@@ -1,0 +1,2 @@
+rm *.o *.hi Main
+ghc -o Main Main.hs
