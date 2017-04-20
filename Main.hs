@@ -27,7 +27,7 @@ appendo xs ys zs =
                 (\t -> 
                   (xs === pair h t) 
                   &&& (call_fresh (\r -> (zs === pair h r) 
-                              &&& (appendo t ys r)))
+                                     &&& (appendo t ys r)))
                 )
               )
             ]
@@ -44,14 +44,28 @@ test6 =
       zs = list [at 1, at 2, at 3, at 4, at 5]
   in eval (call_fresh (\q -> appendo xs q zs)) empty_state
 
+test7 = 
+  let zs = list [at 1, at 2, at 3, at 4, at 5]
+  in eval (call_fresh (\q -> call_fresh (\p -> appendo q p zs))) empty_state
+
 main = 
   do 
     putStrLn "\nTest 5\n"
     putStrLn $ show test5
     putStrLn "\nTest 6\n"
     putStrLn $ show test6
-   -- putStrLn $ show test1
-   -- putStrLn $ show test4
+    putStrLn "\nTest 7\n"
+    putStrLn $ show test7
+
+    putStrLn $ show (reify' (Var 0) test0)
+    putStrLn $ show (reify' (Var 0) test1)
+    putStrLn $ show (reify' (Var 0) test7)
+    
+    --(5 x (#t y x) z) 
+    
+    putStrLn $ show (reify (pair (at 5) (pair (var 0) (pair (at 1) (pair (list [var 1, var 0]) (var 2))))) empty_subst) 
+   
+    putStrLn $ show (test0)
    -- line <- getLine
    -- putStrLn $ show test2
    -- putStrLn $ show test3

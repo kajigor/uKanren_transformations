@@ -7,9 +7,9 @@
 module MuKanren where
 import Debug.Trace
 
-type Var = Integer
+type Var = Int
 -- for now, only integer atoms are allowed
-data Term = Var Var | Pair Term Term | Atom Integer | Nil deriving Show
+data Term = Var Var | Pair Term Term | Atom Int | Nil | R Var deriving Show
 
 data Stream a = Empty 
               | Mature a (Stream a) 
@@ -40,7 +40,8 @@ disj = seq2 (|||)
 
 conde ds = disj (map conj ds)
 
-empty_state = ([], 0)
+empty_subst = []
+empty_state = (empty_subst, (0 :: Int))
 
 mzero = Empty
 
@@ -54,23 +55,18 @@ bind Empty g = mzero
 bind (Mature x xs) g = g x `mplus` bind xs g
 bind (Immature _1) _2 = Immature (bind _1 _2)
 
+walk (Var v) s = 
+  case lookup v s of 
+    Nothing -> Var v
+    Just t  -> walk t s
+walk u _ = u
+
+ext_s u v s = (u, v) : s
+
 unify u v s = 
   -- do we need to add occurs check?
-{-
-  trace ("unify! u: " ++ show u ++ 
-         "; \n       v: " ++ show v ++ 
-         "; \n       s: " ++ show s ++ "\n") $
--}
   unify' (walk u s) (walk v s) 
   where 
-    ext_s u v s = (u, v) : s
-
-    walk (Var v) s = 
-      case lookup v s of 
-        Nothing -> Var v
-        Just t  -> walk t s
-    walk u _ = u
-
     unify' (Var u) (Var v) | u == v = Just s 
     unify' (Var u) _ = Just (ext_s u v s)
     unify' _ (Var v) = Just (ext_s v u s)
@@ -100,3 +96,28 @@ eval a s =
     eval' (Fun _ a) = eval a
 
 
+reify' v stream = 
+  let map' f Empty = []
+      map' f (Mature x xs) = f x : map' f xs
+  in map' (\(s,c) -> reify v s) stream
+
+
+reify v s = 
+  let 
+      u = walk' v s 
+
+      walk' v s = 
+        case walk v s of 
+          Var u -> Var u
+          Pair v u -> Pair (walk' v s) (walk' u s)
+          u -> u
+
+      reify_s v s = 
+        case walk v s of 
+          Var v -> ext_s v (reify_name $ length s) s
+          Pair v u -> reify_s u (reify_s v s)
+          _ -> s
+
+      reify_name n = R n -- temporary solution. need to get rid of it
+        --"_." ++ (show n)
+  in walk' u (reify_s u empty_subst)  
