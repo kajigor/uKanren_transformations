@@ -1,18 +1,19 @@
-{- 
+  {- 
    Implementation of MicroKanren as in the paper 
    "µKanren: A Minimal Functional Core for Relational Programming"
    by Jason Hemann and Daniel P. Friedman
 -}
 
 module MuKanren where
+import Debug.Trace
 
 type Var = Integer
 -- for now, only integer atoms are allowed
-data Term = Var Var | Pair Term Term | Atom Integer deriving Show
+data Term = Var Var | Pair Term Term | Atom Integer | Nil deriving Show
 
 data Stream a = Empty 
               | Mature a (Stream a) 
-           -- | Immature (Stream a) -- do we need this?
+              | Immature (Stream a) -- do we need this?
               deriving Show 
 
 type Name = String 
@@ -27,6 +28,17 @@ at = Atom
 (&&&) = Conj
 call_fresh = Fresh
 fun = Fun 
+nil = Nil
+pair = Pair
+list xs = foldr (\x acc -> pair x acc) nil xs 
+
+seq2 f [x]    = x
+seq2 f (x:xs) = x `f` seq2 f xs
+
+conj = seq2 (&&&)
+disj = seq2 (|||)
+
+conde ds = disj (map conj ds)
 
 empty_state = ([], 0)
 
@@ -35,15 +47,20 @@ mzero = Empty
 -- used for disjunctions, interleaves streams
 mplus Empty _2 = _2 
 mplus (Mature h tl) _2 = Mature h (_2 `mplus` tl)
---  mplus (Immature _1) _2 = Immature (_1 `mplus` _2)
+mplus (Immature _1) _2 = Immature (_1 `mplus` _2)
 
 -- used for conjuctions
 bind Empty g = mzero
 bind (Mature x xs) g = g x `mplus` bind xs g
---  bind (Immature _1) _2 = Immature (bind _1 _2)
+bind (Immature _1) _2 = Immature (bind _1 _2)
 
 unify u v s = 
   -- do we need to add occurs check?
+{-
+  trace ("unify! u: " ++ show u ++ 
+         "; \n       v: " ++ show v ++ 
+         "; \n       s: " ++ show s ++ "\n") $
+-}
   unify' (walk u s) (walk v s) 
   where 
     ext_s u v s = (u, v) : s
@@ -62,6 +79,7 @@ unify u v s =
         Nothing -> Nothing
         Just s' -> unify u' v' s'
     unify' (Atom u) (Atom v) | u == v = Just s
+    unify' Nil Nil = Just s
     unify' _ _ = Nothing
 
 -- program evaluates to a stream of states which are pairs of substitution and 
@@ -80,3 +98,5 @@ eval a s =
     eval' (Conj g g') = \st -> bind (eval g st) (\st -> eval g' st) 
     eval' (Fresh f) = \(s, c) -> eval (f (var c)) (s, c + 1)
     eval' (Fun _ a) = eval a
+
+
