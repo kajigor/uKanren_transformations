@@ -47,10 +47,23 @@ test6 =
 test7 = 
   let zs = list [at 1, at 2, at 3, at 4, at 5]
   in eval (call_fresh (\q -> call_fresh (\p -> appendo q p zs))) empty_state
+  
+test8 = 
+  unfold $ appendo (list [at 1, at 2]) (list [at 3, at 4, at 5]) (Var 0)
+
+test9 = 
+  let fivesRev_ x = zzz (fivesRev_ x) ||| (x === at 5) in
+  run 5 (call_fresh (\q -> fivesRev_ q))
+
+run k a = 
+  let take k (Immature s) = take k s
+      take k (Mature h t) | k > 0 = Mature h $ take (k-1) t
+      take k _ = Empty
+  in take k $ eval a empty_state
 
 main = 
   do 
-    putStrLn "\nTest 5\n"
+    {- putStrLn "\nTest 5\n"
     putStrLn $ show test5
     putStrLn "\nTest 6\n"
     putStrLn $ show test6
@@ -65,8 +78,10 @@ main =
     
     putStrLn $ show (reify (pair (at 5) (pair (var 0) (pair (at 1) (pair (list [var 1, var 0]) (var 2))))) empty_subst) 
    
-    putStrLn $ show (test0)
+    putStrLn $ show (test0) 
    -- line <- getLine
    -- putStrLn $ show test2
    -- putStrLn $ show test3
-  
+    putStrLn $ show  test8
+  -}
+    putStrLn $ show (reify' (Var 0) test9)

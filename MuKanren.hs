@@ -9,15 +9,36 @@ import Debug.Trace
 
 type Var = Int
 -- for now, only integer atoms are allowed
-data Term = Var Var | Pair Term Term | Atom Int | Nil | R Var deriving Show
+data Term = Var Var | Pair Term Term | Atom Int | Nil | R Var
+
+instance Show Term where
+  show (Var  v)   = "x." ++ show v
+  show (Pair v u) = "(" ++ show v ++ ", " ++ show u ++ ")"
+  show (Atom i)   = show i
+  show Nil        = "[]"
+  show (R v)      = "_." ++ show v
 
 data Stream a = Empty 
               | Mature a (Stream a) 
-              | Immature (Stream a) -- do we need this?
+              -- we need this in case of left recursion (who would have known)
+              | Immature (Stream a) 
               deriving Show 
 
 type Name = String 
-data AST = Uni Term Term | Conj AST AST | Disj AST AST | Fresh (Term -> AST) | Fun Name AST
+data AST = Uni Term Term 
+         | Conj AST AST
+         | Disj AST AST 
+         | Fresh (Term -> AST) 
+         | Fun Name AST
+         | Zzz AST
+
+instance Show AST where 
+  show (Uni  x y) = show x ++ " === " ++ show y
+  show (Conj x y) = show x ++ " &&& " ++ show y
+  show (Disj x y) = show x ++ " ||| " ++ show y
+  show (Fun  n b) = n ++ "(" ++ show b ++ ")"
+  show (Fresh  f) = "fresh"
+  show (Zzz a) = "zzz " ++ show a
 
 -- Combinators to write programs with
 var = Var
@@ -28,6 +49,7 @@ at = Atom
 (&&&) = Conj
 call_fresh = Fresh
 fun = Fun 
+zzz = Zzz
 nil = Nil
 pair = Pair
 list xs = foldr (\x acc -> pair x acc) nil xs 
@@ -48,7 +70,7 @@ mzero = Empty
 -- used for disjunctions, interleaves streams
 mplus Empty _2 = _2 
 mplus (Mature h tl) _2 = Mature h (_2 `mplus` tl)
-mplus (Immature _1) _2 = Immature (_1 `mplus` _2)
+mplus (Immature _1) _2 = Immature (_2 `mplus` _1)
 
 -- used for conjuctions
 bind Empty g = mzero
@@ -61,7 +83,17 @@ walk (Var v) s =
     Just t  -> walk t s
 walk u _ = u
 
-ext_s u v s = (u, v) : s
+ext_s u v s = 
+  (u, v) : s
+  {- let v' = walk v s
+      occurs_check (Var x) (Var v) = x == v
+      occurs_check x (Pair v u) = occurs_check x v s || occurs_check x u s
+      occurs_check _ _ = False
+  in 
+  case occurs_check u v' s of 
+    False -> Just ((u, v) : s)
+    True  -> Nothing -}
+  
 
 unify u v s = 
   -- do we need to add occurs check?
@@ -80,20 +112,18 @@ unify u v s =
 
 -- program evaluates to a stream of states which are pairs of substitution and 
 -- auxilary variable counter.
-eval a s = 
-  eval' a s 
-  where 
-    eval' (Uni t t') = \(s,c) -> 
-      let s' = unify t t' s 
-          unit = \(s,c) -> Mature (s,c) Empty
-      in
-      case s' of 
-        Nothing -> mzero
-        Just s' -> unit (s',c)
-    eval' (Disj g g') = \st -> (mplus (eval g st) (eval g' st))
-    eval' (Conj g g') = \st -> bind (eval g st) (\st -> eval g' st) 
-    eval' (Fresh f) = \(s, c) -> eval (f (var c)) (s, c + 1)
-    eval' (Fun _ a) = eval a
+eval (Uni t t') = \(s,c) -> 
+  let s' = unify t t' s 
+      unit = \(s,c) -> Mature (s,c) Empty
+  in
+  case s' of 
+    Nothing -> mzero
+    Just s' -> unit (s',c)
+eval (Disj g g') = \st -> eval g st `mplus` eval g' st
+eval (Conj g g') = \st -> eval g st `bind` \st -> eval g' st
+eval (Fresh f) = \(s, c) -> eval (f (var c)) (s, c + 1)
+eval (Fun _ a) = eval a
+eval (Zzz a) = \st -> Immature (eval a st)
 
 
 reify' v stream = 
@@ -101,16 +131,15 @@ reify' v stream =
       map' f (Mature x xs) = f x : map' f xs
   in map' (\(s,c) -> reify v s) stream
 
+walk' v s = 
+  case walk v s of 
+    Var u -> Var u
+    Pair v u -> Pair (walk' v s) (walk' u s)
+    u -> u
 
 reify v s = 
   let 
       u = walk' v s 
-
-      walk' v s = 
-        case walk v s of 
-          Var u -> Var u
-          Pair v u -> Pair (walk' v s) (walk' u s)
-          u -> u
 
       reify_s v s = 
         case walk v s of 
@@ -118,6 +147,8 @@ reify v s =
           Pair v u -> reify_s u (reify_s v s)
           _ -> s
 
-      reify_name n = R n -- temporary solution. need to get rid of it
+      reify_name n = 
+        R n -- temporary solution. need to get rid of it
         --"_." ++ (show n)
-  in walk' u (reify_s u empty_subst)  
+  in walk' u (reify_s u empty_subst)
+
