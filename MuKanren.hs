@@ -1,4 +1,4 @@
-  {- 
+{- 
    Implementation of MicroKanren as in the paper 
    "µKanren: A Minimal Functional Core for Relational Programming"
    by Jason Hemann and Daniel P. Friedman
@@ -28,8 +28,9 @@ type Name = String
 data AST = Uni Term Term 
          | Conj AST AST
          | Disj AST AST 
-         | Fresh (Term -> AST) 
+         | Fresh (Term -> AST)
          | Fun Name AST
+         | Call AST [Term]
          | Zzz AST
 
 instance Show AST where 
@@ -38,7 +39,17 @@ instance Show AST where
   show (Disj x y) = show x ++ " ||| " ++ show y
   show (Fun  n b) = n ++ "(" ++ show b ++ ")"
   show (Fresh  f) = "fresh"
+  show (Call (Fun n _) arg) = "call " ++ n ++ " with [" ++ concat (map (\x -> show x ++ "; ") arg) ++ "]"
   show (Zzz a) = "zzz " ++ show a
+
+show' _ c | c > 20 = ""
+show' (Uni  x y) c = show x ++ " === " ++ show y
+show' (Conj x y) c = show' x c ++ " &&& " ++ show' y c
+show' (Disj x y) c = show' x c ++ " ||| " ++ show' y c
+show' (Fun  n b) c = n ++ "(" ++ show' b c ++ ")"
+show' (Fresh  f) c = "fresh " ++ show' (f (var c)) (c + 1)
+show' (Call x arg) c = "call " ++ show' x c ++ " with [" ++ concat (map (\x -> show x ++ "; ") arg) ++ "]"
+show' (Zzz a) c = "zzz " ++ show' a c
 
 -- Combinators to write programs with
 var = Var
@@ -52,6 +63,7 @@ fun = Fun
 zzz = Zzz
 nil = Nil
 pair = Pair
+call = Call
 list xs = foldr (\x acc -> pair x acc) nil xs 
 
 seq2 f [x]    = x
@@ -93,7 +105,6 @@ ext_s u v s =
   case occurs_check u v' s of 
     False -> Just ((u, v) : s)
     True  -> Nothing -}
-  
 
 unify u v s = 
   -- do we need to add occurs check?
@@ -123,8 +134,8 @@ eval (Disj g g') = \st -> eval g st `mplus` eval g' st
 eval (Conj g g') = \st -> eval g st `bind` \st -> eval g' st
 eval (Fresh f) = \(s, c) -> eval (f (var c)) (s, c + 1)
 eval (Fun _ a) = eval a
+eval (Call f _) = eval f
 eval (Zzz a) = \st -> Immature (eval a st)
-
 
 reify' v stream = 
   let map' f Empty = []
