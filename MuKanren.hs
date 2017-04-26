@@ -9,7 +9,7 @@ import Debug.Trace
 
 type Var = Int
 -- for now, only integer atoms are allowed
-data Term = Var Var | Pair Term Term | Atom Int | Nil | R Var
+data Term = Var Var | Pair Term Term | Atom Int | Nil | R Var deriving Eq
 
 instance Show Term where
   show (Var  v)   = "x." ++ show v
@@ -17,12 +17,20 @@ instance Show Term where
   show (Atom i)   = show i
   show Nil        = "[]"
   show (R v)      = "_." ++ show v
-
+{-
+instance Eq Term where 
+  Nil       == Nil       = True
+  Atom l    == Atom r    = l == r
+  Pair l l' == Pair r r' = l == r && l' == r'
+  Var  l    == Var  r    = l == r
+  R    l    == R    r    = l == r 
+  _         == _         = False
+-}
 data Stream a = Empty 
               | Mature a (Stream a) 
               -- we need this in case of left recursion (who would have known)
               | Immature (Stream a) 
-              deriving Show 
+              deriving Show
 
 type Name = String 
 data AST = Uni Term Term 
@@ -31,7 +39,7 @@ data AST = Uni Term Term
          | Fresh (Term -> AST)
          | Fun Name AST
          | Call AST [Term]
-         | Zzz AST
+         | Zzz AST 
 
 instance Show AST where 
   show (Uni  x y) = show x ++ " === " ++ show y
