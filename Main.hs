@@ -96,7 +96,7 @@ test13 =
 
 main = 
   do 
-    putStrLn $ show (drive (call_fresh (\xs -> (call_fresh (\ys -> (call_fresh (\zs -> appendo_call xs ys zs)))))) (Just empty_state))
+    putStrLn $ show (drive (call_fresh (\xs -> (call_fresh (\ys -> (call_fresh (\zs -> appendo_call xs ys zs)))))))
   
     {- putStrLn "\nTest 5\n"
     putStrLn $ show test5

@@ -2,14 +2,14 @@ module Driver where
 import MuKanren
 import Debug.Trace
 
-data Tree subst ast = Leaf (Maybe subst)   | Node subst ast [Tree subst ast]
+data Tree subst ast = Leaf (Maybe subst) | Node Int subst ast [Tree subst ast]
 
 instance (Show subst, Show ast) => Show (Tree subst ast) where 
   show t = show' t 0 
    where 
     nspaces n = [' ' | _ <- [1..n]]
     show' (Leaf s) n = nspaces n ++ "L " ++ (show s) ++ "\n"
-    show' (Node s a ns) n = nspaces n ++ "N " ++ show s ++ " " ++ show a ++ "\n" ++ (concat $ map (\x -> show' x (n + 1)) ns)
+    show' (Node _ s a ns) n = nspaces n ++ "N " ++ show s ++ " " ++ show a ++ "\n" ++ (concat $ map (\x -> show' x (n + 1)) ns)
 
 apply_subst (Conj l r)    s        = Conj (apply_subst l s) (apply_subst r s)
 apply_subst (Disj l r)    s        = Disj (apply_subst l s) (apply_subst r s)
@@ -39,7 +39,7 @@ rename t =
       in (Zzz a', s')
     rename_ast (Call a args) s = 
       let s' = s 
-          a' = a -- (a', s')    = rename_ast a s -- this loops. Doesn't seem necessary for now anyways
+          a' = a -- (a', s')    = rename_ast a s -- this loops. Doesn't seem necessary for now anyway
           (arg', s'') = foldl (\(xs, s) x -> let (x', s') = rename' x s in (x' : xs, s')) ([], s') args
       in (Call a' $ reverse arg', s'')
     rename_ast (Uni l r ) s = 
@@ -65,75 +65,82 @@ eq l r =
     eq' (Conj l l') (Conj r r') = eq' l r && eq' l' r'
     eq' (Disj l l') (Disj r r') = eq' l r && eq' l' r'
     eq' (Uni  l l') (Uni  r r') = l == r && l' == r'
+    -- The following one should not be ever used, TODO consider deleting
     eq' (Fun ln l)  (Fun rn r)  = ln == rn && eq' l r
     eq' (Zzz l)     (Zzz r)     = eq' l r
     eq' (Call (Fun l _) ls) (Call (Fun r _) rs) = l == r && foldl (\acc (l, r) -> acc && l == r) True (zip ls rs)
     eq' _ _ = False 
 
-drive _ Nothing = -- trace "nothing" $
-                  Leaf Nothing
+-- vars can only be the same
+embed_t (Var l) (Var r) = l == r
 
-drive x@(Uni t t')   (Just (s,c))    = 
---trace "uni " $
---trace (show s) $
-  Leaf $ (unify t t' s >>= \s -> Just (s,c))
+-- coupling rules
+embed_t (Nil)       (Nil)       = True
+embed_t (Pair l l') (Pair r r') = embed_t l r && embed_t r r'
+embed_t (Atom l)    (Atom r)    = l == r
 
-drive x@(Disj g g')  st@(Just st')   = 
---trace "disj " $
---trace (show st') $
-  Node st' (apply_subst x st') [drive g st, drive g' st]
+-- diving rules
+embed_t _ (Var _)    = False
+embed_t _ (Atom _)   = False
+embed_t _  Nil       = False 
+embed_t x (Pair l r) = embed_t x l || embed_t x r
+
+-- coupling rules 
+embed (Uni l l') (Uni r r') = embed_t l r && embed_t l' r'
+embed (Conj l l') (Conj r r') = embed l r && embed l' r'
+embed (Disj l l') (Disj r r') = embed l r && embed l' r'
+embed (Call (Fun nl al) als) (Call (Fun nr ar) ars) = nl == nr && and (zipWith embed_t als ars)
+embed (Zzz l) (Zzz r) = embed l r
+
+-- diving rules 
+embed _ (Uni _ _) = False
+embed l (Zzz r) = embed l r
+embed l (Conj r r') = embed l r || embed l r'
+embed l (Disj r r') = embed l r || embed l r'
 
 
-drive x@(Fun _ a)    st@(Just st')   =
---trace "fun" $
---trace (show st') $
-  Node st' (apply_subst x st') [drive a st]
-
-drive x@(Fresh f)    (Just st@(s,c)) = 
---trace "fresh" $
---trace (show s) $ 
-  Node st (apply_subst x st) [drive (f $ var c) (Just (s, c+1))]
-
-drive x@(Zzz a)      st@(Just st')   = Node st' x [drive a st]
-
--- TODO Meaningfull guard should be here (check for embedding or smth like that)
-drive x@(Call f arg) st@(Just st'@(s,c)) | c <= 10   = 
---trace "call" $
---trace (show s) $ 
-  Node st' (apply_subst x st') [drive f st]
-
-drive x@(Call f arg) st@(Just st')   = 
---trace "call nothing" $
-  Leaf Nothing
-
-drive x@(Conj (Uni l l') (Uni r r')) (Just st@(s,c)) = 
---trace "conj uni uni" $
---trace (show x) $
---trace (show s) $
-  Node st (apply_subst x st) [Leaf st'] 
+drive ast = 
+  drive' 0 ast (Just empty_state) 
   where 
-    st' = unify l l' s >>= \s -> 
-            --trace (show s) $ 
-            unify r r' s >>= \s -> Just (s,c)
+    drive' n _ Nothing = Leaf Nothing
 
-drive x@(Conj (Uni l l') r) (Just st@(s,c)) = 
---trace "conj uni _" $
---trace (show x) $
---trace (show s) $
-  let t = apply_subst x st in trace ("\n" ++ show (rename t) ++ "\n") $ 
+    drive' n x@(Uni t t')   (Just (s,c))    = 
+      Leaf $ (unify t t' s >>= \s -> Just (s,c))
 
-    Node st (apply_subst x st) [drive r (unify l l' s >>= \s -> Just (s, c))]
+    drive' n x@(Disj g g')  st@(Just st')   = 
+      Node n st' (apply_subst x st') [drive' n g st, drive' n g' st]
 
-drive x@(Conj l (Uni r r')) (Just st@(s,c)) = 
---trace "conj _ uni" $
---trace (show x) $
---trace (show s) $
-  Node st (apply_subst x st) [drive l (unify r r' s >>= \s -> Just (s, c))]
+    drive' n x@(Fun _ a)    st@(Just st')   =
+      Node n st' (apply_subst x st') [drive' n a st]
 
-drive x@(Conj l r) st@(Just st'@(s,c)) = 
-  Node st' (apply_subst x st') $ [
-    case drive l st of 
-      Leaf Nothing -> Leaf Nothing
-      Leaf st@(Just st') -> Node st' (apply_subst x st') [drive r st]
-      Node st x ch -> Node st (apply_subst (Conj x r) st) ch
-  ]
+    drive' n x@(Fresh f)    (Just st@(s,c)) = 
+      Node n st (apply_subst x st) [drive' n (f $ var c) (Just (s, c+1))]
+
+    drive' n x@(Zzz a)      st@(Just st')   = Node n st' x [drive' n a st]
+
+    -- TODO Meaningfull guard should be here (check for embedding or smth like that)
+    drive' n x@(Call f arg) st@(Just st'@(s,c)) | c <= 10   = 
+      Node n st' (apply_subst x st') [drive' n f st]
+
+    drive' n x@(Call f arg) st@(Just st')   = 
+      Leaf Nothing
+
+    drive' n x@(Conj (Uni l l') (Uni r r')) (Just st@(s,c)) = 
+      Node n st (apply_subst x st) [Leaf st'] 
+      where 
+        st' = unify l l' s >>= \s -> 
+                unify r r' s >>= \s -> Just (s,c)
+
+    drive' n x@(Conj (Uni l l') r) (Just st@(s,c)) = 
+      Node n st (apply_subst x st) [drive' n r (unify l l' s >>= \s -> Just (s, c))]
+
+    drive' n x@(Conj l (Uni r r')) (Just st@(s,c)) = 
+      Node n st (apply_subst x st) [drive' n l (unify r r' s >>= \s -> Just (s, c))]
+
+    drive' n x@(Conj l r) st@(Just st'@(s,c)) = 
+      Node n st' (apply_subst x st') $ [
+        case drive' n l st of 
+          Leaf Nothing -> Leaf Nothing
+          Leaf st@(Just st') -> Node n st' (apply_subst x st') [drive' n r st]
+          Node n st x ch -> Node n st (apply_subst (Conj x r) st) ch
+      ]
