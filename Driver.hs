@@ -9,7 +9,7 @@ instance (Show subst, Show ast) => Show (Tree subst ast) where
    where 
     nspaces n = [' ' | _ <- [1..n]]
     show' (Leaf s) n = nspaces n ++ "L " ++ (show s) ++ "\n"
-    show' (Node _ s a ns) n = nspaces n ++ "N " ++ show s ++ " " ++ show a ++ "\n" ++ (concat $ map (\x -> show' x (n + 1)) ns)
+    show' (Node d s a ns) n = nspaces n ++ "N " ++ show d ++ " " ++ show s ++ " " ++ show a ++ "\n" ++ (concat $ map (\x -> show' x (n + 1)) ns)
 
 apply_subst (Conj l r)    s        = Conj (apply_subst l s) (apply_subst r s)
 apply_subst (Disj l r)    s        = Disj (apply_subst l s) (apply_subst r s)
@@ -66,7 +66,7 @@ eq l r =
     eq' (Disj l l') (Disj r r') = eq' l r && eq' l' r'
     eq' (Uni  l l') (Uni  r r') = l == r && l' == r'
     -- The following one should not be ever used, TODO consider deleting
-    eq' (Fun ln l)  (Fun rn r)  = ln == rn && eq' l r
+    -- eq' (Fun ln l)  (Fun rn r)  = ln == rn && eq' l r
     eq' (Zzz l)     (Zzz r)     = eq' l r
     eq' (Call (Fun l _) ls) (Call (Fun r _) rs) = l == r && foldl (\acc (l, r) -> acc && l == r) True (zip ls rs)
     eq' _ _ = False 
@@ -98,49 +98,50 @@ embed l (Zzz r) = embed l r
 embed l (Conj r r') = embed l r || embed l r'
 embed l (Disj r r') = embed l r || embed l r'
 
-
 drive ast = 
-  drive' 0 ast (Just empty_state) 
+  let (_, tree) = drive' 0 ast (Just empty_state) in tree
   where 
-    drive' n _ Nothing = Leaf Nothing
+    drive' n _ Nothing = (n, Leaf Nothing)
 
-    drive' n x@(Uni t t')   (Just (s,c))    = 
-      Leaf $ (unify t t' s >>= \s -> Just (s,c))
-
-    drive' n x@(Disj g g')  st@(Just st')   = 
-      Node n st' (apply_subst x st') [drive' n g st, drive' n g' st]
-
-    drive' n x@(Fun _ a)    st@(Just st')   =
-      Node n st' (apply_subst x st') [drive' n a st]
-
-    drive' n x@(Fresh f)    (Just st@(s,c)) = 
-      Node n st (apply_subst x st) [drive' n (f $ var c) (Just (s, c+1))]
-
-    drive' n x@(Zzz a)      st@(Just st')   = Node n st' x [drive' n a st]
-
-    -- TODO Meaningfull guard should be here (check for embedding or smth like that)
-    drive' n x@(Call f arg) st@(Just st'@(s,c)) | c <= 10   = 
-      Node n st' (apply_subst x st') [drive' n f st]
-
-    drive' n x@(Call f arg) st@(Just st')   = 
-      Leaf Nothing
-
-    drive' n x@(Conj (Uni l l') (Uni r r')) (Just st@(s,c)) = 
-      Node n st (apply_subst x st) [Leaf st'] 
-      where 
-        st' = unify l l' s >>= \s -> 
-                unify r r' s >>= \s -> Just (s,c)
-
-    drive' n x@(Conj (Uni l l') r) (Just st@(s,c)) = 
-      Node n st (apply_subst x st) [drive' n r (unify l l' s >>= \s -> Just (s, c))]
-
-    drive' n x@(Conj l (Uni r r')) (Just st@(s,c)) = 
-      Node n st (apply_subst x st) [drive' n l (unify r r' s >>= \s -> Just (s, c))]
-
-    drive' n x@(Conj l r) st@(Just st'@(s,c)) = 
-      Node n st' (apply_subst x st') $ [
-        case drive' n l st of 
-          Leaf Nothing -> Leaf Nothing
-          Leaf st@(Just st') -> Node n st' (apply_subst x st') [drive' n r st]
-          Node n st x ch -> Node n st (apply_subst (Conj x r) st) ch
-      ]
+    drive' n x st@(Just st'@(s,c)) = 
+      case x of 
+        Uni  l r -> 
+          (n, Leaf $ unify l r s >>= \s -> Just (s,c))
+        Disj l r -> 
+          let (n' , l') = drive' (n +1) l st
+              (n'', r') = drive' (n'+1) r st
+          in (n'', Node n st' (apply_subst x st') [l', r'])
+        Fresh f ->
+          let (n', a) = drive' (n+1) (f $ var c) (Just (s,c+1))
+          in (n', Node n st' (apply_subst x st') [a])
+        Zzz a -> 
+          drive' n a st
+        Fun _ a -> 
+          let (n', a') = drive' (n+1) a st 
+          in (n', Node n st' (apply_subst x st') [a'])
+        Call (Fun _ a) arg | c <= 10 ->
+          let (n', a') = drive' (n+1) a st
+          in (n', Node n st' (apply_subst x st') [a'])
+        Call _ _ -> 
+          (n, Leaf Nothing)
+        Conj (Uni l l') (Uni r r') -> 
+          let st'' = unify l l' s >>= \s -> 
+                     unify r r' s >>= \s -> 
+                     Just (s,c)
+          in (n, Node n st' (apply_subst x st') [Leaf st''])
+        Conj (Uni l l') r -> 
+          let (n', r') = drive' (n+1) r (unify l l' s >>= \s -> Just (s,c))
+          in (n', Node n st' (apply_subst x st') [r'])
+        Conj l (Uni r r') ->
+          let (n', l') = drive' (n+1) l (unify r r' s >>= \s -> Just (s,c))
+          in (n', Node n st' (apply_subst x st') [l'])
+        Conj l r -> 
+          let (n', l') = drive' (n+1) l st
+          in case l' of 
+               Leaf Nothing -> 
+                 (n, Leaf Nothing)
+               Leaf st@(Just st') ->
+                 let (n'', r') = drive' (n'+1) r st
+                 in (n'', Node n st' (apply_subst x st') [r'])
+               Node _ st x ch -> 
+                 (n', Node (n'+1) st (apply_subst (Conj x r) st) ch)
