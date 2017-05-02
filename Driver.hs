@@ -7,7 +7,7 @@ data Edge a = Up Int | Dn a
 
 data Tree subst ast = Leaf (Maybe subst) | Node Int subst ast [Edge (Tree subst ast)]
 
-node n s x ch = Node n s (apply_subst x s) ch 
+node = Node 
 
 instance (Show subst, Show ast) => Show (Tree subst ast) where 
   show t = show' t 0 
@@ -118,76 +118,67 @@ embed l r =
       embed' _ _ = trace "fell through " $  False
 
 drive ast = 
-  let (_, tree, _) = drive' 0 ast (Just empty_state) [] in tree
+  let tree = drive' 0 ast (Just empty_state) [] in tree
   where 
-    a = apply_subst
- 
-    drive' n _ Nothing nodes = (n, Leaf Nothing, nodes)
+    drive' _ _ Nothing _ = Leaf Nothing
 
-    drive' n x st@(Just st'@(s,c)) nodes = 
-      case x of 
-        Uni  l r -> 
-          (n, Leaf $ unify l r s >>= \s -> Just (s,c), (a x st',n) : nodes)
-        Disj l r -> 
-          let (n' , l', nodes' ) = drive' (n +1) l st ((a x st',n) : nodes)
-              (n'', r', nodes'') = drive' (n'+1) r st ((a x st',n) : nodes')
-              node' = node n st' x [Dn l', Dn r']
-          in (n'', node', nodes'' )
-        Fresh f ->
-          let (n', a, nodes') = drive' (n+1) (f $ var c) (Just (s,c+1)) ((x,n) : nodes)
-              node' = node n st' x [Dn a]
-          in (n', node', nodes')
-        Zzz a -> 
-          drive' n a st nodes
-        Fun _ a -> 
-          let (n', a', nodes') = drive' (n+1) a st ((x,n) : nodes)
-              node' = node n st' x [Dn a']
-          in (n', node', nodes')
-        Call (Fun _ a) arg ->
-          let (n', a', nodes') = drive' (n+1) a st ((x,n) : nodes)
-              child = 
-                      trace ("NODES " ++ show nodes) $
-                      case a' of 
-                        Node _ _ ast _ -> 
-                          case find (\(x,n)  -> {- trace ("embed? " ++ show ast ++ " AND " ++ show x) $ -} let e = embed ast x in trace (show e) $ e) nodes of 
-                            Just (_,y) -> Up y
-                            Nothing -> Dn a'
-                        _ -> Dn a'
-              node' = node n st' x [child]
-          in (n', node', nodes' )
-        Call _ _ -> 
-          (n, Leaf Nothing, nodes)
-        Conj (Uni l l') (Uni r r') -> 
-          let st'' = unify l l' s >>= \s -> 
-                     unify r r' s >>= \s -> 
-                     Just (s,c)
-              node' = node n st' x [Dn $ Leaf st'']
-          in (n, node', (a x st',n) : nodes )
-        Conj (Uni l l') r -> 
-          let (n', r', nodes') = drive' (n+1) r (unify l l' s >>= \s -> Just (s,c)) ((a x st',n) : nodes)
-              node' = node n st' x [Dn r']
-          in (n', node', nodes')
-        Conj l (Uni r r') ->
-          let (n', l', nodes') = drive' (n+1) l (unify r r' s >>= \s -> Just (s,c)) ((a x st',n) : nodes)
-              node' = node n st' x [Dn l']
-          in (n', node', nodes')
-        Conj l r -> -- TODO debug this branch
-          let (n', l', nodes') = drive' (n+1) l st ((a x st',n) : nodes)
-          in case l' of 
-               Leaf Nothing -> 
-                 (n, Leaf Nothing, nodes')
-               Leaf st@(Just st') ->
-                 let (n'', r', nodes') = drive' (n'+1) r st ((a x st',n) : nodes')
-                     node' = node n st' x [Dn r']
-                 in (n'', node', nodes' )
-               Node _ st x ch -> 
-                 let node' = node (n'+1) st (Conj x r) ch
-                 in (n', node', nodes')
-                 
-                 
-                 
-                 
-                 
-                 
-                 
-                 
+    drive' n x st@(Just st'@(s,c)) ancestors = 
+      let parent = apply_subst x st'
+          ancestor = (parent, n)
+      in
+        case x of 
+          Uni  l r -> Leaf $ unify l r s >>= \s -> Just (s,c)
+          Disj l r -> 
+            let l' = drive' (n+1) l st (ancestor : ancestors)
+                r' = drive' (n+1) r st (ancestor : ancestors)
+            in node n st' parent [Dn l', Dn r']
+          Fresh f ->
+            let a = drive' (n+1) (f $ var c) (Just (s,c+1)) (ancestor : ancestors)
+            in node n st' parent [Dn a]
+          Zzz a -> 
+            drive' n a st ancestors
+          Fun _ a -> 
+            let a'= drive' (n+1) a st (ancestor : ancestors)
+            in node n st' parent [Dn a']
+          Call (Fun _ a) arg ->
+            let a' = drive' (n+1) a st (ancestor : ancestors)
+                child = 
+                        trace ("NODES " ++ show ancestors) $
+                        case a' of 
+                          Node _ _ ast _ -> 
+                            case find (\(x,n)  -> {- trace ("embed? " ++ show ast ++ " AND " ++ show x) $ -} let e = embed ast x in trace (show e) $ e) ancestors of 
+                              Just (_,y) -> Up y
+                              Nothing -> Dn a'
+                          _ -> Dn a'
+            in node n st' parent [child]
+          Call _ _ -> 
+            Leaf Nothing
+          Conj (Uni l l') (Uni r r') -> 
+            let st'' = unify l l' s >>= \s -> 
+                       unify r r' s >>= \s -> 
+                       Just (s,c)
+            in node n st' parent [Dn $ Leaf st'']
+          Conj (Uni l l') r -> 
+            let r' = drive' (n+1) r (unify l l' s >>= \s -> Just (s,c)) (ancestor : ancestors)
+            in node n st' parent [Dn r']
+          Conj l (Uni r r') ->
+            let l' = drive' (n+1) l (unify r r' s >>= \s -> Just (s,c)) (ancestor : ancestors)
+            in node n st' parent [Dn l']
+          Conj l r -> -- TODO debug this branch
+            let l' = drive' (n+1) l st (ancestor : ancestors)
+            in case l' of 
+                 Leaf Nothing -> 
+                   Leaf Nothing
+                 Leaf st@(Just st') ->
+                   let r' = drive' (n+1) r st (ancestor : ancestors)
+                   in node n st' parent [Dn r']
+                 Node _ st x ch -> 
+                   node (n+1) st (apply_subst (Conj x r) st) ch
+                   
+                   
+                   
+                   
+                   
+                   
+                   
+                   
