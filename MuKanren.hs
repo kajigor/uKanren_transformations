@@ -6,6 +6,7 @@
 
 module MuKanren where
 import Debug.Trace
+import Data.List
 
 type Var = Int
 -- for now, only integer atoms are allowed
@@ -17,20 +18,13 @@ instance Show Term where
   show (Atom i)   = show i
   show Nil        = "[]"
   show (R v)      = "_." ++ show v
-{-
-instance Eq Term where 
-  Nil       == Nil       = True
-  Atom l    == Atom r    = l == r
-  Pair l l' == Pair r r' = l == r && l' == r'
-  Var  l    == Var  r    = l == r
-  R    l    == R    r    = l == r 
-  _         == _         = False
--}
+
 data Stream a = Empty 
               | Mature a (Stream a) 
               -- we need this in case of left recursion (who would have known)
               | Immature (Stream a) 
               deriving Show
+
 
 type Name = String 
 data AST = Uni Term Term 
@@ -42,13 +36,13 @@ data AST = Uni Term Term
          | Zzz AST 
 
 instance Show AST where 
-  show (Uni  x y) = show x ++ " === " ++ show y
-  show (Conj x y) = show x ++ " &&& " ++ show y
-  show (Disj x y) = show x ++ " ||| " ++ show y
-  show (Fun  n b) = n ++ "(" ++ show b ++ ")"
-  show (Fresh  f) = "fresh"
-  show (Call (Fun n _) arg) = "call " ++ n ++ " with [" ++ concat (map (\x -> show x ++ "; ") arg) ++ "]"
-  show (Zzz a) = "zzz " ++ show a
+  show (Uni  x y) = "(" ++ show x ++ " === " ++ show y ++ ")"
+  show (Conj x y) = "(" ++ show x ++ " &&& " ++ show y ++ ")"
+  show (Disj x y) = "(" ++ show x ++ " ||| " ++ show y ++ ")"
+  show (Fun  n b) = "(" ++ n ++ "(" ++ show b ++ ")" ++ ")"
+  show (Fresh  f) = "(" ++ "fresh" ++ ")"
+  show (Call (Fun n _) arg) = "(" ++ "call " ++ n ++ " with [" ++ concat (map (\x -> show x ++ "; ") arg) ++ "]" ++ ")"
+  show (Zzz a) = "zzz " ++ show a ++ ")"
 
 show' _ c | c > 20 = ""
 show' (Uni  x y) c = show x ++ " === " ++ show y
@@ -64,8 +58,11 @@ var = Var
 at = Atom
 
 (===) = Uni
-(|||) = Disj
-(&&&) = Conj
+--(|||) x y = Disj (zzz x) (zzz y)
+--(&&&) x y = Conj (zzz x) (zzz y)
+
+(|||) = Disj 
+(&&&) = Conj 
 call_fresh = Fresh
 fun = Fun 
 zzz = Zzz
@@ -122,28 +119,37 @@ unify u v s =
     unify' (Var u) _ = Just (ext_s u v s)
     unify' _ (Var v) = Just (ext_s v u s)
     unify' (Pair u u') (Pair v v') = 
+      -- trace ("Unification of pairs (" ++ show u ++ ", " ++ show u' ++ ") AND (" ++ show v ++ ", " ++ show v' ++ ")") $ 
       case unify u v s of 
         Nothing -> Nothing
-        Just s' -> unify u' v' s'
+        Just s' -> unify u' v' s' 
     unify' (Atom u) (Atom v) | u == v = Just s
     unify' Nil Nil = Just s
     unify' _ _ = Nothing
 
+show_st (s,c) = 
+  let reified = sortBy (\(x,_) (y,_) -> if x < y then LT else if x == y then EQ else GT) $ map (\(x,v) -> (x, walk' v s)) s
+  in show (reified, c)
+
 -- program evaluates to a stream of states which are pairs of substitution and 
 -- auxilary variable counter.
-eval (Uni t t') = \(s,c) -> 
-  let s' = unify t t' s 
-      unit = \(s,c) -> Mature (s,c) Empty
-  in
-  case s' of 
-    Nothing -> mzero
-    Just s' -> unit (s',c)
-eval (Disj g g') = \st -> eval g st `mplus` eval g' st
-eval (Conj g g') = \st -> eval g st `bind` \st -> eval g' st
-eval (Fresh f) = \(s, c) -> eval (f (var c)) (s, c + 1)
-eval (Fun _ a) = eval a
-eval (Call f _) = eval f
-eval (Zzz a) = \st -> Immature (eval a st)
+eval x st@(s,c) =
+  -- force termination
+ -- if c >= 30 then Mature st Empty else
+    case x of 
+      (Uni t t') ->
+        let s' = unify t t' s 
+            unit = \(s,c) -> Mature (s,c) Empty
+        in
+        case s' of 
+          Nothing -> mzero
+          Just s' -> unit (s',c)
+      (Disj g g') -> eval g st `mplus` eval g' st
+      (Conj g g') -> eval g st `bind` \st -> eval g' st
+      (Fresh f) -> eval (f (var c)) (s, c + 1)
+      (Fun _ a) -> eval a st
+      (Call f _) -> trace (show_st st) $ trace (show x) $ trace "\n" $ eval f st 
+      (Zzz a) -> Immature (eval a st)
 
 reify' v stream = 
   let map' f Empty = []

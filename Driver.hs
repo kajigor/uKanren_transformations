@@ -125,14 +125,14 @@ drive ast =
     drive' n x st@(Just st'@(s,c)) ancestors = 
       let parent = apply_subst x st'
           ancestor = (parent, n)
-      in
+      in 
         case x of 
           Uni  l r -> Leaf $ unify l r s >>= \s -> Just (s,c)
           Disj l r -> 
             let l' = drive' (n+1) l st (ancestor : ancestors)
                 r' = drive' (n+1) r st (ancestor : ancestors)
             in node n st' parent [Dn l', Dn r']
-          Fresh f ->
+          Fresh f ->  
             let a = drive' (n+1) (f $ var c) (Just (s,c+1)) (ancestor : ancestors)
             in node n st' parent [Dn a]
           Zzz a -> 
@@ -140,13 +140,13 @@ drive ast =
           Fun _ a -> 
             let a'= drive' (n+1) a st (ancestor : ancestors)
             in node n st' parent [Dn a']
-          Call (Fun _ a) arg ->
+          Call (Fun _ a) arg | c <= 10 ->
             let a' = drive' (n+1) a st (ancestor : ancestors)
                 child = 
                         trace ("NODES " ++ show ancestors) $
                         case a' of 
                           Node _ _ ast _ -> 
-                            case find (\(x,n)  -> {- trace ("embed? " ++ show ast ++ " AND " ++ show x) $ -} let e = embed ast x in trace (show e) $ e) ancestors of 
+                            case find (\(x,n)  -> let e = embed ast x in trace (show e) $ e) ancestors of 
                               Just (_,y) -> Up y
                               Nothing -> Dn a'
                           _ -> Dn a'
@@ -174,11 +174,11 @@ drive ast =
                    in node n st' parent [Dn r']
                  Node _ st x ch -> 
                    node (n+1) st (apply_subst (Conj x r) st) ch
-                   
-                   
-                   
-                   
-                   
-                   
-                   
-                   
+                     
+                     
+                     
+                     
+                     
+                     
+                     
+                     
