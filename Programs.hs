@@ -1,43 +1,30 @@
-module Programs where 
+module Programs where
 import MuKanren
 
-appendo xs ys zs = 
+appendo a b ab =
   fun "appendo" $
-      conde [ [xs === nil, zs === ys]
-            , [call_fresh 
-                (\h -> call_fresh 
-                  (\t -> 
-                    (xs === pair h t) 
-                    &&& (call_fresh (\r -> (zs === pair h r) 
-                                       &&& (call (appendo t ys r) [t, ys, r])))
-                  )
+      conde [ [ a === nil, b === ab ]
+            , [ call_fresh (\h ->
+                  call_fresh (\t ->
+                    a === pair h t &&&
+                    call_fresh (\ab' ->
+                      pair h ab' === ab &&& zzz (call (appendo t b ab') [t, b, ab']))
+                 )
                 )
               ]
             ]
 
-reverso xs ys = 
+reverso a b =
   fun "reverso" $
-      conde [ [xs === nil, ys === nil]
+      conde [ [a === nil, b === nil]
             , [call_fresh (\h ->
-                call_fresh (\t -> 
-                  call_fresh (\xs' -> 
-                    xs === pair h t
-                    &&& call (reverso t xs') [t, xs']
-                    &&& (let h' = list [h] in call (appendo xs' h' ys) [xs', h', ys])
+                call_fresh (\t ->
+                    a === pair h t &&&
+                    call_fresh (\a' ->
+                      (let h' = list [h] in zzz (call (appendo a' h' b) [a', h', b])) &&&
+                        zzz (call (reverso t a') [t, a'])
                   )
                 )
               )]
             ]
 
-{-
-let rec reverso a b =
-  conde
-    [ ((a === nil ()) &&& (b === nil ()))
-    ; Fresh.two (fun h t ->
-          (a === h%t) &&&
-          (Fresh.one (fun a' ->
-              (appendo a' !<h b) &&& (reverso t a')
-          ))
-      )
-    ]
--}
