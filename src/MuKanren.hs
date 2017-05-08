@@ -124,7 +124,8 @@ unify u v s =
     unify' _ _ = Nothing
 
 show_st (s,c) =
-  let reified = sortBy (\(x,_) (y,_) -> if x < y then LT else if x == y then EQ else GT) $ map (\(x,v) -> (x, walk' v s)) s
+  let reified = sortBy (\(x,_) (y,_) -> if x < y then LT else if x == y then EQ else GT) $
+                       map (\(x,v) -> (x, walk' v s)) s
   in show (reified, c)
 
 -- program evaluates to a stream of states which are pairs of substitution and

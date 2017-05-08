@@ -7,6 +7,8 @@ data Edge a = Up Int | Dn a
 
 data Tree subst ast = Leaf (Maybe subst) | Node Int subst ast [Edge (Tree subst ast)]
 
+--data GeneralizedSubst = S (Term, Term) | G (Term, AST)
+
 node = Node
 
 instance (Show subst, Show ast) => Show (Tree subst ast) where
@@ -16,7 +18,7 @@ instance (Show subst, Show ast) => Show (Tree subst ast) where
     show' (Leaf s) n = nspaces n ++ "L " ++ show s ++ "\n"
     show' (Node d s a ns) n = nspaces n ++ "N " ++ show d ++ " " ++ show s ++ " " ++ show a ++ "\n" ++
                               concatMap (\x -> case x of Dn x -> show' x (n + 1)
-                                                         Up d -> "Up " ++ show d)
+                                                         Up d -> nspaces (n + 1) ++ "Up " ++ show d)
                                          ns
 
 apply_subst (Conj l r)    s        = Conj (apply_subst l s) (apply_subst r s)
@@ -100,7 +102,7 @@ embed l r =
   let l' = rename l
       r' = rename r
   in
-    trace ("EMBED l' = " ++ show l' ++ " AND r' = " ++ show r') $
+    -- trace ("EMBED l' = " ++ show l' ++ " AND r' = " ++ show r') $
     embed' l' r' where
       -- coupling rules
       embed' (Uni  l l') (Uni  r r') = embed_t l r && embed_t l' r'
@@ -115,7 +117,29 @@ embed l r =
       embed' l (Conj r r') = embed' l r || embed' l r'
       embed' l (Disj r r') = embed' l r || embed' l r'
 
-      embed' _ _ = trace "fell through " False
+      embed' _ _ = False -- trace "fell through " False
+
+unfold _ Nothing = [(Nothing, Nothing)]
+
+unfold x st@(Just st'@(s,c)) =
+  if c >= 6 then [(Nothing, Nothing)] else
+  case x of
+    Uni  l r -> [(Nothing, unify l r s >>= \s -> Just (s,c))]
+    Disj l r -> unfold l st ++ unfold r st
+    Fresh f  -> [(Just $ f (var c), Just (s,c+1))]
+    Zzz a    -> [(Just a,st)]
+    Fun _ a  -> [(Just a,st)]
+    Call (Fun _ a) arg -> [(Just a,st)]
+    Conj (Uni l l') (Uni r r') -> [(Nothing, unify l l' s >>= \s -> unify r r' s >>= \s -> Just (s,c))]
+    Conj (Uni l l') r -> unfold r (unify l l' s >>= \s -> Just (s,c))
+    Conj l (Uni r r') -> unfold l (unify r r' s >>= \s -> Just (s,c))
+    Conj l r -> let l' = unfold l st
+                in concatMap (\y -> case y of
+                                     (Nothing, Nothing) -> [y]
+                                     (Nothing, st@(Just _)) -> unfold r st
+                                     (Just x', st@(Just _)) -> [(Just $ Conj x' r, st)]
+                                     _ -> error "invalid substitution during unfolding")
+                             l'
 
 drive ast =
   let tree = drive' 0 ast (Just empty_state) [] in tree
@@ -123,6 +147,7 @@ drive ast =
     drive' _ _ Nothing _ = Leaf Nothing
 
     drive' n x st@(Just st'@(s,c)) ancestors =
+      if c >= 5 then Leaf Nothing else
       let parent = apply_subst x st'
           ancestor = (parent, n)
       in
@@ -140,13 +165,13 @@ drive ast =
           Fun _ a ->
             let a'= drive' (n+1) a st (ancestor : ancestors)
             in node n st' parent [Dn a']
-          Call (Fun _ a) arg | c <= 10 ->
+          Call (Fun _ a) arg ->
             let a' = drive' (n+1) a st (ancestor : ancestors)
                 child =
-                        trace ("NODES " ++ show ancestors) $
+--                        trace ("NODES " ++ show ancestors) $
                         case a' of
                           Node _ _ ast _ ->
-                            case find (\(x,n)  -> let e = embed ast x in trace (show e) e) ancestors of
+                            case find (\(x,n) -> embed ast x) ancestors of -- let e = embed ast x in trace (show e) e) ancestors of
                               Just (_,y) -> Up y
                               Nothing -> Dn a'
                           _ -> Dn a'
@@ -164,21 +189,43 @@ drive ast =
           Conj l (Uni r r') ->
             let l' = drive' (n+1) l (unify r r' s >>= \s -> Just (s,c)) (ancestor : ancestors)
             in node n st' parent [Dn l']
-          Conj l r -> -- TODO debug this branch
+          Conj (Disj l l') r ->
+            let ch = drive' (n+1) (Disj (Conj l r) (Conj l' r)) st (ancestor : ancestors)
+            in node n st' parent [Dn ch]
+          Conj l (Disj r r') ->
+            let ch = drive' (n+1) (Disj (Conj l r) (Conj l r')) st (ancestor : ancestors)
+            in node n st' parent [Dn ch]
+          Conj l r  -> -- TODO debug this branch
+            let unfolded = unfold x st
+                children = map (\y ->
+                                 Dn $ case y of
+                                   (Nothing, Nothing) -> Leaf Nothing
+                                   (Nothing, st) -> Leaf st
+                                   (Just ch, Just st) ->
+                                     let ch' = apply_subst ch st
+                                     in node
+                                          (n+1)
+                                          st
+                                          ch'
+                                          [Dn $ drive' (n+2) ch' (Just st) ((ch', n+1) : ancestors)]
+                               )
+                               unfolded
+            in node n st' parent children
+{-
             let l' = drive' (n+1) l st (ancestor : ancestors)
-            in case l' of
+            in trace (show l') $ case l' of
                  Leaf Nothing ->
                    Leaf Nothing
                  Leaf st@(Just st') ->
                    let r' = drive' (n+1) r st (ancestor : ancestors)
                    in node n st' parent [Dn r']
                  Node _ st x ch ->
+--                   let r' = drive' (n+1) (Conj x r) (Just st) ancestors
+--                   in
                    node (n+1) st (apply_subst (Conj x r) st) ch
 
 
-
-
-
+-}
 
 
 

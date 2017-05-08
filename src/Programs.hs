@@ -8,7 +8,7 @@ appendo a b ab =
                   call_fresh (\t ->
                     a === pair h t &&&
                     call_fresh (\ab' ->
-                      pair h ab' === ab &&& zzz (call (appendo t b ab') [t, b, ab']))
+                      pair h ab' === ab &&& (call (appendo t b ab') [t, b, ab']))
                  )
                 )
               ]
@@ -21,8 +21,9 @@ reverso a b =
                 call_fresh (\t ->
                     a === pair h t &&&
                     call_fresh (\a' ->
-                      (let h' = list [h] in zzz (call (appendo a' h' b) [a', h', b])) &&&
-                        zzz (call (reverso t a') [t, a'])
+                      (call (reverso t a') [t, a'])
+                       &&&
+                       (let h' = list [h] in (call (appendo a' h' b) [a', h', b]))
                   )
                 )
               )]
