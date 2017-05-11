@@ -10,12 +10,14 @@ run k a =
       take k (Immature s) | k > 0 = take k s
       take k (Mature h t) | k > 0 = Mature h $ take (k-1) t
       take k _ = Empty
-  in take k $ eval a empty_state
+  in take k $ eval a emptyState
 
 main =
   do
-    let l = list [at 239, at (-91)]
-    print $ drive (call_fresh (\xs -> call_fresh (\sx -> call (reverso xs sx) [xs, sx])))
+--    print $ drive (call_fresh (\xs -> call_fresh (\ys -> (call_fresh (\zs -> call (appendo xs ys zs) [xs, ys, zs])))))
+
+--    let l = list [at 239, at (-91)]
+    print $ drive (callFresh (\xs -> callFresh (\sx -> call (reverso xs sx) [xs, sx])))
     {- let forward  l = run 1 (call_fresh (\xs -> call (reverso l xs) [l, xs]))
         backward l = run 2 (call_fresh (\xs -> call (reverso xs l) [xs, l]))
         empty = list []

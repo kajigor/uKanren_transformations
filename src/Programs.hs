@@ -4,10 +4,10 @@ import MuKanren
 appendo a b ab =
   fun "appendo" $
       conde [ [ a === nil, b === ab ]
-            , [ call_fresh (\h ->
-                  call_fresh (\t ->
+            , [ callFresh (\h ->
+                  callFresh (\t ->
                     a === pair h t &&&
-                    call_fresh (\ab' ->
+                    callFresh (\ab' ->
                       pair h ab' === ab &&& (call (appendo t b ab') [t, b, ab']))
                  )
                 )
@@ -17,10 +17,10 @@ appendo a b ab =
 reverso a b =
   fun "reverso" $
       conde [ [a === nil, b === nil]
-            , [call_fresh (\h ->
-                call_fresh (\t ->
+            , [callFresh (\h ->
+                callFresh (\t ->
                     a === pair h t &&&
-                    call_fresh (\a' ->
+                    callFresh (\a' ->
                       (call (reverso t a') [t, a'])
                        &&&
                        (let h' = list [h] in (call (appendo a' h' b) [a', h', b]))
