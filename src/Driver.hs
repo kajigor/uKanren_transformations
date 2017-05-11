@@ -1,50 +1,14 @@
 module Driver where
-import MuKanren
+import MuKanren hiding (mplus)
+import Control.Monad
 import Debug.Trace
 import Data.List (find, delete)
-
---type FSubst = [(Name, Maybe GAst)]
---
---data GAst = GVar Var
---          | GUni Term Term
---          | GConj GAst GAst
---          | GDisj GAst GAst
-----          | GFresh (Term -> GAst)
---          | GCall Name [Term]
---          | GZzz GAst
---          deriving Eq
---
---toGAst :: AST -> FSubst -> (GAst, FSubst)
---toGAst ast fs =
---  case ast of
---    Uni  l r -> (GUni l r, fs)
---    Conj l r ->
---      let (l', fs' ) = toGAst l fs
---          (r', fs'') = toGAst r fs'
---      in (GConj l' r', fs'')
---    Disj l r ->
---      let (l', fs' ) = toGAst l fs
---          (r', fs'') = toGAst r fs'
---      in (GDisj l' r', fs'')
---    Call (Fun n b) ts ->
---      let fs' = case find (\(n',_) -> n' == n) fs of
---                  Just  _ -> fs
---                  Nothing -> let (b', fs'') = toGAst b ((n,Nothing):fs) in (n, Just b') : delete (n,Nothing) fs''
---      in (GCall n ts, fs')
---    Zzz a ->
---      let (a', fs') = toGAst a fs
---      in (GZzz a', fs')
---    _ -> error ("Failed to convert AST to GAst" ++ show ast)
-
-
+import Data.Maybe (isJust)
+import Data.Foldable (foldrM)
 
 type ESubst = [(Var, Either AST Term)]
 
---data Gast = Either (Var, AST) (AST)
-
 data Tree subst ast = Leaf (Maybe subst) | Node Int subst ast [Tree subst ast] | Up Int subst ast | G Int subst ESubst ast [Tree subst ast]
-
---data GeneralizedSubst = S (Term, Term) | G (Term, AST)
 
 node = Node
 
@@ -126,20 +90,6 @@ eq l r =
 instance Eq AST where
   (==) = eq
 
--- vars can only be the same
-embedT (Var l) (Var r) = True -- l == r
-
--- coupling rules
-embedT  Nil         Nil        = True
-embedT (Pair l l') (Pair r r') = embedT l r && embedT l' r'
-embedT (Atom l)    (Atom r)    = l == r
-
--- diving rules
-embedT _ (Var _)    = False
-embedT _ (Atom _)   = False
-embedT _  Nil       = False
-embedT x (Pair l r) = embedT x l || embedT x r
-
 isCoupling l r =
   case (l,r) of
     (Uni  _ _, Uni  _ _) -> True
@@ -149,26 +99,88 @@ isCoupling l r =
     (Zzz    _, Zzz    _) -> True
     _ -> False
 
-embed l r =
-  let l' = l -- rename l
-      r' = r -- rename r
-  in
-    -- trace ("EMBED l' = " ++ show l' ++ " AND r' = " ++ show r') $
-    embed' l' r' where
-      -- coupling rules
-      embed' (Uni  l l') (Uni  r r') = embedT l r && embedT l' r'
-      embed' (Conj l l') (Conj r r') = embed' l r && embed' l' r'
-      embed' (Disj l l') (Disj r r') = embed' l r && embed' l' r'
-      embed' (Call (Fun nl al) als) (Call (Fun nr ar) ars) = nl == nr && and (zipWith embedT als ars)
-      embed' (Zzz l) (Zzz r) = embed' l r
+embed l r = -- TODO this is wrong. We should construct renaming while we inspect terms
+  let
+      embedT :: Term -> Term -> [(Var, Var)] -> Maybe [(Var, Var)]
+      embedT l r ren = coupleT l r ren `mplus` coupleT l r ren
+
+      coupleT l r renaming =
+        case (l,r) of
+          -- terms should be embedded up to renaming
+          (Var l, Var r) -> if l `elem` fst (unzip renaming)
+                            then if (l,r) `elem` renaming then Just renaming else Nothing
+                            else Just ((l,r):renaming)
+
+          (Nil, Nil) -> Just renaming
+          (Pair l l', Pair r r') -> embedT l r renaming >>= embedT l' r'
+          (Atom l, Atom r) | l == r -> Just renaming
+          _ -> Nothing
+
+      diveT l r renaming =
+        case (l,r) of
+        (_, Var _) -> Nothing
+        (_, Atom _) -> Nothing
+        (_, Nil) -> Nothing
+        (x, Pair l r) -> embedT x l renaming `mplus` embedT x r renaming
+        _ -> Nothing
+
+      embed' l r renaming = couple l r renaming `mplus` dive l r renaming
+
+      couple l r renaming =
+        case (l,r) of
+          (Uni  l l', Uni  r r') -> embedT l r renaming >>= embedT l' r'
+          (Conj l l', Conj r r') -> embed' l r renaming >>= embed' l' r'
+          (Disj l l', Disj r r') -> embed' l r renaming >>= embed' l' r'
+          (Call (Fun nl al) als, Call (Fun nr ar) ars) | nl == nr ->
+            foldrM (\(l,r) ren -> embedT l r ren) renaming (zip als ars)
+          (Zzz l, Zzz r) -> embed' l r renaming
+          _ -> Nothing
+
+--      embed' (Uni  l l') (Uni  r r') renaming = embedT l r renaming >>= embedT l' r'
+--      embed' (Conj l l') (Conj r r') renaming =
+--        let l'' = embed' l r renaming
+--            r'' = case l'' of { Just l''' -> embed' l' r' l''' ; Nothing ->
+--              trace "conj conj" $
+--              trace ("left " ++ show l) $
+--              trace ("right " ++ show l') $
+--              Nothing }
+--        in
+----           trace "Top level conj" $
+----           trace ("left " ++ show l'') $
+----           trace ("right " ++ show r'') $
+--           embed' l r renaming >>= embed' l' r'
+--      embed' (Disj l l') (Disj r r') renaming = embed' l r renaming >>= embed' l' r'
+--      embed' (Call (Fun nl al) als) (Call (Fun nr ar) ars) renaming | nl == nr =
+--         foldrM (\(l,r) ren -> embedT l r ren) renaming (zip als ars)
+--        --foldr (\(l, r) ren -> embedT l r ren) renaming (zip als ars) --        and (zipWith embedT als ars)
+--      embed' (Zzz l) (Zzz r) renaming = embed' l r renaming
 
       -- diving rules
-      embed' _ (Uni _ _) = False
-      embed' l (Zzz r) = embed' l r
-      embed' l (Conj r r') = embed' l r || embed' l r'
-      embed' l (Disj r r') = embed' l r || embed' l r'
+      dive l r renaming =
+        case (l,r) of
+          (_, Uni _ _) -> Nothing
+          (l, Zzz r) -> embed' l r renaming
+          (l, Conj r r') -> embed' l r renaming `mplus` embed' l r' renaming
+          _ -> Nothing
 
-      embed' _ _ = False -- trace "fell through " False
+--      embed' _ (Uni _ _) _ = Nothing
+--      embed' l (Zzz r) renaming = embed' l r renaming
+--      embed' l (Conj r r') renaming =
+--        let _1 = embed' l r renaming
+--            _2 = embed' l r' renaming
+--            res = mplus (embed' l r renaming) (embed' l r' renaming)
+--        in trace (show _1 ++ " " ++ show _2 ++ "\nres = " ++ show res) $ res -- mplus (embed' l r renaming) (embed' l r' renaming)
+--      embed' l (Disj r r') renaming = mplus (embed' l r renaming) (embed' l r' renaming)
+--
+--      embed' _ _ _ = Nothing
+
+      res = embed' l r []
+      isJustRes = isJust res
+  in
+    trace ("left: " ++ show l) $
+    trace ("right: " ++ show r) $
+    trace ( "After all. Result: " ++ show res ++ "\nIsJust? " ++ show isJustRes) $ isJustRes
+--    isJust $ embed' l r []
 
 unfold _ Nothing = [(Nothing, Nothing)]
 
@@ -206,6 +218,7 @@ generalize smaller bigger n =
             let (l'', s1' , s2' , n' ) = generalizeT l l' s1  s2  n
                 (r'', s1'', s2'', n'') = generalizeT r r' s1' s2' n'
             in (Pair l'' r'', s1'', s2'', n'')
+          (Var v, Var u) | v == u -> (Var v, s1, s2, n)  -- TODO
           (Var _, Var _) ->
             (Var (n), (n, Right r) : s1, (n, Right l) : s2, n+1)
           (Var _, Pair _ _) ->
@@ -267,7 +280,7 @@ drive ast =
     drive' _ _ Nothing _ = Leaf Nothing
 
     drive' n x st@(Just st'@(s,c)) ancestors =
-      if c >= 20 then Leaf Nothing else
+--      if c >= 20 then Leaf Nothing else
       let parent = applySubst x st'
           ancestor = (parent, n)
       in
@@ -292,15 +305,15 @@ drive ast =
                 child =
 --                        trace ("NODES " ++ show ancestors) $
                         case a' of
-                          Node _ s'@(_,c) ast _ ->
+                          Node _ s'@(s,c) ast _ ->
 --                            trace ("!!!!" ++ show ast) $
                             case find (\(x,n) -> renaming ast x) ancestors of -- let e = embed ast x in trace (show e) e) ancestors of
                               Just (_,y) -> Up y s' ast -- []
                               Nothing ->
                                 case find (\(x,n) -> isCoupling x ast && embed x ast) ancestors of
                                   Just (x',y) ->
-                                    let (x'', _, _, _) = generalize x' ast c
-                                    in error "Call_fun TODO" -- node (n+1) st' x'' [drive (n+2) x'' st' (ancestor:ancestors)] --TODO
+                                    let (x'', s1, _, varcount) = generalize x' ast c
+                                    in G y s' s1 x'' [drive' (n+1) x'' (Just (s,varcount)) (ancestor:ancestors)]
                                   _ -> a'
                           _ -> a'
             in node n st' parent [child]
@@ -347,15 +360,6 @@ drive ast =
                                                    st
                                                    ch'
                                                    [drive' (n+2) ch' (Just st) ((ch', n+1) : ancestors)]
-
---
---
---                                     if n >= 20 then Leaf Nothing else
---                                        node
---                                          (n+1)
---                                          st
---                                          ch'
---                                          [drive' (n+2) ch' (Just st) ((ch', n+1) : ancestors)]
                                )
                                unfolded
             in node n st' parent children
