@@ -99,7 +99,7 @@ isCoupling l r =
     (Zzz    _, Zzz    _) -> True
     _ -> False
 
-embed l r = -- TODO this is wrong. We should construct renaming while we inspect terms
+embed l r =
   let
       embedT :: Term -> Term -> [(Var, Var)] -> Maybe [(Var, Var)]
       embedT l r ren = coupleT l r ren `mplus` coupleT l r ren
@@ -136,51 +136,14 @@ embed l r = -- TODO this is wrong. We should construct renaming while we inspect
           (Zzz l, Zzz r) -> embed' l r renaming
           _ -> Nothing
 
---      embed' (Uni  l l') (Uni  r r') renaming = embedT l r renaming >>= embedT l' r'
---      embed' (Conj l l') (Conj r r') renaming =
---        let l'' = embed' l r renaming
---            r'' = case l'' of { Just l''' -> embed' l' r' l''' ; Nothing ->
---              trace "conj conj" $
---              trace ("left " ++ show l) $
---              trace ("right " ++ show l') $
---              Nothing }
---        in
-----           trace "Top level conj" $
-----           trace ("left " ++ show l'') $
-----           trace ("right " ++ show r'') $
---           embed' l r renaming >>= embed' l' r'
---      embed' (Disj l l') (Disj r r') renaming = embed' l r renaming >>= embed' l' r'
---      embed' (Call (Fun nl al) als) (Call (Fun nr ar) ars) renaming | nl == nr =
---         foldrM (\(l,r) ren -> embedT l r ren) renaming (zip als ars)
---        --foldr (\(l, r) ren -> embedT l r ren) renaming (zip als ars) --        and (zipWith embedT als ars)
---      embed' (Zzz l) (Zzz r) renaming = embed' l r renaming
-
-      -- diving rules
       dive l r renaming =
         case (l,r) of
           (_, Uni _ _) -> Nothing
           (l, Zzz r) -> embed' l r renaming
           (l, Conj r r') -> embed' l r renaming `mplus` embed' l r' renaming
           _ -> Nothing
-
---      embed' _ (Uni _ _) _ = Nothing
---      embed' l (Zzz r) renaming = embed' l r renaming
---      embed' l (Conj r r') renaming =
---        let _1 = embed' l r renaming
---            _2 = embed' l r' renaming
---            res = mplus (embed' l r renaming) (embed' l r' renaming)
---        in trace (show _1 ++ " " ++ show _2 ++ "\nres = " ++ show res) $ res -- mplus (embed' l r renaming) (embed' l r' renaming)
---      embed' l (Disj r r') renaming = mplus (embed' l r renaming) (embed' l r' renaming)
---
---      embed' _ _ _ = Nothing
-
-      res = embed' l r []
-      isJustRes = isJust res
   in
-    trace ("left: " ++ show l) $
-    trace ("right: " ++ show r) $
-    trace ( "After all. Result: " ++ show res ++ "\nIsJust? " ++ show isJustRes) $ isJustRes
---    isJust $ embed' l r []
+    isJust $ embed' l r []
 
 unfold _ Nothing = [(Nothing, Nothing)]
 
@@ -265,22 +228,12 @@ generalize smaller bigger n =
                             (GV nv, (n, Left s) : s1, (n, Left b) : s2, nv)
   in generalize' smaller bigger [] [] n
 
-
-
-
---  generalise' t u fv s1 s2 = case find (\(x,t') -> t==t' && (lookup x s2 == Just u)) s1 of
---                              Just (x,t') -> (Free x,s1,s2)
---                              Nothing -> let x = rename (fv++fst(unzip s1)) "x"
---                                         in  (Free x,(x,t):s1,(x,u):s2)
-
-
 drive ast =
   let tree = drive' 0 ast (Just emptyState) [] in tree
   where
     drive' _ _ Nothing _ = Leaf Nothing
 
     drive' n x st@(Just st'@(s,c)) ancestors =
---      if c >= 20 then Leaf Nothing else
       let parent = applySubst x st'
           ancestor = (parent, n)
       in
@@ -292,7 +245,7 @@ drive ast =
                 r' = drive' (n+1) r st (ancestor : ancestors)
             in node n st' parent [l', r']
           Fresh f ->
-            let a = drive' (n+1) (f $ var c) (Just (s,c+1)) (ancestors)
+            let a = drive' (n+1) (f $ var c) (Just (s,c+1)) ancestors
             in node n st' parent [a]
           Zzz a ->
             drive' n a st ancestors
@@ -363,15 +316,3 @@ drive ast =
                                )
                                unfolded
             in node n st' parent children
-
---            let l' = drive' (n+1) l st (ancestor : ancestors)
---            in trace (show l') $ case l' of
---                 Leaf Nothing ->
---                   Leaf Nothing
---                 Leaf st@(Just st') ->
---                   let r' = drive' (n+1) r st (ancestor : ancestors)
---                   in node n st' parent [r']
---                 Node _ st x ch ->
-----                   let r' = drive' (n+1) (Conj x r) (Just st) ancestors
-----                   in
---                   node (n+1) st (applySubst (Conj x r) st) ch
