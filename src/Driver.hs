@@ -6,9 +6,7 @@ import Data.List (find, delete)
 import Data.Maybe (isJust)
 import Data.Foldable (foldrM)
 
-type ESubst = [(Var, Either AST Term)]
 
-type Subst = ([(Var, Term)], Int)
 
 -- data Tree subst ast = Leaf (Maybe subst) | Node Int subst ast [Tree subst ast] | Up Int subst ast | G Int subst ESubst ast [Tree subst ast]
 
@@ -52,7 +50,7 @@ applySubst (Fun n a)     s        = Fun n $ applySubst a s
 applySubst (Zzz a)       s        = Zzz $ applySubst a s
 applySubst (Call a args) s'@(s,c) = Call (applySubst a s') (map (\x -> walk' x s) args)
 applySubst (Uni l r)     (s,c)    = Uni (walk' l s) (walk' r s)
-applySubst (GV v)        _        = GV v
+applySubst g@(GV _ _ _)   _       = g
 
 rename t =
   let (t', _) = rename_ast t ([], 0) in t'
@@ -173,17 +171,17 @@ unfold _ Nothing = [(Nothing, Nothing)]
 unfold x st@(Just st'@(s,c)) =
 --  if c >= 6 then [(Nothing, Nothing)] else
   case x of
-    GV _ -> [(Nothing, st)]
+    GV _ _ _ -> [(Nothing, st)]
     Uni  l r -> [(Nothing, unify l r s >>= \s -> Just (s,c))]
-    Disj (GV _) r -> [(Just r, st)]
-    Disj l (GV _) -> [(Just l, st)]
+    Disj (GV _ _ _) r -> [(Just r, st)]
+    Disj l (GV _ _ _) -> [(Just l, st)]
     Disj l r -> unfold l st ++ unfold r st
     Fresh f  -> [(Just $ f (var c), Just (s,c+1))]
     Zzz a    -> [(Just a,st)]
     Fun _ a  -> [(Just a,st)]
     Call (Fun _ a) arg -> [(Just a,st)]
-    Conj (GV _) r -> [(Just r, st)]
-    Conj l (GV _) -> [(Just l, st)]
+    Conj (GV _ _ _) r -> [(Just r, st)]
+    Conj l (GV _ _ _) -> [(Just l, st)]
     Conj (Uni l l') (Uni r r') -> [(Nothing, unify l l' s >>= \s -> unify r r' s >>= \s -> Just (s,c))]
     Conj (Uni l l') r -> unfold r (unify l l' s >>= \s -> Just (s,c))
     Conj l (Uni r r') -> unfold l (unify r r' s >>= \s -> Just (s,c))
@@ -195,8 +193,8 @@ unfold x st@(Just st'@(s,c)) =
                                      _ -> error "invalid substitution during unfolding")
                              l'
 
-generalize :: AST -> AST -> Int -> (AST, ESubst, ESubst, Int)
-generalize smaller bigger n =
+generalize :: AST -> AST -> Int -> Int -> (AST, ESubst, ESubst, Int)
+generalize smaller bigger n up =
   let generalizeT :: Term -> Term -> ESubst -> ESubst -> Int -> (Term, ESubst, ESubst, Int)
       generalizeT l r s1 s2 n =
         case (l,r) of
@@ -215,20 +213,20 @@ generalize smaller bigger n =
             (l, s1, s2, n)
           _ -> error $ "Failed to generalize the following terms:\n" ++ show l ++ "\n" ++ show r ++ "\nThis is impossible due to embedding defenition"
 
-      generalize' :: AST -> AST -> ESubst -> ESubst -> Int -> (AST, ESubst, ESubst, Int)
-      generalize' smaller bigger s1 s2 n =
+      generalize' :: AST -> AST -> ESubst -> ESubst -> Int -> Int -> (AST, ESubst, ESubst, Int)
+      generalize' smaller bigger s1 s2 n up =
 --        trace ("Attempt to generalize.\nsmaller: " ++ show smaller ++ "\nbigger: " ++ show bigger) $
         case (smaller, bigger) of
           (Disj l r, Disj l' r') ->
-            let (l'', s1', s2', n') = generalize' l l' s1 s2 n
-                (r'', s1'', s2'', n'') = generalize' r r' s1' s2' n'
+            let (l'', s1', s2', n') = generalize' l l' s1 s2 n up
+                (r'', s1'', s2'', n'') = generalize' r r' s1' s2' n' up
             in (Disj l'' r'', s1'', s2'', n'')
           (Conj l r, Conj l' r') ->
-            let (l'', s1', s2', n') = generalize' l l' s1 s2 n
-                (r'', s1'', s2'', n'') = generalize' r r' s1' s2' n'
+            let (l'', s1', s2', n') = generalize' l l' s1 s2 n up
+                (r'', s1'', s2'', n'') = generalize' r r' s1' s2' n' up
             in (Conj l'' r'', s1'', s2'', n'')
           (Zzz s, Zzz b) ->
-            let (g, s1', s2', n') = generalize' s b s1 s2 n
+            let (g, s1', s2', n') = generalize' s b s1 s2 n up
             in (Zzz g, s1', s2', n')
           (Call (Fun ns as) args, Call (Fun nb ab) argb) | ns == nb ->
             let (arg', s1', s2', n') = foldr (\(l, r) (prev, s1, s2, n) ->
@@ -244,12 +242,12 @@ generalize smaller bigger n =
             in (Uni l'' r'', s1'', s2'', n'')
           (s, b) ->
             case find (\(x,t) -> (t == (Left s)) && ((lookup x s2) == (Just $ Left b))) s1 of
-              Just (x,t) -> (GV x, s1, s2, n)
+              Just (x,t) -> (GV x s1 up, s1, s2, n)
               Nothing -> let nv = n+1
                          in
 --                            trace ("smaller: " ++ show s ++ "\nbigger: " ++ show b) $
-                            (GV nv, (n, Left s) : s1, (n, Left b) : s2, nv)
-  in generalize' smaller bigger [] [] n
+                            (GV nv ((nv, Left b) : s1) up, (nv, Left s) : s1, (n, Left s) : s2, nv)
+  in generalize' smaller bigger [] [] n up
 
 flatten t EmptyCtx = t
 flatten t (ConjCtx t' ctx) = flatten (Conj t t') ctx
@@ -307,13 +305,22 @@ drive ast =
 --                                         ":\nisCoupling: " ++ show isC ++ "\nisEmbedding: " ++ show emb ++ "\n") $
                                  isC && emb) ancs of
                      Just (a,n') ->
-                       let (g, s1, s2, c') = generalize a anc c
-                       in case ctx of
-                            EmptyCtx -> Up n' s anc
-                            ConjCtx x ctx ->
-                              Gen (n+1) s g s1 n' (drive' (n+2) x ctx st ((anc,n):ancs)) -- TODO check ancestors
-                     Nothing -> drive' (n+1) a'''' ctx st ((anc,n):ancs) -- Step (n+1) anc ctx st ((anc,n):ancs)
+                       let (g, s1, s2, c') = generalize a anc c n'
+                       in drive' (n+1) g EmptyCtx st ((anc,n):ancs)
+--                       in case ctx of
+--                            EmptyCtx -> Up n' s anc
+--                            ConjCtx x ctx ->
+--                              Gen (n+1) s g s1 n' (drive' (n+2) x ctx st ((anc,n):ancs)) -- TODO check ancestors
+                     Nothing -> drive' (n+1) a'''' ctx st ((anc,n):ancs)
       in Step n s anc ch
+
+    drive' n t@(GV v es r) EmptyCtx st@(s,c) ancs =
+      Up r s t
+
+    drive' n t@(GV v es r) c@(ConjCtx a ctx) st@(s,_) ancs =
+     let anc = flatten t c
+     in Gen n s anc es r (drive' (n+1) a ctx st ((anc,n):ancs))
+
 --drive ast =
 --  let tree = drive' 0 ast (Just emptyState) [] in tree
 --  where

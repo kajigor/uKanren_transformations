@@ -25,6 +25,9 @@ data Stream a = Empty
               | Immature (Stream a)
               deriving Show
 
+type ESubst = [(Var, Either AST Term)]
+
+type Subst = ([(Var, Term)], Int)
 
 type Name = String
 data AST = Uni Term Term
@@ -34,7 +37,7 @@ data AST = Uni Term Term
          | Fun Name AST
          | Call AST [Term]
          | Zzz AST
-         | GV Var
+         | GV Var ESubst Int
 
 instance Show AST where
   show (Uni  x y) = "(" ++ show x ++ " === " ++ show y ++ ")"
@@ -44,7 +47,7 @@ instance Show AST where
   show (Fresh  f) = "(" ++ "fresh" ++ ")"
   show (Call (Fun n _) arg) = "(" ++ "call " ++ n ++ " with [" ++ concatMap (\x -> show x ++ "; ") arg ++ "]" ++ ")"
   show (Zzz a) = "zzz " ++ show a ++ ")"
-  show (GV v) = "v." ++ show v
+  show (GV v _ _) = "v." ++ show v
 
 -- Combinators to write programs with
 var = Var
