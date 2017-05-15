@@ -6,34 +6,18 @@ import Data.List (find, delete)
 import Data.Maybe (isJust)
 import Data.Foldable (foldrM)
 
-
-
--- data Tree subst ast = Leaf (Maybe subst) | Node Int subst ast [Tree subst ast] | Up Int subst ast | G Int subst ESubst ast [Tree subst ast]
-
 type GenRef = Int
 
-data Tree' subst ast = Success (subst,Int)
-                     | Fail
-                     | Step Int subst ast (Tree' subst ast)
-                     | Or Int subst ast (Tree' subst ast) (Tree' subst ast)
-                     | Up Int subst ast
-                     | Gen Int subst ast ESubst GenRef (Tree' subst ast)
+data Tree subst ast = Success (subst,Int)
+                    | Fail
+                    | Step Int subst ast (Tree subst ast)
+                    | Or Int subst ast (Tree subst ast) (Tree subst ast)
+                    | Up Int subst ast
+                    | Gen Int subst ast ESubst GenRef (Tree subst ast)
 
 data Ctx = EmptyCtx | ConjCtx AST Ctx
 
---node = Node
-
---instance (Show subst, Show ast) => Show (Tree subst ast) where
---  show t = show' t 0
---   where
---    nspaces n = [' ' | _ <- [1..n]]
---    show' (Leaf s) n = nspaces n ++ "L " ++ show s ++ "\n"
---    show' (Node d s a ns) n = nspaces n ++ "N " ++ show d ++ {- " " ++ show s ++ -} " " ++ show a ++ "\n" ++
---                              concatMap (\x -> show' x (n + 1)) ns
---    show' (Up d s a) n = nspaces n ++ "U " ++ show d ++ " " ++ show s ++ " " ++ " " ++ show a ++  "\n"
---    show' (G d s es a ch) n = nspaces n ++ "G " ++ show d ++ " " ++ show s ++ " " ++ show es ++ " " ++ show a ++ "\n" ++ concatMap (\x -> show' x (n+1)) ch
-
-instance (Show subst, Show ast) => Show (Tree' subst ast) where
+instance (Show subst, Show ast) => Show (Tree subst ast) where
   show t = show' t 0 where
     nspaces n = [' ' | _ <- [1..n]]
     show' Fail n' = nspaces n' ++ "F\n"
@@ -42,15 +26,6 @@ instance (Show subst, Show ast) => Show (Tree' subst ast) where
     show' (Or n s a l r) n' = nspaces n' ++ "O " ++ show n ++ " " ++ show s ++ " " ++ show a ++ "\n" ++ show' l (n+1) ++ "\n" ++ show' r (n+1)
     show' (Up n s a) n' = nspaces n' ++ "U " ++ show n ++ " " ++ show s ++ " " ++ show a ++ "\n"
     show' (Gen n s a es gr ch) n' = nspaces n' ++ "G " ++ show gr ++ " " ++ show a ++ " " ++ show es ++ "\n" ++ show' ch (n+1)
-
-applySubst (Conj l r)    s        = Conj (applySubst l s) (applySubst r s)
-applySubst (Disj l r)    s        = Disj (applySubst l s) (applySubst r s)
-applySubst (Fresh f)     (s,c)    = applySubst (f $ var c) (s,c+1)
-applySubst (Fun n a)     s        = Fun n $ applySubst a s
-applySubst (Zzz a)       s        = Zzz $ applySubst a s
-applySubst (Call a args) s'@(s,c) = Call (applySubst a s') (map (\x -> walk' x s) args)
-applySubst (Uni l r)     (s,c)    = Uni (walk' l s) (walk' r s)
-applySubst g@(GV _ _ _)   _       = g
 
 rename t =
   let (t', _) = rename_ast t ([], 0) in t'
@@ -93,23 +68,15 @@ rename t =
       in (Pair l' r', s'')
     rename_t x s = (x, s)
 
-renaming l r =
-  eq (rename l) (rename r)
-
-eq l r =
-  eq' l' r'
-  where
-    l' = rename l
-    r' = rename r
-    eq' (Conj l l') (Conj r r') = eq' l r && eq' l' r'
-    eq' (Disj l l') (Disj r r') = eq' l r && eq' l' r'
-    eq' (Uni  l l') (Uni  r r') = l == r && l' == r'
-    eq' (Zzz l)     (Zzz r)     = eq' l r
-    eq' (Call (Fun l _) ls) (Call (Fun r _) rs) = l == r && foldl (\acc (l, r) -> acc && l == r) True (zip ls rs)
-    eq' _ _ = False
+renaming l r = rename l == rename r
 
 instance Eq AST where
-  (==) = eq
+  Conj l l' == Conj r r' = l == r && l' == r'
+  Disj l l' == Disj r r' = l == r && l' == r'
+  Uni  l l' == Uni  r r' = l == r && l' == r'
+  Zzz l     == Zzz r     = l == r
+  Call (Fun l _) ls == Call (Fun r _) rs = l == r && foldl (\acc (l, r) -> acc && l == r) True (zip ls rs)
+  _ == _ = False
 
 isCoupling l r =
   case (l,r) of
@@ -215,7 +182,6 @@ generalize smaller bigger n up =
 
       generalize' :: AST -> AST -> ESubst -> ESubst -> Int -> Int -> (AST, ESubst, ESubst, Int)
       generalize' smaller bigger s1 s2 n up =
---        trace ("Attempt to generalize.\nsmaller: " ++ show smaller ++ "\nbigger: " ++ show bigger) $
         case (smaller, bigger) of
           (Disj l r, Disj l' r') ->
             let (l'', s1', s2', n') = generalize' l l' s1 s2 n up
@@ -245,7 +211,6 @@ generalize smaller bigger n up =
               Just (x,t) -> (GV x s1 up, s1, s2, n)
               Nothing -> let nv = n+1
                          in
---                            trace ("smaller: " ++ show s ++ "\nbigger: " ++ show b) $
                             (GV nv ((nv, Left b) : s1) up, (nv, Left s) : s1, (n, Left s) : s2, nv)
   in generalize' smaller bigger [] [] n up
 
@@ -280,38 +245,25 @@ drive ast =
 
     drive' n t@(Conj l r) ctx st@(s,c) ancs =
       let anc = flatten t ctx
-      in Step n s anc (drive' (n+1) l (ConjCtx r ctx) st (ancs))
+      in Step n s anc (drive' (n+1) l (ConjCtx r ctx) st ancs)
 
     drive' n t@(Fresh f) ctx st@(s,c) ancs =
       let anc = flatten t ctx
-      in Step n s anc (drive' (n+1) (f $ var c) ctx (s,c+1) (ancs))
+      in Step n s anc (drive' (n+1) (f $ var c) ctx (s,c+1) ancs)
 
     drive' _ (Fun _ _) _ _ _ = error "unapplied function"
 
-    drive' n t@(Call (Fun _ a'''') args) ctx st@(s,c) ancs =
---      if n >= 20 then Fail else
+    drive' n t@(Call (Fun _ a) args) ctx st@(s,c) ancs =
       let anc = flatten t ctx
           ch =
---               trace ("ancestors " ++ show ancs ) $
---               trace ("\nancestor: " ++ show anc ++ "\nterm: " ++ show t) $
                case find (\(a,n') -> renaming a anc) ancs of
                  Just (a,n') -> Up n' s anc
                  Nothing ->
-                   case find (\(a,n') ->
-                               let isC = isCoupling a anc
-                                   emb = embed a anc
-                               in
---                                 trace ("checking " ++ show a ++ " AND " ++ show anc ++
---                                         ":\nisCoupling: " ++ show isC ++ "\nisEmbedding: " ++ show emb ++ "\n") $
-                                 isC && emb) ancs of
+                   case find (\(a,n') -> isCoupling a anc && embed a anc) ancs of
                      Just (a,n') ->
                        let (g, s1, s2, c') = generalize a anc c n'
                        in drive' (n+1) g EmptyCtx st ((anc,n):ancs)
---                       in case ctx of
---                            EmptyCtx -> Up n' s anc
---                            ConjCtx x ctx ->
---                              Gen (n+1) s g s1 n' (drive' (n+2) x ctx st ((anc,n):ancs)) -- TODO check ancestors
-                     Nothing -> drive' (n+1) a'''' ctx st ((anc,n):ancs)
+                     Nothing -> drive' (n+1) a ctx st ((anc,n):ancs)
       in Step n s anc ch
 
     drive' n t@(GV v es r) EmptyCtx st@(s,c) ancs =
@@ -320,123 +272,3 @@ drive ast =
     drive' n t@(GV v es r) c@(ConjCtx a ctx) st@(s,_) ancs =
      let anc = flatten t c
      in Gen n s anc es r (drive' (n+1) a ctx st ((anc,n):ancs))
-
---drive ast =
---  let tree = drive' 0 ast (Just emptyState) [] in tree
---  where
---    drive' _ _ Nothing _ = Leaf Nothing
---
---    drive' n x st@(Just st'@(s,c)) ancestors =
---      let parent = applySubst x st'
---          ancestor = (parent, n)
---      in
---        case x of
---          Uni  l r ->
---            Leaf $ unify l r s >>= \s -> Just (s,c)
---          Disj l r ->
---            let l' = drive' (n+1) l st (ancestor : ancestors)
---                r' = drive' (n+1) r st (ancestor : ancestors)
---            in node n st' parent [l', r']
---          Fresh f ->
---            let a = drive' (n+1) (f $ var c) (Just (s,c+1)) ancestors
---            in node n st' parent [a]
---          Zzz a ->
---            drive' n a st ancestors
---          Fun _ a ->
---            let a'= drive' (n+1) a st (ancestor : ancestors)
---            in node n st' parent [a']
---          Call (Fun name a) arg ->
-----            trace ("Calling function " ++ name ++ " with body " ++ show a ++ " and arguments " ++ show arg ) $
---            let a' = drive' (n+1) a st (ancestor : ancestors)
---                child =
-----                        trace ("NODES " ++ show ancestors) $
---                        case a' of
---                          Node _ s'@(s,c) ast _ ->
-----                            trace ("!!!!" ++ show ast) $
---                            case find (\(x,n) -> renaming ast x) ancestors of -- let e = embed ast x in trace (show e) e) ancestors of
---                              Just (_,y) -> Up y s' ast -- []
---                              Nothing ->
---                                case find (\(x,n) -> isCoupling x ast && embed x ast) ancestors of
---                                  Just (x',y) ->
---                                    let (x'', s1, _, varcount) = generalize x' ast c
---                                    in G y s' s1 x'' [drive' (n+1) x'' (Just (s,varcount)) (ancestor:ancestors)]
---                                  _ -> a'
---                          _ -> a'
---            in node n st' parent [child]
---          Call _ _ ->
---            Leaf Nothing
---          Conj (Uni l l') (Uni r r') ->
---            let st'' = unify l l' s >>= \s ->
---                       unify r r' s >>= \s ->
---                       Just (s,c)
---            in node n st' parent [Leaf st'']
---          Conj (Uni l l') r ->
---            let r' = drive' (n+1) r (unify l l' s >>= \s -> Just (s,c)) (ancestor : ancestors)
---            in node n st' parent [r']
---          Conj l (Uni r r') ->
---            let l' = drive' (n+1) l (unify r r' s >>= \s -> Just (s,c)) (ancestor : ancestors)
---            in node n st' parent [l']
---          Conj (Disj l l') r ->
---            let ch = drive' (n+1) (Disj (Conj l r) (Conj l' r)) st (ancestor : ancestors)
---            in node n st' parent [ch]
---          Conj l (Disj r r') ->
---            let ch = drive' (n+1) (Disj (Conj l r) (Conj l r')) st (ancestor : ancestors)
---            in node n st' parent [ch]
---          Conj l r  -> -- TODO debug this branch
---            if n >= 20 then Leaf Nothing else
---            let unfolded = unfold x st
---                children = map (\y ->
---                                 case y of
---                                   (Nothing, Nothing) -> Leaf Nothing
---                                   (Nothing, st) -> Leaf st
---                                   (Just ch, Just st) ->
---                                     let ch' = applySubst ch st
---                                     in
-----                                       trace ("Ancestors " ++ show ancestors) $
---                                       case find (\(x,n) -> renaming ch' x) ancestors of -- let e = embed ast x in trace (show e) e) ancestors of
---                                        Just (_,y) -> Up y st ch' -- []
---                                        Nothing ->
---                                          case find (\(x,n') -> isCoupling x ch' && embed x ch') ancestors of
---                                            Just (x',y) ->
---                                              let (x'', s1, _, varcount) = generalize x' ch' c
---                                              in --trace ("generalization " ++ show varcount) $
---                                                 G y st s1 x'' [drive' (n+1) x'' (Just (s,varcount)) (ancestor:ancestors)]
---                                            _ -> node
---                                                   (n+1)
---                                                   st
---                                                   ch'
---                                                   [drive' (n+2) ch' (Just st) ((ch', n+1) : ancestors)]
---                               )
---                               unfolded
---            in node n st' parent children
---
---residualise t =
---  case t of
---    Leaf Nothing -> Nothing
---    Leaf (Just (subst,c)) -> Just $ conj (map (\(v, u) -> Uni (Var v) u) subst)
---    _ -> error "todo"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
