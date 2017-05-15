@@ -25,6 +25,9 @@ data Stream a = Empty
               | Immature (Stream a)
               deriving Show
 
+type ESubst = [(Var, Either AST Term)]
+
+type Subst = ([(Var, Term)], Int)
 
 type Name = String
 data AST = Uni Term Term
@@ -34,6 +37,7 @@ data AST = Uni Term Term
          | Fun Name AST
          | Call AST [Term]
          | Zzz AST
+         | GV Var ESubst Int
 
 instance Show AST where
   show (Uni  x y) = "(" ++ show x ++ " === " ++ show y ++ ")"
@@ -43,15 +47,7 @@ instance Show AST where
   show (Fresh  f) = "(" ++ "fresh" ++ ")"
   show (Call (Fun n _) arg) = "(" ++ "call " ++ n ++ " with [" ++ concatMap (\x -> show x ++ "; ") arg ++ "]" ++ ")"
   show (Zzz a) = "zzz " ++ show a ++ ")"
-
-show' _ c | c > 20 = ""
-show' (Uni  x y) c = show x ++ " === " ++ show y
-show' (Conj x y) c = show' x c ++ " &&& " ++ show' y c
-show' (Disj x y) c = show' x c ++ " ||| " ++ show' y c
-show' (Fun  n b) c = n ++ "(" ++ show' b c ++ ")"
-show' (Fresh  f) c = "fresh " ++ show' (f (var c)) (c + 1)
-show' (Call x arg) c = "call " ++ show' x c ++ " with [" ++ concatMap (\x -> show x ++ "; ") arg ++ "]"
-show' (Zzz a) c = "zzz " ++ show' a c
+  show (GV v _ _) = "v." ++ show v
 
 -- Combinators to write programs with
 var = Var
@@ -60,7 +56,7 @@ at = Atom
 (===) = Uni
 (|||) = Disj
 (&&&) = Conj
-call_fresh = Fresh
+callFresh = Fresh
 fun = Fun
 zzz = Zzz
 nil = Nil
@@ -76,8 +72,8 @@ disj = seq2 (|||)
 
 conde ds = disj (map conj ds)
 
-empty_subst = []
-empty_state = (empty_subst, 0 :: Int)
+emptySubst = []
+emptyState= (emptySubst, 0 :: Int)
 
 mzero = Empty
 
@@ -97,7 +93,7 @@ walk (Var v) s =
     Just t  -> walk t s
 walk u _ = u
 
-ext_s u v s =
+extS u v s =
   (u, v) : s
   {- let v' = walk v s
       occurs_check (Var x) (Var v) = x == v
@@ -113,8 +109,8 @@ unify u v s =
   unify' (walk u s) (walk v s)
   where
     unify' (Var u) (Var v) | u == v = Just s
-    unify' (Var u) _ = Just (ext_s u v s)
-    unify' _ (Var v) = Just (ext_s v u s)
+    unify' (Var u) _ = Just (extS u v s)
+    unify' _ (Var v) = Just (extS v u s)
     unify' (Pair u u') (Pair v v') =
       case unify u v s of
         Nothing -> Nothing
@@ -123,7 +119,7 @@ unify u v s =
     unify' Nil Nil = Just s
     unify' _ _ = Nothing
 
-show_st (s,c) =
+showSt (s,c) =
   let reified = sortBy (\(x,_) (y,_) -> if x < y then LT else if x == y then EQ else GT) $ map (\(x,v) -> (x, walk' v s)) s
   in show (reified, c)
 
@@ -162,10 +158,10 @@ reify v s =
 
       reify_s v s =
         case walk v s of
-          Var v -> ext_s v (reify_name $ length s) s
+          Var v -> extS v (reify_name $ length s) s
           Pair v u -> reify_s u (reify_s v s)
           _ -> s
 
       reify_name = R -- temporary solution. need to get rid of it
         --"_." ++ (show n)
-  in walk' u (reify_s u empty_subst)
+  in walk' u (reify_s u emptySubst)
