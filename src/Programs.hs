@@ -1,5 +1,5 @@
 module Programs where
-import MuKanren
+import Data
 
 appendo =
   Def "appendo" ["x", "y", "xy"]
