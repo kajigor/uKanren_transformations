@@ -1,6 +1,6 @@
 module Main where
 
-import MuKanren
+import MiniKanren
 import Programs
 import Data
 import DataShow
@@ -48,5 +48,6 @@ run k spec =
 main = do
 --  print $ unify emptyState (Free 0) (Ctor "ctor" [Var "v"])
 --    print $ run 3 appSpec1
-  print $ run 5 appSpec2
+--  print $ run 5 appSpec2
+  print $ reify (Free 0) (run 3 appSpec)
 

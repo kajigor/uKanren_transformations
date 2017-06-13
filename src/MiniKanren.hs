@@ -2,10 +2,11 @@
    Deeply embedded minikanren
 -}
 
-module MuKanren where
+module MiniKanren where
 import Debug.Trace
 import Control.Monad (foldM)
 import Data
+import DataShow
 import State
 import Stream
 
@@ -16,6 +17,7 @@ flatten state (Var v)  =
   walkVar state (Var v)
   where
     walkVar s (Var v) =
+--      trace ("trying to walk var " ++ v ++ " in " ++ show s) $
       case getState s v of
         Var v' -> walk s (Var v')
         x -> x
@@ -61,6 +63,43 @@ eval env state (Invoke f actualArgs) =
   where
     Def _ formalArgs body = env f
     state' = foldl bindVar state $ zip formalArgs (map (flatten state) actualArgs)
+
+reify :: Term -> Stream State -> [Term]
+reify var =
+  map' (reifyState var)
+  where
+    map' _ Empty = []
+    map' f (Mature h t) = f h : map' f t
+    map' _ (Immature _) = error "Trying to reify immature stream"
+
+    reifyState var state =
+      let var' = walk' state var in
+      walk' (reify' emptyState var') var'
+      where
+        walk' state var =
+          case walk'' state var of
+            Ctor name args -> Ctor name (map (walk' state) args)
+            x -> x
+
+        walk'' :: State -> Term -> Term
+        walk'' state (Free i) =
+          case lookup i (getSubst state) of
+            Nothing -> Free i
+            Just i' -> walk'' state i'
+        walk'' _ u = u
+
+        reify' state var =
+          case walk'' state var of
+            Free i -> extS state i
+            Ctor name args -> foldl reify' state args
+            Var n -> error $ "Trying to reify state with a naked variable " ++ n
+          where
+            extS state i =
+              State { getSubst = (i, reifyName $ index state) : getSubst state
+                    , getState = getState state
+                    , index = index state + 1
+                    }
+        reifyName i = Var ("_." ++ show i)
 
 var = Var
 (===) = Unify

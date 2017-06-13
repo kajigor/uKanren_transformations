@@ -16,7 +16,7 @@ executable mktransform
         Data
         DataShow
         Driver
-        MuKanren
+        MiniKanren
         Programs
         Residualization
         State
