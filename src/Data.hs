@@ -7,6 +7,7 @@ data Spec = Spec { defs :: [Def], goal :: Goal }
 data Term = Var String
           | Ctor String [Term]
           | Free Integer
+          deriving Eq
 
 data Goal = Unify Term Term
           | Disj Goal Goal
@@ -22,5 +23,5 @@ data Stream a = Empty
 
 type Subst = [(Integer, Term)]
 
-data State = State { getSubst :: Subst, getState :: String -> Term, index :: Integer }
-
+data State = State { getSubst :: Subst, getState :: String -> Term,
+                     index :: Integer, vars :: [String] }

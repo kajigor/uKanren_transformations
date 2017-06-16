@@ -2,10 +2,12 @@ module DataShow where
 import Data
 import Data.List (intercalate)
 
-showSubst s = "[" ++ intercalate ", " (map (\(i,t) -> "x." ++ show i ++ " -> " ++ show t) s) ++  "]"
+showSubst f s = "[" ++ intercalate ", " (map (\(i,t) -> f i ++ " -> " ++ show t) s) ++  "]"
 
 instance Show State where
-  show (State subst _ index) = "St " ++ showSubst subst ++ " " ++ show index
+  show (State subst state index vars) = "St " ++ showSubst (\i -> "x." ++ show i) subst ++ "\n" ++
+                                        showSubst id (map (\x -> (x, state x)) vars) ++
+                                        " " ++ show index
 
 instance Show Term where
   show (Var v) = v
@@ -24,7 +26,3 @@ instance Show a => Show (Stream a) where
   show Empty = "[]"
   show (Mature a s) = show a ++ " :\n" ++ show s
   show (Immature s) = "Immature " ++ show s
-
-
-
-

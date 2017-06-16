@@ -5,24 +5,22 @@ import Programs
 import Data
 import DataShow
 import State
-import Data.List (find)
+import Driver
 
 i x = Ctor x []
 
+a = i "A" `cons` nil
+abc = i "A" `cons` (i "B" `cons` (i "C" `cons` nil))
+def = i "D" `cons` (i "E" `cons` (i "F" `cons` nil))
+
 appSpec = Spec { defs = [appendo]
-               , goal =  Fresh "q" (Invoke "appendo" [
-                                                      i "A" `cons` (i "B" `cons` (i "C" `cons` nil)),
-                                                      i "D" `cons` (i "E" `cons` (i "F" `cons` nil)),
-                                                      var "q"])
+               , goal =  Fresh "q" (Invoke "appendo" [abc, def, var "q"])
                }
 
 appSpec1 = Spec { defs = [appendo]
                , goal =  Fresh "q"
                            (Fresh "p"
-                             (Invoke "appendo" [
-                                                var "p",
-                                                i "D" `cons` (i "E" `cons` (i "F" `cons` nil)),
-                                                var "q"]))
+                             (Invoke "appendo" [var "p", def, var "q"]))
                }
 
 appSpec2 = Spec { defs = [appendo]
@@ -32,11 +30,17 @@ appSpec2 = Spec { defs = [appendo]
                                Invoke "appendo" [var "q", var "p", var "r"]
                 }
 
-env :: Spec -> String -> Def
-env spec name =
-  case find (\(Def n _ _) -> n == name) (defs spec) of
-    Just d -> d
-    Nothing -> error $ "No definition with name " ++ name ++ " in specification!"
+revSpec = Spec { defs = [appendo, reverso]
+               , goal = Fresh "q" (Invoke "reverso" [a, Var "q"])
+               }
+
+revSpec1 = Spec { defs = [appendo, reverso]
+                , goal = Fresh "q" (Invoke "reverso" [abc, Var "q"])
+                }
+
+revSpec2 = Spec { defs = [appendo, reverso]
+                , goal = Fresh "q" $ Fresh "p" (Invoke "reverso" [Var "p", Var "q"])
+                }
 
 run k spec =
   let
@@ -47,7 +51,16 @@ run k spec =
 
 main = do
 --  print $ unify emptyState (Free 0) (Ctor "ctor" [Var "v"])
---    print $ run 3 appSpec1
---  print $ run 5 appSpec2
-  print $ reify (Free 0) (run 3 appSpec)
+  print $ reify (Free 0) $ run 3 appSpec
+  print ""
+  print $ reify (Free 0) $ run 3 appSpec1
+  print ""
+  print $ reify (Free 0) $ run 3 appSpec2
+  print ""
+  print $ reify (Free 0) $ run 5 revSpec
+  print ""
+  print $ reify (Free 0) $ run 5 revSpec1
+  print ""
+  print $ reify (Free 0) $ run 5 revSpec2
+  print ""
 
