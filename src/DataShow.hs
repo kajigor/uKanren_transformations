@@ -5,8 +5,8 @@ import Data.List (intercalate)
 showSubst f s = "[" ++ intercalate ", " (map (\(i,t) -> f i ++ " -> " ++ show t) s) ++  "]"
 
 instance Show State where
-  show (State subst state index vars) = "St " ++ showSubst (\i -> "x." ++ show i) subst ++ "\n" ++
-                                        showSubst id (map (\x -> (x, state x)) vars) ++
+  show (State subst state index vars) = "St " ++ showSubst (\i -> "x." ++ show i) subst ++
+--                                        "\n" ++ showSubst id (map (\x -> (x, state x)) vars) ++
                                         " " ++ show index
 
 instance Show Term where
@@ -26,3 +26,23 @@ instance Show a => Show (Stream a) where
   show Empty = "[]"
   show (Mature a s) = show a ++ " :\n" ++ show s
   show (Immature s) = "Immature " ++ show s
+
+instance Show Tree where
+  show t =
+    show' t 0
+    where
+      nSpaces n = replicate n ' '
+      show' t n =
+        case t of
+          Fail                        -> nSpaces n ++ "F\n"
+          Success st                  -> nSpaces n ++ "S " ++ show st ++ "\n"
+          Renaming i st g             -> nSpaces n ++ "R " ++ show i ++ " " ++ {- show st ++ -} " (" ++ show g ++ ")"
+          Step     i st g ch          -> nSpaces n ++ "T " ++ show i ++ " " ++ {- show st ++ -} " (" ++ show g ++ ")" ++ "\n" ++ show' ch (n+1)
+          Or       i st g ch1 ch2     -> nSpaces n ++ "O " ++ show i ++ " " ++ {- show st ++ -} " (" ++ show g ++ ")" ++ "\n" ++ show' ch1 (n+1) ++ "\n" ++ show' ch2 (n+1)
+          Split    i st g1 g2 ch1 ch2 -> nSpaces n ++ "G " ++ show i ++ " " ++ {- show st ++ -} " (" ++ show g1 ++ ")" ++ " (" ++ show g2 ++ ")" ++ "\n" ++ show' ch1 (n+1) ++ "\n" ++ show' ch2 (n+1)
+
+
+
+
+
+

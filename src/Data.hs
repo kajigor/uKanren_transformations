@@ -25,3 +25,15 @@ type Subst = [(Integer, Term)]
 
 data State = State { getSubst :: Subst, getState :: String -> Term,
                      index :: Integer, vars :: [String] }
+
+
+type Ctx = [Goal]
+
+data Tree = Success  { state :: State}
+          | Fail
+          | Step     { getInd :: Integer, state :: State, getGoal :: Goal, getChild :: Tree }
+          | Or       { getInd :: Integer, state :: State, getGoal :: Goal, getLChild :: Tree, getRChild :: Tree }
+          | Split    { getInd :: Integer, state :: State, getLGoal :: Goal, getRGoal :: Goal, getLChild :: Tree, getRChild :: Tree }
+          | Renaming { getInd :: Integer, state :: State, getGoal :: Goal }
+
+type Renaming = [(Term, Term)]
