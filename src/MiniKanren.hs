@@ -6,51 +6,43 @@ module MiniKanren where
 import Debug.Trace
 import Control.Monad (foldM)
 import Data.List (find)
+import Data.Maybe (fromMaybe)
 import Data
 import DataShow
 import State
 import Stream
-
-
-flatten :: State -> Term -> Term
-flatten state (Free i) = Free i
-flatten state (Var v)  =
-  walkVar state (Var v)
-  where
-    walkVar s (Var v) =
-      case getState s v of
-        Var v' -> walk s (Var v')
-        x -> x
-    walkVar s x = x
-flatten state (Ctor name ts) = Ctor name (map (flatten state) ts)
 
 walk :: State -> Term -> Term
 walk state (Free i) =
   case lookup i (getSubst state) of
     Nothing -> Free i
     Just t -> walk state t
-walk _ (Var _) = error "syntactic variable in walk"
+walk state (Var v) = error $ "syntactic variable " ++ v ++ " in walk\nstate: " ++ show state
 walk _ x = x
 
 unify :: State -> Term -> Term -> Maybe State
-unify state u v =
-  unify' (walk state u) (walk state v)
-  where
-    unify' (Free u) (Free v) | u == v = Just state
-    unify' u@(Free _) _ = Just (extSubst state u v)
-    unify' _ v@(Free _) = Just (extSubst state v u)
-    unify' (Ctor c1 ts1) (Ctor c2 ts2) | c1 == c2 && length ts1 == length ts2 =
-      foldM (\s (u,v) -> unify s u v) state (zip ts1 ts2)
-    unify' (Var _) _ = error "syntactic variable in unification"
-    unify' _ (Var _) = error "syntactic variable in unification"
-    unify' _ _ = Nothing
+unify state u' v' =
+  let u = subst state u'
+      v = subst state v'
+
+      unify' (Free u) (Free v) | u == v = Just state
+      unify' u@(Free _) _ = Just (extSubst state u v)
+      unify' _ v@(Free _) = Just (extSubst state v u)
+      unify' (Ctor c1 ts1) (Ctor c2 ts2) | c1 == c2 && length ts1 == length ts2 =
+        foldM (\s (u,v) -> unify s u v) state (zip ts1 ts2)
+      unify' (Var _) _ = error "syntactic variable in unification"
+      unify' _ (Var _) = error "syntactic variable in unification"
+      unify' _ _ = Nothing
+  in -- first, eliminate syntactic variables by substitution,
+     -- then walk terms
+     unify' (walk state u) (walk state v)
 
 maybeToStream Nothing  = Empty
 maybeToStream (Just a) = Mature a Empty
 
 eval :: (String -> Def) -> State -> Goal -> Stream State
 eval env state (Unify t1 t2) =
-  maybeToStream $ unify state (subst state t1) (subst state t2)
+  maybeToStream $ unify state t1 t2
 eval env state (Disj g1 g2) = eval env state g1 `mplus` eval env state g2
 eval env state (Conj g1 g2) = eval env state g1 `bind` (\s -> eval env s (substG state g2))
 eval env state (Fresh s g)  = eval env (newVar state s) g
@@ -61,14 +53,11 @@ eval env state (Invoke f actualArgs) =
     Def _ formalArgs body = env f
     state' = foldl bindVar state $ zip formalArgs (map (subst state) actualArgs)
 
-
-
 env :: Spec -> String -> Def
 env spec name =
-  case find (\(Def n _ _) -> n == name) (defs spec) of
-    Just d -> d
-    Nothing -> error $ "No definition with name " ++ name ++ " in specification!"
-
+  fromMaybe
+    (error $ "No definition with name " ++ name ++ " in specification!")
+    (find (\ (Def n _ _) -> n == name) (defs spec))
 
 reify :: Term -> Stream State -> [Term]
 reify var =
@@ -125,3 +114,4 @@ disj = seq2 (|||)
 
 conde ds = disj (map conj ds)
 
+fresh xs g = foldr Fresh g xs
