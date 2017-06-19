@@ -30,6 +30,12 @@ appSpec2 = Spec { defs = [appendo]
                                Invoke "appendo" [var "q", var "p", var "r"]
                 }
 
+appAppSpec = Spec { defs = [appendo]
+                  , goal = fresh ["x", "y", "t", "z", "r"] $
+                             Conj (Invoke "appendo" [var "x", var "y", var "t"])
+                                  (Invoke "appendo" [var "t", var "z", var "r"])
+                  }
+
 revSpec = Spec { defs = [appendo, reverso]
                , goal = Fresh "q" (Invoke "reverso" [a, Var "q"])
                }
@@ -51,16 +57,22 @@ run k spec =
 
 main = do
 --  print $ unify emptyState (Free 0) (Ctor "ctor" [Var "v"])
-  print $ reify (Free 0) $ run 3 appSpec
-  print ""
-  print $ reify (Free 0) $ run 3 appSpec1
-  print ""
-  print $ reify (Free 0) $ run 3 appSpec2
-  print ""
-  print $ reify (Free 0) $ run 5 revSpec
-  print ""
-  print $ reify (Free 0) $ run 5 revSpec1
-  print ""
-  print $ reify (Free 0) $ run 5 revSpec2
-  print ""
+--  print $ reify (Free 0) $ run 3 appSpec
+--  print ""
+--  print $ reify (Free 0) $ run 3 appSpec1
+--  print ""
+--  print $ reify (Free 0) $ run 3 appSpec2
+--  print ""
+--  print $ reify (Free 0) $ run 5 revSpec
+--  print ""
+--  print $ reify (Free 0) $ run 5 revSpec1
+--  print ""
+--  print $ reify (Free 0) $ run 5 revSpec2
+--  print ""
+--  print $ reify (Free 4) $ run 5 appAppSpec
+--  print $ drive revSpec2
 
+
+--  print $ drive appSpec2
+  print $ drive appAppSpec
+--  print $ drive revSpec2
