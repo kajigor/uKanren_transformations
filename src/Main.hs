@@ -6,10 +6,12 @@ import Data
 import DataShow
 import State
 import Driver
+import Data.List (intercalate)
 
 i x = Ctor x []
 
 a = i "A" `cons` nil
+ab = i "A" `cons` (i "B" `cons` nil)
 abc = i "A" `cons` (i "B" `cons` (i "C" `cons` nil))
 def = i "D" `cons` (i "E" `cons` (i "F" `cons` nil))
 
@@ -45,8 +47,25 @@ revSpec1 = Spec { defs = [appendo, reverso]
                 }
 
 revSpec2 = Spec { defs = [appendo, reverso]
-                , goal = Fresh "q" $ Fresh "p" (Invoke "reverso" [Var "p", Var "q"])
+                , goal = Fresh "q" $ Fresh "p" (Invoke "reverso" [Var "q", Var "p"])
                 }
+
+revAccoSpec = Spec { defs = [revAcco]
+                   , goal = fresh ["q"] (Invoke "revAcco" [abc, nil, Var "q"])
+                   }
+
+revAccoSpec1 = Spec { defs = [revAcco]
+                    , goal = fresh ["q"] (Invoke "revAcco" [var "q", nil, Var "q"])
+                    }
+
+revAccoSpec2 = Spec { defs = [revAcco]
+                    , goal = fresh ["q"] (Invoke "revAcco" [Var "q", nil, abc])
+                    }
+
+
+revAccoSpec3 = Spec { defs = [revAcco]
+                    , goal = fresh ["q", "p"] (Invoke "revAcco" [Var "q", nil, Var "p"])
+                    }
 
 run k spec =
   let
@@ -72,7 +91,11 @@ main = do
 --  print $ reify (Free 4) $ run 5 appAppSpec
 --  print $ drive revSpec2
 
+  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 10 revAccoSpec
+  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 10 revAccoSpec1
+  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 1  revAccoSpec2
+
 
 --  print $ drive appSpec2
-  print $ drive appAppSpec
+--  print $ drive appAppSpec
 --  print $ drive revSpec2

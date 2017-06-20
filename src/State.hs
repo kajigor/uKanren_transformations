@@ -44,6 +44,7 @@ substG state (Fresh x g)   =
   let state' = bindVar state (x, Var x)
   in Fresh x (substG state' g)
 substG state (Invoke f as) = Invoke f (map (subst state) as)
+substG state (Zzz a) = Zzz (substG state a)
 
 
 applyState goal state =

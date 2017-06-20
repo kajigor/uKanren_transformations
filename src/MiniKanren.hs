@@ -87,7 +87,7 @@ reify var =
           case walk'' state var of
             Free i -> extS state i
             Ctor name args -> foldl reify' state args
-            Var n -> error $ "Trying to reify state with a naked variable " ++ n
+            Var n -> state -- error $ "Trying to reify state with a naked variable " ++ n
           where
             extS state i =
               State { getSubst = (i, reifyName $ index state) : getSubst state
