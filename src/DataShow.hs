@@ -36,10 +36,10 @@ instance Show Tree where
         case t of
           Fail                        -> nSpaces n ++ "F\n"
           Success st                  -> nSpaces n ++ "S " ++ show st ++ "\n"
-          Renaming i st g             -> nSpaces n ++ "R " ++ show i ++ " " ++ {- show st ++ -} " (" ++ show g ++ ")"
-          Step     i st g ch          -> nSpaces n ++ "T " ++ show i ++ " " ++ {- show st ++ -} " (" ++ show g ++ ")" ++ "\n" ++ show' ch (n+1)
-          Or       i st g ch1 ch2     -> nSpaces n ++ "O " ++ show i ++ " " ++ {- show st ++ -} " (" ++ show g ++ ")" ++ "\n" ++ show' ch1 (n+1) ++ "\n" ++ show' ch2 (n+1)
-          Split    i st g1 g2 ch1 ch2 -> nSpaces n ++ "G " ++ show i ++ " " ++ {- show st ++ -} " (" ++ show g1 ++ ")" ++ " (" ++ show g2 ++ ")" ++ "\n" ++ show' ch1 (n+1) ++ "\n" ++ show' ch2 (n+1)
+          Renaming i st g             -> nSpaces n ++ "R " ++ show i ++ " " ++ show st ++ " (" ++ show g ++ ")"
+          Step     i st g ch          -> nSpaces n ++ "T " ++ show i ++ " " ++ show st ++ " (" ++ show g ++ ")" ++ "\n" ++ show' ch (n+1)
+          Or       i st g ch          -> nSpaces n ++ "O " ++ show i ++ " " ++ show st ++ " (" ++ show g ++ ")" ++ "\n" ++ intercalate "\n" (map (\x -> show' x (n+1)) ch)
+          Split    i st g1 g2 ch1 ch2 -> nSpaces n ++ "G " ++ show i ++ " " ++ show st ++ " (" ++ show g1 ++ ")" ++ " (" ++ show g2 ++ ")" ++ "\n" ++ show' ch1 (n+1) ++ "\n" ++ show' ch2 (n+1)
 
 
 

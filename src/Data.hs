@@ -32,7 +32,7 @@ type Ctx = [Goal]
 data Tree = Success  { state :: State}
           | Fail
           | Step     { getInd :: Integer, state :: State, getGoal :: Goal, getChild :: Tree }
-          | Or       { getInd :: Integer, state :: State, getGoal :: Goal, getLChild :: Tree, getRChild :: Tree }
+          | Or       { getInd :: Integer, state :: State, getGoal :: Goal, getChildren :: [Tree] }
           | Split    { getInd :: Integer, state :: State, getLGoal :: Goal, getRGoal :: Goal, getLChild :: Tree, getRChild :: Tree }
           | Renaming { getInd :: Integer, state :: State, getGoal :: Goal }
 
