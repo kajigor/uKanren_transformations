@@ -120,7 +120,7 @@ drive spec =
   drive' 0 (goal spec) [] emptyState []
   where
     drive' i g' ctx state ancs =
-      let anc = substG state (mergeCtx g' ctx)
+      let anc = applyState (substG state (mergeCtx g' ctx)) state
           ancs' = (i,anc) : ancs
           g = substG state g'
       in
@@ -145,11 +145,18 @@ drive spec =
                 unf = unfold body state'
                 processCtx st acc [] = Just (st,acc)
                 processCtx st acc (c:cs) =
-                  case unfold c st of
-                    [] -> Nothing
-                    [(g,s)] -> processCtx s (acc ++ g) cs
-                    _ -> processCtx st (c:acc) cs
-                res = mapMaybe (\(g,st) -> processCtx st g ctx) unf
+                  let c' = applyState c st
+                      (c'', st'') = case c' of
+                                      Invoke n args ->
+                                        let (Def _ fArgs b) = env spec n
+                                            st' = foldl bindVar st $ zip fArgs (map (subst st) args)
+                                        in  (b, st')
+                                      x -> (x, st)
+                  in  case unfold c'' st'' of
+                        [] -> Nothing
+                        [(g,s)] -> processCtx s (acc ++ g) cs
+                        _       -> processCtx st (acc ++ [c]) cs
+                res = mapMaybe (\(g,st) -> processCtx st (concatMap goalToList g) ctx) unf
                 makeNodes =
                   map (\(st,g) -> case g of
                                     [] -> Success st
@@ -169,10 +176,14 @@ drive spec =
                           prev = goalToList g
                       in  if   length curr > length prev
                           then let (l,r) = split curr prev
-                               in  Or (i+1) state anc [ drive' (i+2) (conj l) [] state' ancs'
-                                                      , drive' (i+2) (conj r) [] state' ancs'
-                                                      ]
-                          else error "Coupled conjunctions have different number of conjunctions"
+                               in  Split (i+1)
+                                         state
+                                         (conj l)
+                                         (conj r)
+                                         (drive' (i+2) (conj l) [] state' ancs')
+                                         (drive' (i+2) (conj r) [] state' ancs')
+                          else error ("Coupled conjunctions have equal number of conjunctions\n"
+                                     ++ "curr: " ++ show curr ++ "\nprev: " ++ show prev)
                     Nothing -> Step i state' anc ch
 
 

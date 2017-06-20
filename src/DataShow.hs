@@ -15,9 +15,9 @@ instance Show Term where
   show (Ctor ctor ts) = ctor ++ "(" ++ showList ts ")"
 
 instance Show Goal where
-  show (Unify l r) = "(" ++ show l ++ " === " ++ show r ++ ")"
-  show (Conj l r)  = "(" ++ show l ++ " &&& " ++ show r ++ ")"
-  show (Disj l r)  = "(" ++ show l ++ " ||| " ++ show r ++ ")"
+  show (Unify l r) = "(" ++ show l ++ ") === (" ++ show r ++ ")"
+  show (Conj l r)  = "(" ++ show l ++ ") &&& (" ++ show r ++ ")"
+  show (Disj l r)  = "(" ++ show l ++ ") ||| (" ++ show r ++ ")"
   show (Fresh v g) = "Fresh " ++ v ++ " " ++ show g
   show (Invoke n args) = "Invoke " ++ n ++ " with (" ++ show args ++ ")"
   show (Zzz g) = "Zzz " ++ show g
