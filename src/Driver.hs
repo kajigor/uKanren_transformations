@@ -32,9 +32,9 @@ renaming l r =
     renameT l r renaming =
       case (l,r) of
         (Free _, Free _) -> updateRenaming l r renaming
-        (Var  _, Free _) -> updateRenaming l r renaming
         (Var  _, Var  _) -> updateRenaming l r renaming
-        (Free _, Var  _) -> updateRenaming l r renaming
+--        (Var  _, Free _) -> updateRenaming l r renaming
+--        (Free _, Var  _) -> updateRenaming l r renaming
         (Ctor ln ls, Ctor rn rs) | ln == rn ->
           foldrM (\(t,t') r -> renameT t t' r) renaming (zip ls rs)
         _ -> Nothing
@@ -114,6 +114,77 @@ split (x:xs) (y:ys) | isJust $ couple x y [] =
   let (cs,uncs) = split xs ys in (x:cs, uncs)
 split xs [] = ([], xs)
 
+--renaming l r =
+--  isJust $ rename l r []
+--  where
+--    rename l r renaming =
+--      case (l,r) of
+--        (Unify l l', Unify r r') -> renameT l r renaming >>= renameT l' r'
+--        (Conj  l l', Conj  r r') -> rename  l r renaming >>= rename l' r'
+--        (Disj  l l', Disj  r r') -> rename  l r renaming >>= rename l' r'
+--        (Zzz   l,    Zzz   r)    -> rename  l r renaming
+--        (Invoke ln ls, Invoke rn rs) | ln == rn ->
+--          foldrM (\(t,t') r -> renameT t t' r) renaming (zip ls rs)
+--        _ -> Nothing
+--    renameT l r renaming =
+--      case (l,r) of
+--        (Free _, Free _) -> updateRenaming l r renaming
+--        (Var  _, Var  _) -> updateRenaming l r renaming
+----        (Var  _, Free _) -> updateRenaming l r renaming
+----        (Free _, Var  _) -> updateRenaming l r renaming
+--        (Ctor ln ls, Ctor rn rs) | ln == rn ->
+--          foldrM (\(t,t') r -> renameT t t' r) renaming (zip ls rs)
+--        _ -> Nothing
+
+generalizeTerm :: Term -> Term -> Integer -> (Term, [(Term, Term)], [(Term, Term)], Integer)
+generalizeTerm t1 t2 =
+  gt t1 t2 [] []
+  where
+    gt t1 t2 s12 s21 n =
+      case (t1, t2) of
+        (Free i, Free j) | i == j -> (t1, s12, s21, n)
+--        (Free i, Free j) -> let new = Free n in (new, (new,t1):s12, (new,t2):s21, n+1)
+        (_, Var _) -> error "Syntactic variable in term"
+        (Var _, _) -> error "Syntactic variable in term"
+        (Ctor ln larg, Ctor rn rarg) | ln == rn ->
+          (Ctor ln args, s12', s21', n')
+          where
+            (args, s12', s21', n') =
+              foldl (\(args, s12, s21, n) (l,r) ->
+                       let (arg, s12', s21', n') = gt l r s12 s21 n
+                       in  (arg:args, s12', s21', n'))
+                    ([], s12, s21, n)
+                    (zip larg rarg)
+        (x, y) -> let new = Free n in (new, (new,t1):s12, (new,t2):s21, n+1)
+
+generalizeArgs :: [Goal] -> [Goal] -> State -> (Goal, [(Term, Term)], Integer)
+generalizeArgs curr prev state =
+--  trace ("\nGeneralizing:\nCurr: " ++ show curr ++ "\nPrev: " ++ show prev ++ "\nn: " ++ show (index state) ++ "\n") $
+  (conj goals, s12, n)
+  --(addFresh s12 goals, updateState s12 state)
+  where
+    (goals, s12, _, n) = ga curr prev [] [] (index state)
+    ga [] [] s12 s21 n = ([], s12, s21, n)
+    ga (x:xs) (y:ys) s12 s21 n =
+      let (g, s12', s21', n') = ga' x y s12 s21 n
+          (gs, s12'', s21'', n'') = ga xs ys s12' s21' n'
+      in (g:gs, s12'', s21'', n'') -- check the order of conjuncts
+      where
+        ga' x y s12 s21 n =
+          case (x,y) of
+            (Invoke xn xarg, Invoke yn yarg) | xn == yn && length xarg == length yarg ->
+              let (args', s12', s21', n') =
+                    foldl (\(args, s12, s21, n) (x,y) ->
+                              let (g, s12', s21', n') = generalizeTerm x y n
+                              in  (g:args, s12'++s12, s21'++s21, n'))
+                          ([], s12, s21, n)
+                          (zip xarg yarg)
+              in (Invoke xn (reverse args'), s12', s21', n')
+--    addFresh s12 goals = conj goals
+--    updateState s12 state = state
+
+
+
 drive :: Spec -> Tree
 drive spec =
 --  drive' :: Integer -> Goal -> Ctx -> State -> [(Integer,Goal)] -> Tree
@@ -182,8 +253,14 @@ drive spec =
                                          (conj r)
                                          (drive' (i+2) (conj l) [] state' ancs')
                                          (drive' (i+2) (conj r) [] state' ancs')
-                          else error ("Coupled conjunctions have equal number of conjunctions\n"
-                                     ++ "curr: " ++ show curr ++ "\nprev: " ++ show prev)
+                          else let (g',st,n) = generalizeArgs curr prev state
+                                   state'' =
+                                     State { getSubst = getSubst state
+                                           , getState = getState state
+                                           , index = n
+                                           , vars = vars state
+                                           }
+                               in  Gen (i+1) st g' (drive' (i+2) g' [] state'' ancs')
                     Nothing -> Step i state' anc ch
 
 

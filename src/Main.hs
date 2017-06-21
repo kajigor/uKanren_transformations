@@ -91,11 +91,12 @@ main = do
 --  print $ reify (Free 4) $ run 5 appAppSpec
 --  print $ drive revSpec2
 
-  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 10 revAccoSpec
-  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 10 revAccoSpec1
-  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 1  revAccoSpec2
+--  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 10 revAccoSpec
+--  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 10 revAccoSpec1
+--  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 1  revAccoSpec2
 
 
 --  print $ drive appSpec2
 --  print $ drive appAppSpec
 --  print $ drive revSpec2
+  print $ drive revAccoSpec3
