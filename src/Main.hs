@@ -99,4 +99,5 @@ main = do
 --  print $ drive appSpec2
 --  print $ drive appAppSpec
 --  print $ drive revSpec2
-  print $ drive revAccoSpec3
+--  print $ drive revAccoSpec3
+  print $ drive testSpec

@@ -48,3 +48,11 @@ revAcco =
                 &&& Zzz (Invoke "revAcco" [var "t", var "h" `cons` var "acc", var "sx"])
             ]
           ]
+
+testSpec = Spec
+  { defs = [ Def "A" [] (fresh ["x", "y"] $ Invoke "B" [var "x"] &&& Invoke "C" [var "y"] )
+           , Def "B" ["x"] (fresh ["y"] $ Invoke "B" [var "y" `cons` var "x"])
+           , Def "C" ["y"] (fresh ["z"] $ Invoke "C" [var "z" `cons` var "y"])
+           ]
+  , goal = Invoke "A" []
+  }

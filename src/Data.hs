@@ -35,6 +35,6 @@ data Tree = Success  { state :: State}
           | Or       { getInd :: Integer, state :: State, getGoal :: Goal, getChildren :: [Tree] }
           | Split    { getInd :: Integer, state :: State, getLGoal :: Goal, getRGoal :: Goal, getLChild :: Tree, getRChild :: Tree }
           | Renaming { getInd :: Integer, state :: State, getGoal :: Goal }
-          | Gen      { getInd :: Integer, substitution :: [(Term, Term)], getGoal :: Goal, getChild :: Tree }
+          | Gen      { getInd :: Integer, state :: State {- substitution :: [(Term, Term)] -} , getGoal :: Goal, getChild :: Tree }
 
 type Renaming = [(Term, Term)]

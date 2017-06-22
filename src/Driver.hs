@@ -114,28 +114,6 @@ split (x:xs) (y:ys) | isJust $ couple x y [] =
   let (cs,uncs) = split xs ys in (x:cs, uncs)
 split xs [] = ([], xs)
 
---renaming l r =
---  isJust $ rename l r []
---  where
---    rename l r renaming =
---      case (l,r) of
---        (Unify l l', Unify r r') -> renameT l r renaming >>= renameT l' r'
---        (Conj  l l', Conj  r r') -> rename  l r renaming >>= rename l' r'
---        (Disj  l l', Disj  r r') -> rename  l r renaming >>= rename l' r'
---        (Zzz   l,    Zzz   r)    -> rename  l r renaming
---        (Invoke ln ls, Invoke rn rs) | ln == rn ->
---          foldrM (\(t,t') r -> renameT t t' r) renaming (zip ls rs)
---        _ -> Nothing
---    renameT l r renaming =
---      case (l,r) of
---        (Free _, Free _) -> updateRenaming l r renaming
---        (Var  _, Var  _) -> updateRenaming l r renaming
-----        (Var  _, Free _) -> updateRenaming l r renaming
-----        (Free _, Var  _) -> updateRenaming l r renaming
---        (Ctor ln ls, Ctor rn rs) | ln == rn ->
---          foldrM (\(t,t') r -> renameT t t' r) renaming (zip ls rs)
---        _ -> Nothing
-
 generalizeTerm :: Term -> Term -> Integer -> (Term, [(Term, Term)], [(Term, Term)], Integer)
 generalizeTerm t1 t2 =
   gt t1 t2 [] []
@@ -157,11 +135,9 @@ generalizeTerm t1 t2 =
                     (zip larg rarg)
         (x, y) -> let new = Free n in (new, (new,t1):s12, (new,t2):s21, n+1)
 
-generalizeArgs :: [Goal] -> [Goal] -> State -> (Goal, [(Term, Term)], Integer)
+generalizeArgs :: [Goal] -> [Goal] -> State -> (Goal, State {- [(Term, Term)] -} , Integer)
 generalizeArgs curr prev state =
---  trace ("\nGeneralizing:\nCurr: " ++ show curr ++ "\nPrev: " ++ show prev ++ "\nn: " ++ show (index state) ++ "\n") $
-  (conj goals, s12, n)
-  --(addFresh s12 goals, updateState s12 state)
+  (conj goals, updateState s12, n)
   where
     (goals, s12, _, n) = ga curr prev [] [] (index state)
     ga [] [] s12 s21 n = ([], s12, s21, n)
@@ -180,10 +156,8 @@ generalizeArgs curr prev state =
                           ([], s12, s21, n)
                           (zip xarg yarg)
               in (Invoke xn (reverse args'), s12', s21', n')
---    addFresh s12 goals = conj goals
---    updateState s12 state = state
-
-
+    updateState =
+      foldl (\st (u,v)-> extSubst st u v) state
 
 drive :: Spec -> Tree
 drive spec =
