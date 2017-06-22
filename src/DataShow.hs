@@ -34,8 +34,8 @@ instance Show Tree where
       nSpaces n = replicate n ' '
       show' t n =
         case t of
-          Fail                        -> nSpaces n ++ "F\n"
-          Success st                  -> nSpaces n ++ "S " ++ show st ++ "\n"
+          Fail                        -> nSpaces n ++ "F"
+          Success st                  -> nSpaces n ++ "S " ++ show st
           Renaming i st g             -> nSpaces n ++ "R " ++ show i ++ " " ++ show st ++ " (" ++ show g ++ ")"
           Step     i st g ch          -> nSpaces n ++ "T " ++ show i ++ " " ++ show st ++ " (" ++ show g ++ ")" ++ "\n" ++ show' ch (n+1)
           Or       i st g ch          -> nSpaces n ++ "O " ++ show i ++ " " ++ show st ++ " (" ++ show g ++ ")" ++ "\n" ++ intercalate "\n" (map (\x -> show' x (n+1)) ch)

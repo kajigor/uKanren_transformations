@@ -96,8 +96,13 @@ main = do
 --  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 1  revAccoSpec2
 
 
---  print $ drive appSpec2
---  print $ drive appAppSpec
---  print $ drive revSpec2
---  print $ drive revAccoSpec3
+  print $ drive appSpec2
+  putStrLn ""
+  print $ drive appAppSpec
+  putStrLn ""
+  print $ drive revSpec2
+  putStrLn ""
+  print $ drive revAccoSpec3
+  putStrLn ""
   print $ drive testSpec
+  putStrLn ""

@@ -118,44 +118,44 @@ generalizeTerm :: Term -> Term -> Integer -> (Term, [(Term, Term)], [(Term, Term
 generalizeTerm t1 t2 =
   gt t1 t2 [] []
   where
-    gt t1 t2 s12 s21 n =
+    gt t1 t2 s1 s2 n =
       case (t1, t2) of
-        (Free i, Free j) | i == j -> (t1, s12, s21, n)
---        (Free i, Free j) -> let new = Free n in (new, (new,t1):s12, (new,t2):s21, n+1)
+        (Free i, Free j) | i == j -> (t1, s1, s2, n)
+        (Free i, Free j) -> (t1, s1, (t1,t2):s2, n+1)
         (_, Var _) -> error "Syntactic variable in term"
         (Var _, _) -> error "Syntactic variable in term"
         (Ctor ln larg, Ctor rn rarg) | ln == rn ->
-          (Ctor ln args, s12', s21', n')
+          (Ctor ln args, s1', s2', n')
           where
-            (args, s12', s21', n') =
-              foldl (\(args, s12, s21, n) (l,r) ->
-                       let (arg, s12', s21', n') = gt l r s12 s21 n
-                       in  (arg:args, s12', s21', n'))
-                    ([], s12, s21, n)
+            (args, s1', s2', n') =
+              foldl (\(args, s1, s2, n) (l,r) ->
+                       let (arg, s1', s2', n') = gt l r s1 s2 n
+                       in  (arg:args, s1', s2', n'))
+                    ([], s1, s2, n)
                     (zip larg rarg)
-        (x, y) -> let new = Free n in (new, (new,t1):s12, (new,t2):s21, n+1)
+        (x, y) -> let new = Free n in (new, (new,t1):s1, (new,t2):s2, n+1)
 
 generalizeArgs :: [Goal] -> [Goal] -> State -> (Goal, State {- [(Term, Term)] -} , Integer)
 generalizeArgs curr prev state =
-  (conj goals, updateState s12, n)
+  (conj goals, updateState s1, n)
   where
-    (goals, s12, _, n) = ga curr prev [] [] (index state)
-    ga [] [] s12 s21 n = ([], s12, s21, n)
-    ga (x:xs) (y:ys) s12 s21 n =
-      let (g, s12', s21', n') = ga' x y s12 s21 n
-          (gs, s12'', s21'', n'') = ga xs ys s12' s21' n'
-      in (g:gs, s12'', s21'', n'') -- check the order of conjuncts
+    (goals, s1, _, n) = ga curr prev [] [] (index state)
+    ga [] [] s1 s2 n = ([], s1, s2, n)
+    ga (x:xs) (y:ys) s1 s2 n =
+      let (g, s1', s2', n') = ga' x y s1 s2 n
+          (gs, s1'', s2'', n'') = ga xs ys s1' s2' n'
+      in (g:gs, s1'', s2'', n'') -- check the order of conjuncts
       where
-        ga' x y s12 s21 n =
+        ga' x y s1 s2 n =
           case (x,y) of
             (Invoke xn xarg, Invoke yn yarg) | xn == yn && length xarg == length yarg ->
-              let (args', s12', s21', n') =
-                    foldl (\(args, s12, s21, n) (x,y) ->
-                              let (g, s12', s21', n') = generalizeTerm x y n
-                              in  (g:args, s12'++s12, s21'++s21, n'))
-                          ([], s12, s21, n)
+              let (args', s1', s2', n') =
+                    foldl (\(args, s1, s2, n) (x,y) ->
+                              let (g, s1', s2', n') = generalizeTerm x y n
+                              in  (g:args, s1'++s1, s2'++s2, n'))
+                          ([], s1, s2, n)
                           (zip xarg yarg)
-              in (Invoke xn (reverse args'), s12', s21', n')
+              in (Invoke xn (reverse args'), s1', s2', n')
     updateState =
       foldl (\st (u,v)-> extSubst st u v) state
 
@@ -205,11 +205,11 @@ drive spec =
                 makeNodes =
                   map (\(st,g) -> case g of
                                     [] -> Success st
-                                    x -> drive' (i+2) (conj x) [] st ancs')
+                                    x -> drive' (i+1) (conj x) [] st ancs')
                       res
                 ch = let nodes = makeNodes
                      in  if length nodes > 1
-                         then Or (i+1) state' anc nodes
+                         then Or i state' anc nodes
                          else if null nodes then Fail else head nodes
             in
               case find (\(n,g) -> renaming g anc) ancs of
@@ -221,12 +221,12 @@ drive spec =
                           prev = goalToList g
                       in  if   length curr > length prev
                           then let (l,r) = split curr prev
-                               in  Split (i+1)
+                               in  Split i
                                          state
                                          (conj l)
                                          (conj r)
-                                         (drive' (i+2) (conj l) [] state' ancs')
-                                         (drive' (i+2) (conj r) [] state' ancs')
+                                         (drive' (i+1) (conj l) [] state' ancs')
+                                         (drive' (i+1) (conj r) [] state' ancs')
                           else let (g',st,n) = generalizeArgs curr prev state
                                    state'' =
                                      State { getSubst = getSubst state
@@ -234,16 +234,5 @@ drive spec =
                                            , index = n
                                            , vars = vars state
                                            }
-                               in  Gen (i+1) st g' (drive' (i+2) g' [] state'' ancs')
-                    Nothing -> Step i state' anc ch
-
-
-
-
-
-
-
-
-
-
-
+                               in  Gen i st g' (drive' (i+1) g' [] state'' ancs')
+                    Nothing -> ch
