@@ -40,7 +40,7 @@ instance Show Tree where
           Step     i st g fv ch       -> nSpaces n ++ "T " ++ show fv ++ " " ++ show i ++ " " ++ show st ++ " (" ++ show g ++ ")" ++ "\n" ++ show' ch (n+1)
           Or       i st g ch          -> nSpaces n ++ "O " ++ show i ++ " " ++ show st ++ " (" ++ show g ++ ")" ++ "\n" ++ intercalate "\n" (map (\x -> show' x (n+1)) ch)
           Split    i st g1 g2 ch1 ch2 -> nSpaces n ++ "G " ++ show i ++ " " ++ show st ++ " (" ++ show g1 ++ ")" ++ " (" ++ show g2 ++ ")" ++ "\n" ++ show' ch1 (n+1) ++ "\n" ++ show' ch2 (n+1)
-          Gen      i st g ch          -> nSpaces n ++ "A " ++ show i ++ " " ++ show st ++ " (" ++ show g ++ ")" ++ "\n" ++ show' ch (n+1)
+          Gen      i st subst g ch    -> nSpaces n ++ "A " ++ show i ++ " " ++ show st ++ " <" ++ show subst ++ "> "  ++ " (" ++ show g ++ ")" ++ "\n" ++ show' ch (n+1)
 
 instance Show Def where
   show x = "let " ++ name x ++ " " ++ unwords (map show $ args x) ++ " = " ++ show (body x)

@@ -6,6 +6,7 @@ import Data
 import DataShow
 import State
 import Driver
+import Residualization
 import Data.List (intercalate)
 
 i x = Ctor x []
@@ -96,13 +97,29 @@ main = do
 --  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 1  revAccoSpec2
 
 
-  print $ drive appSpec2
-  putStrLn ""
-  print $ drive appAppSpec
-  putStrLn ""
-  print $ drive revSpec2
-  putStrLn ""
+--  print $ drive appSpec2
+--  putStrLn ""
+--  print $ drive appAppSpec
+--  putStrLn ""
+--  print $ drive revSpec2
+--  putStrLn ""
+--  print $ drive revAccoSpec3
+--  putStrLn ""
+--  print $ drive testSpec
+--  putStrLn ""
+--
+
+  putStrLn "\nAppendo:\n"
+  print $ residualize' $ drive appSpec2
+
+  putStrLn "\nDouble appendo:\n"
+  print $ residualize' $ drive appAppSpec
+
+  putStrLn "\nNaive reverso:\n"
+  print $ residualize' $ drive revSpec2
+
+  putStrLn "\nAccumulative reverso:\n"
   print $ drive revAccoSpec3
-  putStrLn ""
-  print $ drive testSpec
-  putStrLn ""
+
+  putStrLn "\nAccumulative reverso transformed:\n"
+  print $ residualize' $ drive revAccoSpec3

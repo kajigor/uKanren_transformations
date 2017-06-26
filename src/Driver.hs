@@ -139,9 +139,10 @@ generalizeTerm t1 t2 =
                     (zip larg rarg)
         (x, y) -> let new = Free n in (new, (new,t1):s1, (new,t2):s2, n+1)
 
-generalizeArgs :: [Goal] -> [Goal] -> State -> (Goal, State {- [(Term, Term)] -} , Integer)
+generalizeArgs :: [Goal] -> [Goal] -> State -> (Goal, [(Term, Term)], State, Integer)
 generalizeArgs curr prev state =
-  (conj goals, updateState s1, n)
+  -- (conj goals, updateState s1, n)
+  (conj goals, s1, updateState s1, n)
   where
     (goals, s1, _, n) = ga curr prev [] [] (index state)
     ga [] [] s1 s2 n = ([], s1, s2, n)
@@ -245,12 +246,12 @@ drive spec =
                                                  (conj r)
                                                  (drive' (i+1) (conj l) [] state' ancs' [])
                                                  (drive' (i+1) (conj r) [] state' ancs' [])
-                                  else let (g',st,n) = generalizeArgs curr prev state
+                                  else let (g',subst,st,n) = generalizeArgs curr prev state
                                            state'' =
                                              State { getSubst = getSubst state
                                                    , getState = getState state
                                                    , index = n
                                                    , vars = vars state
                                                    }
-                                       in  Gen i st g' (drive' (i+1) g' [] state'' ancs' [])
+                                       in  Gen i st subst g' (drive' (i+1) g' [] state'' ancs' [])
                             Nothing -> ch
