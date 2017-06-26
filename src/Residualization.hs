@@ -4,7 +4,7 @@ import MiniKanren
 import Driver
 import Debug.Trace (trace)
 import Data.Maybe (mapMaybe, fromJust, fromMaybe)
-import Data.List (intercalate, nub)
+import Data.List (intercalate, nub, (\\))
 import State
 
 addAnc :: Integer -> Tree -> (Integer -> Tree) -> (Integer -> Tree)
@@ -79,7 +79,8 @@ residualize x bound ancs fNames defs =
     Split i _ _ _ ch1 ch2 ->
       let ancs' = addAnc i x ancs
           (g, fn, td) = residualize ch1 bound ancs' fNames defs
-          (g', fn', td') = residualize ch2 bound ancs' fn td
+          bound' = bound \\ map fst (getSubst $ state ch1)
+          (g', fn', td') = residualize ch2 bound' ancs' fn td
       in  (g &&& g', fn', td')
     Success st ->
       ( conj $ residualizeState st bound
@@ -98,3 +99,5 @@ residualize x bound ancs fNames defs =
           invoke = Invoke name actualArgs
       in  (conj $ residualizeState st bound ++ [invoke], fn, defs')
     -- x -> error $ "residualization of (" ++ show x ++ ") failed"
+
+
