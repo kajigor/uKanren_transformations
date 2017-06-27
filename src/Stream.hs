@@ -15,6 +15,3 @@ bind :: Stream  a -> (a -> Stream a) -> Stream a
 bind Empty g = mzero
 bind (Mature h t) g = g h `mplus` bind t g
 bind (Immature l) r = Immature (bind l r)
-
-
-

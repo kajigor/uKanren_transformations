@@ -6,6 +6,7 @@ import Data
 import DataShow
 import State
 import Driver
+import Residualization
 import Data.List (intercalate)
 
 i x = Ctor x []
@@ -75,29 +76,14 @@ run k spec =
   in  take k $ eval (env spec) emptyState (goal spec)
 
 main = do
---  print $ unify emptyState (Free 0) (Ctor "ctor" [Var "v"])
---  print $ reify (Free 0) $ run 3 appSpec
---  print ""
---  print $ reify (Free 0) $ run 3 appSpec1
---  print ""
---  print $ reify (Free 0) $ run 3 appSpec2
---  print ""
---  print $ reify (Free 0) $ run 5 revSpec
---  print ""
---  print $ reify (Free 0) $ run 5 revSpec1
---  print ""
---  print $ reify (Free 0) $ run 5 revSpec2
---  print ""
---  print $ reify (Free 4) $ run 5 appAppSpec
---  print $ drive revSpec2
+  putStrLn "\nAppendo:\n"
+  print $ residualize' $ drive appSpec2
 
---  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 10 revAccoSpec
---  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 10 revAccoSpec1
---  putStrLn $ intercalate "\n" $ map show $ reify (Free 0) $ run 1  revAccoSpec2
+  putStrLn "\nDouble appendo:\n"
+  print $ residualize' $ drive appAppSpec
 
+  putStrLn "\nNaive reverso:\n"
+  print $ residualize' $ drive revSpec2
 
---  print $ drive appSpec2
---  print $ drive appAppSpec
---  print $ drive revSpec2
---  print $ drive revAccoSpec3
-  print $ drive testSpec
+  putStrLn "\nAccumulative reverso:\n"
+  print $ residualize' $ drive revAccoSpec3
