@@ -2,13 +2,12 @@ module Residualization where
 import Data
 import MiniKanren
 import Driver
-import Debug.Trace (trace)
 import Data.Maybe (mapMaybe, fromJust, fromMaybe)
 import Data.List (intercalate, nub, (\\))
 import State
 
-addAnc :: Integer -> Tree -> (Integer -> Tree) -> (Integer -> Tree)
-addAnc i t ancs = \x -> if x == i then t else ancs x
+addAnc :: (Integer -> Tree) -> Integer -> Tree -> (Integer -> Tree)
+addAnc ancs i t  = \x -> if x == i then t else ancs x
 
 makeVar i = "x." ++ show i
 
@@ -32,9 +31,8 @@ getArgs goal =
   in  nub $ ga goal
 
 formalArgs goal call =
-  let args = getArgs goal
-      Just ren = renaming goal call
-  in  map (\x -> fromJust $ lookup (Free x) ren) args
+  let Just ren = renaming goal call
+  in  map (\x -> fromJust $ lookup (Free x) ren) (getArgs goal)
 
 getName (Invoke name _) = name
 getName (Conj l r) = getName l ++ "_" ++ getName r
@@ -68,7 +66,7 @@ residualize x bound ancs fNames defs =
       let (g, fn, td) = residualize ch (fv++bound) ancs fNames defs
       in  (fresh (map makeVar fv) g, fn, td)
     Or i _ _ ch ->
-      let ancs' = addAnc i x ancs
+      let ancs' = addAnc ancs i x
           (gs, fn, td) =
             foldl (\(gs,fn,td) y ->
                       let (g, fn', td') = residualize y bound ancs' fn td
@@ -77,7 +75,7 @@ residualize x bound ancs fNames defs =
                   ch
       in  (disj (reverse gs), fn, td)
     Split i _ _ _ ch1 ch2 ->
-      let ancs' = addAnc i x ancs
+      let ancs' = addAnc ancs i x
           (g, fn, td) = residualize ch1 bound ancs' fNames defs
           bound' = bound \\ map fst (getSubst $ state ch1)
           (g', fn', td') = residualize ch2 bound' ancs' fn td
@@ -94,10 +92,9 @@ residualize x bound ancs fNames defs =
           invoke = Invoke name args
       in  (conj $ residualizeState st bound ++ [invoke], fn, defs')
     x@(Gen i st subst g ch) ->
-      let y@(name, args, fn, defs') = generateInvocation (getGoal ch) fNames defs g ch
+      let (name, args, fn, defs') = generateInvocation (getGoal ch) fNames defs g ch
           actualArgs = map (\x -> fromMaybe x (lookup x subst)) args
           invoke = Invoke name actualArgs
       in  (conj $ residualizeState st bound ++ [invoke], fn, defs')
-    -- x -> error $ "residualization of (" ++ show x ++ ") failed"
 
 

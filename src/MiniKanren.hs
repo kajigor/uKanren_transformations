@@ -3,7 +3,6 @@
 -}
 
 module MiniKanren where
-import Debug.Trace
 import Control.Monad (foldM)
 import Data.List (find)
 import Data.Maybe (fromMaybe)
@@ -87,7 +86,7 @@ reify var =
           case walk'' state var of
             Free i -> extS state i
             Ctor name args -> foldl reify' state args
-            Var n -> state -- error $ "Trying to reify state with a naked variable " ++ n
+            Var n -> state
           where
             extS state i =
               State { getSubst = (i, reifyName $ index state) : getSubst state

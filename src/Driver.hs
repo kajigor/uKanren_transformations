@@ -5,7 +5,6 @@ import Data.List (find, intercalate)
 import Control.Monad (mplus)
 import Data.Maybe (mapMaybe, isJust, fromMaybe)
 import MiniKanren
-import Debug.Trace
 import State
 
 updateRenaming :: Term -> Term -> Renaming -> Maybe Renaming
@@ -27,8 +26,8 @@ renaming l r =
     rename l r renaming =
       case (l,r) of
         (Unify l l', Unify r r') -> renameT l r renaming >>= renameT l' r'
-        (Conj  l l', Conj  r r') -> rename  l r renaming >>= rename l' r'
-        (Disj  l l', Disj  r r') -> rename  l r renaming >>= rename l' r'
+        (Conj  l l', Conj  r r') -> rename  l r renaming >>= rename  l' r'
+        (Disj  l l', Disj  r r') -> rename  l r renaming >>= rename  l' r'
         (Zzz   l,    Zzz   r)    -> rename  l r renaming
         (Invoke ln ls, Invoke rn rs) | ln == rn ->
           foldrM (\(t,t') r -> renameT t t' r) renaming (zip ls rs)
@@ -37,8 +36,6 @@ renaming l r =
       case (l,r) of
         (Free _, Free _) -> updateRenaming l r renaming
         (Var  _, Var  _) -> updateRenaming l r renaming
---        (Var  _, Free _) -> updateRenaming l r renaming
---        (Free _, Var  _) -> updateRenaming l r renaming
         (Ctor ln ls, Ctor rn rs) | ln == rn ->
           foldrM (\(t,t') r -> renameT t t' r) renaming (zip ls rs)
         _ -> Nothing
@@ -65,7 +62,6 @@ instance Embeddable Term where
 
 instance Embeddable Goal where
   couple l r renaming =
---    trace ("\nChecking for coupling\n" ++ show l ++ "\n" ++ show r ++ "\n") $
     case (l,r) of
       (Unify l l', Unify r r') -> embed l r renaming >>= embed l' r'
       (Conj  l l', Conj  r r') -> embed l r renaming >>= embed l' r'
@@ -81,9 +77,6 @@ instance Embeddable Goal where
       Conj r r' -> embed l r renaming `mplus` embed l r' renaming
       Disj r r' -> embed l r renaming `mplus` embed l r' renaming
       _ -> Nothing
-
-mergeCtx :: Goal -> Ctx -> Goal
-mergeCtx = foldl Conj
 
 unfold :: Goal -> State -> [([Goal], State)]
 unfold goal state =
@@ -141,7 +134,6 @@ generalizeTerm t1 t2 =
 
 generalizeArgs :: [Goal] -> [Goal] -> State -> (Goal, [(Term, Term)], State, Integer)
 generalizeArgs curr prev state =
-  -- (conj goals, updateState s1, n)
   (conj goals, s1, updateState s1, n)
   where
     (goals, s1, _, n) = ga curr prev [] [] (index state)
@@ -166,92 +158,86 @@ generalizeArgs curr prev state =
 
 drive :: Spec -> Tree
 drive spec =
---  drive' :: Integer -> Goal -> Ctx -> State -> [(Integer,Goal)] -> Tree
   drive' 0 (goal spec) [] emptyState [] []
   where
     drive' i g' ctx state ancs freshVars =
-      let anc = applyState (substG state (mergeCtx g' ctx)) state
+      let mergeCtx = foldl Conj
+          anc = applyState (substG state (mergeCtx g' ctx)) state
           ancs' = (i,anc) : ancs
           g = substG state g'
       in
         case g of
           Fresh var g -> drive' i g ctx (newVar state var) ancs (index state : freshVars)
           _ ->
-            if null freshVars then ch else Step i state anc (reverse freshVars) ch
-            where
-              ch =
-                case g of
-                  Unify l r ->
-                    case unify state l r of
-                      Just st ->
-                        case ctx of
-                          [] -> Success st
-                          (c:cs) -> drive' i c cs st ancs []
-                      Nothing -> Fail
-                  Zzz g -> drive' i g ctx state ancs []
-                  Disj l r -> Or i state anc [ drive' (i+1) l ctx state ancs' []
-                                             , drive' (i+1) r ctx state ancs' []
-                                             ]
-                  Conj l r -> drive' i l (substG state r:ctx) state ancs []
-    --              Fresh var g -> Step i state anc (drive' (i+1) g ctx st ancs')
-    --                             where st = newVar state var
-                  Invoke name actualArgs ->
-                    let (Def _ formalArgs body) = env spec name
-                        state' = foldl bindVar state $ zip formalArgs (map (subst state) actualArgs)
-                        unf = unfold body state'
-                        processCtx st acc [] = Just (st,acc)
-                        processCtx st acc (c:cs) =
-                          let c' = applyState c st
-                              (c'', st'') =
-                                case c' of
-                                  Invoke n args ->
-                                    let (Def _ fArgs b) = env spec n
-                                        st' = foldl bindVar st $ zip fArgs (map (subst st) args)
-                                    in  (b, st')
-                                  x -> (x, st)
+            (if null freshVars then id else Step i state anc (reverse freshVars)) $
+               case g of
+                 Unify l r ->
+                   case unify state l r of
+                     Just st ->
+                       case ctx of
+                         [] -> Success st
+                         (c:cs) -> drive' i c cs st ancs []
+                     Nothing -> Fail
+                 Zzz g -> drive' i g ctx state ancs []
+                 Disj l r -> Or i state anc [ drive' (i+1) l ctx state ancs' []
+                                            , drive' (i+1) r ctx state ancs' []
+                                            ]
+                 Conj l r -> drive' i l (substG state r:ctx) state ancs []
+                 Invoke name actualArgs ->
+                   let (Def _ formalArgs body) = env spec name
+                       state' = foldl bindVar state $ zip formalArgs (map (subst state) actualArgs)
+                       unf = unfold body state'
+                       processCtx st acc [] = Just (st,acc)
+                       processCtx st acc (c:cs) =
+                         let c' = applyState c st
+                             (c'', st'') =
+                               case c' of
+                                 Invoke n args ->
+                                   let (Def _ fArgs b) = env spec n
+                                       st' = foldl bindVar st $ zip fArgs (map (subst st) args)
+                                   in  (b, st')
+                                 x -> (x, st)
                           in  case unfold c'' st'' of
-                                [] -> Nothing
-                                [(g,s)] -> processCtx s (acc ++ g) cs
-                                _       -> processCtx st (acc ++ [c]) cs
-                        res = mapMaybe (\(g,st) -> processCtx st (concatMap goalToList g) ctx) unf
-                        makeNodes baseState =
-                          let wrapInFresh state =
-                                let fv = [index baseState .. index state - 1]
-                                in if length fv <= 1 then id else Step i state' anc fv
-                          in  map (\(st,g) ->
-                                      wrapInFresh st $
-                                        case g of
-                                          [] -> Success st
-                                          x -> drive' (i+1) (conj x) [] st ancs' [])
-                                  res
-                        ch = let nodes = makeNodes state'
-                             in  if length nodes > 1
-                                 then Or i state' anc nodes
-                                 else if null nodes then Fail else head nodes
-                    in
-                      case find (\(n,g) -> isRenaming g anc) ancs of
-                        Just (n,g) ->
---                          trace ("\nAncestors:\n" ++ intercalate "\n" (map show ancs) ++ "\n") $
-                          Renaming n state anc
-                        Nothing ->
-                          case find (\(n,g) -> isJust $ couple g anc []) ancs of
-                            Just (n,g) ->
-                              let curr = goalToList anc
-                                  prev = goalToList g
-                              in  if   length curr > length prev
-                                  then let (l,r) = split curr prev
-                                       in  Split i
-                                                 state
-                                                 (conj l)
-                                                 (conj r)
-                                                 (drive' (i+1) (conj l) [] state' ancs' [])
-                                                 (drive' (i+1) (conj r) [] state' ancs' [])
-                                  else let (g',subst,st,n) = generalizeArgs curr prev state
-                                           state'' =
-                                             State { getSubst = getSubst state
-                                                   , getState = getState state
-                                                   , index = n
-                                                   , vars = vars state
-                                                   }
-                                       in  Gen i st subst g' (drive' (i+1) g' [] state'' ancs' [])
-                            Nothing -> ch
+                               [] -> Nothing
+                               [(g,s)] -> processCtx s (acc ++ g) cs
+                               _       -> processCtx st (acc ++ [c]) cs
+                       res = mapMaybe (\(g,st) -> processCtx st (concatMap goalToList g) ctx) unf
+                       makeNodes baseState =
+                         let wrapInFresh state =
+                               let fv = [index baseState .. index state - 1]
+                               in if length fv <= 1 then id else Step i state' anc fv
+                         in  map (\(st,g) ->
+                                     wrapInFresh st $
+                                       case g of
+                                         [] -> Success st
+                                         x -> drive' (i+1) (conj x) [] st ancs' [])
+                                 res
+                       ch = let nodes = makeNodes state'
+                            in  if length nodes > 1
+                                then Or i state' anc nodes
+                                else if null nodes then Fail else head nodes
+                   in
+                     case find (\(n,g) -> isRenaming g anc) ancs of
+                       Just (n,g) -> Renaming n state anc
+                       Nothing ->
+                         case find (\(n,g) -> isJust $ couple g anc []) ancs of
+                           Just (n,g) ->
+                             let curr = goalToList anc
+                                 prev = goalToList g
+                             in  if   length curr > length prev
+                                 then let (l,r) = split curr prev
+                                      in  Split i
+                                                state
+                                                (conj l)
+                                                (conj r)
+                                                (drive' (i+1) (conj l) [] state' ancs' [])
+                                                (drive' (i+1) (conj r) [] state' ancs' [])
+                                 else let (g',subst,st,n) = generalizeArgs curr prev state
+                                          state'' =
+                                            State { getSubst = getSubst state
+                                                  , getState = getState state
+                                                  , index = n
+                                                  , vars = vars state
+                                                  }
+                                      in  Gen i st subst g' (drive' (i+1) g' [] state'' ancs' [])
+                           Nothing -> ch
