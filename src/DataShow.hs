@@ -16,7 +16,7 @@ instance Show Term where
     case ctor of
       "Nil" -> "[]"
       "Cons" -> let [h,t] = ts
-                in  show h ++ ":" ++ show t
+                in  "(" ++ show h ++ ":" ++ show t ++ ")"
       _ | null ts -> ctor
       _ ->  ctor ++ showList ts ""
 
@@ -26,12 +26,12 @@ instance Show Goal where
     where
       show' (Fresh v g) fresh = show' g (v:fresh)
       show' g fresh =
-        (if null fresh then "" else "Fresh " ++ unwords fresh ++ " ") ++
+        (if null fresh then "" else "Fresh " ++ unwords (reverse fresh) ++ " ") ++
         case g of
           Unify l r -> show l ++ " === " ++ show r
           Conj  l r -> "(" ++ show l ++ ") &&& (" ++ show r ++ ")"
           Disj  l r -> "(" ++ show l ++ ") ||| (" ++ show r ++ ")"
-          Invoke n args -> "Invoke " ++ n ++ " with " ++ show args
+          Invoke n args -> n ++ " " ++ unwords (map show args)
           Zzz g -> "Zzz " ++ show g
 
 instance Show a => Show (Stream a) where
@@ -47,7 +47,7 @@ instance Show Tree where
       show' t n =
         case t of
           Fail                        -> nSpaces n ++ "F"
-          Success st                  -> nSpaces n ++ "S " ++ show st
+          Success  st                 -> nSpaces n ++ "S " ++ show st
           Renaming i st g             -> nSpaces n ++ "R " ++ show i ++ " " ++ show st ++ " (" ++ show g ++ ")"
           Step     i st g fv ch       -> nSpaces n ++ "T " ++ show fv ++ " " ++ show i ++ " " ++ show st ++ " (" ++ show g ++ ")" ++ "\n" ++ show' ch (n+1)
           Or       i st g ch          -> nSpaces n ++ "O " ++ show i ++ " " ++ show st ++ " (" ++ show g ++ ")" ++ "\n" ++ intercalate "\n" (map (\x -> show' x (n+1)) ch)
