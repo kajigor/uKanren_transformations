@@ -53,10 +53,13 @@ eval env state (Invoke f actualArgs) =
     state' = foldl bindVar state $ zip formalArgs (map (subst state) actualArgs)
 
 env :: Spec -> String -> Def
-env spec name =
+env spec = env' (defs spec)
+
+env' :: [Def] -> String -> Def
+env' defs name =
   fromMaybe
     (error $ "No definition with name " ++ name ++ " in specification!")
-    (find (\ (Def n _ _) -> n == name) (defs spec))
+    (find (\ (Def n _ _) -> n == name) defs)
 
 reify :: Term -> Stream State -> [Term]
 reify var =

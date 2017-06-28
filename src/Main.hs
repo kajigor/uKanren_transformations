@@ -77,13 +77,27 @@ run k spec =
 
 main = do
   putStrLn "\nAppendo:\n"
-  print $ residualize' $ drive appSpec2
+  print $ goal appSpec2
+  print $ transform (defs appSpec2) "appendo"
 
-  putStrLn "\nDouble appendo:\n"
-  print $ residualize' $ drive appAppSpec
+--  putStrLn "\nDouble appendo:\n"
+--  print $ transform (defs appAppSpec)
 
   putStrLn "\nNaive reverso:\n"
-  print $ residualize' $ drive revSpec2
+  print $ transform (defs revSpec2) "reverso"
 
   putStrLn "\nAccumulative reverso:\n"
-  print $ residualize' $ drive revAccoSpec3
+  print $ transform (defs revAccoSpec3) "revAcco"
+
+--
+--  putStrLn "\nAppendo:\n"
+--  print $ residualize' $ drive appSpec2
+--
+--  putStrLn "\nDouble appendo:\n"
+--  print $ residualize' $ drive appAppSpec
+--
+--  putStrLn "\nNaive reverso:\n"
+--  print $ residualize' $ drive revSpec2
+--
+--  putStrLn "\nAccumulative reverso:\n"
+--  print $ residualize' $ drive revAccoSpec3
