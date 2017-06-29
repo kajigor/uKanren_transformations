@@ -21,6 +21,45 @@ appendo =
        )
     )
 
+--[let topLevel x.0 x.1 x.2 =
+--  ((x.0 === []) &&& (x.2 === x.1))
+--  ||| (Fresh x.3 x.4 x.5
+--        (x.0 === (x.3:x.4)) &&&
+--        ((x.2 === (x.3:x.5)) &&& (appendo x.4 x.1 x.5)))
+
+--let topLevel x.0 x.1 x.2 = ((x.0 === []) &&& (x.2 === x.1)) ||| (Fresh x.3 x.4 x.5 (x.0 === (x.3:x.4)) &&& ((x.2 === (x.3:x.5)) &&& (appendo x.4 x.1 x.5)))
+--let  appendo x.0 x.1 x.2 = ((x.0 === []) &&& (x.2 === x.1)) ||| (Fresh x.3 x.4 x.5 (x.0 === (x.3:x.4)) &&& ((x.2 === (x.3:x.5)) &&& (appendo x.4 x.1 x.5)))
+
+tl =
+  Def "topLevel" ["x.0", "x.1", "x.2"] $
+    conde [ [ var "x.0" === nil, var "x.2" === var "x.1"]
+          , [ fresh ["x.3", "x.4", "x.5"] $
+                conj [ var "x.0" === (var "x.3" `cons` var "x.4")
+                     , var "x.2" === (var "x.3" `cons` var "x.5")
+                     , Invoke "appendo'" [var "x.4", var "x.1", var "x.5"]
+                     ]
+            ]
+          ]
+
+
+
+appendo' =
+  Def "appendo'" ["x.0", "x.1", "x.2"] $
+    conde [ [ var "x.0" === nil, var "x.2" === var "x.1"]
+          , [ fresh ["x.3", "x.4", "x.5"] $
+                conj [ var "x.0" === (var "x.3" `cons` var "x.4")
+                     , var "x.2" === (var "x.3" `cons` var "x.5")
+                     , Invoke "appendo'" [var "x.4", var "x.1", var "x.5"]
+                     ]
+            ]
+          ]
+
+doubleAppendo =
+  Def "doubleAppendo" ["x", "y", "t", "z", "r"]
+    (Conj (Invoke "appendo" [var "x", var "y", var "t"])
+          (Invoke "appendo" [var "t", var "z", var "r"])
+    )
+
 reverso =
   Def "reverso" ["xs", "sx"]
     (Disj
@@ -48,6 +87,9 @@ revAcco =
                 &&& Zzz (Invoke "revAcco" [var "t", var "h" `cons` var "acc", var "sx"])
             ]
           ]
+
+revAcco' =
+  Def "revAcco'" ["xs", "sx"] $ Invoke "revAcco" [var "xs", nil, var "sx"]
 
 testSpec = Spec
   { defs = [ Def "A" [] (fresh ["x", "y"] $ Invoke "B" [var "x"] &&& Invoke "C" [var "y"] )
