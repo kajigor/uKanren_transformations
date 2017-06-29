@@ -56,7 +56,7 @@ getArgs goal =
 formalArgs :: Goal -> Goal -> [Term]
 formalArgs goal call =
   let Just ren = renaming goal call
-  in  map (\x -> fromJust $ lookup (Free x) ren) (getArgs goal)
+  in  map (\x -> freeToVar $ fromJust $ lookup (Free x) ren) (getArgs goal)
 
 getName :: Goal -> String
 getName (Invoke name _) = name
@@ -91,8 +91,13 @@ instantiate subst goal =
 
 residualizeState :: State -> [Integer] -> [Goal]
 residualizeState state bound =
-  mapMaybe (\(v,u) -> if v `elem` bound then Just (Free v === u) else Nothing )
+  mapMaybe (\(v,u) -> if v `elem` bound then Just (Var (makeVar v) === freeToVar u) else Nothing )
            (reverse $ getSubst state)
+
+freeToVar :: Term -> Term
+freeToVar (Free x) = Var $ makeVar x
+freeToVar (Ctor name args) = Ctor name (map freeToVar args)
+freeToVar x = x
 
 residualize' :: Tree -> Spec
 residualize' t =
@@ -134,4 +139,5 @@ residualize x bound ancs fNames defs =
       in  (conj $ residualizeState st bound ++ [invoke], fn, defs')
     Gen _ _ subst _ ch ->
       let (goal, fn, td) = residualize ch bound ancs fNames defs
-      in  (instantiate subst goal, fn, td)
+          subst' = map (\(x,y) -> (freeToVar x, freeToVar y)) subst
+      in  (instantiate subst' goal, fn, td)
