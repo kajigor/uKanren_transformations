@@ -12,32 +12,56 @@ import Debug.Trace
 
 i x = Ctor x []
 
-a   = i "A" `cons` nil
-ab  = i "A" `cons` (i "B" `cons` nil)
-abc = i "A" `cons` (i "B" `cons` (i "C" `cons` nil))
-def = i "D" `cons` (i "E" `cons` (i "F" `cons` nil))
+list :: [Term] -> Term
+list = foldr cons nil
+
+list' = list . map i
+
+pair   [x,y]         = Ctor "Pair"   [x,y]
+triple [x,y,z]       = Ctor "Triple" [x,y,z]
+tuple4 [x,y,z,r]     = Ctor "Tuple4" [x,y,z,r]
+tuple5 [x,y,z,r,s]   = Ctor "Tuple5" [x,y,z,r,s]
+tuple6 [x,y,z,r,s,t] = Ctor "Tuple6" [x,y,z,r,s,t]
+
+tuple xs
+  | length xs == 2 = pair   (map var xs)
+  | length xs == 3 = triple (map var xs)
+  | length xs == 4 = tuple4 (map var xs)
+  | length xs == 5 = tuple5 (map var xs)
+  | length xs == 6 = tuple6 (map var xs)
+
+a   = list' ["A"]           -- i "A" `cons` nil
+ab  = list' ["A", "B"]      -- i "A" `cons` (i "B" `cons` nil)
+abc = list' ["A", "B", "C"] -- i "A" `cons` (i "B" `cons` (i "C" `cons` nil))
+def = list' ["D", "E", "F"] -- i "D" `cons` (i "E" `cons` (i "F" `cons` nil))
 
 appSpec = Spec { defs = [appendo]
                , goal =  Fresh "q" (Invoke "appendo" [abc, def, var "q"])
                }
 
 appSpec1 = Spec { defs = [appendo]
-               , goal =  Fresh "q"
-                           (Fresh "p"
-                             (Invoke "appendo" [var "p", def, var "q"]))
+               , goal =  fresh ["q", "p", "r"]
+                           (var "q" === tuple ["p","r"]
+                           &&& Invoke "appendo" [var "p", def, var "r"])
                }
 
 appSpec2 = Spec { defs = [appendo]
-                , goal = Fresh "q" $
-                           Fresh "p" $
-                             Fresh "r" $
-                               Invoke "appendo" [var "q", var "p", var "r"]
+                , goal = fresh ["q0", "q", "p", "r"]
+                           (var "q0" === tuple ["q","p","r"]
+                           &&& Invoke "appendo" [var "q", var "p", var "r"])
                 }
 
 appAppSpec = Spec { defs = [appendo, doubleAppendo]
                   , goal = let args = ["x", "y", "t", "z", "r"]
                            in  fresh args $ Invoke "doubleAppendo" (map Var args)
                   }
+
+appAppSpec1 = Spec { defs = [appendo, doubleAppendo]
+                   , goal = let args = ["x", "y", "t", "z", "r"]
+                            in  fresh ("q" : args)
+                                  ( var "q" === tuple args
+                                  &&& Invoke "doubleAppendo" (map Var args))
+                   }
 
 revSpec = Spec { defs = [appendo, reverso]
                , goal = Fresh "q" (Invoke "reverso" [a, Var "q"])
@@ -49,6 +73,13 @@ revSpec1 = Spec { defs = [appendo, reverso]
 
 revSpec2 = Spec { defs = [appendo, reverso]
                 , goal = Fresh "q" $ Fresh "p" (Invoke "reverso" [Var "q", Var "p"])
+                }
+
+revSpec3 = Spec { defs = [appendo, reverso]
+                , goal = let args = ["xs", "sx"]
+                         in  fresh ("q" : args)
+                               ( var "q" === tuple args
+                                 &&& Invoke "reverso" (map var args))
                 }
 
 revAccoSpec = Spec { defs = [revAcco]
@@ -70,6 +101,13 @@ revAccoSpec3 = Spec { defs = [revAcco]
 
 revAcco'Spec = Spec { defs = [revAcco, revAcco']
                     , goal = fresh ["xs", "sx"] (Invoke "revAcco'" [var "xs", var "sx"])
+                    }
+
+revAccoSpec4 = Spec { defs = [revAcco, revAcco']
+                    , goal = let args = ["xs", "sx"]
+                             in  fresh ("q":args)
+                                 (var "q" === tuple args
+                                 &&& Invoke "revAcco'" (map var args))
                     }
 
 run k spec =
@@ -122,23 +160,15 @@ main = do
 --  putStrLn "\nAppendo"
 --  print $ run 10 appSpec
 --
-  print $ appendo
-
-  let (tlName, transformed) = transform (defs appSpec) "appendo"
-  print $ transformed
-  putStrLn "\nTrying to eval transformed appendo\n"
-
---  let spec1 = Spec{goal = Fresh "q" (Invoke tlName [nil, def, var "q"]) , defs = transformed}
---  let spec2 = Spec{goal = Fresh "q" (Invoke "topLevel" [nil, def, var "q"]) , defs = [appendo', tl]}
---  print spec1
---  print spec2
---  print $ run 1 spec1
---  putStrLn "============================================================"
---  print $ run 1 spec2
-
 
   print $ test 2 appSpec "appendo"
-  print $ test 1 appSpec1 "appendo"
+  print $ test 3 appSpec1 "appendo"
+  print $ test 3 appSpec2 "appendo"
+  print $ test 13 appAppSpec1 "doubleAppendo"
+  print $ test 5 revSpec3 "reverso"
+
+  putStrLn "revAcco"
+  print $ test 10 revAccoSpec4 "revAcco'"
 
 --
 --  putStrLn "\nAppendo:\n"

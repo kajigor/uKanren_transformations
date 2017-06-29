@@ -10,15 +10,18 @@ instance Show State where
                                         " " ++ show index
 
 instance Show Term where
-  show (Var v) = v
+  show (Var v) = "v." ++ v
   show (Free i) = "x." ++ show i
   show (Ctor ctor ts) =
     case ctor of
       "Nil" -> "[]"
       "Cons" -> let [h,t] = ts
                 in  "(" ++ show h ++ ":" ++ show t ++ ")"
+      x | x `elem` ["Pair", "Triple", "Tuple4", "Tuple5", "Tuple6"] ->
+          "(" ++ intercalate ", " (map show ts) ++ ")"
       _ | null ts -> ctor
       _ ->  ctor ++ showList ts ""
+  showList ts _ = intercalate "\n" (map show ts)
 
 instance Show Goal where
   show t =
