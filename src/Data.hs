@@ -10,7 +10,7 @@ data Term = Var String
           deriving Eq
 
 data Goal = Unify Term Term
-          | Disj Goal Goal
+          | Disj [Goal] -- Goal
           | Conj Goal Goal
           | Fresh String Goal
           | Zzz Goal

@@ -27,7 +27,9 @@ renaming l r =
       case (l,r) of
         (Unify l l', Unify r r') -> renameT l r renaming >>= renameT l' r'
         (Conj  l l', Conj  r r') -> rename  l r renaming >>= rename  l' r'
-        (Disj  l l', Disj  r r') -> rename  l r renaming >>= rename  l' r'
+        (Disj  l   , Disj  r   ) ->
+          foldrM (\(l,r) renaming -> rename l r renaming) renaming (zip l r)
+          -- rename  l r renaming >>= rename  l' r'
         (Zzz   l,    Zzz   r)    -> rename  l r renaming
         (Invoke ln ls, Invoke rn rs) | ln == rn ->
           foldrM (\(t,t') r -> renameT t t' r) renaming (zip ls rs)
@@ -65,7 +67,9 @@ instance Embeddable Goal where
     case (l,r) of
       (Unify l l', Unify r r') -> embed l r renaming >>= embed l' r'
       (Conj  l l', Conj  r r') -> embed l r renaming >>= embed l' r'
-      (Disj  l l', Disj  r r') -> embed l r renaming >>= embed l' r'
+      (Disj  l   , Disj  r   ) ->
+        foldrM (\(l,r) renaming -> embed l r renaming) renaming (zip l r)
+        -- embed l r renaming >>= embed l' r'
       (Zzz   l,    Zzz   r)    -> embed l r renaming
       (Invoke ln ls, Invoke rn rs) | ln == rn ->
         foldrM (\(t,t') r -> embed t t' r) renaming (zip ls rs)
@@ -75,7 +79,9 @@ instance Embeddable Goal where
     case r of
       Zzz  r    -> embed l r renaming
       Conj r r' -> embed l r renaming `mplus` embed l r' renaming
-      Disj r r' -> embed l r renaming `mplus` embed l r' renaming
+      Disj r    ->
+        mconcat (map (\r -> embed l r renaming) r)
+        -- embed l r renaming `mplus` embed l r' renaming
       _ -> Nothing
 
 unfold :: Goal -> State -> [([Goal], State)]
@@ -85,7 +91,7 @@ unfold goal state =
       case unify state l r of
         Nothing -> []
         Just st -> [([], st)]
-    Disj l r -> unfold l state ++ unfold r state
+    Disj xs  -> foldl1 (++) (map (\x -> unfold x state) xs) --  unfold l state ++ unfold r state
     Zzz g -> unfold g state
     Conj l r ->
       let unfL = unfold l state
@@ -162,7 +168,7 @@ drive spec =
   where
     drive' i g' ctx state ancs freshVars =
       let mergeCtx = foldl Conj
-          anc = applyState (substG state (mergeCtx g' ctx)) state
+          anc = applyState state (substG state (mergeCtx g' ctx))
           ancs' = (i,anc) : ancs
           g = substG state g'
       in
@@ -179,9 +185,10 @@ drive spec =
                          (c:cs) -> drive' i c cs st ancs []
                      Nothing -> Fail
                  Zzz g -> drive' i g ctx state ancs []
-                 Disj l r -> Or i state anc [ drive' (i+1) l ctx state ancs' []
-                                            , drive' (i+1) r ctx state ancs' []
-                                            ]
+--                 Disj l r -> Or i state anc [ drive' (i+1) l ctx state ancs' []
+--                                            , drive' (i+1) r ctx state ancs' []
+--                                            ]
+                 Disj xs -> Or i state anc $ map (\x -> drive' (i+1) x ctx state ancs' []) xs
                  Conj l r -> drive' i l (substG state r:ctx) state ancs []
                  Invoke name actualArgs ->
                    let (Def _ formalArgs body) = env spec name
@@ -189,7 +196,7 @@ drive spec =
                        unf = unfold body state'
                        processCtx st acc [] = Just (st,acc)
                        processCtx st acc (c:cs) =
-                         let c' = applyState c st
+                         let c' = applyState st c
                              (c'', st'') =
                                case c' of
                                  Invoke n args ->

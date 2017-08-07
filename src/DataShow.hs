@@ -33,7 +33,7 @@ instance Show Goal where
         case g of
           Unify l r -> show l ++ " === " ++ show r
           Conj  l r -> "(" ++ show l ++ ") &&& (" ++ show r ++ ")"
-          Disj  l r -> "(" ++ show l ++ ") ||| (" ++ show r ++ ")"
+          Disj  xs -> intercalate " ||| " (map (\x -> "(" ++ show x ++ ")") xs) --"(" ++ show l ++ ") ||| (" ++ show r ++ ")"
           Invoke n args -> n ++ " " ++ unwords (map show args)
           Zzz g -> "Zzz " ++ show g
 

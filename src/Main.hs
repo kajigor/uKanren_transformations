@@ -125,7 +125,8 @@ test k spec name =
           Invoke name args | name == name -> Invoke tlName args
           Fresh v g -> Fresh v (rename tlName g)
           Conj l r -> Conj (rename tlName l) (rename tlName r)
-          Disj l r -> Disj (rename tlName l) (rename tlName r)
+--          Disj l r -> Disj (rename tlName l) (rename tlName r)
+          Disj l -> Disj (map (rename tlName) l)
           Zzz g -> Zzz (rename tlName g)
           x -> x
       x@(tlName, transformedDefs) = transform (defs spec) name

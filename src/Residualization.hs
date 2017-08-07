@@ -79,7 +79,8 @@ instantiate subst goal =
   in  case goal of
         Unify l r -> Unify (instantiateT subst l) (instantiateT subst r)
         Conj l r -> Conj (instantiate' l) (instantiate' r)
-        Disj l r -> Disj (instantiate' l) (instantiate' r)
+--        Disj l r -> Disj (instantiate' l) (instantiate' r)
+        Disj l -> Disj (map instantiate' l)
         Zzz g -> Zzz (instantiate' g)
         Invoke name args -> Invoke name (map (instantiateT subst) args)
         Fresh v g -> Fresh v (instantiate' g)

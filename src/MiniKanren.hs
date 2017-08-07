@@ -42,7 +42,7 @@ maybeToStream (Just a) = Mature a Empty
 eval :: (String -> Def) -> State -> Goal -> Stream State
 eval env state (Unify t1 t2) =
   maybeToStream $ unify state t1 t2
-eval env state (Disj g1 g2) = eval env state g1 `mplus` eval env state g2
+eval env state (Disj xs) = foldl1 mplus (map (eval env state) xs) -- g1 `mplus` eval env state g2
 eval env state (Conj g1 g2) = eval env state g1 `bind` (\s -> eval env s (substG state g2))
 eval env state (Fresh s g)  = eval env (newVar state s) g
 eval env state (Zzz g) = Immature (eval env state g)
@@ -112,7 +112,7 @@ seq2 f [x]    = x
 seq2 f (x:xs) = x `f` seq2 f xs
 
 conj = seq2 (&&&)
-disj = seq2 (|||)
+disj = Disj --seq2 (|||)
 
 conde ds = disj (map conj ds)
 

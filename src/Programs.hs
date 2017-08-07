@@ -5,10 +5,9 @@ import MiniKanren
 appendo =
   Def "appendo" ["x", "y", "xy"]
     (Disj
-       (Conj (Unify (Var "x") (Ctor "Nil" []))
-             (Unify (Var "xy") (Var "y"))
-       )
-       (Fresh "h"
+       [ Conj (Unify (Var "x") (Ctor "Nil" []))
+              (Unify (Var "xy") (Var "y"))
+       , Fresh "h"
           (Fresh "t"
              (Fresh "ty"
                 (Conj (Unify (Var "x") (Ctor "Cons" [Var "h", Var "t"]))
@@ -18,7 +17,7 @@ appendo =
                 )
              )
           )
-       )
+       ]
     )
 
 doubleAppendo =
@@ -30,20 +29,19 @@ doubleAppendo =
 reverso =
   Def "reverso" ["xs", "sx"]
     (Disj
-      (Conj (Unify (Var "xs") nil)
-            (Unify (Var "sx") nil)
-      )
-      (Fresh "h"
-        (Fresh "t"
-          (Conj (Unify (Var "xs") (Var "h" `cons` Var "t"))
-                (Fresh "tr"
-                  (Conj (Invoke "reverso" [Var "t", Var "tr"])
-                        (Invoke "appendo" [Var "tr", Var "h" `cons` nil, Var "sx"])
-                  )
-                )
-          )
-        )
-      )
+      [ Conj (Unify (Var "xs") nil)
+             (Unify (Var "sx") nil)
+      , Fresh "h"
+         (Fresh "t"
+           (Conj (Unify (Var "xs") (Var "h" `cons` Var "t"))
+                 (Fresh "tr"
+                   (Conj (Invoke "reverso" [Var "t", Var "tr"])
+                         (Invoke "appendo" [Var "tr", Var "h" `cons` nil, Var "sx"])
+                   )
+                 )
+           )
+         )
+      ]
     )
 
 revAcco =
