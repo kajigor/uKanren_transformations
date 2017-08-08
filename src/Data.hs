@@ -11,7 +11,7 @@ data Term = Var String
 
 data Goal = Unify Term Term
           | Disj [Goal] -- Goal
-          | Conj Goal Goal
+          | Conj [Goal] -- Goal
           | Fresh String Goal
           | Zzz Goal
           | Invoke String [Term]

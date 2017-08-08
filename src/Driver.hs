@@ -26,7 +26,10 @@ renaming l r =
     rename l r renaming =
       case (l,r) of
         (Unify l l', Unify r r') -> renameT l r renaming >>= renameT l' r'
-        (Conj  l l', Conj  r r') -> rename  l r renaming >>= rename  l' r'
+--        (Conj  l l', Conj  r r') -> rename  l r renaming >>= rename  l' r'
+        (Conj  l, Conj  r) ->
+          foldrM (\(l,r) renaming -> rename l r renaming) renaming (zip l r)
+--          rename  l r renaming >>= rename  l' r'
         (Disj  l   , Disj  r   ) ->
           foldrM (\(l,r) renaming -> rename l r renaming) renaming (zip l r)
           -- rename  l r renaming >>= rename  l' r'
@@ -66,7 +69,9 @@ instance Embeddable Goal where
   couple l r renaming =
     case (l,r) of
       (Unify l l', Unify r r') -> embed l r renaming >>= embed l' r'
-      (Conj  l l', Conj  r r') -> embed l r renaming >>= embed l' r'
+--      (Conj  l l', Conj  r r') -> embed l r renaming >>= embed l' r'
+      (Conj  l   , Conj  r   ) ->
+        foldrM (\(l,r) renaming -> embed l r renaming) renaming (zip l r)
       (Disj  l   , Disj  r   ) ->
         foldrM (\(l,r) renaming -> embed l r renaming) renaming (zip l r)
         -- embed l r renaming >>= embed l' r'
@@ -77,9 +82,10 @@ instance Embeddable Goal where
 
   dive l r renaming =
     case r of
-      Zzz  r    -> embed l r renaming
-      Conj r r' -> embed l r renaming `mplus` embed l r' renaming
-      Disj r    ->
+      Zzz  r -> embed l r renaming
+--      Conj r r' -> embed l r renaming `mplus` embed l r' renaming
+      Conj r -> mconcat (map (\r -> embed l r renaming) r)
+      Disj r ->
         mconcat (map (\r -> embed l r renaming) r)
         -- embed l r renaming `mplus` embed l r' renaming
       _ -> Nothing

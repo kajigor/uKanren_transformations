@@ -39,7 +39,8 @@ subst state t           = t
 
 substG state (Unify t1 t2) = Unify (subst  state t1) (subst  state t2)
 substG state (Disj  xs   ) = Disj  (map (substG state) xs)
-substG state (Conj  g1 g2) = Conj  (substG state g1) (substG state g2)
+--substG state (Conj  g1 g2) = Conj  (substG state g1) (substG state g2)
+substG state (Conj  xs   ) = Conj  (map (substG state) xs)
 substG state (Fresh x g)   =
   let state' = bindVar state (x, Var x)
   in Fresh x (substG state' g)
@@ -51,7 +52,7 @@ applyState state goal =
   case goal of
     Unify l r -> Unify (apply l state) (apply r state)
     Disj  xs  -> Disj  (map (applyState state) xs) -- (applyState r state)
-    Conj  l r -> Conj  (applyState state l) (applyState state r )
+    Conj  xs  -> Conj  (map (applyState state) xs) -- (applyState state r )
     Fresh v g -> Fresh v (applyState state g)
     Zzz     g -> Zzz (applyState state g)
     Invoke n args -> Invoke n (map (`apply` state) args)
