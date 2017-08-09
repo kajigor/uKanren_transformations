@@ -42,13 +42,10 @@ maybeToStream (Just a) = Mature a Empty
 eval :: (String -> Def) -> State -> Goal -> Stream State
 eval env state (Unify t1 t2) =
   maybeToStream $ unify state t1 t2
--- TODO foldl1 mplus -> mconcat ?
-eval env state (Disj xs) = foldl1 mplus (map (eval env state) xs) -- g1 `mplus` eval env state g2
---eval env state (Conj g1 g2) = eval env state g1 `bind` (\s -> eval env s (substG state g2))
+eval env state (Disj xs) = foldl1 mplus (map (eval env state) xs)
 eval env state (Conj [x]) = eval env state x
 eval env state (Conj (x:xs)) = eval env state x `bind` (\s -> eval env s (substG state (Conj xs)))
 eval env state (Conj []) = error "Empty conjunction"
--- eval env state (head xs) `bind` (\s -> foldr (\g st -> eval env st (substG state g)) s (tail xs)) --   eval env state g1 `bind` (\s -> eval env s (substG state g2))
 eval env state (Fresh s g)  = eval env (newVar state s) g
 eval env state (Zzz g) = Immature (eval env state g)
 eval env state (Invoke f actualArgs) =
@@ -106,8 +103,8 @@ reify var =
 
 var = Var
 (===) = Unify
-(|||) = Disj
-(&&&) = Conj
+{- (|||) = Disj
+(&&&) = Conj -}
 callFresh = Fresh
 zzz = Zzz
 nil = Ctor "Nil" []
@@ -116,8 +113,8 @@ cons h t = Ctor "Cons" [h,t]
 seq2 f [x]    = x
 seq2 f (x:xs) = x `f` seq2 f xs
 
-conj = Conj -- seq2 (&&&)
-disj = Disj --seq2 (|||)
+conj = Conj
+disj = Disj
 
 conde ds = disj (map conj ds)
 

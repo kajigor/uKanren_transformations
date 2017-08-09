@@ -3,7 +3,7 @@ import Data
 import MiniKanren
 import Driver
 import Data.Maybe (mapMaybe, fromJust, fromMaybe)
-import Data.List (nub, (\\))
+import Data.List (nub, (\\), intercalate)
 
 type Ancestors = Integer -> Tree
 
@@ -49,7 +49,7 @@ getArgs goal =
       ga goal =
         case goal of
           Invoke _ args -> concatMap getArgsT args
-          Conj l r -> ga l ++ ga r
+          Conj xs -> concatMap ga xs
           _ -> error $ "Unexpected goal" ++ show goal
   in  nub $ ga goal
 
@@ -60,7 +60,7 @@ formalArgs goal call =
 
 getName :: Goal -> String
 getName (Invoke name _) = name
-getName (Conj l r) = getName l ++ "_" ++ getName r
+getName (Conj xs) = intercalate "_" $ map getName xs
 getName _ = "pred"
 
 generateInvocation :: Goal -> [String] -> [(Goal,(String,Tree))] -> Goal -> Tree -> (String, [Term], [String], [(Goal,(String,Tree))])
@@ -78,9 +78,8 @@ instantiate subst goal =
   let instantiate' = instantiate subst
   in  case goal of
         Unify l r -> Unify (instantiateT subst l) (instantiateT subst r)
-        Conj l r -> Conj (instantiate' l) (instantiate' r)
---        Disj l r -> Disj (instantiate' l) (instantiate' r)
-        Disj l -> Disj (map instantiate' l)
+        Conj xs -> Conj (map instantiate' xs)
+        Disj xs -> Disj (map instantiate' xs)
         Zzz g -> Zzz (instantiate' g)
         Invoke name args -> Invoke name (map (instantiateT subst) args)
         Fresh v g -> Fresh v (instantiate' g)
@@ -130,7 +129,7 @@ residualize x bound ancs fNames defs =
           (g, fn, td) = residualize ch1 bound ancs' fNames defs
           bound' = bound \\ map fst (getSubst $ state ch1)
           (g', fn', td') = residualize ch2 bound' ancs' fn td
-      in  (g &&& g', fn', td')
+      in  (Conj [g, g'], fn', td')
     Success st -> (conj $ residualizeState st bound, fNames, defs)
     Fail -> error "Unexpected Fail node in the driving tree"
     x@(Renaming i st g) ->

@@ -40,15 +40,17 @@ appSpec = Spec { defs = [appendo]
                }
 
 appSpec1 = Spec { defs = [appendo]
-               , goal =  fresh ["q", "p", "r"]
-                           (var "q" === tuple ["p","r"]
-                           &&& Invoke "appendo" [var "p", def, var "r"])
+               , goal =  fresh ["q", "p", "r"] $
+                           Conj [ var "q" === tuple ["p","r"]
+                                , Invoke "appendo" [var "p", def, var "r"]
+                                ]
                }
 
 appSpec2 = Spec { defs = [appendo]
-                , goal = fresh ["q0", "q", "p", "r"]
-                           (var "q0" === tuple ["q","p","r"]
-                           &&& Invoke "appendo" [var "q", var "p", var "r"])
+                , goal = fresh ["q0", "q", "p", "r"] $
+                           Conj [ var "q0" === tuple ["q","p","r"]
+                                , Invoke "appendo" [var "q", var "p", var "r"]
+                                ]
                 }
 
 appAppSpec = Spec { defs = [appendo, doubleAppendo]
@@ -58,9 +60,10 @@ appAppSpec = Spec { defs = [appendo, doubleAppendo]
 
 appAppSpec1 = Spec { defs = [appendo, doubleAppendo]
                    , goal = let args = ["x", "y", "t", "z", "r"]
-                            in  fresh ("q" : args)
-                                  ( var "q" === tuple args
-                                  &&& Invoke "doubleAppendo" (map Var args))
+                            in  fresh ("q" : args) $
+                                  Conj [ var "q" === tuple args
+                                       , Invoke "doubleAppendo" (map Var args)
+                                       ]
                    }
 
 revSpec = Spec { defs = [appendo, reverso]
@@ -77,9 +80,10 @@ revSpec2 = Spec { defs = [appendo, reverso]
 
 revSpec3 = Spec { defs = [appendo, reverso]
                 , goal = let args = ["xs", "sx"]
-                         in  fresh ("q" : args)
-                               ( var "q" === tuple args
-                                 &&& Invoke "reverso" (map var args))
+                         in  fresh ("q" : args) $
+                               Conj [ var "q" === tuple args
+                                    ,  Invoke "reverso" (map var args)
+                                    ]
                 }
 
 revAccoSpec = Spec { defs = [revAcco]
@@ -105,9 +109,10 @@ revAcco'Spec = Spec { defs = [revAcco, revAcco']
 
 revAccoSpec4 = Spec { defs = [revAcco, revAcco']
                     , goal = let args = ["xs", "sx"]
-                             in  fresh ("q":args)
-                                 (var "q" === tuple args
-                                 &&& Invoke "revAcco'" (map var args))
+                             in  fresh ("q":args) $
+                                   Conj [ var "q" === tuple args
+                                        , Invoke "revAcco'" (map var args)
+                                        ]
                     }
 
 run k spec =
@@ -124,9 +129,8 @@ test k spec name =
         case goal of
           Invoke name args | name == name -> Invoke tlName args
           Fresh v g -> Fresh v (rename tlName g)
-          Conj l r -> Conj (rename tlName l) (rename tlName r)
---          Disj l r -> Disj (rename tlName l) (rename tlName r)
-          Disj l -> Disj (map (rename tlName) l)
+          Conj xs -> Conj (map (rename tlName) xs)
+          Disj xs -> Disj (map (rename tlName) xs)
           Zzz g -> Zzz (rename tlName g)
           x -> x
       x@(tlName, transformedDefs) = transform (defs spec) name

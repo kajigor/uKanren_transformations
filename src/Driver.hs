@@ -26,22 +26,19 @@ renaming l r =
     rename l r renaming =
       case (l,r) of
         (Unify l l', Unify r r') -> renameT l r renaming >>= renameT l' r'
---        (Conj  l l', Conj  r r') -> rename  l r renaming >>= rename  l' r'
-        (Conj  l, Conj  r) ->
+        (Conj l, Conj r) | length l == length r ->
           foldrM (\(l,r) renaming -> rename l r renaming) renaming (zip l r)
---          rename  l r renaming >>= rename  l' r'
-        (Disj  l   , Disj  r   ) ->
+        (Disj l, Disj r) | length l == length r ->
           foldrM (\(l,r) renaming -> rename l r renaming) renaming (zip l r)
-          -- rename  l r renaming >>= rename  l' r'
-        (Zzz   l,    Zzz   r)    -> rename  l r renaming
-        (Invoke ln ls, Invoke rn rs) | ln == rn ->
+        (Zzz l, Zzz r) -> rename  l r renaming
+        (Invoke ln ls, Invoke rn rs) | ln == rn && length ls == length rs ->
           foldrM (\(t,t') r -> renameT t t' r) renaming (zip ls rs)
         _ -> Nothing
     renameT l r renaming =
       case (l,r) of
         (Free _, Free _) -> updateRenaming l r renaming
         (Var  _, Var  _) -> updateRenaming l r renaming
-        (Ctor ln ls, Ctor rn rs) | ln == rn ->
+        (Ctor ln ls, Ctor rn rs) | ln == rn && length ls == length rs->
           foldrM (\(t,t') r -> renameT t t' r) renaming (zip ls rs)
         _ -> Nothing
 
@@ -56,7 +53,7 @@ instance Embeddable Term where
     case (l,r) of
       (Free _, Free _) -> updateRenaming l r renaming
       (Var  _, Var  _) -> updateRenaming l r renaming
-      (Ctor ln ls, Ctor rn rs) | ln == rn ->
+      (Ctor ln ls, Ctor rn rs) | ln == rn && length ls == length rs ->
         foldrM (\(t,t') r -> embed t t' r) renaming (zip ls rs)
       _ -> Nothing
 
@@ -69,25 +66,20 @@ instance Embeddable Goal where
   couple l r renaming =
     case (l,r) of
       (Unify l l', Unify r r') -> embed l r renaming >>= embed l' r'
---      (Conj  l l', Conj  r r') -> embed l r renaming >>= embed l' r'
-      (Conj  l   , Conj  r   ) ->
+      (Conj l, Conj r) | length l == length r ->
         foldrM (\(l,r) renaming -> embed l r renaming) renaming (zip l r)
-      (Disj  l   , Disj  r   ) ->
+      (Disj l, Disj r) | length l == length r ->
         foldrM (\(l,r) renaming -> embed l r renaming) renaming (zip l r)
-        -- embed l r renaming >>= embed l' r'
-      (Zzz   l,    Zzz   r)    -> embed l r renaming
-      (Invoke ln ls, Invoke rn rs) | ln == rn ->
+      (Zzz l, Zzz r) -> embed l r renaming
+      (Invoke ln ls, Invoke rn rs) | ln == rn && length ln == length rn ->
         foldrM (\(t,t') r -> embed t t' r) renaming (zip ls rs)
       _ -> Nothing
 
   dive l r renaming =
     case r of
       Zzz  r -> embed l r renaming
---      Conj r r' -> embed l r renaming `mplus` embed l r' renaming
       Conj r -> mconcat (map (\r -> embed l r renaming) r)
-      Disj r ->
-        mconcat (map (\r -> embed l r renaming) r)
-        -- embed l r renaming `mplus` embed l r' renaming
+      Disj r -> mconcat (map (\r -> embed l r renaming) r)
       _ -> Nothing
 
 unfold :: Goal -> State -> [([Goal], State)]
@@ -97,26 +89,28 @@ unfold goal state =
       case unify state l r of
         Nothing -> []
         Just st -> [([], st)]
-    Disj xs  -> foldl1 (++) (map (\x -> unfold x state) xs) --  unfold l state ++ unfold r state
+    Disj xs  -> concatMap (`unfold` state) xs
     Zzz g -> unfold g state
-    Conj l r ->
-      let unfL = unfold l state
+    Conj [] -> error "empty conjunction"
+    Conj [x] -> unfold x state
+    Conj (x:xs) ->
+      let unfL  = unfold x state
       in  concatMap
             (\(g,st) ->
-                case g of
-                  [] -> unfold (substG state r) st
-                  [g''] ->
-                    map (\(g',st') ->
+               case g of
+                 [] -> unfold (substG state (Conj xs)) st
+                 [g''] ->
+                   map (\(g',st') ->
                             case g' of
                               [] -> (g, st')
-                              [g'] -> ([Conj g'' g'], st))
-                        (unfold (substG state r) st))
+                              [g'] -> ([Conj (g'' : goalToList g')], st))
+                        (unfold (substG state (Conj xs)) st))
             (reverse unfL)
     Invoke _ _ -> [([substG state goal], state)]
     Fresh var g -> unfold g st
                    where st = newVar state var
 
-goalToList (Conj l r) = goalToList l ++ goalToList r
+goalToList (Conj xs) = xs
 goalToList x = [x]
 
 split (x:xs) (y:ys) | isJust $ couple x y [] =
@@ -173,7 +167,7 @@ drive spec =
   drive' 0 (goal spec) [] emptyState [] []
   where
     drive' i g' ctx state ancs freshVars =
-      let mergeCtx = foldl Conj
+      let mergeCtx g ctx = Conj (g:ctx)
           anc = applyState state (substG state (mergeCtx g' ctx))
           ancs' = (i,anc) : ancs
           g = substG state g'
@@ -191,11 +185,10 @@ drive spec =
                          (c:cs) -> drive' i c cs st ancs []
                      Nothing -> Fail
                  Zzz g -> drive' i g ctx state ancs []
---                 Disj l r -> Or i state anc [ drive' (i+1) l ctx state ancs' []
---                                            , drive' (i+1) r ctx state ancs' []
---                                            ]
                  Disj xs -> Or i state anc $ map (\x -> drive' (i+1) x ctx state ancs' []) xs
-                 Conj l r -> drive' i l (substG state r:ctx) state ancs []
+                 Conj [] -> error "empty conjunction while driving!"
+                 Conj [x] -> drive' i x ctx state ancs []
+                 Conj (x:xs) -> drive' i x (map (substG state) xs ++ ctx) state ancs []
                  Invoke name actualArgs ->
                    let (Def _ formalArgs body) = env spec name
                        state' = foldl bindVar state $ zip formalArgs (map (subst state) actualArgs)

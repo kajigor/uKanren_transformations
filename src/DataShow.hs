@@ -32,8 +32,7 @@ instance Show Goal where
         (if null fresh then "" else "Fresh " ++ unwords (reverse fresh) ++ " ") ++
         case g of
           Unify l r -> show l ++ " === " ++ show r
---          Conj  l r -> "(" ++ show l ++ ") &&& (" ++ show r ++ ")"
-          Conj  xs -> intercalate "&&&" (map (\x -> "(" ++ show x ++ ")") xs)
+          Conj  xs -> intercalate " &&& " (map (\x -> "(" ++ show x ++ ")") xs)
           Disj  xs -> intercalate " ||| " (map (\x -> "(" ++ show x ++ ")") xs) --"(" ++ show l ++ ") ||| (" ++ show r ++ ")"
           Invoke n args -> n ++ " " ++ unwords (map show args)
           Zzz g -> "Zzz " ++ show g
@@ -63,4 +62,3 @@ instance Show Def where
 
 instance Show Spec where
   show x = "Spec\nGoal: " ++ show (goal x) ++ "\nDefs: " ++ intercalate "\n" (map show $ defs x)
-

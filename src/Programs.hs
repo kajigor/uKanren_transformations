@@ -15,13 +15,11 @@ appendo =
                ]
       ]
 
-
 doubleAppendo =
-  Def "doubleAppendo" ["x", "y", "t", "z", "r"]
-    (Conj [ Invoke "appendo" [var "x", var "y", var "t"]
-          , Invoke "appendo" [var "t", var "z", var "r"]
-          ]
-    )
+  Def "doubleAppendo" ["x", "y", "t", "z", "r"] $
+    Conj [ Invoke "appendo" [var "x", var "y", var "t"]
+         , Invoke "appendo" [var "t", var "z", var "r"]
+         ]
 
 reverso =
   Def "reverso" ["xs", "sx"] $
