@@ -1,90 +1,56 @@
-import Debug.Trace
-import Data.List
+{-# LANGUAGE TupleSections #-}
+
 import Control.Monad
 import Control.Applicative
+import Data.List
 import Data.Maybe 
 
--- Abstraction synonyms
-type Name = String
-type Var  = Int
+type X    = String -- Syntactic variables
+type S    = Int    -- Semantic variables
+type Name = String -- Names of variables/definitions
 
 -- Terms
-data Term = C Name [Term] | L Var | V Name deriving (Eq, Show)
+data Term v = V v | C String [Term v] deriving (Eq, Show)
+type Tx     = Term X
+type Ts     = Term S
 
 -- Goals
 data G = 
-    Term :=: Term
-  | G :&: G
-  | G :!: G
+    Tx :=: Tx
+  | G :/\: G
+  | G :\/: G
   | Fresh  Name G 
-  | Invoke Name [Term] deriving Show
+  | Invoke Name [Tx] deriving Show
 
 infixr 7 &&&
 infixr 6 |||
 infix  8 ===
 
 (===) = (:=:)
-(|||) = (:!:)
-(&&&) = (:&:)
+(|||) = (:\/:)
+(&&&) = (:/\:)
 
 fresh xs g = foldr Fresh g xs
 call       = Invoke
 
 -- Definitions
-type D = (Name, [Name], G)
+type Def = (Name, [Name], G)
 
 def = (,,)
 
 -- Specification
-type S = ([D], G)
+type Spec = ([Def], G)
 
 spec = (,)
 
--- Interpreter
-type State = (String -> Term, [(Var, Term)], Int)
+-- States
+type Iota  = X -> Ts
+type Sigma = [(S, Ts)]
+type Delta = [S]
+type P     = String -> Def
+type Gamma = (P, Iota, Delta)
 
-update bnds x v y = if y == x then v else bnds y
-
-subst  st         (C n ts) = C n $ map (subst st) ts
-subst  (st, _, _) (V n)    = st n
-subst  _          t        = t
-
-substG st                   (t1 :=: t2)   = (subst  st t1) :=: (subst  st t2)
-substG st                   (g1 :!: g2)   = (substG st g1) :!: (substG st g2)
-substG st                   (g1 :&: g2)   = (substG st g1) :&: (substG st g2)
-substG (bnds, subst, index) (Fresh x g)   = Fresh x (substG (update bnds x (V x), subst, index) g)
-substG st                   (Invoke f as) = Invoke f (map (subst st) as)
-
-eval env state (t1 :=: t2)   = maybeToStream $ unify (Just state) (subst state t1) (subst state t2)
-eval env state (g1 :!: g2)   = eval env state g1 `mplus` eval env state g2
-eval env state (g1 :&: g2)   = eval env state g1 >>= (\ st -> eval env st (substG state g2))
-eval env state (Fresh x g)   = eval env (freshVar state x) g
-eval env state (Invoke f as) = 
-  let (_, fs, g) = env f in
-  let state'     = foldl bindVar state $ zip fs as in
-  eval env state' g
-
-bindVar  st@(bnds, sub, index) (fa, aa) = (update bnds fa (subst st aa), sub, index  )
-freshVar st@(bnds, sub, index) x        = (update bnds x  (L index)    , sub, index+1)
-
-unify Nothing _ _ = Nothing
-unify st@(Just (s@(bnds, subst, index))) u v = 
-  unify' (walk u subst) (walk v subst)  where
-    unify' (L u) (L v) | u == v = Just s
-    unify' (L u) _              = Just (bnds, extS u v subst, index)
-    unify' _ (L v)              = Just (bnds, extS v u subst, index)
-    unify' (C a as) (C b bs) | a == b && length as == length bs = foldl (\ st (u, v) -> unify st u v) st $ zip as bs
-    unify' (V _) _ = error "syntactic variable in unification"
-    unify' _ (V _) = error "syntactic variable in unification"
-    unify' _ _ = Nothing
-    walk x@(L v) s =
-      case lookup v s of
-        Nothing -> x
-        Just t  -> walk t s
-    walk (V _) _ = error "syntactic variable in walk"
-    walk u     _ = u
-    extS u v s = (u, v) : s
-
+-- Stream
 data Stream a = Empty
               | Mature a (Stream a)
               -- we need this in case of left recursion (who would have known)
@@ -116,27 +82,73 @@ instance Alternative Stream where
   empty = Empty
   Empty <|> s = s
   s <|> Empty = s
-  (Immature s) <|> t = s <|> t
-  s <|> (Immature t) = s <|> t
-  (Mature a s) <|> t = Mature a (s <|> t)
+  Immature s <|> t = s <|> t
+  s <|> Immature t = s <|> t
+  Mature a s <|> t = Mature a (s <|> t)
 
 instance Monad Stream where
   Empty >>= _ = mzero
-  (Mature x xs) >>= g = g x `mplus` (xs >>= g)
-  (Immature _1) >>= _2 = Immature (_1 >>= _2)
+  Mature x xs >>= g = g x `mplus` (xs >>= g)
+  Immature x  >>= y = Immature $ x >>= y
 
 instance MonadPlus Stream where
   mzero = Empty
-  mplus (Mature h tl) _2 = Mature h (_2 `mplus` tl)
-  mplus (Immature _1) _2 = Immature (_2 `mplus` _1)
-  mplus Empty         _2 = _2
+  mplus (Mature h tl) y = Mature h $ y `mplus` tl
+  mplus (Immature  x) y = Immature $ y `mplus` x
+  mplus Empty         y = y
 
-state0 = ((\ _ -> undefined), [], 0)
+-- Unification
+unify :: Maybe Sigma -> Ts -> Ts -> Maybe Sigma 
+unify Nothing _ _ = Nothing
+unify st@(Just subst) u v = 
+  unify' (walk u subst) (walk v subst)  where
+    unify' (V u) (V v) | u == v = Just subst
+    unify' (V u) _              = Just $ (u, v) : subst
+    unify' _ (V v)              = Just $ (v, u) : subst
+    unify' (C a as) (C b bs) | a == b && length as == length bs = 
+      foldl (\ st (u, v) -> unify st u v) st $ zip as bs
+    unify' _ _ = Nothing
+    walk x@(V v) s =
+      case lookup v s of
+        Nothing -> x
+        Just t  -> walk t s
+    walk u     _ = u
 
-run :: S -> Stream State
+-- Syntactic terms -> semantic terms
+
+---- Interpreting syntactic variables 
+infix 7 <@>
+(<@>) :: Iota -> Tx -> Ts
+i <@> (V x)    = i x
+i <@> (C c ts) = C c $ map (i<@>) ts
+
+---- Extending variable interpretation
+extend :: Iota -> X -> Ts -> Iota
+extend i x ts y = if x == y then ts else i y 
+
+-- Evaluation relation
+eval :: Gamma -> Sigma -> G -> Stream (Sigma, Delta)
+eval (p, i, d) s (t1 :=:  t2) = fmap (,d) (maybeToStream $ unify (Just s) (i <@> t1) (i <@> t2))
+eval  env      s (g1 :\/: g2) = eval env s g1 `mplus` eval env s g2
+eval env@(p, i, d) s (g1 :/\: g2) = 
+  eval env s g1 >>= (\ (s', d') -> eval (p, i, d') s' g2)
+eval (p, i, d) s (Fresh x g)  = eval (p, extend i x (V y), d') s g where
+  y : d' = d 
+eval env@(p, i, d) s (Invoke f as) = 
+  let (_, fs, g) = p f in
+  let i'         = foldl (\ i' (f, a) -> extend i' f $ i <@> a) i $ zip fs as in
+  eval (p, i', d) s g
+
+env0 :: P -> Gamma
+env0 p = (p, (\_ -> undefined), [0..]) 
+
+s0 :: Sigma
+s0 = []
+
+run :: Spec -> Stream Sigma
 run (defs, goal) =
-  let defs' = map (\ d@(n, _, _) -> (n, d)) defs in
-  eval (\ n -> fromJust $ lookup n defs') state0 goal
+  let p n = fromJust $ find (\ (m, _, _) -> m == n) defs in
+  fmap fst $ eval (env0 p) s0 goal
 
 -- Tests
 nil      = C "Nil"  []     
@@ -176,7 +188,7 @@ reverso =
           )
          )
 
-toplevel n spec = takeS n $ fmap (\ (_, s, _) -> s) (run spec)
+toplevel n spec = takeS n $ (run spec)
 
 main = 
   do
@@ -188,7 +200,5 @@ main =
     putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [i "A" `cons` nil, V "q"])))
     putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [i "A" `cons` (i "B" `cons` nil), V "q"])))
     putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [V "q", i "A" `cons` (i "B" `cons` nil)])))
-    
-
     
   
