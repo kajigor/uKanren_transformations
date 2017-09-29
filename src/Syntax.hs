@@ -10,12 +10,12 @@ type Tx     = Term X
 type Ts     = Term S
 
 -- Goals
-data G = 
-    Tx :=: Tx
-  | G :/\: G
-  | G :\/: G
-  | Fresh  Name G 
-  | Invoke Name [Tx] deriving Show
+data G a = 
+    Term a :=: Term a
+  | G a :/\: G a
+  | G a :\/: G a
+  | Fresh  Name (G a)
+  | Invoke Name [Term a] deriving Show
 
 infixr 7 &&&
 infixr 6 |||
@@ -29,11 +29,11 @@ fresh xs g = foldr Fresh g xs
 call       = Invoke
 
 -- Definitions
-type Def = (Name, [Name], G)
+type Def = (Name, [Name], G X)
 
 def = (,,)
 
 -- Specification
-type Spec = ([Def], G)
+type Spec = ([Def], G X)
 
 spec = (,)

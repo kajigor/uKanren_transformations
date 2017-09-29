@@ -44,8 +44,13 @@ i <@> (C c ts) = C c $ map (i<@>) ts
 extend :: Iota -> X -> Ts -> Iota
 extend i x ts y = if x == y then ts else i y 
 
+---- Applying substitution
+substitute :: Sigma -> Ts -> Ts
+substitute s t@(V x)  = case lookup x s of Nothing -> t ; Just tx -> substitute s tx
+substitute s (C m ts) = C m $ map (substitute s) ts
+
 -- Evaluation relation
-eval :: Gamma -> Sigma -> G -> Stream (Sigma, Delta)
+eval :: Gamma -> Sigma -> G X -> Stream (Sigma, Delta)
 eval (p, i, d) s (t1 :=:  t2) = fmap (,d) (maybeToStream $ unify (Just s) (i <@> t1) (i <@> t2))
 eval  env      s (g1 :\/: g2) = eval env s g1 `mplus` eval env s g2
 eval env@(p, i, d) s (g1 :/\: g2) = 
