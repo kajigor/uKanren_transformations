@@ -1,5 +1,4 @@
 {-# LANGUAGE TupleSections #-}
-
 module Eval where
 
 import Control.Monad

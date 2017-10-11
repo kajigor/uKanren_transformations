@@ -1,3 +1,5 @@
+module Test where
+
 import Syntax
 import Stream
 import Eval
@@ -20,6 +22,24 @@ appendo =
              (x  === h `cons` t  &&&
               xy === h `cons` ty &&&
               call "appendo" [t, y, ty]
+             )
+          )
+         )
+
+
+appendo' =
+  let x  = V "x"  in
+  let y  = V "y"  in
+  let xy = V "xy" in
+  let h  = V "h"  in
+  let t  = V "t"  in
+  let ty = V "ty" in
+  def "appendo'" ["x", "y", "xy"] 
+         ((x === nil ||| xy === y) ||| 
+          (fresh ["h", "t", "ty"] 
+             (x  === h `cons` t  |||
+              xy === h `cons` ty |||
+              call "appendo'" [t, y, ty]
              )
           )
          )

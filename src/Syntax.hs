@@ -5,7 +5,7 @@ type S    = Int    -- Semantic variables
 type Name = String -- Names of variables/definitions
 
 -- Terms
-data Term v = V v | C String [Term v] deriving (Eq, Show)
+data Term v = V v | C String [Term v] deriving (Eq, Ord, Show)
 type Tx     = Term X
 type Ts     = Term S
 
@@ -15,7 +15,7 @@ data G a =
   | G a :/\: G a
   | G a :\/: G a
   | Fresh  Name (G a)
-  | Invoke Name [Term a] deriving Show
+  | Invoke Name [Term a] deriving (Eq, Ord, Show)
 
 infixr 7 &&&
 infixr 6 |||
