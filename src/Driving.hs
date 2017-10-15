@@ -12,11 +12,11 @@ import qualified Eval as E
 import Test
 
 data Tree  = 
-  Fail                         | 
-  Success E.Sigma              | 
-  Or      Tree Tree            | 
-  Fresh   X S Tree             | 
-  Rename  String [Ts] Renaming |
+  Fail                          | 
+  Success E.Sigma               | 
+  Or      Tree Tree             | 
+  Fresh   X S Tree              | 
+  Rename  String [Ts] Renaming  |
   Gen     Generalizer Tree deriving Show
 
 type Stack = [(String, [Ts])]
@@ -101,34 +101,40 @@ generalize d (Invoke f as) (Invoke g bs) =
                   gs  
     where group x y = snd x == snd y
 
-invoke :: Stack -> E.Gamma -> E.Sigma -> G S -> Tree 
-invoke cs (p, i, d) s (Invoke f as') = 
+invoke :: Stack -> E.Gamma -> E.Sigma -> G S -> [G X] -> Tree 
+invoke cs (p, i, d) s (Invoke f as') conjs = 
   let (_, fs, g) = p f in
   case find (\ (g, bs) -> isJust $ rename (Invoke g bs) (Invoke f as')) cs of 
     Just (g, bs) -> Rename g bs $ fromJust (rename (Invoke g bs) (Invoke f as'))
     Nothing      -> case find (\ (g, bs) -> isJust $ embed (Invoke g bs) (Invoke f as')) cs of
                       Just (g, bs) -> let (msg, s1, s2, d') = generalize d (Invoke f as') (Invoke g bs) in
-                                      (Gen s1 (invoke ((f, as'):cs) (p, i, d') s msg))
-                      Nothing      -> eval ((f, as') : cs) (p, i, d) s g  
+                                      (Gen s1 (invoke ((f, as'):cs) (p, i, d') s msg conjs))
+                      Nothing      -> eval ((f, as') : cs) (p, i, d) s (g:conjs)  
 
-eval :: Stack -> E.Gamma -> E.Sigma -> G X -> Tree
-eval cs e s g@(t1 :=: t2) = 
+eval :: Stack -> E.Gamma -> E.Sigma -> [G X]  -> Tree
+eval cs e s (g@(t1 :=: t2):conjs) = 
   case takeS 1 $ E.eval e s g of
     []       -> Fail
-    [(s, _)] -> Success s
-eval cs  e        s (g1 :\/: g2      ) = Or (eval cs e s g1) (eval cs e s g2)
-eval cs (p, i, d) s (Syntax.Fresh x g) = Driving.Fresh x y $ eval cs (p, E.extend i x (V y), d') s g where 
+    [(s, _)] -> case conjs of
+                  [] -> Success s
+                  _  -> eval cs e s conjs 
+eval cs  e        s ((g1 :\/: g2):conjs) = Or (eval cs e s (g1:conjs)) (eval cs e s (g2:conjs))
+eval cs  e        s ((g1 :/\: g2):conjs) = eval cs e s $ [g1,g2] ++ conjs
+
+{- Rot -}
+eval cs (p, i, d) s ((Syntax.Fresh x g):conjs) = Driving.Fresh x y $ eval cs (p, E.extend i x (V y), d') s (g:conjs) where 
   y : d' = d
-eval cs (p, i, d) s (Invoke f as) = 
+
+eval cs (p, i, d) s ((Invoke f as):conjs) = 
   let (_, fs, g) = p f in
   let i'         = foldl (\ i' (f, a) -> E.extend i' f $ i E.<@> a) i $ zip fs as in
   let as' = map (E.substitute s . (i E.<@>)) as in
-  invoke cs (p, i', d) s (Invoke f as')
+  invoke cs (p, i', d) s (Invoke f as') conjs
 
 drive :: Spec -> Tree
 drive (defs, goal) =
   let p n = fromJust $ find (\ (m, _, _) -> m == n) defs in
-  eval [] (E.env0 p) E.s0 goal
+  eval [] (E.env0 p) E.s0 [goal]
 
 f x y = C "f" [x, y]
 g x y = C "g" [x, y]

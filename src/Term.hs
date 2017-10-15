@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
 {-# LANGUAGE TypeFamilies           #-}
@@ -20,32 +21,74 @@ class Term t v s | t -> v s where
   binder   :: t -> Maybe v
   eq       :: t -> t -> Bool
   make     :: t -> s -> t
+  hom      :: (t -> t) -> t -> t
+  hom f t = 
+    let s = subterms t in
+    let l = lift s     in
+    let h = makeHom (hom f) l in
+    --f t
+    let t' = make t $ apply (subterms t) h in
+    f t'
 
-class Select fs t | fs -> t where
-  select :: t -> fs -> t
+class MakeHom0 f fs where
+  makeHom0 :: f -> fs -> fs
 
-instance Select (a -> a) a where
-  select x f = f x
+instance MakeHom0 (f -> f) (a -> a) where
+  makeHom0 f _ x = x
 
-instance {-# OVERLAPPING #-} Select ((a -> a) :+: b) a where
-  select x (f :+: _) = f x 
+instance {-# OVERLAPPING #-} MakeHom0 (f -> f) (f -> f) where
+  makeHom0 f _ x = f x
 
-instance Select g c => Select (f :+: g) c where
-  select x (_ :+: g) = select x g  
+class MakeHom f fs where
+  makeHom :: f -> fs -> fs
 
+instance MakeHom0 f fs => MakeHom f fs where
+  makeHom = makeHom0
+
+instance {-# OVERLAPPING #-} (MakeHom0 f fs, MakeHom f gs) => MakeHom f (fs :+: gs) where
+  makeHom f (fs :+: gs) = (makeHom0 f fs) :+: (makeHom f gs)
+
+--instance MakeHom f ((f -> f) :+: g) where
+--  makeHom f = f :+: (undefined :: g)
+
+class Lift0 fs gs | fs -> gs where
+  lift0 :: fs -> gs
+  lift0 = undefined
+
+instance Lift0 f (f -> f)
+
+class Lift fs gs | fs -> gs where
+  lift :: fs -> gs
+  lift = undefined
+
+instance Lift0 f f' => Lift f f'
+instance {-# OVERLAPPING #-} (Lift0 f f', Lift g g') => Lift (f :+: g) (f' :+: g')
+  
+
+class Apply fs t where
+  apply :: t -> fs -> t
+
+instance Apply (a -> a) [a] where
+  apply x f = map f x
+
+instance Apply g a => Apply (f :+: g) a where
+  apply x (_ :+: g) = apply x g  
+
+instance {-# OVERLAPPING #-} Apply ((a -> a) :+: g) [a] where
+  apply x (f :+: g) = map f x
+
+instance {-# OVERLAPPING #-} (Apply (fs :+: gs) a, Apply (fs :+: gs) b) => Apply (fs :+: gs) (a :+: b) where
+  apply (a :+: b) fsgs = (apply a fsgs) :+: (apply b fsgs)
+
+{-
 class Hom fs t where
   hom :: t -> fs -> t
 
-instance (Select fs s, Select fs t, Term t v s) => Hom fs t where
+instance (Apply fs s, Apply fs [t], Term t v s) => Hom fs t where
   hom t fs = 
     let s = subterms t in
-    make (select t fs) (select s fs)    
-
-instance {-# OVERLAPPING #-} Select fs t => Hom fs [t] where
-  hom t fs = map (\ t -> select t fs) t  
-
-instance {-# OVERLAPPING #-} (Select fs h, Select fs t) => Hom fs (h :+: t) where
-  hom (h :+: t) fs = select h fs :+: select t fs
+    make (head $ apply [t] fs) (apply s fs)    
+-}
 
 class Eq v => FV t v | t -> v where
   fv :: t -> [v]
@@ -100,6 +143,70 @@ alpha = rename empty
 -------------------------------
 -------------------------------
 
+
+data Expr = Var String | Const Int | Bop String Expr Expr | D Def Expr deriving Show
+data Def  = Def String Expr deriving Show
+
+instance Term Def  String ([Expr] :+: [Def]) where
+  var _            = Nothing
+  binder (Def s _) = Just s
+  eq  _ _          = True
+
+  subterms (Def _ e) = [e] :+: []
+  make     (Def s _) ([e] :+: []) = Def s e
+
+instance Term Expr String ([Expr] :+: [Def]) where
+  var (Var s) = Just s
+  var  _      = Nothing
+
+  binder _    = Nothing
+
+  eq (Var     _) (Var     _) = True
+  eq (Const   _) (Const   _) = True
+  eq (Bop _ _ _) (Bop _ _ _) = True
+  eq (D   _ _  ) (D   _ _  ) = True
+  eq  _           _          = False
+
+  subterms (Var _)     = [] :+: []
+  subterms (Const _)   = [] :+: []
+  subterms (Bop _ l r) = [l, r] :+: []
+  subterms (D   d e)   = [e] :+: [d]
+
+  make t@(Var _  ) _ = t
+  make t@(Const _) _ = t
+  make (Bop b _ _) ([l, r] :+: [] ) = Bop b l r
+  make (D   _ _  ) ([e]    :+: [d]) = D d e
+
+expr = Bop "+" (Var "a") (D (Def "b" (Const 1)) (Bop "+" (Const 0) (Var "b")))
+
+idexpr :: Expr -> Expr
+idexpr = id
+
+iddef :: Def -> Def
+iddef = id
+
+{-
+--homhom (t -> t) -> t -> t
+homhom f t =
+  let t' = make t $ apply (subterms t) (homhom f :+: iddef) in
+  f t'
+
+elim0 = homhom (\ t -> case t of
+                         Bop "+" e (Const 0) -> e
+                         Bop "+" (Const 0) e -> e
+                         _                   -> t
+               )
+-}
+
+{-
+elim0 t =
+  let t' = make t $ apply (subterms t) (elim0 :+: iddef) in
+  case t' of
+    Bop "+" e (Const 0) -> e
+    Bop "+" (Const 0) e -> e
+    _                   -> t'
+-}
+
 data T = V String | C T T
 
 instance Term T String [T] where
@@ -129,13 +236,13 @@ id1 = id
 id2 :: T2 String -> T2 String
 id2 = id
 
-f1 :: T1 String -> T1 String
-f1 (T1A v) = T1A (v ++ "!")
-f1 x       = x
+f1 :: Apply fs ([T1 String] :+: [T2 String]) => T1 String -> fs -> T1 String
+f1 (T1A v) f = T1A (v ++ "!")
+f1 x       f = make x (apply (subterms x) f)
 
-f2 :: T2 String -> T2 String
-f2 (T2A v) = T2A (v ++ "!")
-f2 x       = x
+f2 :: T2 String -> (((T1 String -> T1 String) :+: (T1 String -> T2 String))) -> T2 String
+f2 (T2A v) f = T2A (v ++ "!")
+f2 x       f = x
 
 instance Term (T1 v) v ([T1 v] :+: [T2 v]) where -- :+: Nil v) where
   var (T1A x) = Just x
@@ -152,7 +259,9 @@ instance Term (T1 v) v ([T1 v] :+: [T2 v]) where -- :+: Nil v) where
   subterms (T1B t1 t2) = [t1, t2] :+: []
   subterms (T1C t1 t2) = [] :+: [t1, t2]
 
-  make t@(T1A x) _ = t
+  make t@(T1A x) _                = t
+  make (T1B _ _) ([t1, t2] :+: _) = T1B t1 t2
+  make (T1C _ _) (_ :+: [t1, t2]) = T1C t1 t2
 
 instance Term (T2 v) v ([T1 v] :+: [T2 v]) where -- :+: Nil v) where
   var (T2A x) = Just x
@@ -170,13 +279,13 @@ instance Term (T2 v) v ([T1 v] :+: [T2 v]) where -- :+: Nil v) where
   subterms (T2C t1 t2) = [t1, t2] :+: [] -- :+: Nil
 
   make t@(T2A x) _ = t
+  make (T2B _ _) (_ :+: [t1, t2]) = T2B t1 t2
+  make (T2C _ _) ([t1, t2] :+: _) = T2C t1 t2
 
-
-
-t  = T1C (T2A "1") (T2B (T2A "2") (T2C (T1A "0") (T1A "2")))
-t1 = T1C (T2A "1") (T2B (T2A "2") (T2C (T1A "0") (T1A "1")))
-t2 = T1C (T2A "10") (T2B (T2A "20") (T2C (T1A "40") (T1A "10")))
-t3 = T2A "p"
+t   = T1C (T2A "1") (T2B (T2A "2") (T2C (T1A "0") (T1A "2")))
+t1  = T1C (T2A "1") (T2B (T2A "2") (T2C (T1A "0") (T1A "1")))
+t1' = T1C (T2A "10") (T2B (T2A "20") (T2C (T1A "40") (T1A "10")))
+t2  = T2A "p"
 
 _ = rename empty t t
 
@@ -184,7 +293,8 @@ _ = fv t
 _ = fv [t]
 _ = fv $ subterms t
 
-
+foo :: ([T1 String] :+: [T2 String]) -> ([T1 String] :+: [T2 String])
+foo = undefined
 
 
 {-
