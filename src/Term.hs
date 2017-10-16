@@ -21,6 +21,7 @@ class Term t v s | t -> v s where
   binder   :: t -> Maybe v
   eq       :: t -> t -> Bool
   make     :: t -> s -> t
+{-
   hom      :: (t -> t) -> t -> t
   hom f t = 
     let s = subterms t in
@@ -29,6 +30,28 @@ class Term t v s | t -> v s where
     --f t
     let t' = make t $ apply (subterms t) h in
     f t'
+-}
+
+{-
+class Hom t where
+  hom :: (t -> t) -> t -> t
+-}
+{-
+homhom f t =
+  let t' = make t $ apply (subterms t) (homhom f :+: (id :: Def -> Def)) in
+  f t'
+-}
+
+{-instance (Term t v s, Lift s fs, MakeHom (t -> t) fs) => Hom t where -}
+
+hom :: (Apply fs r, Lift r fs, MakeHom (t -> t) fs, Term t v r) => (t -> t) -> t -> t
+hom f t = 
+  let s = subterms t in
+  let h = makeHom (hom f) (lift s) in
+  let t' = make t $ apply s h in
+  f t
+
+
 
 class MakeHom0 f fs where
   makeHom0 :: f -> fs -> fs
@@ -48,22 +71,19 @@ instance MakeHom0 f fs => MakeHom f fs where
 instance {-# OVERLAPPING #-} (MakeHom0 f fs, MakeHom f gs) => MakeHom f (fs :+: gs) where
   makeHom f (fs :+: gs) = (makeHom0 f fs) :+: (makeHom f gs)
 
---instance MakeHom f ((f -> f) :+: g) where
---  makeHom f = f :+: (undefined :: g)
-
 class Lift0 fs gs | fs -> gs where
   lift0 :: fs -> gs
   lift0 = undefined
 
-instance Lift0 f (f -> f)
+instance Lift0 [f] (f -> f)
 
 class Lift fs gs | fs -> gs where
   lift :: fs -> gs
   lift = undefined
 
 instance Lift0 f f' => Lift f f'
-instance {-# OVERLAPPING #-} (Lift0 f f', Lift g g') => Lift (f :+: g) (f' :+: g')
-  
+instance {-# OVERLAPPING #-} (Lift0 f f', Lift g g') => Lift (f :+: g) (f' :+: g') where
+  lift _ = undefined :+: undefined
 
 class Apply fs t where
   apply :: t -> fs -> t
@@ -179,24 +199,18 @@ instance Term Expr String ([Expr] :+: [Def]) where
 
 expr = Bop "+" (Var "a") (D (Def "b" (Const 1)) (Bop "+" (Const 0) (Var "b")))
 
-idexpr :: Expr -> Expr
-idexpr = id
-
-iddef :: Def -> Def
-iddef = id
-
 {-
---homhom (t -> t) -> t -> t
 homhom f t =
-  let t' = make t $ apply (subterms t) (homhom f :+: iddef) in
+  let t' = make t $ apply (subterms t) (homhom f :+: (id :: Def -> Def)) in
   f t'
-
-elim0 = homhom (\ t -> case t of
-                         Bop "+" e (Const 0) -> e
-                         Bop "+" (Const 0) e -> e
-                         _                   -> t
-               )
 -}
+
+elim0 = hom (\ t -> case t of
+                      Bop "+" e (Const 0) -> e
+                      Bop "+" (Const 0) e -> e
+                      _                   -> t
+            )
+
 
 {-
 elim0 t =
