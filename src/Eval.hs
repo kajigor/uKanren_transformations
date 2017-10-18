@@ -69,7 +69,7 @@ eval env@(p, i, d) s (Invoke f as) =
   let (_, fs, g) = p f in
   let i'         = foldl (\ i' (f, a) -> extend i' f $ a) i $ zip fs as in
   let (g', env') = pre_eval (p, i', d) g in
-  eval (p, i', d) s g'
+  eval env' s g'
 
 env0 :: P -> Gamma
 env0 p = (p, (\_ -> undefined), [0..]) 
