@@ -1,0 +1,8 @@
+["nil"]
+["a % nil"]
+["a % b % nil"]
+["a % nil"]
+["nil"]
+["a % nil"]
+["b % a % nil"]
+["b % a % nil"]
