@@ -10,19 +10,10 @@ import Syntax
 import Stream
 import qualified Eval as E
 import Test
-
-data Tree  = 
-  Fail                         | 
-  Success E.Sigma              | 
-  Or      Tree Tree            | 
-  Fresh   X S Tree             | 
-  Rename  String [Ts] Renaming |
-  Gen     Generalizer Tree deriving Show
+import PrintTree
 
 type Stack = [(String, [Ts])]
 
--- Renaming
-type Renaming = [(S, S)]
  
 rename :: G S -> G S -> Maybe Renaming
 rename g1 g2 = rename' (Just []) (g1, g2) where
@@ -62,9 +53,6 @@ embed g1 g2 = embedGoal True (Just []) (g1, g2) where
   embedTerm _  _                              = Nothing
   embedTerms r ps qs | length ps == length qs = foldl embedTerm r $ zip ps qs
   embedTerms _ _  _                           = Nothing
-
--- Generalization
-type Generalizer = [(S, Ts)]
 
 generalize :: [S] -> G S -> G S -> (G S, Generalizer, Generalizer, [S])
 generalize d (Invoke f as) (Invoke g bs) = 
@@ -117,7 +105,7 @@ eval cs e s g@(t1 :=: t2) =
     []       -> Fail
     [(s, _)] -> Success s
 eval cs  e        s (g1 :\/: g2      ) = Or (eval cs e s g1) (eval cs e s g2)
-eval cs (p, i, d) s (Syntax.Fresh x g) = Driving.Fresh x y $ eval cs (p, E.extend i x (V y), d') s g where 
+eval cs (p, i, d) s (Syntax.Fresh x g) = PrintTree.Fresh x y $ eval cs (p, E.extend i x (V y), d') s g where 
   y : d' = d
 eval cs (p, i, d) s (Invoke f as) = 
   let (_, fs, g) = p f in
@@ -137,3 +125,5 @@ t0 s = C s []
 x = V 0
 
 tree = drive ([Test.appendo'], fresh ["q"] (call "appendo'" [Test.nil, Test.nil, V "q"]))
+
+main = printTree tree "tree.dot"

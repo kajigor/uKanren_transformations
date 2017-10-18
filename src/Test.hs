@@ -64,6 +64,7 @@ toplevel n spec = takeS n $ (run spec)
 
 main = 
   do
+    putStrLn $ show (fresh ["q"] (call "appendo" [ V "q", i "B" `cons` nil, i "A" `cons` (i "B" `cons` nil)]))
     putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [nil, nil, V "q"])))
     putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [i "A" `cons` nil, nil, V "q"])))
     putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [i "A" `cons` nil, i "B" `cons` nil, V "q"])))
