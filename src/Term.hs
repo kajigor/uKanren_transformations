@@ -4,7 +4,6 @@
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
-{-# LANGUAGE TypeFamilies           #-}
 
 module Term where
 
@@ -21,37 +20,11 @@ class Term t v s | t -> v s where
   binder   :: t -> Maybe v
   eq       :: t -> t -> Bool
   make     :: t -> s -> t
-{-
-  hom      :: (t -> t) -> t -> t
-  hom f t = 
-    let s = subterms t in
-    let l = lift s     in
-    let h = makeHom (hom f) l in
-    --f t
-    let t' = make t $ apply (subterms t) h in
-    f t'
--}
-
-{-
-class Hom t where
-  hom :: (t -> t) -> t -> t
--}
-{-
-homhom f t =
-  let t' = make t $ apply (subterms t) (homhom f :+: (id :: Def -> Def)) in
-  f t'
--}
-
-{-instance (Term t v s, Lift s fs, MakeHom (t -> t) fs) => Hom t where -}
 
 hom :: (Apply fs r, Lift r fs, MakeHom (t -> t) fs, Term t v r) => (t -> t) -> t -> t
 hom f t = 
   let s = subterms t in
-  let h = makeHom (hom f) (lift s) in
-  let t' = make t $ apply s h in
-  f t
-
-
+  f $ make t $ apply s $ makeHom (hom f) (lift s)
 
 class MakeHom0 f fs where
   makeHom0 :: f -> fs -> fs
@@ -99,16 +72,6 @@ instance {-# OVERLAPPING #-} Apply ((a -> a) :+: g) [a] where
 
 instance {-# OVERLAPPING #-} (Apply (fs :+: gs) a, Apply (fs :+: gs) b) => Apply (fs :+: gs) (a :+: b) where
   apply (a :+: b) fsgs = (apply a fsgs) :+: (apply b fsgs)
-
-{-
-class Hom fs t where
-  hom :: t -> fs -> t
-
-instance (Apply fs s, Apply fs [t], Term t v s) => Hom fs t where
-  hom t fs = 
-    let s = subterms t in
-    make (head $ apply [t] fs) (apply s fs)    
--}
 
 class Eq v => FV t v | t -> v where
   fv :: t -> [v]

@@ -1,5 +1,3 @@
-module Test where
-
 import Syntax
 import Stream
 import Eval

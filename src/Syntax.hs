@@ -17,6 +17,10 @@ data G a =
   | Fresh  Name (G a)
   | Invoke Name [Term a] deriving (Eq, Ord, Show)
 
+infix  8 :=:
+infixr 7 :/\:
+infixr 6 :\/:
+
 infixr 7 &&&
 infixr 6 |||
 infix  8 ===

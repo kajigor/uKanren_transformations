@@ -34,7 +34,7 @@ unify st@(Just subst) u v =
 -- Syntactic terms -> semantic terms
 
 ---- Interpreting syntactic variables 
-infix 7 <@>
+infix 9 <@>
 (<@>) :: Iota -> Tx -> Ts
 i <@> (V x)    = i x
 i <@> (C c ts) = C c $ map (i<@>) ts
@@ -48,18 +48,28 @@ substitute :: Sigma -> Ts -> Ts
 substitute s t@(V x)  = case lookup x s of Nothing -> t ; Just tx -> substitute s tx
 substitute s (C m ts) = C m $ map (substitute s) ts
 
+-- Pre-evaluation
+pre_eval :: Gamma -> G X -> (G S, Gamma)
+pre_eval g@(_, i, _) (t1 :=: t2)   = (i <@> t1 :=: i <@> t2, g)
+pre_eval g           (g1 :/\: g2)  = let (g1', g' ) = pre_eval g  g1 in
+                                     let (g2', g'') = pre_eval g' g2 in
+                                     (g1' :/\: g2', g'')
+pre_eval g           (g1 :\/: g2)  = let (g1', g' ) = pre_eval g  g1 in
+                                     let (g2', g'') = pre_eval g' g2 in
+                                     (g1' :\/: g2', g'')
+pre_eval g@(p, i, d) (Fresh x g')  = pre_eval (p, extend i x (V y), d') g' where y : d' = d 
+pre_eval g@(_, i, _) (Invoke f fs) = (Invoke f (map (i <@>) fs), g)
+ 
 -- Evaluation relation
-eval :: Gamma -> Sigma -> G X -> Stream (Sigma, Delta)
-eval (p, i, d) s (t1 :=:  t2) = fmap (,d) (maybeToStream $ unify (Just s) (i <@> t1) (i <@> t2))
-eval  env      s (g1 :\/: g2) = eval env s g1 `mplus` eval env s g2
-eval env@(p, i, d) s (g1 :/\: g2) = 
-  eval env s g1 >>= (\ (s', d') -> eval (p, i, d') s' g2)
-eval (p, i, d) s (Fresh x g)  = eval (p, extend i x (V y), d') s g where
-  y : d' = d 
+eval :: Gamma -> Sigma -> G S -> Stream (Sigma, Delta)
+eval     (p, i, d) s (t1 :=:  t2)  = fmap (,d) (maybeToStream $ unify (Just s) t1 t2)
+eval env           s (g1 :\/: g2)  = eval env s g1 `mplus` eval env s g2
+eval env@(p, i, d) s (g1 :/\: g2)  = eval env s g1 >>= (\ (s', d') -> eval (p, i, d') s' g2)
 eval env@(p, i, d) s (Invoke f as) = 
   let (_, fs, g) = p f in
-  let i'         = foldl (\ i' (f, a) -> extend i' f $ i <@> a) i $ zip fs as in
-  eval (p, i', d) s g
+  let i'         = foldl (\ i' (f, a) -> extend i' f $ a) i $ zip fs as in
+  let (g', env') = pre_eval (p, i', d) g in
+  eval (p, i', d) s g'
 
 env0 :: P -> Gamma
 env0 p = (p, (\_ -> undefined), [0..]) 
@@ -70,4 +80,5 @@ s0 = []
 run :: Spec -> Stream Sigma
 run (defs, goal) =
   let p n = fromJust $ find (\ (m, _, _) -> m == n) defs in
-  fmap fst $ eval (env0 p) s0 goal
+  let (goal', env') = pre_eval (env0 p) goal in
+  fmap fst $ eval env' s0 goal'
