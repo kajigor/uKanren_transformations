@@ -67,7 +67,7 @@ eval env           s (g1 :\/: g2)  = eval env s g1 `mplus` eval env s g2
 eval env@(p, i, d) s (g1 :/\: g2)  = eval env s g1 >>= (\ (s', d') -> eval (p, i, d') s' g2)
 eval env@(p, i, d) s (Invoke f as) = 
   let (_, fs, g) = p f in
-  let i'         = foldl (\ i' (f, a) -> extend i' f $ a) i $ zip fs as in
+  let i'         = foldl (\ i' (f, a) -> extend i' f a) i $ zip fs as in
   let (g', env') = pre_eval (p, i', d) g in
   eval env' s g'
 
