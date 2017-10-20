@@ -9,19 +9,10 @@ import Data.Maybe
 import Syntax
 import Stream
 import qualified Eval as E
-
-data Tree  = 
-  Fail                          | 
-  Success E.Sigma               | 
-  Or      Tree Tree             | 
-  Rename  String [Ts] Renaming  |
-  Gen     Generalizer Tree deriving Show
+import Tree 
 
 type Stack = [(String, [Ts], [G S])]
 
--- Renaming
-type Renaming = [(S, S)]
- 
 rename :: G S -> G S -> Maybe Renaming
 rename g1 g2 = rename' (Just []) (g1, g2) where
   rename' r (s1 :=:  s2, t1 :=:  t2)                                      = renameTerms r [s1, s2] [t1, t2]
@@ -67,9 +58,6 @@ embed g1 g2 = embedGoal True (Just []) (g1, g2) where
 
 embedGoals :: [G S] -> [G S] -> Maybe Renaming
 embedGoals as bs = embed (conj as) (conj bs)
-
--- Generalization
-type Generalizer = [(S, Ts)]
 
 generalize :: [S] -> G S -> G S -> (G S, Generalizer, Generalizer, [S])
 generalize d (Invoke f as) (Invoke g bs) = 

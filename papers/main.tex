@@ -1,0 +1,195 @@
+\documentclass{llncs}
+
+\usepackage{makeidx}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{indentfirst}
+\usepackage{verbatim}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{stmaryrd}
+\usepackage{xspace}
+\usepackage{comment}
+
+\sloppy
+
+\def\transarrow{\xrightarrow}
+\newcommand{\setarrow}[1]{\def\transarrow{#1}}
+
+\newcommand{\trule}[2]{\frac{#1}{#2}}
+\newcommand{\crule}[3]{\frac{#1}{#2},\;{#3}}
+\newcommand{\withenv}[2]{{#1}\vdash{#2}}
+\newcommand{\trans}[3]{{#1}\transarrow{#2}{#3}}
+\newcommand{\ctrans}[4]{{#1}\transarrow{#2}{#3},\;{#4}}
+\newcommand{\llang}[1]{\mbox{\lstinline[mathescape]|#1|}}
+\newcommand{\pair}[2]{\inbr{{#1}\mid{#2}}}
+\newcommand{\inbr}[1]{\left<{#1}\right>}
+\newcommand{\highlight}[1]{\color{red}{#1}}
+\newcommand{\ruleno}[1]{\eqno[\scriptsize\textsc{#1}]}
+\newcommand{\inmath}[1]{\mbox{$#1$}}
+\newcommand{\lfp}[1]{fix_{#1}}
+\newcommand{\gfp}[1]{Fix_{#1}}
+\newcommand{\vsep}{\vspace{-2mm}}
+\newcommand{\supp}[1]{\scriptsize{#1}}
+\newcommand{\G}{\mathfrak G}
+\newcommand{\sembr}[1]{\llbracket{#1}\rrbracket}
+\newcommand{\cd}[1]{\texttt{#1}}
+\newcommand{\miniKanren}{\texttt{miniKanren}\xspace}
+\newcommand{\ocanren}{\texttt{ocanren}\xspace}
+
+\lstdefinelanguage{ocanren}{
+keywords={fresh, let, in, match, with, when, class, type,
+object, method, of, rec, repeat, until, while, not, do, done, as, val, inherit,
+new, module, sig, deriving, datatype, struct, if, then, else, open, private, virtual, include, success, failure},
+sensitive=true,
+commentstyle=\small\itshape\ttfamily,
+keywordstyle=\ttfamily\underbar,
+identifierstyle=\ttfamily,
+basewidth={0.5em,0.5em},
+columns=fixed,
+fontadjust=true,
+literate={fun}{{$\lambda$}}1 {->}{{$\to$}}3 {===}{{$\equiv$}}1 {=/=}{{$\not\equiv$}}1 {|>}{{$\triangleright$}}3 {/\\}{{$\wedge$}}2 {\\/}{{$\vee$}}2 {^}{{$\uparrow$}}1,
+morecomment=[s]{(*}{*)}
+}
+
+\lstset{
+mathescape=true,
+basicstyle=\small,
+identifierstyle=\ttfamily,
+keywordstyle=\bfseries,
+commentstyle=\scriptsize\rmfamily,
+basewidth={0.5em,0.5em},
+fontadjust=true,
+language=ocanren
+}
+
+\usepackage{letltxmacro}
+\newcommand*{\SavedLstInline}{}
+\LetLtxMacro\SavedLstInline\lstinline
+\DeclareRobustCommand*{\lstinline}{%
+  \ifmmode
+    \let\SavedBGroup\bgroup
+    \def\bgroup{%
+      \let\bgroup\SavedBGroup
+      \hbox\bgroup
+    }%
+  \fi
+  \SavedLstInline
+}
+
+\begin{document}
+
+\mainmatter
+
+\title{MiniKanren Semantics for Programs Transformation}
+
+\maketitle
+
+\section{Syntax}
+
+\begin{figure}
+\centering 
+{\bf Supplementary syntax categories:}
+$$
+\begin{array}{rcll}
+  \mathcal{X} &=& x_1,\, x_2,\dots & \mbox{\supp(syntactic variables)} \\
+  \mathcal{S} &=& \sigma_1,\, \sigma_2,\dots & \mbox{\supp(semantic variables)} \\
+  \mathcal{R}^n &=& r^n_1, r^n_2, \dots &\mbox{\supp{(predicate names indexed by the arity n)}}
+\end{array}
+$$
+  
+{\bf Terms:}
+$$
+\begin{array}{rcll}
+  \mathcal{T(V)} &=& \mathcal{V} \,|\, C^n \, t_1,\dots,t_n & \mbox{\supp(terms parameterized by variable type)} \\
+  \mathcal{T_X} &=& \mathcal{T(X)} & \mbox{\supp(terms which contain only syntactic variables)} \\
+  \mathcal{T_S} &=& \mathcal{T(S)} & \mbox{\supp(terms which contain only syntactic variables)} 
+\end{array}
+$$
+
+{\bf Goals:}
+$$
+\begin{array}{rcll}
+  \mathcal{G} &=& t_1 \equiv t_2 & \mbox{\supp(unification)} \\
+              &|& g_1 \wedge g_2 & \mbox{\supp(conjunction)} \\
+              &|& g_1 \vee   g_2 & \mbox{\supp(disjunction)} \\
+              &|&\lstinline|fresh $x$ $\;g$| & \mbox{\supp{(fresh logical variable binder)}}\\
+              &|& \mathcal{R}^{n} \, t_1 ,\dots, t_n & \mbox{\supp{(relations)}} \\
+\end{array}
+$$
+
+{\bf Definitions:}
+$$
+\begin{array}{rcll}
+  \mathcal{D}^n &=& \lambda x_1, \dots, x_n. g & \mbox{\supp(relation definition)}
+\end{array}
+$$
+
+{\bf States:}
+$$
+\begin{array}{rcll}
+  I &=& \mathcal{X} \rightarrow \mathcal{T_S} & \mbox{\supp(syntax variables interpretation)} \\
+  \Sigma &=& \mathcal{S} \rightarrow \mathcal{T_S} & \mbox{\supp(substitutions)} \\
+  \Delta &=& 2^\mathcal{S} & \mbox{\supp(the set of used semantic variables)} \\
+  \mathfrak{S} &=& I \times \Sigma \times \Delta & \mbox{\supp(states)} \\
+  \Gamma &=& \mathcal{R}^n \rightarrow \mathcal{D}^n & \\
+  \Gamma &\vdash& \mathfrak{s} \xrightarrow{g} \mathfrak{\bar{s}} & \mbox{\supp(semantics of the goal g)}
+\end{array} 
+$$
+
+\end{figure}
+
+\newpage
+\section{Semantics}
+
+\begin{figure}
+\centering 
+$$
+\withenv{\Gamma}{ \ctrans{(\iota,\sigma,\delta)}{t_1 \equiv t_2}{[]}{mgu \, (\iota \, t_1) \sigma \,\, (\iota \, t_2) \sigma = \bot} } 
+$$
+
+$$
+\withenv{\Gamma}{ \trans{(\iota,\sigma,\delta)}{t_1 \equiv t_2}{(\iota, mgu \, (\iota \, t_1) \sigma \; (\iota \, t_2) \sigma , \delta)}}	
+$$
+
+$$
+\crule{\withenv{\Gamma}{\trans{(\iota', \sigma, \delta')}{g}{\mathfrak{\bar{s}}}}}
+      {\withenv{\Gamma}{\trans{(\iota, \sigma, \delta)}{\lstinline|fresh $\;x$ $\;g$|}{\mathfrak{\bar{s}}}}}
+      {\iota' = \iota[x \leftarrow s], \delta' = \delta \cup \{x\}, x \notin \delta}
+$$
+
+$$
+\crule{\withenv{\Gamma}{\trans{(\iota',\sigma,\delta)}{g}{\mathfrak{\bar{s}}}}}
+      {\withenv{\Gamma}{\trans{(\iota,\sigma,\delta)}{r^n \, t_1 \dots t_n}{\mathfrak{\bar{s}}}}}
+      {\iota' = \iota[x_i \leftarrow t_i \iota], \Gamma \, r^n = \lambda x_1 \dots x_n. g}
+$$
+
+$$
+\begin{array}{rcll}
+  \square \iota &:& \mathcal{T_X} \rightarrow \mathcal{T_S} & \\
+  x \iota &=& \iota (x) & \\
+  \mathcal{C}^n \, t_1 \dots t_n &=& \mathcal{C}^n \, (t_1 \iota) \dots (t_n \iota)
+\end{array} 
+$$
+
+$$
+\trule{\withenv{\Gamma}{\trans{\mathfrak{s}}{g_1}{\mathfrak{\bar{s_1}}}} \;\;\;\; \withenv{\Gamma}{\trans{\mathfrak{s}}{g_2}{\mathfrak{\bar{s_2}}}}}
+      {\withenv{\Gamma}{\trans{\mathfrak{s}}{g_1 \vee g_2}{\mathfrak{\bar{s_1}} \oplus \mathfrak{\bar{s_2}}}}}
+$$
+
+$$
+\trule{\withenv{\Gamma}{\trans{(\iota,\sigma,\delta)}{g_1}{\mathfrak{\bar{s_1}}}} \;\;\;\; \withenv{\Gamma}{\trans{\mathfrak{\bar{s_1}}}{g_2 \iota}{\mathfrak{\bar{s_2}}}}}
+      {\withenv{\Gamma}{\trans{(\iota,\sigma,\delta)}{g_1 \wedge g_2}{\mathfrak{\bar{s_2}}}}}
+$$
+
+$$
+\trule{\withenv{\Gamma}{\trans{\mathfrak{s}}{g}{\mathfrak{\bar{s_1}}}} \;\;\;\; \withenv{\Gamma}{\trans{\mathfrak{\bar{s}}}{g}{\mathfrak{\bar{s_2}}}}}
+      {\withenv{\Gamma}{\trans{\mathfrak{s}:\mathfrak{\bar{s}}}{g}{\mathfrak{\bar{s_1}} \oplus \mathfrak{\bar{s_2}}}}}
+$$
+
+\end{figure}
+
+\end{document}
+
