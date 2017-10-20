@@ -9,12 +9,10 @@ import Data.Maybe
 import Syntax
 import Stream
 import qualified Eval as E
-import Test
-import PrintTree
+import Tree 
 
-type Stack = [(String, [Ts])]
+type Stack = [(String, [Ts], [G S])]
 
- 
 rename :: G S -> G S -> Maybe Renaming
 rename g1 g2 = rename' (Just []) (g1, g2) where
   rename' r (s1 :=:  s2, t1 :=:  t2)                                      = renameTerms r [s1, s2] [t1, t2]
@@ -32,8 +30,12 @@ rename g1 g2 = rename' (Just []) (g1, g2) where
   renameGoals           = renames rename'
   renames     f r ms ns = foldl f r $ zip ms ns
 
--- Embedding
+conj (a:as) = foldl (:/\:) a as
 
+renameGoals :: [G S] -> [G S] -> Maybe Renaming
+renameGoals as bs = rename (conj as) (conj bs)
+
+-- Embedding
 embed :: G S -> G S -> Maybe Renaming
 embed g1 g2 = embedGoal True (Just []) (g1, g2) where 
   embedGoal _ r (t1 :=:   t2, q1 :=: q2  ) = embedTerms r [t1, t2] [q1, q2]
@@ -53,6 +55,9 @@ embed g1 g2 = embedGoal True (Just []) (g1, g2) where
   embedTerm _  _                              = Nothing
   embedTerms r ps qs | length ps == length qs = foldl embedTerm r $ zip ps qs
   embedTerms _ _  _                           = Nothing
+
+embedGoals :: [G S] -> [G S] -> Maybe Renaming
+embedGoals as bs = embed (conj as) (conj bs)
 
 generalize :: [S] -> G S -> G S -> (G S, Generalizer, Generalizer, [S])
 generalize d (Invoke f as) (Invoke g bs) = 
@@ -89,41 +94,68 @@ generalize d (Invoke f as) (Invoke g bs) =
                   gs  
     where group x y = snd x == snd y
 
-invoke :: Stack -> E.Gamma -> E.Sigma -> G S -> Tree 
-invoke cs (p, i, d) s (Invoke f as') = 
-  let (_, fs, g) = p f in
-  case find (\ (g, bs) -> isJust $ rename (Invoke g bs) (Invoke f as')) cs of 
-    Just (g, bs) -> Rename g bs $ fromJust (rename (Invoke g bs) (Invoke f as'))
-    Nothing      -> case find (\ (g, bs) -> isJust $ embed (Invoke g bs) (Invoke f as')) cs of
-                      Just (g, bs) -> let (msg, s1, s2, d') = generalize d (Invoke f as') (Invoke g bs) in
-                                      (Gen s1 (invoke ((f, as'):cs) (p, i, d') s msg))
-                      Nothing      -> eval ((f, as') : cs) (p, i, d) s g  
+generalizeGoals :: [S] -> [G S] -> [G S] -> (G S, Generalizer, Generalizer, [S])
+generalizeGoals s as bs = generalize s (conj as) (conj bs)
 
-eval :: Stack -> E.Gamma -> E.Sigma -> G X -> Tree
-eval cs e s g@(t1 :=: t2) = 
+substitute :: E.Sigma -> G S -> G S
+substitute s (t1 :=: t2  ) = E.substitute s t1 :=: E.substitute s t2
+substitute s (g1 :/\: g2 ) = substitute s g1 :/\: substitute s g2 
+substitute s (g1 :\/: g2 ) = substitute s g1 :\/: substitute s g2
+substitute s (Invoke f as) = Invoke f $ map (E.substitute s) as
+
+weakCouple :: (G S, G S) -> Bool
+weakCouple gs =
+  case gs of
+    (_ :=:  _  , _ :=:  _  ) -> True
+    (_ :/\: _  , _ :/\: _  ) -> True
+    (_ :\/: _  , _ :\/: _  ) -> True
+    (Invoke _ _, Invoke _ _) -> True
+    _                        -> False
+
+split :: [G S] -> [G S] -> ([G S], [G S])
+split gs1 gs2 = 
+  case elemIndex False $ map weakCouple $ zip gs1 gs2 of
+    Nothing -> splitAt (length gs2) gs1
+    Just i  -> splitAt (i-1)        gs1
+
+invoke :: Stack -> E.Gamma -> E.Sigma -> G S -> [G S] -> Tree 
+invoke cs (p, i, d) s (Invoke f as') conjs = 
+  let (_, fs, g) = p f in
+  case find (\ (g, bs, conjs') -> isJust $ renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs)) cs of 
+    Just (g, bs, conjs') -> 
+      Rename g bs $ fromJust (renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs))
+    Nothing -> 
+      case find (\ (g, bs, conjs') -> isJust $ embedGoals (Invoke g bs : conjs') (Invoke f as' : conjs)) cs of
+        Just (g, bs, conjs') -> 
+          if length conjs == length conjs' 
+          then let (msg, s1, s2, d') = generalizeGoals d (Invoke f as' : conjs) (Invoke g bs : conjs') in
+               (Gen s1 (invoke ((f, as', conjs):cs) (p, i, d') s msg conjs))
+          else if length conjs' < length conjs 
+               then let cs'           = (f, as', conjs):cs in
+                    let (left, right) = split (Invoke f as' : conjs) (Invoke g bs : conjs') in
+                    Split (eval cs' (p, i, d) s left)
+                          (eval cs' (p, i, d) s right)
+               else error "Wow..."
+        Nothing -> let (g', env') = E.pre_eval (p, i, d) g in
+                   eval ((f, as', map (substitute s) conjs) : cs) env' s (g':conjs)  
+
+eval :: Stack -> E.Gamma -> E.Sigma -> [G S]  -> Tree
+eval cs e s (g@(t1 :=: t2):conjs) = 
   case takeS 1 $ E.eval e s g of
     []       -> Fail
-    [(s, _)] -> Success s
-eval cs  e        s (g1 :\/: g2      ) = Or (eval cs e s g1) (eval cs e s g2)
-eval cs (p, i, d) s (Syntax.Fresh x g) = PrintTree.Fresh x y $ eval cs (p, E.extend i x (V y), d') s g where 
-  y : d' = d
-eval cs (p, i, d) s (Invoke f as) = 
+    [(s, _)] -> case conjs of
+                  [] -> Success s
+                  _  -> eval cs e s conjs 
+eval cs  e        s ((g1 :\/: g2):conjs) = Or (eval cs e s (g1:conjs)) (eval cs e s (g2:conjs))
+eval cs  e        s ((g1 :/\: g2):conjs) = eval cs e s $ [g1, g2] ++ conjs
+eval cs (p, i, d) s ((Invoke f as):conjs) = 
   let (_, fs, g) = p f in
-  let i'         = foldl (\ i' (f, a) -> E.extend i' f $ i E.<@> a) i $ zip fs as in
-  let as' = map (E.substitute s . (i E.<@>)) as in
-  invoke cs (p, i', d) s (Invoke f as')
+  let i'         = foldl (\ i' (f, a) -> E.extend i' f a) i $ zip fs as in
+  let as'        = map (E.substitute s) as in
+  invoke cs (p, i', d) s (Invoke f as') conjs
 
 drive :: Spec -> Tree
 drive (defs, goal) =
   let p n = fromJust $ find (\ (m, _, _) -> m == n) defs in
-  eval [] (E.env0 p) E.s0 goal
-
-f x y = C "f" [x, y]
-g x y = C "g" [x, y]
-t0 s = C s []
-[a, b, c] = map t0 ["a", "b", "c"]
-x = V 0
-
-tree = drive ([Test.appendo'], fresh ["q"] (call "appendo'" [Test.nil, Test.nil, V "q"]))
-
-main = printTree tree "tree.dot"
+  let (goal', env') = E.pre_eval (E.env0 p) goal in 
+  eval [] env' E.s0 [goal']

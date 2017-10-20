@@ -1,274 +1,249 @@
 module Driver where
-import MuKanren hiding (mplus)
-import Control.Monad
-import Debug.Trace
-import Data.List (find, delete)
-import Data.Maybe (isJust)
-import Data.Foldable (foldrM)
+import Data
+import Data.Foldable (foldrM, msum)
+import Data.List (find, intercalate)
+import Control.Monad (mplus)
+import Data.Maybe (mapMaybe, isJust, fromMaybe)
+import MiniKanren
+import State
 
-type GenRef = Int
+updateRenaming :: Term -> Term -> Renaming -> Maybe Renaming
+updateRenaming l r renaming =
+  if l `elem` fst (unzip renaming)
+  then if (l,r) `elem` renaming
+       then Just renaming
+       else Nothing
+  else Just ((l,r):renaming)
 
-data Tree subst ast = Success (subst,Int)
-                    | Fail
-                    | Step Int subst ast (Tree subst ast)
-                    | Or Int subst ast (Tree subst ast) (Tree subst ast)
-                    | Up Int subst ast
-                    | Gen Int subst ast ESubst GenRef (Tree subst ast)
+isRenaming :: Goal -> Goal -> Bool
+isRenaming l r =
+  isJust $ renaming l r
 
-data Ctx = EmptyCtx | ConjCtx AST Ctx
-
-instance (Show subst, Show ast) => Show (Tree subst ast) where
-  show t = show' t 0 where
-    nspaces n = [' ' | _ <- [1..n]]
-    show' Fail n' = nspaces n' ++ "F\n"
-    show' (Success (s,c)) n' = nspaces n' ++ "S " ++ show s ++ "\n"
-    show' (Step n s a ch) n' = nspaces n' ++ "T " ++ show n ++ " " ++ show s ++ " " ++ show a ++ "\n" ++ show' ch (n+1)
-    show' (Or n s a l r) n' = nspaces n' ++ "O " ++ show n ++ " " ++ show s ++ " " ++ show a ++ "\n" ++ show' l (n+1) ++ "\n" ++ show' r (n+1)
-    show' (Up n s a) n' = nspaces n' ++ "U " ++ show n ++ " " ++ show s ++ " " ++ show a ++ "\n"
-    show' (Gen n s a es gr ch) n' = nspaces n' ++ "G " ++ show gr ++ " " ++ show a ++ " " ++ show es ++ "\n" ++ show' ch (n+1)
-
-rename t =
-  let (t', _) = rename_ast t ([], 0) in t'
+renaming :: Goal -> Goal -> Maybe Renaming
+renaming l r =
+  rename l r []
   where
-    -- Fresh should be impossible at this stage
-    rename_ast (Conj l r) s =
-      let (l', s')  = rename_ast l s
-          (r', s'') = rename_ast r s'
-      in (Conj l' r', s'')
-    rename_ast (Disj l r) s =
-      let (l', s')  = rename_ast l s
-          (r', s'') = rename_ast r s'
-      in (Disj l' r', s'')
-    rename_ast (Fun n a) s =
-      let (a', s') = rename_ast a s
-      in (Fun n a', s')
-    rename_ast (Zzz a ) s =
-      let (a', s') = rename_ast a s
-      in (Zzz a', s')
-    rename_ast (Call a args) s =
-      let s' = s
-          a' = a -- (a', s')    = rename_ast a s -- this loops. Doesn't seem necessary for now anyway
-          (arg', s'') = foldl (\(xs, s) x -> let (x', s') = rename_t x s in (x' : xs, s'))
-                              ([], s')
-                                args
-      in (Call a' $ reverse arg', s'')
-    rename_ast (Uni l r ) s =
-      let (l', s')  = rename_t l s
-          (r', s'') = rename_t r s'
-      in (Uni l' r', s'')
-    rename_ast x s = (x, s)
-
-    rename_t (Var v) s@(m, c) =
-      case lookup v m of
-        Nothing -> let v' = Var c in (v', ((v, v') : m, c+1))
-        Just v' -> (v', s)
-    rename_t (Pair l r) s =
-      let (l', s')  = rename_t l s
-          (r', s'') = rename_t r s'
-      in (Pair l' r', s'')
-    rename_t x s = (x, s)
-
-renaming l r = rename l == rename r
-
-instance Eq AST where
-  Conj l l' == Conj r r' = l == r && l' == r'
-  Disj l l' == Disj r r' = l == r && l' == r'
-  Uni  l l' == Uni  r r' = l == r && l' == r'
-  Zzz l     == Zzz r     = l == r
-  Call (Fun l _) ls == Call (Fun r _) rs = l == r && foldl (\acc (l, r) -> acc && l == r) True (zip ls rs)
-  _ == _ = False
-
-isCoupling l r =
-  case (l,r) of
-    (Uni  _ _, Uni  _ _) -> True
-    (Conj _ _, Conj _ _) -> True
-    (Disj _ _, Disj _ _) -> True
-    (Call _ _, Call _ _) -> True
-    (Zzz    _, Zzz    _) -> True
-    _ -> False
-
-embed l r =
-  let
-      embedT :: Term -> Term -> [(Var, Var)] -> Maybe [(Var, Var)]
-      embedT l r ren = coupleT l r ren `mplus` coupleT l r ren
-
-      coupleT l r renaming =
-        case (l,r) of
-          -- terms should be embedded up to renaming
-          (Var l, Var r) -> if l `elem` fst (unzip renaming)
-                            then if (l,r) `elem` renaming then Just renaming else Nothing
-                            else Just ((l,r):renaming)
-
-          (Nil, Nil) -> Just renaming
-          (Pair l l', Pair r r') -> embedT l r renaming >>= embedT l' r'
-          (Atom l, Atom r) | l == r -> Just renaming
-          _ -> Nothing
-
-      diveT l r renaming =
-        case (l,r) of
-        (_, Var _) -> Nothing
-        (_, Atom _) -> Nothing
-        (_, Nil) -> Nothing
-        (x, Pair l r) -> embedT x l renaming `mplus` embedT x r renaming
+    rename l r renaming =
+      case (l,r) of
+        (Unify l l', Unify r r') -> renameT l r renaming >>= renameT l' r'
+        (Conj l, Conj r) | length l == length r ->
+          foldrM (\(l,r) renaming -> rename l r renaming) renaming (zip l r)
+        (Disj l, Disj r) | length l == length r ->
+          foldrM (\(l,r) renaming -> rename l r renaming) renaming (zip l r)
+        (Zzz l, Zzz r) -> rename  l r renaming
+        (Invoke ln ls, Invoke rn rs) | ln == rn && length ls == length rs ->
+          foldrM (\(t,t') r -> renameT t t' r) renaming (zip ls rs)
+        _ -> Nothing
+    renameT l r renaming =
+      case (l,r) of
+        (Free _, Free _) -> updateRenaming l r renaming
+        (Var  _, Var  _) -> updateRenaming l r renaming
+        (Ctor ln ls, Ctor rn rs) | ln == rn && length ls == length rs->
+          foldrM (\(t,t') r -> renameT t t' r) renaming (zip ls rs)
         _ -> Nothing
 
-      embed' l r renaming = couple l r renaming `mplus` dive l r renaming
+class Embeddable a where
+  couple :: a -> a -> Renaming -> Maybe Renaming
+  dive   :: a -> a -> Renaming -> Maybe Renaming
+  embed  :: a -> a -> Renaming -> Maybe Renaming
+  embed l r renaming = couple l r renaming `mplus` dive l r renaming
 
-      couple l r renaming =
-        case (l,r) of
-          (Uni  l l', Uni  r r') -> embedT l r renaming >>= embedT l' r'
-          (Conj l l', Conj r r') -> embed' l r renaming >>= embed' l' r'
-          (Disj l l', Disj r r') -> embed' l r renaming >>= embed' l' r'
-          (Call (Fun nl al) als, Call (Fun nr ar) ars) | nl == nr ->
-            foldrM (\(l,r) ren -> embedT l r ren) renaming (zip als ars)
-          (Zzz l, Zzz r) -> embed' l r renaming
-          _ -> Nothing
+instance Embeddable Term where
+  couple l r renaming =
+    case (l,r) of
+      (Free _, Free _) -> updateRenaming l r renaming
+      (Var  _, Var  _) -> updateRenaming l r renaming
+      (Ctor ln ls, Ctor rn rs) | ln == rn && length ls == length rs ->
+        foldrM (\(t,t') r -> embed t t' r) renaming (zip ls rs)
+      _ -> Nothing
 
-      dive l r renaming =
-        case (l,r) of
-          (_, Uni _ _) -> Nothing
-          (l, Zzz r) -> embed' l r renaming
-          (l, Conj r r') -> embed' l r renaming `mplus` embed' l r' renaming
-          _ -> Nothing
-  in
-    isJust $ embed' l r []
+  dive l r renaming =
+    case r of
+      Ctor _ rs -> msum (map (\r' -> embed l r' renaming) rs)
+      _ -> Nothing
 
-unfold _ Nothing = [(Nothing, Nothing)]
+instance Embeddable Goal where
+  couple l r renaming =
+    case (l,r) of
+      (Unify l l', Unify r r') -> embed l r renaming >>= embed l' r'
+      (Conj l, Conj r) | length l == length r ->
+        foldrM (\(l,r) renaming -> embed l r renaming) renaming (zip l r)
+      (Disj l, Disj r) | length l == length r ->
+        foldrM (\(l,r) renaming -> embed l r renaming) renaming (zip l r)
+      (Zzz l, Zzz r) -> embed l r renaming
+      (Invoke ln ls, Invoke rn rs) | ln == rn && length ln == length rn ->
+        foldrM (\(t,t') r -> embed t t' r) renaming (zip ls rs)
+      _ -> Nothing
 
-unfold x st@(Just st'@(s,c)) =
---  if c >= 6 then [(Nothing, Nothing)] else
-  case x of
-    GV _ _ _ -> [(Nothing, st)]
-    Uni  l r -> [(Nothing, unify l r s >>= \s -> Just (s,c))]
-    Disj (GV _ _ _) r -> [(Just r, st)]
-    Disj l (GV _ _ _) -> [(Just l, st)]
-    Disj l r -> unfold l st ++ unfold r st
-    Fresh f  -> [(Just $ f (var c), Just (s,c+1))]
-    Zzz a    -> [(Just a,st)]
-    Fun _ a  -> [(Just a,st)]
-    Call (Fun _ a) arg -> [(Just a,st)]
-    Conj (GV _ _ _) r -> [(Just r, st)]
-    Conj l (GV _ _ _) -> [(Just l, st)]
-    Conj (Uni l l') (Uni r r') -> [(Nothing, unify l l' s >>= \s -> unify r r' s >>= \s -> Just (s,c))]
-    Conj (Uni l l') r -> unfold r (unify l l' s >>= \s -> Just (s,c))
-    Conj l (Uni r r') -> unfold l (unify r r' s >>= \s -> Just (s,c))
-    Conj l r -> let l' = unfold l st
-                in concatMap (\y -> case y of
-                                     (Nothing, Nothing) -> [y]
-                                     (Nothing, st@(Just _)) -> unfold r st
-                                     (Just x', st@(Just _)) -> [(Just $ Conj x' r, st)]
-                                     _ -> error "invalid substitution during unfolding")
-                             l'
+  dive l r renaming =
+    case r of
+      Zzz  r -> embed l r renaming
+      Conj r -> mconcat (map (\r -> embed l r renaming) r)
+      Disj r -> mconcat (map (\r -> embed l r renaming) r)
+      _ -> Nothing
 
-generalize :: AST -> AST -> Int -> Int -> (AST, ESubst, ESubst, Int)
-generalize smaller bigger n up =
-  let generalizeT :: Term -> Term -> ESubst -> ESubst -> Int -> (Term, ESubst, ESubst, Int)
-      generalizeT l r s1 s2 n =
-        case (l,r) of
-          (Pair l r, Pair l' r') ->
-            let (l'', s1' , s2' , n' ) = generalizeT l l' s1  s2  n
-                (r'', s1'', s2'', n'') = generalizeT r r' s1' s2' n'
-            in (Pair l'' r'', s1'', s2'', n'')
-          (Var v, Var u) | v == u -> (Var v, s1, s2, n)  -- TODO
-          (Var _, Var _) ->
-            (Var n, (n, Right r) : s1, (n, Right l) : s2, n+1)
-          (Var _, Pair _ _) ->
-            (Var n, (n, Right r) : s1, (n, Right l) : s2, n+1)
-          (Atom _, Atom _) ->
-            (l, s1, s2, n)
-          (Nil, Nil) ->
-            (l, s1, s2, n)
-          _ -> error $ "Failed to generalize the following terms:\n" ++ show l ++ "\n" ++ show r ++ "\nThis is impossible due to embedding defenition"
+unfold :: Goal -> State -> [([Goal], State)]
+unfold goal state =
+  case goal of
+    Unify l r ->
+      case unify state l r of
+        Nothing -> []
+        Just st -> [([], st)]
+    Disj xs  -> concatMap (`unfold` state) xs
+    Zzz g -> unfold g state
+    Conj [] -> error "empty conjunction"
+    Conj [x] -> unfold x state
+    Conj (x:xs) ->
+      let unfL  = unfold x state
+      in  concatMap
+            (\(g,st) ->
+               case g of
+                 [] -> unfold (substG state (Conj xs)) st
+                 [g''] ->
+                   map (\(g',st') ->
+                            case g' of
+                              [] -> (g, st')
+                              [g'] -> ([Conj (g'' : goalToList g')], st))
+                        (unfold (substG state (Conj xs)) st))
+            (reverse unfL)
+    Invoke _ _ -> [([substG state goal], state)]
+    Fresh var g -> unfold g st
+                   where st = newVar state var
 
-      generalize' :: AST -> AST -> ESubst -> ESubst -> Int -> Int -> (AST, ESubst, ESubst, Int)
-      generalize' smaller bigger s1 s2 n up =
-        case (smaller, bigger) of
-          (Disj l r, Disj l' r') ->
-            let (l'', s1', s2', n') = generalize' l l' s1 s2 n up
-                (r'', s1'', s2'', n'') = generalize' r r' s1' s2' n' up
-            in (Disj l'' r'', s1'', s2'', n'')
-          (Conj l r, Conj l' r') ->
-            let (l'', s1', s2', n') = generalize' l l' s1 s2 n up
-                (r'', s1'', s2'', n'') = generalize' r r' s1' s2' n' up
-            in (Conj l'' r'', s1'', s2'', n'')
-          (Zzz s, Zzz b) ->
-            let (g, s1', s2', n') = generalize' s b s1 s2 n up
-            in (Zzz g, s1', s2', n')
-          (Call (Fun ns as) args, Call (Fun nb ab) argb) | ns == nb ->
-            let (arg', s1', s2', n') = foldr (\(l, r) (prev, s1, s2, n) ->
-                                               let (cur, s1', s2', n') = generalizeT l r s1 s2 n
-                                               in (cur : prev, s1', s2', n')
-                                             )
-                                             ([], s1, s2, n)
-                                             (zip args argb)
-            in (Call (Fun ns as) arg', s1', s2', n')
-          (Uni l r, Uni l' r') ->
-            let (l'', s1', s2', n') = generalizeT l l' s1 s2 n
-                (r'', s1'', s2'', n'') = generalizeT r r' s1' s2' n'
-            in (Uni l'' r'', s1'', s2'', n'')
-          (s, b) ->
-            case find (\(x,t) -> (t == (Left s)) && ((lookup x s2) == (Just $ Left b))) s1 of
-              Just (x,t) -> (GV x s1 up, s1, s2, n)
-              Nothing -> let nv = n+1
-                         in
-                            (GV nv ((nv, Left b) : s1) up, (nv, Left s) : s1, (n, Left s) : s2, nv)
-  in generalize' smaller bigger [] [] n up
+goalToList (Conj xs) = xs
+goalToList x = [x]
 
-flatten t EmptyCtx = t
-flatten t (ConjCtx t' ctx) = flatten (Conj t t') ctx
+split (x:xs) (y:ys) | isJust $ couple x y [] =
+  let (cs,uncs) = split xs ys in (x:cs, uncs)
+split xs [] = ([], xs)
 
-unify' l r st@(s,c) =
-  unify l r s >>= \s -> Just (s,c)
-
-drive ast =
-  drive' 0 ast EmptyCtx emptyState []
+generalizeTerm :: Term -> Term -> Integer -> (Term, [(Term, Term)], [(Term, Term)], Integer)
+generalizeTerm t1 t2 =
+  gt t1 t2 [] []
   where
-    drive' _ (Uni l r) EmptyCtx st _ =
-      case unify' l r st of
-        Just st' -> Success st'
-        Nothing -> Fail
+    gt t1 t2 s1 s2 n =
+      case (t1, t2) of
+        (Free i, Free j) | i == j -> (t1, s1, s2, n)
+        (Free i, Free j) -> (t1, s1, (t1,t2):s2, n+1)
+        (_, Var _) -> error "Syntactic variable in term"
+        (Var _, _) -> error "Syntactic variable in term"
+        (Ctor ln larg, Ctor rn rarg) | ln == rn ->
+          (Ctor ln args, s1', s2', n')
+          where
+            (args, s1', s2', n') =
+              foldl (\(args, s1, s2, n) (l,r) ->
+                       let (arg, s1', s2', n') = gt l r s1 s2 n
+                       in  (arg:args, s1', s2', n'))
+                    ([], s1, s2, n)
+                    (zip larg rarg)
+        (x, y) -> let new = Free n in (new, (new,t1):s1, (new,t2):s2, n+1)
 
-    drive' n t@(Uni l r) c@(ConjCtx a ctx) st ancs =
-      case unify' l r st of
-        Just st'@(s',c') ->
-          let anc = flatten t c
-          in Step n s' anc (drive' (n+1) a ctx st' ((anc,n):ancs))
-        Nothing -> Fail
+generalizeArgs :: [Goal] -> [Goal] -> State -> (Goal, [(Term, Term)], State, Integer)
+generalizeArgs curr prev state =
+  (conj goals, s1, updateState s1, n)
+  where
+    (goals, s1, _, n) = ga curr prev [] [] (index state)
+    ga [] [] s1 s2 n = ([], s1, s2, n)
+    ga (x:xs) (y:ys) s1 s2 n =
+      let (g, s1', s2', n') = ga' x y s1 s2 n
+          (gs, s1'', s2'', n'') = ga xs ys s1' s2' n'
+      in (g:gs, s1'', s2'', n'') -- check the order of conjuncts
+      where
+        ga' x y s1 s2 n =
+          case (x,y) of
+            (Invoke xn xarg, Invoke yn yarg) | xn == yn && length xarg == length yarg ->
+              let (args', s1', s2', n') =
+                    foldl (\(args, s1, s2, n) (x,y) ->
+                              let (g, s1', s2', n') = generalizeTerm x y n
+                              in  (g:args, s1'++s1, s2'++s2, n'))
+                          ([], s1, s2, n)
+                          (zip xarg yarg)
+              in (Invoke xn (reverse args'), s1', s2', n')
+    updateState =
+      foldl (\st (u,v)-> extSubst st u v) state
 
-    drive' n t@(Zzz a) ctx st@(s,c) ancs =
-      let anc = flatten t ctx
-      in Step n s anc (drive' (n+1) a ctx st ((anc,n):ancs))
-
-    drive' n t@(Disj l r) ctx st@(s,c) ancs =
-      let anc = flatten t ctx
-      in Or n s anc (drive' (n+1) l ctx st ((anc,n):ancs)) (drive' (n+1) r ctx st ((anc,n):ancs))
-
-    drive' n t@(Conj l r) ctx st@(s,c) ancs =
-      let anc = flatten t ctx
-      in Step n s anc (drive' (n+1) l (ConjCtx r ctx) st ancs)
-
-    drive' n t@(Fresh f) ctx st@(s,c) ancs =
-      let anc = flatten t ctx
-      in Step n s anc (drive' (n+1) (f $ var c) ctx (s,c+1) ancs)
-
-    drive' _ (Fun _ _) _ _ _ = error "unapplied function"
-
-    drive' n t@(Call (Fun _ a) args) ctx st@(s,c) ancs =
-      let anc = flatten t ctx
-          ch =
-               case find (\(a,n') -> renaming a anc) ancs of
-                 Just (a,n') -> Up n' s anc
-                 Nothing ->
-                   case find (\(a,n') -> isCoupling a anc && embed a anc) ancs of
-                     Just (a,n') ->
-                       let (g, s1, s2, c') = generalize a anc c n'
-                       in drive' (n+1) g EmptyCtx st ((anc,n):ancs)
-                     Nothing -> drive' (n+1) a ctx st ((anc,n):ancs)
-      in Step n s anc ch
-
-    drive' n t@(GV v es r) EmptyCtx st@(s,c) ancs =
-      Up r s t
-
-    drive' n t@(GV v es r) c@(ConjCtx a ctx) st@(s,_) ancs =
-     let anc = flatten t c
-     in Gen n s anc es r (drive' (n+1) a ctx st ((anc,n):ancs))
+drive :: Spec -> Tree
+drive spec =
+  drive' 0 (goal spec) [] emptyState [] []
+  where
+    drive' i g' ctx state ancs freshVars =
+      let mergeCtx g ctx = Conj (g:ctx)
+          anc = applyState state (substG state (mergeCtx g' ctx))
+          ancs' = (i,anc) : ancs
+          g = substG state g'
+      in
+        case g of
+          Fresh var g -> drive' i g ctx (newVar state var) ancs (index state : freshVars)
+          _ ->
+            (if null freshVars then id else Step i state anc (reverse freshVars)) $
+               case g of
+                 Unify l r ->
+                   case unify state l r of
+                     Just st ->
+                       case ctx of
+                         [] -> Success st
+                         (c:cs) -> drive' i c cs st ancs []
+                     Nothing -> Fail
+                 Zzz g -> drive' i g ctx state ancs []
+                 Disj xs -> Or i state anc $ map (\x -> drive' (i+1) x ctx state ancs' []) xs
+                 Conj [] -> error "empty conjunction while driving!"
+                 Conj [x] -> drive' i x ctx state ancs []
+                 Conj (x:xs) -> drive' i x (map (substG state) xs ++ ctx) state ancs []
+                 Invoke name actualArgs ->
+                   let (Def _ formalArgs body) = env spec name
+                       state' = foldl bindVar state $ zip formalArgs (map (subst state) actualArgs)
+                       unf = unfold body state'
+                       processCtx st acc [] = Just (st,acc)
+                       processCtx st acc (c:cs) =
+                         let c' = applyState st c
+                             (c'', st'') =
+                               case c' of
+                                 Invoke n args ->
+                                   let (Def _ fArgs b) = env spec n
+                                       st' = foldl bindVar st $ zip fArgs (map (subst st) args)
+                                   in  (b, st')
+                                 x -> (x, st)
+                          in  case unfold c'' st'' of
+                               [] -> Nothing
+                               [(g,s)] -> processCtx s (acc ++ g) cs
+                               _       -> processCtx st (acc ++ [c]) cs
+                       res = mapMaybe (\(g,st) -> processCtx st (concatMap goalToList g) ctx) unf
+                       makeNodes baseState =
+                         let wrapInFresh state =
+                               let fv = [index baseState .. index state - 1]
+                               in if length fv <= 1 then id else Step i state' anc fv
+                         in  map (\(st,g) ->
+                                     wrapInFresh st $
+                                       case g of
+                                         [] -> Success st
+                                         x -> drive' (i+1) (conj x) [] st ancs' [])
+                                 res
+                       ch = let nodes = makeNodes state'
+                            in  if length nodes > 1
+                                then Or i state' anc nodes
+                                else if null nodes then Fail else head nodes
+                   in
+                     case find (\(n,g) -> isRenaming g anc) ancs of
+                       Just (n,g) -> Renaming n state anc
+                       Nothing ->
+                         case find (\(n,g) -> isJust $ couple g anc []) ancs of
+                           Just (n,g) ->
+                             let curr = goalToList anc
+                                 prev = goalToList g
+                             in  if   length curr > length prev
+                                 then let (l,r) = split curr prev
+                                      in  Split i
+                                                state
+                                                (conj l)
+                                                (conj r)
+                                                (drive' (i+1) (conj l) [] state' ancs' [])
+                                                (drive' (i+1) (conj r) [] state' ancs' [])
+                                 else let (g',subst,st,n) = generalizeArgs curr prev state
+                                          state'' =
+                                            State { getSubst = getSubst state
+                                                  , getState = getState state
+                                                  , index = n
+                                                  , vars = vars state
+                                                  }
+                                      in  Gen i st subst g' (drive' (i+1) g' [] state'' ancs' [])
+                           Nothing -> ch

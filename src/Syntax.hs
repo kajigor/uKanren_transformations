@@ -42,6 +42,10 @@ instance Show a => Show (G a) where
   show (Fresh name g) = "Fresh " ++ name ++ " (" ++ show g ++ ")"
   show (Invoke name ts) = name ++ "(" ++ show ts ++ ")"
 
+infix  8 :=:
+infixr 7 :/\:
+infixr 6 :\/:
+
 infixr 7 &&&
 infixr 6 |||
 infix  8 ===
