@@ -103,6 +103,21 @@ substitute s (g1 :/\: g2 ) = substitute s g1 :/\: substitute s g2
 substitute s (g1 :\/: g2 ) = substitute s g1 :\/: substitute s g2
 substitute s (Invoke f as) = Invoke f $ map (E.substitute s) as
 
+weakCouple :: (G S, G S) -> Bool
+weakCouple gs =
+  case gs of
+    (_ :=:  _  , _ :=:  _  ) -> True
+    (_ :/\: _  , _ :/\: _  ) -> True
+    (_ :\/: _  , _ :\/: _  ) -> True
+    (Invoke _ _, Invoke _ _) -> True
+    _                        -> False
+
+split :: [G S] -> [G S] -> ([G S], [G S])
+split gs1 gs2 = 
+  case elemIndex False $ map weakCouple $ zip gs1 gs2 of
+    Nothing -> splitAt (length gs2) gs1
+    Just i  -> splitAt (i-1)        gs1
+
 invoke :: Stack -> E.Gamma -> E.Sigma -> G S -> [G S] -> Tree 
 invoke cs (p, i, d) s (Invoke f as') conjs = 
   let (_, fs, g) = p f in
@@ -115,7 +130,12 @@ invoke cs (p, i, d) s (Invoke f as') conjs =
           if length conjs == length conjs' 
           then let (msg, s1, s2, d') = generalizeGoals d (Invoke f as' : conjs) (Invoke g bs : conjs') in
                (Gen s1 (invoke ((f, as', conjs):cs) (p, i, d') s msg conjs))
-          else undefined {- !!! split -}
+          else if length conjs' < length conjs 
+               then let cs'           = (f, as', conjs):cs in
+                    let (left, right) = split (Invoke f as' : conjs) (Invoke g bs : conjs') in
+                    Split (eval cs' (p, i, d) s left)
+                          (eval cs' (p, i, d) s right)
+               else error "Wow..."
         Nothing -> let (g', env') = E.pre_eval (p, i, d) g in
                    eval ((f, as', map (substitute s) conjs) : cs) env' s (g':conjs)  
 
