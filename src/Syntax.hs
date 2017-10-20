@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 
 module Syntax where
@@ -11,8 +13,8 @@ data Term v = V v | C String [Term v] deriving (Eq, Ord) --, Show)
 type Tx     = Term X
 type Ts     = Term S
 
---instance Show S where 
---  show i = "_." ++ show i
+instance {-# OVERLAPPING #-} Show S where 
+  show i = "_." ++ show i
 
 instance Show a => Show (Term a) where
   show (V v) = show v

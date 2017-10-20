@@ -43,7 +43,6 @@ import Data.GraphViz.Attributes.Complete (
   zVal,
   focus
   )
-import System.Mem.StableName
 import Syntax
 import qualified Eval as E
 
@@ -87,15 +86,7 @@ label tree =
     label' t@(PrintTree.Fresh _ _ ch)   i ns es = addChild    i (show t) ns es ch
     label' t@(Gen _ ch)                 i ns es = addChild    i (show t) ns es ch
     label' t@(Or ch1 ch2)               i ns es = addChildren i (show t) ns es ch1 ch2
-{-
-data Tree  = 
-  Fail                         | 
-  Success E.Sigma              | 
-  Or      Tree Tree            | 
-  Fresh   X S Tree             | 
-  Rename  String [Ts] Renaming |
-  Gen     Generalizer Tree -- deriving Show
--}
+
 instance Show (Tree) where 
   show Fail = "_|_"
   show (Success s) = ("S\n" ++ show s)
