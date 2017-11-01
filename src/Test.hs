@@ -1,8 +1,10 @@
+module Test where
+
 import Syntax
 import Stream
 import Eval
-import Driving
-import Tree
+--import Driving
+--import Tree
 
 -- Tests
 infixr 9 %
@@ -79,6 +81,7 @@ reverso =
 
 toplevel n spec = map (\s -> list $ reify s (V 0)) $ takeS n $ (run spec)
 
+{-
 main = 
   do
     putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [nil, nil, V "q"])))
@@ -91,3 +94,4 @@ main =
     putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [V "q", a % b % nil])))
 --    putStrLn $ show $ drive     ([appendo'], fresh ["q"] (call "appendo'" [nil, nil, V "q"]))    
     printTree "appendo.dot" $ drive     ([appendo'], fresh ["q"] (call "appendo'" [nil, nil, V "q"]))    
+-}
