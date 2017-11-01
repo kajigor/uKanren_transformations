@@ -3,8 +3,8 @@ module Test where
 import Syntax
 import Stream
 import Eval
---import Driving
---import Tree
+import Driving
+import Tree
 
 -- Tests
 infixr 9 %
@@ -73,15 +73,15 @@ reverso =
          ((x === nil &&& y === nil) |||
           (fresh ["h", "t", "rt"]
              (x === h % t &&&
-              call "appendo" [rt, h % nil, y] &&&
-              call "reverso" [t, rt] 
+              call "reverso" [t, rt] &&&
+              call "appendo" [rt, h % nil, y]
              )
           )
          )
 
 toplevel n spec = map (\s -> list $ reify s (V 0)) $ takeS n $ (run spec)
 
-{-
+
 main = 
   do
     putStrLn $ show (fresh ["q"] (call "appendo" [ V "q", i "B" % nil, i "A" % (i "B" % nil)]))
@@ -94,5 +94,19 @@ main =
     putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [a % b % nil, V "q"])))
     putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [V "q", a % b % nil])))
 --    putStrLn $ show $ drive     ([appendo'], fresh ["q"] (call "appendo'" [nil, nil, V "q"]))    
-    printTree "appendo.dot" $ drive     ([appendo'], fresh ["q"] (call "appendo'" [nil, nil, V "q"]))    
+--    printTree "appendo.dot" $ drive     ([appendo'], fresh ["q"] (call "appendo'" [nil, nil, V "q"]))    
+{-
+    printTree "appapp.dot"  $ 
+      drive ([appendo], 
+              fresh ["q", "r", "s", "t", "p"] 
+                 (call "appendo" [V "q", V "r", V "s"] &&& 
+                  call "appendo" [V "s", V "t", V "p"]
+                 )
+             )
 -}
+    printTree "reverso.dot"  $ 
+      drive ([reverso, appendo], 
+              fresh ["q", "r", "s"] 
+                 (call "reverso" [V "q", V "r", V "s"]
+                 )
+             )

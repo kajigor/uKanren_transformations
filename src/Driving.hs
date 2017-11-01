@@ -9,23 +9,23 @@ import Data.Maybe
 import Syntax
 import Stream
 import qualified Eval as E
---import Tree 
+import Tree 
 import Debug.Trace
-import Test
+--import Test
 
-data Tree = 
-  Fail                          | 
-  Success E.Sigma               | 
-  Or      Tree Tree             | 
-  Rename  String [Ts] Renaming  |
-  Gen     Generalizer Tree      |
-  Split   Tree Tree deriving Show
+--data Tree = 
+--  Fail                          | 
+--  Success E.Sigma               | 
+--  Or      Tree Tree             | 
+--  Rename  String [Ts] Renaming  |
+--  Gen     Generalizer Tree      |
+--  Split   Tree Tree deriving Show
 
--- Renaming
-type Renaming = [(S, S)]
+---- Renaming
+--type Renaming = [(S, S)]
 
--- Generalization
-type Generalizer = [(S, Ts)]
+---- Generalization
+--type Generalizer = [(S, Ts)]
 
 type Stack = [(String, [Ts], [G S])]
 
@@ -152,17 +152,23 @@ invoke :: Stack -> E.Gamma -> E.Sigma -> G S -> [G S] -> Tree
 invoke cs (p, i, d) s (Invoke f as') conjs = 
   let (_, fs, g) = p f in
   case find (\ (g, bs, conjs') -> isJust $ renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs)) cs of 
-    Just (g, bs, conjs') -> 
-      Rename g bs $ fromJust (renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs))
+    Just (g, bs, conjs') ->
+      Rename (conj (Invoke f as' : conjs')) $ fromJust (renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs))
     Nothing -> 
       case find (\ (g, bs, conjs') -> isJust $ embedGoals (Invoke g bs : conjs') (Invoke f as' : conjs)) cs of
         Just (g, bs, conjs') -> 
           if length conjs == length conjs' 
-          then let (msg, s1, s2, d') = generalizeGoals d (Invoke f as' : conjs) (Invoke g bs : conjs') in
+          then let x = (Invoke f as' : conjs)
+                   y = (Invoke g bs  : conjs')
+               in
+               let (msg, s1, s2, d') = generalizeGoals d (Invoke f as' : conjs) (Invoke g bs : conjs') in
+               trace ("HERE\n" ++ "x: " ++ show x ++ "\ny: " ++ show y ++ "\ng: " ++ show msg  ) $
                (Gen s1 (eval ((f, as', conjs):cs) (p, i, d') s [msg]))
           else if length conjs' < length conjs 
-               then let cs'           = (f, as', conjs):cs in
+               then trace ("In Split") $
+                    let cs'           = (f, as', conjs):cs in
                     let (left, right) = split (Invoke f as' : conjs) (Invoke g bs : conjs') in
+                    trace ("SPLITTED into \n" ++ show left ++ "\nAND\n" ++ show right) $
                     Split (eval cs' (p, i, d) s left)
                           (eval cs' (p, i, d) s right)
                else error "Wow..."
@@ -193,9 +199,9 @@ drive (defs, goal) =
     trace (show goal') ( 
     eval [] env' E.s0 [goal']))
 
-tree = drive ([appendo], 
-              fresh ["q", "r", "s", "t", "p"] 
-                 (call "appendo" [V "q", V "r", V "s"] &&& 
-                  call "appendo" [V "s", V "t", V "p"]
-                 )
-             )
+--tree = drive ([appendo], 
+--              fresh ["q", "r", "s", "t", "p"] 
+--                 (call "appendo" [V "q", V "r", V "s"] &&& 
+--                  call "appendo" [V "s", V "t", V "p"]
+--                 )
+--             )

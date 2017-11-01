@@ -41,7 +41,7 @@ data Tree =
   Fail                          | 
   Success E.Sigma               | 
   Or      Tree Tree             | 
-  Rename  String [Ts] Renaming  |
+  Rename  (G S) Renaming  |
   Gen     Generalizer Tree      | 
   Split   Tree Tree -- deriving Show
 
@@ -73,16 +73,19 @@ label tree =
       in  ((i, n) : (ns' ++ ns''), (i, i1, "") : (i, i2, "") : (es' ++ es''))
     label' t@Fail                       i ns es = addLeaf     i (show t) ns es
     label' t@(Success _)                i ns es = addLeaf     i (show t) ns es
-    label' t@(Rename _ _ _)             i ns es = addLeaf     i (show t) ns es
+    label' t@(Rename _ _)             i ns es = addLeaf     i (show t) ns es
     label' t@(Gen _ ch)                 i ns es = addChild    i (show t) ns es ch
     label' t@(Or ch1 ch2)               i ns es = addChildren i (show t) ns es ch1 ch2
+    label' t@(Split ch1 ch2)            i ns es = addChildren i (show t) ns es ch1 ch2
+
 
 instance Show (Tree) where 
   show Fail = "_|_"
   show (Success s) = ("S\n" ++ show s)
-  show (Rename str ts _) = "R\n" ++ str ++ "\n" ++ show ts
+  show (Rename g _) = "R\n" ++ show g -- ++ "\n" ++ show ts
   show (Gen g _) = "G\n" ++ show g
   show (Or _ _) = "O"
+  show (Split t1 t2) = "Splt\n"
 
 params :: GraphvizParams n Text Text () Text
 params = nonClusteredParams {
