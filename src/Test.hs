@@ -81,7 +81,7 @@ toplevel n spec = map (\s -> list $ reify s (V 0)) $ takeS n $ (run spec)
 
 main = 
   do
-    putStrLn $ show (fresh ["q"] (call "appendo" [ V "q", i "B" `cons` nil, i "A" `cons` (i "B" `cons` nil)]))
+    putStrLn $ show (fresh ["q"] (call "appendo" [ V "q", i "B" % nil, i "A" % (i "B" % nil)]))
     putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [nil, nil, V "q"])))
     putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [a % nil, nil, V "q"])))
     putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [a % b % nil, nil, V "q"])))

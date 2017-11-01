@@ -42,7 +42,8 @@ data Tree =
   Success E.Sigma               | 
   Or      Tree Tree             | 
   Rename  String [Ts] Renaming  |
-  Gen     Generalizer Tree -- deriving Show
+  Gen     Generalizer Tree      | 
+  Split   Tree Tree -- deriving Show
 
 -- Renaming
 type Renaming = [(S, S)]
