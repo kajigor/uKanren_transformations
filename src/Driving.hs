@@ -9,7 +9,23 @@ import Data.Maybe
 import Syntax
 import Stream
 import qualified Eval as E
-import Tree 
+--import Tree 
+import Debug.Trace
+import Test
+
+data Tree = 
+  Fail                          | 
+  Success E.Sigma               | 
+  Or      Tree Tree             | 
+  Rename  String [Ts] Renaming  |
+  Gen     Generalizer Tree      |
+  Split   Tree Tree deriving Show
+
+-- Renaming
+type Renaming = [(S, S)]
+
+-- Generalization
+type Generalizer = [(S, Ts)]
 
 type Stack = [(String, [Ts], [G S])]
 
@@ -59,43 +75,57 @@ embed g1 g2 = embedGoal True (Just []) (g1, g2) where
 embedGoals :: [G S] -> [G S] -> Maybe Renaming
 embedGoals as bs = embed (conj as) (conj bs)
 
-generalize :: [S] -> G S -> G S -> (G S, Generalizer, Generalizer, [S])
-generalize d (Invoke f as) (Invoke g bs) = 
-  let (msg, d')        = generalizeTerm d ([], []) (C "()" as, C "()" bs) in
+generalize :: [S] -> (Generalizer, Generalizer) -> G S -> G S -> (G S, Generalizer, Generalizer, [S])
+generalize d gg (g1 :/\: g2) (h1 :/\: h2) =
+  let (i, s1' , s2' , d' ) = generalize d gg         g1 h1 in
+  let (j, s1'', s2'', d'') = generalize d (s1', s2') g2 h2 in
+  (i :/\: j, s1'', s2'', d'')
+generalize d gg (g1 :\/: g2) (h1 :\/: h2) =
+  let (i, s1' , s2' , d' ) = generalize d gg         g1 h1 in
+  let (j, s1'', s2'', d'') = generalize d (s1', s2') g2 h2 in
+  (i :\/: j, s1'', s2'', d'')
+generalize d gg (t1 :=: t2) (r1 :=: r2) =
+  let ((i, s1' , s2' ), d' ) = generalizeTerm d gg         (t1, r1) in
+  let ((j, s1'', s2''), d'') = generalizeTerm d (s1', s2') (t2, r2) in
+  (i :=: j, s1'', s2'', d'')
+generalize d gg (Invoke f as) (Invoke g bs) = 
+  let (msg, d')        = generalizeTerm d gg (C "()" as, C "()" bs) in
   let (C _ cs, s1, s2) = refine msg in
-  (Invoke f cs, s1, s2, d') where
-  generalizeTerm vs s@(s1, s2) (C m ms, C n ns) | m == n && length ms == length ns =
-    let (gs, (s1, s2), vs') = foldl (\ (gs, s, vs) ts -> 
-                                          let ((g, s1, s2), vs') = generalizeTerm vs s ts in
-                                          (g:gs, (s1, s2), vs')
-                                    ) ([], s, vs) $ zip ms ns
-    in  
-    ((C m $ reverse gs, s1, s2), vs')
-  generalizeTerm vs (s1, s2) (V x, V y) | x == y = ((V x, s1, s2), vs)  
-  generalizeTerm (v:vs) (s1, s2) (t1, t2) = ((V v, (v, t1):s1, (v, t2):s2), vs)
-  refine msg@(g, s1, s2) = 
-    case filter ((>1) . length) $ groupBy group s1 of
-      [] -> msg 
-      gs -> foldl (\ acc g1 ->
-                      let restriction = filter (\ (x, _) -> isJust $ lookup x g1) s2 in
-                      case filter ((>1) . length) $ groupBy group restriction of
-                        [] -> msg
-                        g2 -> foldl (\ (g, s1, s2) ((x, _):bs) ->
-                                       (
-                                        E.substitute (map (\ (y, _) -> (y, V x)) bs) g, 
-                                        filter (\ (x, _) -> isNothing $ lookup x bs) s1, 
-                                        filter (\ (x, _) -> isNothing $ lookup x bs) s2
-                                       ) 
-                                    ) 
-                                    msg 
-                                    g2
-                  ) 
-                  msg
-                  gs  
-    where group x y = snd x == snd y
+  (Invoke f cs, s1, s2, d') 
+
+generalizeTerm vs s@(s1, s2) (C m ms, C n ns) | m == n && length ms == length ns =
+  let (gs, (s1, s2), vs') = foldl (\ (gs, s, vs) ts -> 
+                                        let ((g, s1, s2), vs') = generalizeTerm vs s ts in
+                                        (g:gs, (s1, s2), vs')
+                                  ) ([], s, vs) $ zip ms ns
+  in  
+  ((C m $ reverse gs, s1, s2), vs')
+generalizeTerm vs (s1, s2) (V x, V y) | x == y = ((V x, s1, s2), vs)  
+generalizeTerm (v:vs) (s1, s2) (t1, t2) = ((V v, (v, t1):s1, (v, t2):s2), vs)
+
+refine msg@(g, s1, s2) = 
+  case filter ((>1) . length) $ groupBy group s1 of
+    [] -> msg 
+    gs -> foldl (\ acc g1 ->
+                    let restriction = filter (\ (x, _) -> isJust $ lookup x g1) s2 in
+                    case filter ((>1) . length) $ groupBy group restriction of
+                      [] -> msg
+                      g2 -> foldl (\ (g, s1, s2) ((x, _):bs) ->
+                                     (
+                                      E.substitute (map (\ (y, _) -> (y, V x)) bs) g, 
+                                      filter (\ (x, _) -> isNothing $ lookup x bs) s1, 
+                                      filter (\ (x, _) -> isNothing $ lookup x bs) s2
+                                     ) 
+                                  ) 
+                                  msg 
+                                  g2
+                ) 
+                msg
+                gs  
+  where group x y = snd x == snd y
 
 generalizeGoals :: [S] -> [G S] -> [G S] -> (G S, Generalizer, Generalizer, [S])
-generalizeGoals s as bs = generalize s (conj as) (conj bs)
+generalizeGoals s as bs = generalize s ([], []) (conj as) (conj bs)
 
 substitute :: E.Sigma -> G S -> G S
 substitute s (t1 :=: t2  ) = E.substitute s t1 :=: E.substitute s t2
@@ -129,14 +159,15 @@ invoke cs (p, i, d) s (Invoke f as') conjs =
         Just (g, bs, conjs') -> 
           if length conjs == length conjs' 
           then let (msg, s1, s2, d') = generalizeGoals d (Invoke f as' : conjs) (Invoke g bs : conjs') in
-               (Gen s1 (invoke ((f, as', conjs):cs) (p, i, d') s msg conjs))
+               (Gen s1 (eval ((f, as', conjs):cs) (p, i, d') s [msg]))
           else if length conjs' < length conjs 
                then let cs'           = (f, as', conjs):cs in
                     let (left, right) = split (Invoke f as' : conjs) (Invoke g bs : conjs') in
                     Split (eval cs' (p, i, d) s left)
                           (eval cs' (p, i, d) s right)
                else error "Wow..."
-        Nothing -> let (g', env') = E.pre_eval (p, i, d) g in
+        Nothing -> let (g', env') = trace (show g) (E.pre_eval (p, i, d) g) in
+                   trace (show g') $
                    eval ((f, as', map (substitute s) conjs) : cs) env' s (g':conjs)  
 
 eval :: Stack -> E.Gamma -> E.Sigma -> [G S]  -> Tree
@@ -156,6 +187,15 @@ eval cs (p, i, d) s ((Invoke f as):conjs) =
 
 drive :: Spec -> Tree
 drive (defs, goal) =
-  let p n = fromJust $ find (\ (m, _, _) -> m == n) defs in
-  let (goal', env') = E.pre_eval (E.env0 p) goal in 
-  eval [] env' E.s0 [goal']
+  trace (show goal) (
+    let p n = fromJust $ find (\ (m, _, _) -> m == n) defs in
+    let (goal', env') = E.pre_eval (E.env0 p) goal in
+    trace (show goal') ( 
+    eval [] env' E.s0 [goal']))
+
+tree = drive ([appendo], 
+              fresh ["q", "r", "s", "t", "p"] 
+                 (call "appendo" [V "q", V "r", V "s"] &&& 
+                  call "appendo" [V "s", V "t", V "p"]
+                 )
+             )
