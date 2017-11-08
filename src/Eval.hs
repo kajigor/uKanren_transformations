@@ -48,6 +48,13 @@ substitute :: Sigma -> Ts -> Ts
 substitute s t@(V x)  = case lookup x s of Nothing -> t ; Just tx -> substitute s tx
 substitute s (C m ts) = C m $ map (substitute s) ts
 
+---- Composing substitutions
+o :: Sigma -> Sigma -> Sigma
+o sigma theta =
+  case map fst sigma `intersect` map fst theta of
+    [] -> map (\ (s, ts) -> (s, substitute sigma ts)) theta ++ sigma
+    _  -> error "Non-disjoint domains in substitution composition"  
+
 -- Pre-evaluation
 pre_eval :: Gamma -> G X -> (G S, Gamma)
 pre_eval g@(_, i, _) (t1 :=: t2)   = (i <@> t1 :=: i <@> t2, g)

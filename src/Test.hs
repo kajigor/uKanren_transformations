@@ -104,7 +104,7 @@ main =
                  )
              )
 
-{-
+
     printTree "reverso.dot"  $ 
       drive ([reverso, appendo], 
               fresh ["q", "r", "s"] 

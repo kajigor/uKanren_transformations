@@ -9,12 +9,13 @@ type S    = Int    -- Semantic variables
 type Name = String -- Names of variables/definitions
 
 -- Terms
-data Term v = V v | C String [Term v] deriving (Eq, Ord) --, Show)
+data Term v = V v | C String [Term v] deriving (Eq, Ord) 
 type Tx     = Term X
 type Ts     = Term S
 
---instance {-# OVERLAPPING #-} Show S where 
---  show i = "_." ++ show i
+instance Functor Term where
+  fmap f (V v)    = V $ f v
+  fmap f (C s ts) = C s $ map (fmap f) ts
 
 instance Show a => Show (Term a) where
   show (V v) = "v." ++ show v
@@ -33,7 +34,7 @@ data G a =
   | G a :/\: G a
   | G a :\/: G a
   | Fresh  Name (G a)
-  | Invoke Name [Term a] deriving (Eq, Ord) --, Show)
+  | Invoke Name [Term a] deriving (Eq, Ord) 
 
 instance Show a => Show (G a) where
   show (t1 :=:  t2) = show t1 ++ " = "  ++ show t2

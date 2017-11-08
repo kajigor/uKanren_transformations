@@ -16,18 +16,18 @@ import Test
 trace _ = id
 
 data Tree = 
-  Fail                          | 
-  Success E.Sigma               | 
-  Or      Tree Tree             | 
-  Rename  (G S) Renaming        |
-  Gen     Generalizer Tree      | 
-  Split   Tree Tree deriving Show
+  Fail                           | 
+  Success E.Sigma                | 
+  Or      Tree Tree (G S)        | 
+  Rename  (G S) Renaming         |
+  Gen     Generalizer Tree (G S) | 
+  Split   Tree Tree (G S) deriving Show
 
 ---- Renaming
 type Renaming = [(S, S)]
 
 ---- Generalization
-type Generalizer = [(S, Ts)]
+type Generalizer = E.Sigma
 
 type Stack = [(String, [Ts], [G S])]
 
@@ -155,7 +155,10 @@ invoke cs (p, i, d) s goal@(Invoke f as') conjs =
   let (_, fs, g) = p f in
   case find (\ (g, bs, conjs') -> isJust $ renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs)) cs of 
     Just (g, bs, conjs') ->
-      Rename (conj (Invoke f as' : conjs')) (fromJust (renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs)))
+      Split
+        (Success s) 
+        (Rename (conj (Invoke f as' : conjs')) (fromJust (renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs))))
+        (conj (Invoke f as' : conjs'))
     Nothing -> 
       case find (\ (g, bs, conjs') -> isJust $ embedGoals (Invoke g bs : conjs') (Invoke f as' : conjs)) cs of
         Just (g, bs, conjs') -> 
