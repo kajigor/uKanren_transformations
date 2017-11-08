@@ -9,8 +9,8 @@ import Tree
 -- Tests
 infixr 9 %
 
-nil   = C "Nil"  []     
-x % y = C "Cons" [x, y] 
+nil   = C "Nil"  []
+x % y = C "Cons" [x, y]
 i x   = C x      []
 
 a = i "a"
@@ -95,7 +95,7 @@ main =
     putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [V "q", a % b % nil])))
 --    putStrLn $ show $ drive     ([appendo'], fresh ["q"] (call "appendo'" [nil, nil, V "q"]))    
 --    printTree "appendo.dot" $ drive     ([appendo'], fresh ["q"] (call "appendo'" [nil, nil, V "q"]))    
-{-
+
     printTree "appapp.dot"  $ 
       drive ([appendo], 
               fresh ["q", "r", "s", "t", "p"] 
@@ -103,10 +103,12 @@ main =
                   call "appendo" [V "s", V "t", V "p"]
                  )
              )
--}
+
+{-
     printTree "reverso.dot"  $ 
       drive ([reverso, appendo], 
               fresh ["q", "r", "s"] 
                  (call "reverso" [V "q", V "r", V "s"]
                  )
              )
+-}

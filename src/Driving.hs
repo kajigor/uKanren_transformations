@@ -149,11 +149,11 @@ split gs1 gs2 =
     Just i  -> splitAt (i-1)        gs1
 
 invoke :: Stack -> E.Gamma -> E.Sigma -> G S -> [G S] -> Tree 
-invoke cs (p, i, d) s (Invoke f as') conjs = 
+invoke cs (p, i, d) s goal@(Invoke f as') conjs = 
   let (_, fs, g) = p f in
   case find (\ (g, bs, conjs') -> isJust $ renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs)) cs of 
     Just (g, bs, conjs') ->
-      Rename (conj (Invoke f as' : conjs')) $ fromJust (renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs))
+      Rename (conj (Invoke f as' : conjs')) (fromJust (renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs)))
     Nothing -> 
       case find (\ (g, bs, conjs') -> isJust $ embedGoals (Invoke g bs : conjs') (Invoke f as' : conjs)) cs of
         Just (g, bs, conjs') -> 
@@ -163,7 +163,7 @@ invoke cs (p, i, d) s (Invoke f as') conjs =
                in
                let (msg, s1, s2, d') = generalizeGoals d (Invoke f as' : conjs) (Invoke g bs : conjs') in
                trace ("HERE\n" ++ "x: " ++ show x ++ "\ny: " ++ show y ++ "\ng: " ++ show msg  ) $
-               (Gen s1 (eval ((f, as', conjs):cs) (p, i, d') s [msg]))
+               (Gen s1 (eval ((f, as', conjs):cs) (p, i, d') s [msg]) (conj $ goal:conjs))
           else if length conjs' < length conjs 
                then trace ("In Split") $
                     let cs'           = (f, as', conjs):cs in
@@ -171,6 +171,7 @@ invoke cs (p, i, d) s (Invoke f as') conjs =
                     trace ("SPLITTED into \n" ++ show left ++ "\nAND\n" ++ show right) $
                     Split (eval cs' (p, i, d) s left)
                           (eval cs' (p, i, d) s right)
+                          (conj $ goal:conjs)
                else error "Wow..."
         Nothing -> let (g', env') = trace (show g) (E.pre_eval (p, i, d) g) in
                    trace (show g') $
@@ -183,7 +184,7 @@ eval cs e s (g@(t1 :=: t2):conjs) =
     [(s, _)] -> case conjs of
                   [] -> Success s
                   _  -> eval cs e s conjs 
-eval cs  e        s ((g1 :\/: g2):conjs) = Or (eval cs e s (g1:conjs)) (eval cs e s (g2:conjs))
+eval cs  e        s g@((g1 :\/: g2):conjs) = Or (eval cs e s (g1:conjs)) (eval cs e s (g2:conjs)) (conj g)
 eval cs  e        s ((g1 :/\: g2):conjs) = eval cs e s $ [g1, g2] ++ conjs
 eval cs (p, i, d) s ((Invoke f as):conjs) = 
   let (_, fs, g) = p f in

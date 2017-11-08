@@ -38,12 +38,12 @@ import qualified Eval as E
 import Syntax
 
 data Tree = 
-  Fail                          | 
-  Success E.Sigma               | 
-  Or      Tree Tree             | 
-  Rename  (G S) Renaming  |
-  Gen     Generalizer Tree      | 
-  Split   Tree Tree -- deriving Show
+  Fail                           | 
+  Success E.Sigma                | 
+  Or      Tree Tree (G S)        | 
+  Rename  (G S) Renaming         |
+  Gen     Generalizer Tree (G S) | 
+  Split   Tree Tree (G S)        -- deriving Show
 
 -- Renaming
 type Renaming = [(S, S)]
@@ -71,21 +71,21 @@ label tree =
           (ns',  es')  = label' ch1 i1 ns es
           (ns'', es'') = label' ch2 i2 ns es
       in  ((i, n) : (ns' ++ ns''), (i, i1, "") : (i, i2, "") : (es' ++ es''))
-    label' t@Fail                       i ns es = addLeaf     i (show t) ns es
-    label' t@(Success _)                i ns es = addLeaf     i (show t) ns es
-    label' t@(Rename _ _)             i ns es = addLeaf     i (show t) ns es
-    label' t@(Gen _ ch)                 i ns es = addChild    i (show t) ns es ch
-    label' t@(Or ch1 ch2)               i ns es = addChildren i (show t) ns es ch1 ch2
-    label' t@(Split ch1 ch2)            i ns es = addChildren i (show t) ns es ch1 ch2
+    label' t@Fail                         i ns es = addLeaf     i (show t) ns es
+    label' t@(Success _)                  i ns es = addLeaf     i (show t) ns es
+    label' t@(Rename _ _)                 i ns es = addLeaf     i (show t) ns es
+    label' t@(Gen _ ch _)                 i ns es = addChild    i (show t) ns es ch
+    label' t@(Or ch1 ch2 _)               i ns es = addChildren i (show t) ns es ch1 ch2
+    label' t@(Split ch1 ch2 _)            i ns es = addChildren i (show t) ns es ch1 ch2
 
 
 instance Show (Tree) where 
   show Fail = "_|_"
-  show (Success s) = ("S\n" ++ show s)
-  show (Rename g _) = "R\n" ++ show g -- ++ "\n" ++ show ts
-  show (Gen g _) = "G\n" ++ show g
-  show (Or _ _) = "O"
-  show (Split t1 t2) = "Splt\n"
+  show (Success s)    = ("S\n" ++ show s)
+  show (Rename g ts)  = "R\n" ++ show g ++ "\n" ++ show (reverse ts)
+  show (Gen g _ curr) = "G\n" ++ show g ++ "\n" ++ show curr
+  show (Or _ _ curr)  = "O\n" ++ show curr
+  show (Split t1 t2 curr) = "Splt\n" ++ show curr
 
 params :: GraphvizParams n Text Text () Text
 params = nonClusteredParams {

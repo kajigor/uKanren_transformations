@@ -17,7 +17,7 @@ type Ts     = Term S
 --  show i = "_." ++ show i
 
 instance Show a => Show (Term a) where
-  show (V v) = show v
+  show (V v) = "v." ++ show v
   show (C name ts) = 
     case name of 
       "Nil" -> "[]"
@@ -36,9 +36,9 @@ data G a =
   | Invoke Name [Term a] deriving (Eq, Ord) --, Show)
 
 instance Show a => Show (G a) where
-  show (t1 :=:  t2) = show t1 ++ " :=: "  ++ show t2
-  show (g1 :/\: g2) = "(" ++ show g1 ++ " :/\\: " ++ show g2 ++ ")"
-  show (g1 :\/: g2) = "(" ++ show g1 ++ " :\\/: " ++ show g2 ++ ")"
+  show (t1 :=:  t2) = show t1 ++ " = "  ++ show t2
+  show (g1 :/\: g2) = "(" ++ show g1 ++ " /\\ " ++ show g2 ++ ")"
+  show (g1 :\/: g2) = "(" ++ show g1 ++ " \\/ " ++ show g2 ++ ")"
   show (Fresh name g) = "Fresh " ++ name ++ " (" ++ show g ++ ")"
   show (Invoke name ts) = name ++ "(" ++ show ts ++ ")"
 
