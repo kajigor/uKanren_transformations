@@ -9,23 +9,25 @@ import Data.Maybe
 import Syntax
 import Stream
 import qualified Eval as E
-import Tree 
-import Debug.Trace
---import Test
+--import Tree 
+--import Debug.Trace
+import Test
 
---data Tree = 
---  Fail                          | 
---  Success E.Sigma               | 
---  Or      Tree Tree             | 
---  Rename  String [Ts] Renaming  |
---  Gen     Generalizer Tree      |
---  Split   Tree Tree deriving Show
+trace _ = id
+
+data Tree = 
+  Fail                          | 
+  Success E.Sigma               | 
+  Or      Tree Tree             | 
+  Rename  (G S) Renaming        |
+  Gen     Generalizer Tree      | 
+  Split   Tree Tree deriving Show
 
 ---- Renaming
---type Renaming = [(S, S)]
+type Renaming = [(S, S)]
 
 ---- Generalization
---type Generalizer = [(S, Ts)]
+type Generalizer = [(S, Ts)]
 
 type Stack = [(String, [Ts], [G S])]
 
@@ -199,9 +201,9 @@ drive (defs, goal) =
     trace (show goal') ( 
     eval [] env' E.s0 [goal']))
 
---tree = drive ([appendo], 
---              fresh ["q", "r", "s", "t", "p"] 
---                 (call "appendo" [V "q", V "r", V "s"] &&& 
---                  call "appendo" [V "s", V "t", V "p"]
---                 )
---             )
+tree = drive ([appendo], 
+              fresh ["q", "r", "s", "t", "p"] 
+                 (call "appendo" [V "q", V "r", V "s"] &&& 
+                  call "appendo" [V "s", V "t", V "p"]
+                 )
+             )
