@@ -1,8 +1,9 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-
 module Syntax where
+
+import Data.List
 
 type X    = String -- Syntactic variables
 type S    = Int    -- Semantic variables
@@ -12,6 +13,12 @@ type Name = String -- Names of variables/definitions
 data Term v = V v | C String [Term v] deriving (Eq, Ord) 
 type Tx     = Term X
 type Ts     = Term S
+
+-- Free variables
+fv :: Eq v => Term v -> [v]
+fv = nub . fv' where
+  fv' (V v)    = [v]
+  fv' (C _ ts) = concat $ map fv' ts
 
 instance Functor Term where
   fmap f (V v)    = V $ f v

@@ -1,5 +1,4 @@
-{-# LANGUAGE TupleSections #-}
-module Eval where
+{-# LANGUAGE TupleSections #-}module Eval where
 
 import Control.Monad
 import Data.List
@@ -20,8 +19,8 @@ unify Nothing _ _ = Nothing
 unify st@(Just subst) u v = 
   unify' (walk u subst) (walk v subst)  where
     unify' (V u) (V v) | u == v = Just subst
-    unify' (V u) _              = Just $ (u, v) : subst
-    unify' _ (V v)              = Just $ (v, u) : subst
+    unify' (V u) t              = occursCheck u t $ Just $ (u, v) : subst
+    unify' t (V v)              = occursCheck v t $ Just $ (v, u) : subst
     unify' (C a as) (C b bs) | a == b && length as == length bs = 
       foldl (\ st (u, v) -> unify st u v) st $ zip as bs
     unify' _ _ = Nothing
@@ -30,6 +29,7 @@ unify st@(Just subst) u v =
         Nothing -> x
         Just t  -> walk t s
     walk u     _ = u
+    occursCheck u t s = if elem u $ fv t then Nothing else s
 
 -- Syntactic terms -> semantic terms
 

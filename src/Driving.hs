@@ -48,7 +48,7 @@ rename g1 g2 = rename' (Just []) (g1, g2) where
   renameGoals           = renames rename'
   renames     f r ms ns = foldl f r $ zip ms ns
 
-conj (a:as) = foldl (:/\:) a as
+conj (a:as) = foldl (:/\:) a as 
 
 renameGoals :: [G S] -> [G S] -> Maybe Renaming
 renameGoals as bs = rename (conj as) (conj bs)
@@ -71,11 +71,11 @@ embed g1 g2 = embedGoal True (Just []) (g1, g2) where
   embedTerm r (C m ms, C n ns) | m == n && length ms == length ns = foldl embedTerm r $ zip ms ns
   embedTerm r (t     , C n ns)                = msum $ map (embedTerm r . (t,)) ns
   embedTerm _  _                              = Nothing
-  embedTerms r ps qs | length ps == length qs = foldl embedTerm r $ zip ps qs
-  embedTerms _ _  _                           = Nothing
+  embedTerms r ps qs | length ps == length qs = trace ("Embed terms\n") $ foldl embedTerm r $ zip ps qs
+  embedTerms _ _  _                           = trace ("Embed terms (Nothing)\n") $ Nothing
 
 embedGoals :: [G S] -> [G S] -> Maybe Renaming
-embedGoals as bs = embed (conj as) (conj bs)
+embedGoals as bs = trace ("Embed goals\n") $ embed (conj as) (conj bs)
 
 generalize :: [S] -> (Generalizer, Generalizer) -> G S -> G S -> (G S, Generalizer, Generalizer, [S])
 generalize d gg (g1 :/\: g2) (h1 :/\: h2) =
@@ -152,16 +152,19 @@ split gs1 gs2 =
 
 invoke :: Stack -> E.Gamma -> E.Sigma -> G S -> [G S] -> Tree 
 invoke cs (p, i, d) s goal@(Invoke f as') conjs = 
+  trace ("Invoke\n") $
   let (_, fs, g) = p f in
   case find (\ (g, bs, conjs') -> isJust $ renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs)) cs of 
-    Just (g, bs, conjs') ->
+    Just (g, bs, conjs') ->     
       Split
         (Success s) 
         (Rename (conj (Invoke f as' : conjs')) (fromJust (renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs))))
         (conj (Invoke f as' : conjs'))
     Nothing -> 
+      trace ("Trying embedding...\n") $
       case find (\ (g, bs, conjs') -> isJust $ embedGoals (Invoke g bs : conjs') (Invoke f as' : conjs)) cs of
         Just (g, bs, conjs') -> 
+          trace ("Found embedding\n") $
           if length conjs == length conjs' 
           then let x = (Invoke f as' : conjs)
                    y = (Invoke g bs  : conjs')
@@ -180,7 +183,7 @@ invoke cs (p, i, d) s goal@(Invoke f as') conjs =
                else error "Wow..."
         Nothing -> let (g', env') = trace (show g) (E.pre_eval (p, i, d) g) in
                    trace (show g') $
-                   eval ((f, as', map (substitute s) conjs) : cs) env' s (g':conjs)  
+                   eval ((f, as', conjs) : cs) env' s (g':conjs)  
 
 eval :: Stack -> E.Gamma -> E.Sigma -> [G S]  -> Tree
 eval cs e s (g@(t1 :=: t2):conjs) = 
@@ -191,11 +194,13 @@ eval cs e s (g@(t1 :=: t2):conjs) =
                   _  -> eval cs e s conjs 
 eval cs  e        s g@((g1 :\/: g2):conjs) = Or (eval cs e s (g1:conjs)) (eval cs e s (g2:conjs)) (conj g)
 eval cs  e        s ((g1 :/\: g2):conjs) = eval cs e s $ [g1, g2] ++ conjs
-eval cs (p, i, d) s ((Invoke f as):conjs) = 
+eval cs (p, i, d) s ((Invoke f as):conjs) =
+  trace ("Eval invoke:\n") $ 
   let (_, fs, g) = p f in
   let i'         = foldl (\ i' (f, a) -> E.extend i' f a) i $ zip fs as in
   let as'        = map (E.substitute s) as in
-  invoke cs (p, i', d) s (Invoke f as') conjs
+  trace ("\nSubst:\n" ++ show s ++ "\n") $
+  invoke cs (p, i', d) s (Invoke f as') $ map (substitute s) conjs
 
 drive :: Spec -> Tree
 drive (defs, goal) =
