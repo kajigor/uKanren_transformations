@@ -79,16 +79,16 @@ embedGoals as bs = trace ("Embed goals\n") $ embed (conj as) (conj bs)
 
 generalize :: [S] -> (Generalizer, Generalizer) -> G S -> G S -> (G S, Generalizer, Generalizer, [S])
 generalize d gg (g1 :/\: g2) (h1 :/\: h2) =
-  let (i, s1' , s2' , d' ) = generalize d gg         g1 h1 in
-  let (j, s1'', s2'', d'') = generalize d (s1', s2') g2 h2 in
+  let (i, s1' , s2' , d' ) = generalize d  gg         g1 h1 in
+  let (j, s1'', s2'', d'') = generalize d' (s1', s2') g2 h2 in
   (i :/\: j, s1'', s2'', d'')
 generalize d gg (g1 :\/: g2) (h1 :\/: h2) =
-  let (i, s1' , s2' , d' ) = generalize d gg         g1 h1 in
-  let (j, s1'', s2'', d'') = generalize d (s1', s2') g2 h2 in
+  let (i, s1' , s2' , d' ) = generalize d  gg         g1 h1 in
+  let (j, s1'', s2'', d'') = generalize d' (s1', s2') g2 h2 in
   (i :\/: j, s1'', s2'', d'')
 generalize d gg (t1 :=: t2) (r1 :=: r2) =
-  let ((i, s1' , s2' ), d' ) = generalizeTerm d gg         (t1, r1) in
-  let ((j, s1'', s2''), d'') = generalizeTerm d (s1', s2') (t2, r2) in
+  let ((i, s1' , s2' ), d' ) = generalizeTerm d  gg         (t1, r1) in
+  let ((j, s1'', s2''), d'') = generalizeTerm d' (s1', s2') (t2, r2) in
   (i :=: j, s1'', s2'', d'')
 generalize d gg (Invoke f as) (Invoke g bs) = 
   let (msg, d')        = generalizeTerm d gg (C "()" as, C "()" bs) in
@@ -171,7 +171,7 @@ invoke cs (p, i, d) s goal@(Invoke f as') conjs =
                in
                let (msg, s1, s2, d') = generalizeGoals d (Invoke f as' : conjs) (Invoke g bs : conjs') in
                trace ("HERE\n" ++ "x: " ++ show x ++ "\ny: " ++ show y ++ "\ng: " ++ show msg  ) $
-               (Gen s1 (eval ((f, as', conjs):cs) (p, i, d') s [msg]) (conj $ goal:conjs))
+               (Gen s1 (eval ((f, as', conjs):cs) (p, i, d') (s1 `E.o` s) [msg]) (conj $ goal:conjs))
           else if length conjs' < length conjs 
                then trace ("In Split") $
                     let cs'           = (f, as', conjs):cs in
@@ -209,6 +209,18 @@ drive (defs, goal) =
     let (goal', env') = E.pre_eval (E.env0 p) goal in
     trace (show goal') ( 
     eval [] env' E.s0 [goal']))
+
+test =
+  do
+    putStrLn $ show (fresh ["q"] (call "appendo" [ V "q", i "B" % nil, i "A" % (i "B" % nil)]))
+    putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [nil, nil, V "q"])))
+    putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [a % nil, nil, V "q"])))
+    putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [a % b % nil, nil, V "q"])))
+    putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [ V "q", b % nil, a % b % nil])))
+    putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [nil, V "q"])))
+    putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [a % nil, V "q"])))
+    putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [a % b % nil, V "q"])))
+    putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [V "q", a % b % nil])))
 
 tree = drive ([appendo], 
               fresh ["q", "r", "s", "t", "p"] 

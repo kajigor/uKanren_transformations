@@ -29,7 +29,7 @@ unify st@(Just subst) u v =
         Nothing -> x
         Just t  -> walk t s
     walk u     _ = u
-    occursCheck u t s = if elem u $ fv t then Nothing else s
+    occursCheck u t s = if elem u $ fv t then error "Occurs check!" else s
 
 -- Syntactic terms -> semantic terms
 
