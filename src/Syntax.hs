@@ -35,20 +35,27 @@ instance Show a => Show (Term a) where
              [] -> name 
              _  -> "C " ++ name ++ " " ++ concatMap show ts
 
+-- Definitions
+type Def = (Name, [Name], G X)
+
+def = (,,)
+
 -- Goals
 data G a = 
     Term a :=: Term a
   | G a :/\: G a
   | G a :\/: G a
   | Fresh  Name (G a)
-  | Invoke Name [Term a] deriving (Eq, Ord) 
+  | Invoke Name [Term a] 
+  | Let Def (G a) deriving (Eq, Ord) 
 
 instance Show a => Show (G a) where
-  show (t1 :=:  t2) = show t1 ++ " = "  ++ show t2
-  show (g1 :/\: g2) = "(" ++ show g1 ++ " /\\ " ++ show g2 ++ ")"
-  show (g1 :\/: g2) = "(" ++ show g1 ++ " \\/ " ++ show g2 ++ ")"
-  show (Fresh name g) = "Fresh " ++ name ++ " (" ++ show g ++ ")"
-  show (Invoke name ts) = name ++ "(" ++ show ts ++ ")"
+  show (t1 :=:  t2)               = show t1 ++ " = "  ++ show t2
+  show (g1 :/\: g2)               = "(" ++ show g1 ++ " /\\ " ++ show g2 ++ ")"
+  show (g1 :\/: g2)               = "(" ++ show g1 ++ " \\/ " ++ show g2 ++ ")"
+  show (Fresh name g)             = "Fresh " ++ name ++ " (" ++ show g ++ ")"
+  show (Invoke name ts)           = name ++ "(" ++ show ts ++ ")"
+  show (Let (name, args, body) g) = "let " ++ name ++ (intercalate " " args) ++ " = " ++ show body ++ " in " ++ show g 
 
 infix  8 :=:
 infixr 7 :/\:
@@ -65,12 +72,3 @@ infix  8 ===
 fresh xs g = foldr Fresh g xs
 call       = Invoke 
 
--- Definitions
-type Def = (Name, [Name], G X)
-
-def = (,,)
-
--- Specification
-type Spec = ([Def], G X)
-
-spec = (,)

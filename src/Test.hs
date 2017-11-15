@@ -29,14 +29,15 @@ reify s x@(V v) =
     Just t  -> reify s t
 reify s (C n ts) = C n $ map (reify s) ts
 
-appendo =
+appendo g =
   let x  = V "x"  in
   let y  = V "y"  in
   let xy = V "xy" in
   let h  = V "h"  in
   let t  = V "t"  in
   let ty = V "ty" in
-  def "appendo" ["x", "y", "xy"] 
+  Let
+    (def "appendo" ["x", "y", "xy"] 
          ((x === nil &&& xy === y) ||| 
           (fresh ["h", "t", "ty"] 
              (x  === h % t  &&&
@@ -45,39 +46,44 @@ appendo =
              )
           )
          )
+    ) g
 
-appendo' =
+appendo' g =
   let x  = V "x"  in
   let y  = V "y"  in
   let xy = V "xy" in
   let h  = V "h"  in
   let t  = V "t"  in
   let ty = V "ty" in
-  def "appendo'" ["x", "y", "xy"] 
-         ((x === nil ||| xy === y) ||| 
-          (fresh ["h", "t", "ty"] 
-             (x  === h % t  |||
-              xy === h % ty |||
-              call "appendo'" [t, y, ty]
-             )
-          )
-         )
+  Let 
+    (def "appendo'" ["x", "y", "xy"] 
+           ((x === nil ||| xy === y) ||| 
+            (fresh ["h", "t", "ty"] 
+               (x  === h % t  |||
+                xy === h % ty |||
+                call "appendo'" [t, y, ty]
+               )
+            )
+           )
+    ) g
 
-reverso =
+reverso g =
   let x  = V "x"  in
   let y  = V "y"  in
   let h  = V "h"  in
   let t  = V "t"  in
   let rt = V "rt" in
-  def "reverso" ["x", "y"]
-         ((x === nil &&& y === nil) |||
-          (fresh ["h", "t", "rt"]
-             (x === h % t &&&
-              call "reverso" [t, rt] &&&
-              call "appendo" [rt, h % nil, y]
-             )
-          )
-         )
+  Let 
+    (def "reverso" ["x", "y"]
+           ((x === nil &&& y === nil) |||
+            (fresh ["h", "t", "rt"]
+               (x === h % t &&&
+                call "reverso" [t, rt] &&&
+                call "appendo" [rt, h % nil, y]
+               )
+            )
+           )
+    ) g
 
 toplevel n spec = map (\s -> list $ reify s (V 0)) $ takeS n $ (run spec)
 
