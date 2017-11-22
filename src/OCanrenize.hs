@@ -8,6 +8,8 @@ import System.IO.Temp
 import Data.Char
 import Syntax
 import Test
+import Driving
+import Residualize
 
 class OCanren a where
   ocanren :: a -> String
@@ -49,4 +51,6 @@ toOCanren filename tree =
                                      return ()
                                 )
 
-test = toOCanren "appendo.ml" (appendo (fresh ["p", "q", "r"] (call "appendo" [V "p", V "q", V "r"])))
+--test = toOCanren "appendo.ml" (appendo (fresh ["p", "q", "r"] (call "appendo" [V "p", V "q", V "r"])))
+
+test = toOCanren "appendo2.ml" $ residualize tc
