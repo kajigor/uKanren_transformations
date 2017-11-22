@@ -25,7 +25,7 @@ instance Functor Term where
   fmap f (C s ts) = C s $ map (fmap f) ts
 
 instance Show a => Show (Term a) where
-  show (V v) = "v." ++ show v
+  show (V v) = "v" ++ show v
   show (C name ts) = 
     case name of 
       "Nil" -> "[]"
