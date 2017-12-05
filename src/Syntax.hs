@@ -47,6 +47,7 @@ data G a =
   | G a :\/: G a
   | Fresh  Name (G a)
   | Invoke Name [Term a] 
+  | Zzz (G a)
   | Let Def (G a) deriving (Eq, Ord) 
 
 instance Show a => Show (G a) where

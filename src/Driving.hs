@@ -11,32 +11,16 @@ import qualified Data.Map.Strict as Map
 import Syntax
 import Stream
 import qualified Eval as E
---import Tree 
+import Tree 
 --import Debug.Trace
-import Test
+--import Test
 
 trace _ = id
 
-type Id = Int
 type TreeContext = (Set.Set Id, Map.Map Id [S], [Id])
 
 emptyContext :: TreeContext
 emptyContext = (Set.empty, Map.empty, [0..])
-
-data Tree = 
-  Fail                              | 
-  Success E.Sigma                   | 
-  Or      Tree Tree (G S)           | 
-  Rename  Id (G S) Renaming         |
-  Gen     Id Generalizer Tree (G S) | 
-  Call    Id Tree (G S)             |
-  Split   Id Tree Tree (G S) deriving Show
-
----- Renaming
-type Renaming = [(S, S)]
-
----- Generalization
-type Generalizer = E.Sigma
 
 type Stack = [(Id, String, [Ts], [G S])]
 
@@ -251,6 +235,7 @@ test =
     putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [V "q", a % b % nil])))
 -}
 
+{-
 tc = drive (appendo -- (fresh ["p", "q", "r"] -- (call "appendo" [V "p", V "q", V "r"]))
               (fresh ["q", "r", "s", "t", "p"] 
                  (call "appendo" [V "q", V "r", V "s"] &&& 
@@ -259,3 +244,4 @@ tc = drive (appendo -- (fresh ["p", "q", "r"] -- (call "appendo" [V "p", V "q", 
            )
 
 tree = snd $ tc
+-}
