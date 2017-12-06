@@ -13,7 +13,7 @@ import Stream
 import qualified Eval as E
 import Tree 
 --import Debug.Trace
---import Test
+import List
 
 trace _ = id
 
@@ -143,11 +143,14 @@ split gs1 gs2 =
     Nothing -> splitAt (length gs2) gs1
     Just i  -> splitAt (i-1)        gs1
 
-invoke :: TreeContext -> Stack -> E.Gamma -> E.Sigma -> G S -> [G S] -> (TreeContext, Tree) 
-invoke (sr, args, ids) cs (p, i, d) s goal@(Invoke f as') conjs = 
+invoke :: Bool -> TreeContext -> Stack -> E.Gamma -> E.Sigma -> G S -> [G S] -> (TreeContext, Tree) 
+invoke bypass (sr, args, ids) cs (p, i, d) s goal@(Invoke f as') conjs =
+  let bypass = head d < 9 in 
   trace ("Invoke\n") $
   let (_, fs, g) = p f in
-  case find (\ (_, g, bs, conjs') -> isJust $ renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs)) cs of 
+  case find (\ (_, g, bs, conjs') -> not bypass && 
+                                     (isJust $ renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs))
+            ) cs of 
     Just (di, g, bs, conjs') ->
       let id:ids' = ids in
       let r       = fromJust (renameGoals (Invoke g bs : conjs') (Invoke f as' : conjs)) in
@@ -160,7 +163,9 @@ invoke (sr, args, ids) cs (p, i, d) s goal@(Invoke f as') conjs =
       )
     Nothing -> 
       trace ("Trying embedding...\n") $
-      case find (\ (_, g, bs, conjs') -> isJust $ embedGoals (Invoke g bs : conjs') (Invoke f as' : conjs)) cs of
+      case find (\ (_, g, bs, conjs') -> not bypass && 
+                                         (isJust $ embedGoals (Invoke g bs : conjs') (Invoke f as' : conjs))
+                ) cs of
         Just (_, g, bs, conjs') -> 
           trace ("Found embedding\n") $
           if length conjs == length conjs' 
@@ -212,7 +217,7 @@ unfold tc cs (p, i, d) s ((Invoke f as) : conjs) =
   let i'         = foldl (\ i' (f, a) -> E.extend i' f a) i $ zip fs as in
   let as'        = map (E.substitute s) as in
   trace ("\nSubst:\n" ++ show s ++ "\n") $
-  invoke tc cs (p, i', d) s (Invoke f as') $ map (substitute s) conjs
+  invoke False tc cs (p, i', d) s (Invoke f as') $ map (substitute s) conjs
 
 drive :: G X -> (TreeContext, Tree)
 drive goal =
@@ -235,7 +240,7 @@ test =
     putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [V "q", a % b % nil])))
 -}
 
-{-
+
 tc = drive (appendo -- (fresh ["p", "q", "r"] -- (call "appendo" [V "p", V "q", V "r"]))
               (fresh ["q", "r", "s", "t", "p"] 
                  (call "appendo" [V "q", V "r", V "s"] &&& 
@@ -244,4 +249,4 @@ tc = drive (appendo -- (fresh ["p", "q", "r"] -- (call "appendo" [V "p", V "q", 
            )
 
 tree = snd $ tc
--}
+
