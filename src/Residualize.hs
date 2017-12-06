@@ -1,7 +1,7 @@
 module Residualize where
 
 import Syntax
---import Tree
+import Tree
 import Driving
 import qualified Eval as E  
 import Data.List

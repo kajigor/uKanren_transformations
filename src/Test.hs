@@ -5,7 +5,6 @@ import Stream
 import Eval
 import Driving
 import Tree
-import TreePrinter
 import List
 import Num
 import Prelude hiding (succ)
@@ -22,6 +21,7 @@ toplevel n printer g =
 
 main = 
   do
+  {-
     putStrLn $ show (toplevel 1 num (addo $ fresh ["q"] (call "addo" [zero, zero, V "q"])))
     putStrLn $ show (toplevel 1 num (addo $ fresh ["q"] (call "addo" [zero, V "q", zero])))
     putStrLn $ show (toplevel 1 num (addo $ fresh ["q"] (call "addo" [V "q", zero, zero])))
@@ -41,7 +41,7 @@ main =
     putStrLn $ show (toplevel 1 num (mulo $ fresh ["q"] (call "mulo" [peanify 2, peanify 3, V "q"])))
     putStrLn $ show (toplevel 1 num (mulo $ fresh ["q"] (call "mulo" [peanify 2, V "q", peanify 6])))
     putStrLn $ show (toplevel 1 num (mulo $ fresh ["q"] (call "mulo" [V "q", V "q", peanify 16])))
-
+-}
 {-
 --    putStrLn $ show (fresh ["q"] (call "appendo" [ V "q", i "B" % nil, i "A" % (i "B" % nil)]))
     putStrLn $ show (toplevel 1 show (appendo $ fresh ["q"] (call "appendo" [nil, nil, V "q"])))
@@ -54,29 +54,5 @@ main =
     putStrLn $ show (toplevel 1 show (reverso $ fresh ["q"] (call "reverso" [a % b % nil, V "q"])))
     putStrLn $ show (toplevel 1 show (reverso $ fresh ["q"] (call "reverso" [V "q", a % b % nil])))
 -}
-{---    putStrLn $ show $ drive     ([appendo'], fresh ["q"] (call "appendo'" [nil, nil, V "q"]))    
---    printTree "appendo.dot" $ drive     ([appendo'], fresh ["q"] (call "appendo'" [nil, nil, V "q"]))
--}    
+    putStrLn $ show $ snd $ drive (reverso $ fresh ["q", "r", "s"] (call "reverso" [V "q", V "r", V "s"]))
 
-{-
-    let (_, t) = drive (appendo $ 
-                          fresh ["q", "r", "s", "t", "p"] 
-                             (call "appendo" [V "q", V "r", V "s"] &&& 
-                              call "appendo" [V "s", V "t", V "p"]
-                             )
-                        )
-    printTree "doubleapp.dot" t
-
-{-
-    printTree "appapp.dot"  $ 
-      drive ([appendo], 
-              fresh ["q", "r", "s", "t", "p"] 
-                 (call "appendo" [V "q", V "r", V "s"] &&& 
-                  call "appendo" [V "s", V "t", V "p"]
-                 )
-             )
--}
-
-    let (_, t') = drive (reverso $ fresh ["q", "r", "s"] (call "reverso" [V "q", V "r", V "s"]))
-    printTree "reverso.dot" t'
--}
