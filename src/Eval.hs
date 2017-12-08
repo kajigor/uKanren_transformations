@@ -80,7 +80,7 @@ eval env@(p, i, d) s (Invoke f as) =
 eval env s (Let def g) = eval (update env def) s g 
 
 env0 :: Gamma
-env0 = ((\ _ -> undefined), (\_ -> undefined), [0..])
+env0 = ((\ _ -> error "Empty environment"), (\ i -> error $ "Empty interpretation on " ++ show i), [0..])
 
 update :: Gamma -> Def -> Gamma
 update (p, i, d) def@(name, _, _) = ((\ name' -> if name == name' then def else p name'), i, d) 
