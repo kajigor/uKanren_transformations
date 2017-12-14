@@ -12,17 +12,15 @@ import Syntax
 import Stream
 import qualified Eval as E
 import Tree 
-import Debug.Trace
 import List
-
---trace _ = id
+import Debug.Trace
 
 type TreeContext = (Set.Set Id, Map.Map Id [S], [Id])
 
 emptyContext :: TreeContext
 emptyContext = (Set.empty, Map.empty, [0..])
 
-type Stack = [(Id, String, [Ts], [G S])]
+type Stack = [(Id, [G S])]
 
 rename :: G S -> G S -> Maybe Renaming
 rename g1 g2 = rename' (Just []) (g1, g2) where
@@ -64,14 +62,11 @@ embed g1 g2 = embedGoal True (Just []) (g1, g2) where
   embedTerm r (C m ms, C n ns) | m == n && length ms == length ns = foldl embedTerm r $ zip ms ns
   embedTerm r (t     , C n ns)                = msum $ map (embedTerm r . (t,)) ns
   embedTerm _  _                              = Nothing
-  embedTerms r ps qs | length ps == length qs = -- trace ("Embed terms\n") $ 
-                                                foldl embedTerm r $ zip ps qs
-  embedTerms _ _  _                           = -- trace ("Embed terms (Nothing)\n") $ 
-                                                Nothing
+  embedTerms r ps qs | length ps == length qs = foldl embedTerm r $ zip ps qs 
+  embedTerms _ _  _                           = Nothing
 
 embedGoals :: [G S] -> [G S] -> Maybe Renaming
-embedGoals as bs = -- trace ("Embed goals\n") $ 
-                   embed (conj as) (conj bs)
+embedGoals as bs = embed (conj as) (conj bs)
 
 generalize :: [S] -> (Generalizer, Generalizer) -> G S -> G S -> (G S, Generalizer, Generalizer, [S])
 generalize d gg (g1 :/\: g2) (h1 :/\: h2) =
@@ -118,7 +113,7 @@ refine msg@(g, s1, s2) =
                                   msg 
                                   g2
                 ) 
-                msg
+                msg 
                 gs  
   where group x y = snd x == snd y
 
@@ -150,31 +145,68 @@ split gs1 gs2 =
     Nothing -> splitAt (length gs2) gs1
     Just i  -> splitAt (i-1)        gs1
 
-type Epsilon = E.Delta -- WRONG! Should be Delta -> (E.P, E.Iota)
-
-update :: (E.P, Epsilon) -> Def -> (E.P, Epsilon)
+update :: (E.P, E.Delta) -> Def -> (E.P, E.Delta)
 update (p, d) def = let (p', _, d') = E.update (p, (\ _ -> V 3), d) def in (p', d')
 
-invoke :: TreeContext -> Stack -> Epsilon -> E.Sigma -> [Zeta] -> (TreeContext, Tree) 
-invoke (sr, args, ids) cs d s (goal@(i, p, Invoke f as') : conjs) =
-  trace ("\nInvoke: " ++ show (head ids) ++ ", " ++ show (map trd' $ goal : conjs) ++ "\n") $
+invoke :: TreeContext -> Stack -> E.Delta -> E.Sigma -> [Zeta] -> (TreeContext, Tree) 
+invoke tc@(sr, args, (ids@(_1:_))) cs d s conjs = 
+  -- HERE WE HAVE TO SUBSTITUTE INTO THE CURRENT GOAL
+-- if _1 > 5 then (tc, Fail) 
+-- else 
+  let qqq = map (\(a, b, g) -> (a, b, substitute s g)) conjs in 
+  let qqq_conjs = map trd' qqq in
+  let p = snd' $ head conjs in 
+  let g = conj qqq_conjs in 
+  case find (\ (_, conjs') -> isJust $ renameGoals conjs' qqq_conjs) cs of 
+    Just (di, conjs') ->
+      let id:ids' = ids in
+      let r       = fromJust (renameGoals conjs' qqq_conjs) in
+      (
+        (Set.insert di sr, Map.insert di (map fst r) args, ids'),
+        Split id (Success s) (Rename di g r) g
+      )
+    Nothing -> 
+      case find (\ (_, conjs') -> (isJust $ embedGoals conjs' qqq_conjs)) cs of
+        Just (_, conjs') -> 
+          if length qqq == length conjs'
+          then
+               let (msg, s1, s2, d') = generalizeGoals d qqq_conjs conjs' in
+               let id:ids' = ids in
+               let (tc', node) = eval (sr, args, ids') ((id, qqq_conjs):cs) d' (s1 `E.o` s) [] (i, p, msg) [] in
+               (tc', Gen id s1 node g)
+          else if length conjs' < length qqq 
+               then let id:ids'        = ids in
+                    let cs'            = (id, qqq_conjs):cs in
+                    let (lh:lt, rh:rt) = split qqq conjs' in
+                    let (tc' , node' ) = eval (sr, args, ids') cs' d s [] lh lt in
+                    let (tc'', node'') = eval tc'              cs' d s [] rh rt in
+                    (tc'', Split id node' node'' g)
+               else error "Wow..."
+        Nothing -> unfold tc cs d s qqq
+
+{-
+invoke :: TreeContext -> Stack -> E.Delta -> E.Sigma -> [Zeta] -> (TreeContext, Tree) 
+invoke (sr, args, ids) cs d s askhg = -- (goal@(i, p, Invoke f as') : conjs) =
+  -- HERE WE HAD TO SUBSTITUTE INTO CURRENT GOAL
+  let qqq@(goal@(i,p,Invoke f as') : conjs) = map (\(a, b, Invoke f as) -> (a,b,Invoke f $ map (E.substitute s) as)) askhg in 
+  trace ("\nInvoke: " ++ show (head ids) ++ ", " ++ show (map trd' $ goal : conjs) ++ "\n" ++ "\nQQQQ\n" ++ show (map trd' qqq)) $
   let (_, fs, g) = p f in
-  case find (\ (_, g, bs, conjs') -> isJust $ renameGoals (Invoke g bs : conjs') (Invoke f as' : map trd' conjs)) cs of 
-    Just (di, g, bs, conjs') ->
+  case find (\ (_, conjs') -> isJust $ renameGoals conjs' (Invoke f as' : map trd' conjs)) cs of 
+    Just (di, (Invoke g bs):conjs') ->
       trace ("\nFOUND renaming\n ") $
       let id:ids' = ids in
-      let r       = fromJust (renameGoals (Invoke g bs : conjs') (Invoke f as' : map trd' conjs)) in      
-      ((Set.insert di sr, Map.insert di (map fst r) args, ids'),      
+      let r       = fromJust (renameGoals (Invoke g bs : conjs') (Invoke f as' : map trd' conjs)) in
+      ((Set.insert di sr, Map.insert di (map fst r) args, ids'),
        Split
          id
          (Success s) 
-         (Rename di (conj (Invoke f as' : conjs')) r)
-         (conj (Invoke f as' : conjs'))
+         (Rename di (conj (Invoke f as' : map trd' conjs)) r)
+         (conj (Invoke f as' : map trd' conjs))
       )
     Nothing -> 
       trace ("\nTrying embedding...\n\nIn stack:\n" ++ show cs ++ "\nGoal:\n" ++ show (Invoke f as' : map trd' conjs) ) $
-      case find (\ (_, g, bs, conjs') -> (isJust $ embedGoals (Invoke g bs : conjs') (Invoke f as' : map trd' conjs))) cs of
-        Just (_, g, bs, conjs') -> 
+      case find (\ (_, conjs') -> (isJust $ embedGoals conjs' (Invoke f as' : map trd' conjs))) cs of
+        Just (_, (Invoke g bs):conjs') -> 
           trace ("Found embedding\n") $
           if length conjs == length conjs' 
           then let x = (Invoke f as' : map trd' conjs)
@@ -183,12 +215,12 @@ invoke (sr, args, ids) cs d s (goal@(i, p, Invoke f as') : conjs) =
                let (msg, s1, s2, d') = generalizeGoals d (Invoke f as' : map trd' conjs) (Invoke g bs : conjs') in
                trace ("HERE\n" ++ "x: " ++ show x ++ "\ny: " ++ show y ++ "\ng: " ++ show msg  ) $
                let id:ids' = ids in
-               let (tc', node) = eval (sr, args, ids') ((id, f, as', map trd' conjs):cs) d' (s1 `E.o` s) [] (i, p, msg) [] in
+               let (tc', node) = eval (sr, args, ids') ((id, (Invoke f as'):(map trd' conjs)):cs) d' (s1 `E.o` s) [] (i, p, msg) [] in
                (tc', Gen id s1 node (conj $ map trd' $ goal:conjs))
           else if length conjs' < length conjs 
                then trace ("In Split") $
                     let id:ids'       = ids in                    
-                    let cs'           = (id, f, as', map trd' conjs):cs in
+                    let cs'           = (id, (Invoke f as'):(map trd' conjs)):cs in
                     let (left, right) = split ((i, p, Invoke f as') : conjs) (Invoke g bs : conjs') in
                     trace ("SPLITTED into \n" ++ show (map trd' left) ++ "\nAND\n" ++ show (map trd' right)) $
                     let lh:lt = left  in
@@ -197,10 +229,11 @@ invoke (sr, args, ids) cs d s (goal@(i, p, Invoke f as') : conjs) =
                     let (tc'', node'') = eval tc'              cs' d s [] rh rt in
                     (tc'', Split id node' node'' (conj $ map trd' $ goal:conjs))
                else error "Wow..."
-        Nothing -> if head ids > 10 
-                   then trace ("Failed\n") $ ((sr, args, ids), Fail)
-                   else trace "Unfold branch\n" $ unfold (sr, args, ids) cs d s (goal:conjs)
-
+        Nothing -> --if head ids > 7 
+                   --then trace ("Failed\n") $ ((sr, args, ids), Fail)
+                   --else
+                     trace "Unfold branch\n" $ unfold (sr, args, ids) cs d s (goal:conjs)
+-}
 {-
  let (g', (p', i', d')) = trace (show g) (E.pre_eval (p, i, d) g) in
                    trace (show g') $
@@ -211,7 +244,7 @@ invoke (sr, args, ids) cs d s (goal@(i, p, Invoke f as') : conjs) =
 
 type Zeta = (E.Iota, E.P, G S)
 
-eval :: TreeContext -> Stack -> Epsilon -> E.Sigma -> [Zeta] -> Zeta -> [Zeta]  -> (TreeContext, Tree)
+eval :: TreeContext -> Stack -> E.Delta -> E.Sigma -> [Zeta] -> Zeta -> [Zeta]  -> (TreeContext, Tree)
 eval tc cs d s prev (i, p, Let def g) conjs = 
   let (p', d') = update (p, d) def in
   eval tc cs d' s prev (i, p', g) conjs  
@@ -226,48 +259,31 @@ eval tc cs d s prev g@(i, p, t1 :=: t2) conjs =
 eval tc cs e s prev g@(i, p, g1 :\/: g2) conjs = 
   let (tc',  node' ) = eval tc  cs e s prev (i, p, g1) conjs in
   let (tc'', node'') = eval tc' cs e s prev (i, p, g2) conjs in 
-  (tc'', Or node' node'' (conj $ map trd' $ prev ++ g:conjs))
+  (tc'', Or node' node'' (conj $ map trd' $ (reverse prev) ++ g:conjs))
 eval tc cs e s prev (i, p, g1 :/\: g2) conjs = eval tc cs e s prev (i, p, g1) ((i, p, g2):conjs)
 eval tc cs e s prev g@(i, p, Invoke _ _) (g':conjs') = eval tc cs e s (g:prev) g' conjs'
 eval tc cs e s prev g@(i, p, Invoke _ _) []          = invoke tc cs e s (reverse $ g:prev)
 
-unfold :: TreeContext -> Stack -> Epsilon -> E.Sigma -> [Zeta] -> (TreeContext, Tree)
+unfold :: TreeContext -> Stack -> E.Delta -> E.Sigma -> [Zeta] -> (TreeContext, Tree)
 unfold tc _ _ s []            = (tc, Success s)
 unfold (sr, args, ids) cs e s conjs =
-  let cs_conjs                = map (\ (_, _, Invoke f as) -> Invoke f $ map (E.substitute s) as) conjs in
-  let (Invoke f as):cs_conjs' = cs_conjs in     
-  let (e', conjs')            = foldl (\ (d, conj) (i, p, Invoke f as) ->
-                                         let (_, fs, g) = p f in
-                                         let i'         = foldl (\ i' (f, a) -> E.extend i' f a) i $ zip fs as in  
-                                         let (g', (p', i'', d')) = trace (show g) (E.pre_eval (p, i', d) g) in
-                                         (d', (i'', p', g'):conj)
-                                      ) (e, []) conjs
+  let cs_conjs     = map (\ (_, _, Invoke f as) -> Invoke f $ map (E.substitute s) as) conjs in
+  let (e', conjs') = foldl (\ (d, conj) (i, p, Invoke f as) ->
+                               let (_, fs, g) = p f in
+                               let i'         = foldr (\ (f, a) i' -> E.extend i' f a) i $ zip fs as in  
+                               let (g', (p', i'', d')) = E.pre_eval (p, i', d) g in
+                               (d', (i'', p', g'):conj)
+                           ) (e, []) (reverse conjs)
   in
-  let id:ids'     = ids    in  
-  let h:t         = conjs' in
-  let (tc', node) = eval (sr, args, ids') (trace ("Stack: " ++ show ((id, f, as, cs_conjs'):cs)) $ (id, f, as, cs_conjs'):cs) e' s [] h t in
-  (tc', Call id node (conj $ map trd' conjs))
+  let id:ids'      = ids    in  
+  let h:t          = conjs' in
+  let (tc', node)  = eval (sr, args, ids') ((id, cs_conjs):cs) e' s [] h t in
+  (tc', Call id node ( conj $ (Invoke (show s) [] ) :  map trd' conjs))
 
 drive :: G X -> (TreeContext, Tree)
 drive goal =
-  trace (show goal) (
-    let (goal', (g', i', d')) = E.pre_eval E.env0 goal in
-    trace (show goal') ( 
-    eval emptyContext [] d' E.s0 [] (i', g', goal') []))
-
-{-
-test =
-  do
-    putStrLn $ show (fresh ["q"] (call "appendo" [ V "q", i "B" % nil, i "A" % (i "B" % nil)]))
-    putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [nil, nil, V "q"])))
-    putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [a % nil, nil, V "q"])))
-    putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [a % b % nil, nil, V "q"])))
-    putStrLn $ show (toplevel 1 ([appendo], fresh ["q"] (call "appendo" [ V "q", b % nil, a % b % nil])))
-    putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [nil, V "q"])))
-    putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [a % nil, V "q"])))
-    putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [a % b % nil, V "q"])))
-    putStrLn $ show (toplevel 1 ([appendo, reverso], fresh ["q"] (call "reverso" [V "q", a % b % nil])))
--}
+  let (goal', (g', i', d')) = E.pre_eval E.env0 goal in
+  eval emptyContext [] d' E.s0 [] (i', g', goal') []
 
 
 tc = drive (appendo -- (fresh ["p", "q", "r"] -- (call "appendo" [V "p", V "q", V "r"]))
