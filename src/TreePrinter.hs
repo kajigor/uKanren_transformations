@@ -41,7 +41,7 @@ import Tree
 treeToGraph :: Tree -> Gr Text Text
 treeToGraph tree = 
   let (vs, es) = label tree 
-  in  mkGraph (map (\(i, v) -> (i, pack v)) vs) (map (\(i,j,l) -> (i,j, pack l)) es)
+  in  mkGraph (map (\(i, v) -> (i, pack ("<" ++ v ++ ">"))) vs) (map (\(i,j,l) -> (i,j, pack l)) es)
 
 label :: Tree -> ([(Int,String)], [(Int,Int,String)])
 label tree = 
@@ -67,12 +67,12 @@ label tree =
     label' t@(Call _ ch _)                i ns es = addChild    i (showNode t) ns es ch
 
 showNode Fail = "_|_"
-showNode (Success s)           = "S\n" ++ show s
-showNode (Rename id g ts)      = "R " ++ show id ++ "\n" ++ show g ++ "\n" ++ show (reverse ts)
-showNode (Gen id g _ curr)     = "G " ++ show id ++ "\n" ++ show g ++ "\n" ++ show curr
-showNode (Or _ _ curr)         = "O\n" ++ show curr
-showNode (Split id t1 t2 curr) = "Splt " ++ show id ++ "\n" ++ show curr
-showNode (Call id t curr)      = "Call " ++ show id ++ "\n" ++ show curr
+showNode (Success s)           = "S<BR/>" ++ show s
+showNode (Rename id g ts)      = "R " ++ show id ++ "<BR/>" ++ show g ++ "<BR/>" ++ show (reverse ts)
+showNode (Gen id g _ curr)     = "G " ++ show id ++ "<BR/>" ++ show g ++ "<BR/>" ++ show curr
+showNode (Or _ _ curr)         = "O<BR/>" ++ show curr
+showNode (Split id t1 t2 curr) = "Splt " ++ show id ++ "<BR/>" ++ show curr
+showNode (Call id t curr)      = "Call " ++ show id ++ "<BR/>" ++ show curr
 
 params :: GraphvizParams n Text Text () Text
 params = nonClusteredParams {

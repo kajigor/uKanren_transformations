@@ -25,7 +25,7 @@ instance Functor Term where
   fmap f (C s ts) = C s $ map (fmap f) ts
 
 instance Show a => Show (Term a) where
-  show (V v) = "v " ++ show v
+  show (V v) = "v<SUB>" ++ show v ++ "</SUB>"
   show (C name ts) = 
     case name of 
       "Nil" -> "[]"
@@ -52,10 +52,10 @@ data G a =
 
 instance Show a => Show (G a) where
   show (t1 :=:  t2)               = show t1 ++ " = "  ++ show t2
-  show (g1 :/\: g2)               = "(" ++ show g1 ++ " /\\ " ++ show g2 ++ ")"
+  show (g1 :/\: g2)               = {- "(" ++ -} show g1 ++ " /\\ " ++ show g2 {- ++ ")" -}
   show (g1 :\/: g2)               = "(" ++ show g1 ++ " \\/ " ++ show g2 ++ ")"
   show (Fresh name g)             = "Fresh " ++ name ++ " (" ++ show g ++ ")"
-  show (Invoke name ts)           = name ++ "(" ++ show ts ++ ")"
+  show (Invoke name ts)           = name ++ " " ++ {- "(" ++ -} intercalate " " (map show ts) {-  ++ ")" -}
   show (Let (name, args, body) g) = "let " ++ name ++ " " ++ (intercalate " " args) ++ " = " ++ show body ++ " in " ++ show g 
 
 infix  8 :=:
