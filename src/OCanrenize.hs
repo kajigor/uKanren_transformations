@@ -48,9 +48,12 @@ toOCanren filename tree =
                                      hPutStrLn file "" 
                                      hClose file
                                      system $ "camlp5o pr_o.cmo " ++ tmp_name ++ " >> " ++ filename
+                                     system $ "ocamlformat " ++ filename ++ " -m 160 -i"
                                      return ()
                                 )
 
---test = toOCanren "appendo.ml" (appendo (fresh ["p", "q", "r"] (call "appendo" [V "p", V "q", V "r"])))
-
 test = toOCanren "appendo2.ml" $ residualize tc
+
+test' = toOCanren "reverso.ml" $ residualize tc'
+
+test'' = toOCanren "revacco.ml" $ residualize tc''

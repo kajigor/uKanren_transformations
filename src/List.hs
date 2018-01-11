@@ -70,8 +70,8 @@ reverso g =
            ((x === nil &&& y === nil) |||
             (fresh ["h", "t", "rt"]
                (x === h % t &&&
-                call "reverso" [t, rt] &&&
-                call "appendo" [rt, h % nil, y]
+                call "reverso" [t, rt] &&& 
+                call "appendo" [rt, h % nil, y]  -- &&&
                )
             )
            )
