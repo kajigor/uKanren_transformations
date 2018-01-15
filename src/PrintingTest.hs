@@ -16,22 +16,14 @@ import qualified Debug.Trace as T
 main = 
   do
     printTree "ehm.dot" tree 
-{-
-    let (_, t) = drive (appendo $ 
-                          fresh ["q", "r", "s", "t", "p"] 
-                             (call "appendo" [V "q", V "r", V "s"] &&& 
-                              call "appendo" [V "s", V "t", V "p"]
-                             )
-                        )
-    printTree "doubleapp.dot" t
--}
-    let (_, t') = tc' -- drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
+
+    let (_, t') = tc'
     let t'' = simpl t'
     printTree "reverso.dot" t'
     printTree "reversoSimple.dot" t''
     
     let ra@(_, t') = drive (revAcco $ fresh ["q", "s"] (call "revacco" [V "q", nil, V "s"]))
+    let t'' = simpl t'
+    printTree "revaccoSimpl.dot" t''
     printTree "revacco.dot" t'
-{-
-    putStrLn $ show $ residualize ra
--}
+

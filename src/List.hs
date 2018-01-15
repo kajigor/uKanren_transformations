@@ -9,12 +9,12 @@ infixr 9 %
 
 nil   = C "Nil"  []
 x % y = C "Cons" [x, y]
-i x   = C x      []
+lit x   = C x      []
 
-a = i "a"
-b = i "b"
-c = i "c"
-d = i "d"
+a = lit "a"
+b = lit "b"
+c = lit "c"
+d = lit "d"
 
 list (V n) = "._" ++ show n
 list (C "Cons" [h, t]) = list h ++ " % " ++ list t

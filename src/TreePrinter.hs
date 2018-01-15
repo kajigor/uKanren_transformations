@@ -60,14 +60,14 @@ label tree =
       in  ((i, n) : (ns' ++ ns''), (i, i1, "") : (i, i2, "") : (es' ++ es''))
     label' t@Fail                         i ns es = addLeaf     i (showNode t) ns es
     label' t@(Success _)                  i ns es = addLeaf     i (showNode t) ns es
-    label' t@(Rename _ _ _ _ _)             i ns es = addLeaf     i (showNode t) ns es
-    label' t@(Gen _ _ ch _ _)               i ns es = addChild    i (showNode t) ns es ch
-    label' t@(Or ch1 ch2 _ _)               i ns es = addChildren i (showNode t) ns es ch1 ch2
-    label' t@(Split _ ch1 ch2 _ _)          i ns es = addChildren i (showNode t) ns es ch1 ch2
-    label' t@(Call _ ch _ _)                i ns es = addChild    i (showNode t) ns es ch
+    label' t@(Rename _ _ _ _ _)           i ns es = addLeaf     i (showNode t) ns es
+    label' t@(Gen _ _ ch _ _)             i ns es = addChild    i (showNode t) ns es ch
+    label' t@(Or ch1 ch2 _ _)             i ns es = addChildren i (showNode t) ns es ch1 ch2
+    label' t@(Split _ ch1 ch2 _ _)        i ns es = addChildren i (showNode t) ns es ch1 ch2
+    label' t@(Call _ ch _ _)              i ns es = addChild    i (showNode t) ns es ch
 
 showNode Fail = "_|_"
-showNode (Success s)           = "S\n" ++ show s
+showNode (Success s)           = "S\n"  ++ show s
 showNode (Rename id g s ts _)    = "R " ++ show id ++ "\n" ++ show s ++ "\n" ++ show g ++ "\n" ++ show (reverse ts)
 showNode (Gen id g _ curr _)     = "G " ++ show id ++ "\n" ++ show g ++ "\n" ++ show curr
 showNode (Or _ _ curr _)         = "O\n" ++ show curr

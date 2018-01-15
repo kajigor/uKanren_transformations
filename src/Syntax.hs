@@ -47,7 +47,7 @@ data G a =
 instance Show a => Show (G a) where
   show (t1 :=:  t2)               = show t1 ++ " = "  ++ show t2
   show (g1 :/\: g2)               = "(" ++ show g1 ++ " /\\ " ++ show g2 ++ ")"
-  show (g1 :\/: g2)               = "(" ++ show g1 ++ " \\/ " ++ show g2 ++ ")"
+  show (g1 :\/: g2)               = "(" ++ show g1 ++ " \n\\/ " ++ show g2 ++ ")"
   show (Fresh name g)             = 
     let (names, goal) = acc [name] g in 
     "fresh " ++ show (reverse names) ++ " (" ++ show goal ++ ")"
@@ -78,7 +78,7 @@ fv t = nub $ fv' t where
   fv' (C _ ts) = concat $ map fv' ts
 
 fvg :: G X -> [X]
-fvg goal = nub $ fv' goal 
+fvg = nub . fv' 
  where
   fv' (t1 :=:  t2) = fv t1 ++ fv t2
   fv' (g1 :/\: g2) = fv' g1 ++ fv' g2

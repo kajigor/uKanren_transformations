@@ -1,14 +1,15 @@
-{-# LANGUAGE TupleSections #-}module Eval where
+{-# LANGUAGE TupleSections #-}
+
+module Eval where
 
 import Control.Monad
 import Data.List
 import Data.Maybe 
 import Syntax
 import Stream
-import Debug.Trace
 
 -- States
-type Iota  = X -> Ts
+type Iota  = ([X], X -> Ts)
 type Sigma = [(S, Ts)]
 type Delta = [S]
 type P     = Name -> Def
@@ -35,12 +36,20 @@ unify st@(Just subst) u v =
 ---- Interpreting syntactic variables 
 infix 9 <@>
 (<@>) :: Iota -> Tx -> Ts
-i <@> (V x)    = i x
+(_, i) <@> (V x)    = i x
 i <@> (C c ts) = C c $ map (i<@>) ts
+
+showInt (dom, f) = intercalate ", " $ map (\ x -> x ++ " -> " ++ show (f x)) dom 
 
 ---- Extending variable interpretation
 extend :: Iota -> X -> Ts -> Iota
-extend i x ts y = if x == y then ts else i y 
+extend (xs, i) x ts = (if elem x xs then xs else x : xs , \y -> if x == y then ts else i y)
+
+emptyIota :: Iota
+emptyIota = ([], \ i -> error $ "Empty interpretation on " ++ show i)
+
+app :: Iota -> X -> Ts
+app (_, i) x = i x
 
 ---- Applying substitution
 substitute :: Sigma -> Ts -> Ts
@@ -75,7 +84,7 @@ post_eval' = post_eval []
  where
   post_eval vars (Let (f, args, b) g) = 
     Let (f, args, let freshs = ((fvg b) \\ args) \\ vars 
-                  in  foldr (\ x g  -> Fresh x g) (post_eval (vars ++ args ++ freshs) b) freshs) $ (post_eval vars g)
+                  in  foldr (\ x g  -> Fresh x g) (post_eval (vars ++ args ++ freshs) b) freshs) $ post_eval vars g
   post_eval vars (g1 :/\: g2) = post_eval vars g1 :/\: post_eval vars g2
   post_eval vars (g1 :\/: g2) = post_eval vars g1 :\/: post_eval vars g2
   post_eval _ g = g
@@ -94,7 +103,7 @@ eval env@(p, i, d) s (Invoke f as) =
 eval env s (Let def g) = eval (update env def) s g 
 
 env0 :: Gamma
-env0 = ((\ _ -> error "Empty environment"), (\ i -> error $ "Empty interpretation on " ++ show i), [0..])
+env0 = ((\ _ -> error "Empty environment"), emptyIota, [0..])
 
 update :: Gamma -> Def -> Gamma
 update (p, i, d) def@(name, _, _) = ((\ name' -> if name == name' then def else p name'), i, d) 
