@@ -83,7 +83,7 @@ generalize d gg (g1 :/\: g2) (h1 :/\: h2) =
 generalize d gg (Invoke f as) (Invoke g bs) = 
   let (msg, d')        = generalizeTerm d gg (C "()" as, C "()" bs) in
   let (C _ cs, s1, s2) = refine msg in
-  (Invoke f (reverse cs), s1, s2, d') 
+  (Invoke f cs, s1, s2, d') 
 
 generalizeTerm vs s@(s1, s2) (C m ms, C n ns) | m == n && length ms == length ns =
   let (gs, (s1, s2), vs') = foldl (\ (gs, s, vs) ts -> 
