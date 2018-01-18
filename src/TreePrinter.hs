@@ -1,6 +1,6 @@
 module TreePrinter where 
 
-import Data.Text.Lazy (Text, pack, unpack)
+import Data.Text.Lazy (Text, pack, unpack, replace)
 import Data.Graph.Inductive (Gr, mkGraph)
 import Data.GraphViz (
   GraphvizParams,
@@ -96,5 +96,9 @@ params = nonClusteredParams {
     fn (n,l) = [(Label . StrLabel) l]
     fe (f,t,l) = [(Label . StrLabel) l]
 
+remove_quots t = 
+  replace (pack ">\"") (pack ">") $
+  replace (pack "\"<") (pack "<") t
+
 printTree filename tree =
-  writeFile filename $ unpack $ renderDot $ toDot $ graphToDot params (treeToGraph tree)
+  writeFile filename $ unpack $ remove_quots $ renderDot $ toDot $ graphToDot params (treeToGraph tree)
