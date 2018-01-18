@@ -1,23 +1,25 @@
+# Run with make TOPFILE=<whatever you need>
+
 OCAMLC = ocamlc
 OCAMLOPT = ocamlopt
 OCAMLDEP = ocamldep
-SOURCES = appendo2.ml
+SOURCES = $(TOPFILE).ml
 CAMLP5 = -pp "camlp5o -I `ocamlfind -query ocanren.syntax` -I `ocamlfind -query GT.syntax` pa_minikanren.cmo pa_gt.cmo -L `ocamlfind -query GT.syntax`"
 PXFLAGS = $(CAMLP5)
 BFLAGS = -rectypes -I `ocamlfind -query GT` -I `ocamlfind -query ocanren` 
 OFLAGS = $(BFLAGS)
 
-all: .depend appendo2.opt
+all: .depend $(TOPFILE).opt
 
 
 .depend: $(SOURCES)
 	$(OCAMLDEP) $(PXFLAGS) *.ml > .depend
 
-appendo2.opt: $(SOURCES:.ml=.cmx)
-	$(OCAMLOPT) -o appendo2.opt $(OFLAGS) GT.cmxa unix.cmxa MiniKanren.cmxa $(SOURCES:.ml=.cmx)
+$(TOPFILE).opt: $(SOURCES:.ml=.cmx)
+	$(OCAMLOPT) -o $(TOPFILE).opt $(OFLAGS) GT.cmxa unix.cmxa MiniKanren.cmxa $(SOURCES:.ml=.cmx)
 
-appendo2.byte: $(SOURCES:.ml=.cmo)
-	$(OCAMLC) -o appendo2.byte $(BFLAGS) GT.cma unix.cma MiniKanren.cma $(SOURCES:.ml=.cmo)
+$(TOPFILE).byte: $(SOURCES:.ml=.cmo)
+	$(OCAMLC) -o $(TOPFILE).byte $(BFLAGS) GT.cma unix.cma MiniKanren.cma $(SOURCES:.ml=.cmo)
 
 clean:
 	rm -Rf *.cmi *.cmo *.cmx *.annot *.o *.opt *.byte *~
