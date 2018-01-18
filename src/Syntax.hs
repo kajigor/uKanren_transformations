@@ -14,12 +14,6 @@ data Term v = V v | C String [Term v] deriving (Eq, Ord)
 type Tx     = Term X
 type Ts     = Term S
 
--- Free variables
-fv :: Eq v => Term v -> [v]
-fv = nub . fv' where
-  fv' (V v)    = [v]
-  fv' (C _ ts) = concat $ map fv' ts
-
 instance Functor Term where
   fmap f (V v)    = V $ f v
   fmap f (C s ts) = C s $ map (fmap f) ts
@@ -52,10 +46,21 @@ data G a =
 
 instance Show a => Show (G a) where
   show (t1 :=:  t2)               = show t1 ++ " = "  ++ show t2
+{- <<<<<<< HEAD
   show (g1 :/\: g2)               = {- "(" ++ -} show g1 ++ " /\\ " ++ show g2 {- ++ ")" -}
   show (g1 :\/: g2)               = "(" ++ show g1 ++ " \\/ " ++ show g2 ++ ")"
   show (Fresh name g)             = "Fresh " ++ name ++ " (" ++ show g ++ ")"
   show (Invoke name ts)           = name ++ " " ++ {- "(" ++ -} intercalate " " (map show ts) {-  ++ ")" -}
+======= -}
+  show (g1 :/\: g2)               = "(" ++ show g1 ++ " /\\ " ++ show g2 ++ ")"
+  show (g1 :\/: g2)               = "(" ++ show g1 ++ " \n\\/ " ++ show g2 ++ ")"
+  show (Fresh name g)             = 
+    let (names, goal) = acc [name] g in 
+    "fresh " ++ show (reverse names) ++ " (" ++ show goal ++ ")"
+    where acc names (Fresh name goal) = acc (name : names) goal
+          acc names goal = (names, goal) 
+  show (Invoke name ts)           = name ++ "(" ++ show ts ++ ")"
+-- >>>>>>> master
   show (Let (name, args, body) g) = "let " ++ name ++ " " ++ (intercalate " " args) ++ " = " ++ show body ++ " in " ++ show g 
 
 infix  8 :=:
@@ -72,4 +77,21 @@ infix  8 ===
 
 fresh xs g = foldr Fresh g xs
 call       = Invoke 
+
+-- Free variables
+fv :: Eq v => Term v -> [v]
+fv t = nub $ fv' t where
+  fv' (V v)    = [v]
+  fv' (C _ ts) = concat $ map fv' ts
+
+fvg :: G X -> [X]
+fvg = nub . fv' 
+ where
+  fv' (t1 :=:  t2) = fv t1 ++ fv t2
+  fv' (g1 :/\: g2) = fv' g1 ++ fv' g2
+  fv' (g1 :\/: g2) = fv' g1 ++ fv' g2
+  fv' (Invoke _ ts) = concat $ map fv ts
+  fv' (Fresh x g)   = fv' g \\ [x]
+  fv' (Let (_, _, _) g) = fv' g
+
 

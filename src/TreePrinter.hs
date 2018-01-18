@@ -60,19 +60,19 @@ label tree =
       in  ((i, n) : (ns' ++ ns''), (i, i1, "") : (i, i2, "") : (es' ++ es''))
     label' t@Fail                         i ns es = addLeaf     i (showNode t) ns es
     label' t@(Success _)                  i ns es = addLeaf     i (showNode t) ns es
-    label' t@(Rename _ _ _)               i ns es = addLeaf     i (showNode t) ns es
-    label' t@(Gen _ _ ch _)               i ns es = addChild    i (showNode t) ns es ch
-    label' t@(Or ch1 ch2 _)               i ns es = addChildren i (showNode t) ns es ch1 ch2
-    label' t@(Split _ ch1 ch2 _)          i ns es = addChildren i (showNode t) ns es ch1 ch2
-    label' t@(Call _ ch _)                i ns es = addChild    i (showNode t) ns es ch
+    label' t@(Rename _ _ _ _ _)           i ns es = addLeaf     i (showNode t) ns es
+    label' t@(Gen _ _ ch _ _)             i ns es = addChild    i (showNode t) ns es ch
+    label' t@(Or ch1 ch2 _ _)             i ns es = addChildren i (showNode t) ns es ch1 ch2
+    label' t@(Split _ ch1 ch2 _ _)        i ns es = addChildren i (showNode t) ns es ch1 ch2
+    label' t@(Call _ ch _ _)              i ns es = addChild    i (showNode t) ns es ch
 
 showNode Fail = "_|_"
-showNode (Success s)           = "S<BR/>" ++ show s
-showNode (Rename id g ts)      = "R " ++ show id ++ "<BR/>" ++ show g ++ "<BR/>" ++ show (reverse ts)
-showNode (Gen id g _ curr)     = "G " ++ show id ++ "<BR/>" ++ show g ++ "<BR/>" ++ show curr
-showNode (Or _ _ curr)         = "O<BR/>" ++ show curr
-showNode (Split id t1 t2 curr) = "Splt " ++ show id ++ "<BR/>" ++ show curr
-showNode (Call id t curr)      = "Call " ++ show id ++ "<BR/>" ++ show curr
+showNode (Success s)           = "S<BR/>"  ++ show s
+showNode (Rename id g s ts _)    = "R " ++ show id ++ "<BR/>" ++ show s ++ "<BR/>" ++ show g ++ "<BR/>" ++ show (reverse ts)
+showNode (Gen id g _ curr _)     = "G " ++ show id ++ "<BR/>" ++ show g ++ "<BR/>" ++ show curr
+showNode (Or _ _ curr _)         = "O<BR/>" ++ show curr
+showNode (Split id t1 t2 curr _) = "Splt " ++ show id ++ "<BR/>" ++ show curr
+showNode (Call id t curr _)      = "Call " ++ show id ++ "<BR/>" ++ show curr
 
 params :: GraphvizParams n Text Text () Text
 params = nonClusteredParams {

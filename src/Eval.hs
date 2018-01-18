@@ -1,4 +1,6 @@
-{-# LANGUAGE TupleSections #-}module Eval where
+{-# LANGUAGE TupleSections #-}
+
+module Eval where
 
 import Control.Monad
 import Data.List
@@ -7,7 +9,7 @@ import Syntax
 import Stream
 
 -- States
-type Iota  = X -> Ts
+type Iota  = ([X], X -> Ts)
 type Sigma = [(S, Ts)]
 type Delta = [S]
 type P     = Name -> Def
@@ -34,12 +36,20 @@ unify st@(Just subst) u v =
 ---- Interpreting syntactic variables 
 infix 9 <@>
 (<@>) :: Iota -> Tx -> Ts
-i <@> (V x)    = i x
+(_, i) <@> (V x)    = i x
 i <@> (C c ts) = C c $ map (i<@>) ts
+
+showInt (dom, f) = intercalate ", " $ map (\ x -> x ++ " -> " ++ show (f x)) dom 
 
 ---- Extending variable interpretation
 extend :: Iota -> X -> Ts -> Iota
-extend i x ts y = if x == y then ts else i y 
+extend (xs, i) x ts = (if elem x xs then xs else x : xs , \y -> if x == y then ts else i y)
+
+emptyIota :: Iota
+emptyIota = ([], \ i -> error $ "Empty interpretation on " ++ show i)
+
+app :: Iota -> X -> Ts
+app (_, i) x = i x
 
 ---- Applying substitution
 substitute :: Sigma -> Ts -> Ts
@@ -54,19 +64,32 @@ o sigma theta =
     _  -> error "Non-disjoint domains in substitution composition"  
 
 -- Pre-evaluation
-pre_eval :: Gamma -> G X -> (G S, Gamma)
-pre_eval g@(_, i, _) (t1 :=: t2)    = (i <@> t1 :=: i <@> t2, g)
-pre_eval g           (g1 :/\: g2)   = let (g1', g' ) = pre_eval g  g1 in
-                                      let (g2', g'') = pre_eval g' g2 in
-                                      (g1' :/\: g2', g'')
-pre_eval g           (g1 :\/: g2)   = let (g1', g' ) = pre_eval g  g1 in
-                                      let (g2', g'') = pre_eval g' g2 in
-                                      (g1' :\/: g2', g'')
-pre_eval g@(p, i, d) (Fresh x g')   = pre_eval (p, extend i x (V y), d') g' where y : d' = d 
-pre_eval g@(_, i, _) (Invoke f fs)  = (Invoke f (map (i <@>) fs), g)
-pre_eval e           (Let    def g) = let (g', e') = pre_eval e g in
-                                      (Let def g', e')
- 
+pre_eval' :: Gamma -> G X -> (G S, Gamma, [S])
+pre_eval' env goal = pre_eval [] env goal
+ where
+  pre_eval vars g@(_, i, _) (t1 :=: t2)    = (i <@> t1 :=: i <@> t2, g, vars)
+  pre_eval vars g           (g1 :/\: g2)   = let (g1', g' , vars' ) = pre_eval vars  g  g1 in
+                                             let (g2', g'', vars'') = pre_eval vars' g' g2 in
+                                             (g1' :/\: g2', g'', vars'')
+  pre_eval vars g           (g1 :\/: g2)   = let (g1', g' , vars')  = pre_eval vars  g  g1 in
+                                             let (g2', g'', vars'') = pre_eval vars' g' g2 in
+                                             (g1' :\/: g2', g'', vars'')
+  pre_eval vars g@(p, i, d) (Fresh x g')   = pre_eval (y : vars) (p, extend i x (V y), d') g' where y : d' = d 
+  pre_eval vars g@(_, i, _) (Invoke f fs)  = (Invoke f (map (i <@>) fs), g, vars)
+  pre_eval vars e           (Let    def g) = let (g', e', vars') = pre_eval vars e g in
+                                             (Let def g', e', vars')
+
+post_eval' :: G X -> G X 
+post_eval' = post_eval []
+ where
+  post_eval vars (Let (f, args, b) g) = 
+    Let (f, args, let freshs = ((fvg b) \\ args) \\ vars 
+                  in  foldr (\ x g  -> Fresh x g) (post_eval (vars ++ args ++ freshs) b) freshs) $ post_eval vars g
+  post_eval vars (g1 :/\: g2) = post_eval vars g1 :/\: post_eval vars g2
+  post_eval vars (g1 :\/: g2) = post_eval vars g1 :\/: post_eval vars g2
+  post_eval _ g = g
+   
+
 -- Evaluation relation
 eval :: Gamma -> Sigma -> G S -> Stream (Sigma, Delta)
 eval     (p, i, d) s (t1 :=:  t2)  = fmap (,d) (maybeToStream $ unify (Just s) t1 t2)
@@ -75,12 +98,12 @@ eval env@(p, i, d) s (g1 :/\: g2)  = eval env s g1 >>= (\ (s', d') -> eval (p, i
 eval env@(p, i, d) s (Invoke f as) = 
   let (_, fs, g) = p f in
   let i'         = foldl (\ i' (f, a) -> extend i' f a) i $ zip fs as in
-  let (g', env') = pre_eval (p, i', d) g in
+  let (g', env', _) = pre_eval' (p, i', d) g in
   eval env' s g'
 eval env s (Let def g) = eval (update env def) s g 
 
 env0 :: Gamma
-env0 = ((\ _ -> error "Empty environment"), (\ i -> error $ "Empty interpretation on " ++ show i), [0..])
+env0 = ((\ _ -> error "Empty environment"), emptyIota, [0..])
 
 update :: Gamma -> Def -> Gamma
 update (p, i, d) def@(name, _, _) = ((\ name' -> if name == name' then def else p name'), i, d) 
@@ -90,5 +113,5 @@ s0 = []
 
 run :: G X -> Stream Sigma
 run goal =
-  let (goal', env') = pre_eval env0 goal in
+  let (goal', env', _) = pre_eval' env0 goal in
   fmap fst $ eval env' s0 goal'
