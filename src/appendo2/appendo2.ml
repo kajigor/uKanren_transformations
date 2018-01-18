@@ -21,6 +21,9 @@ let appendo2 x0 x1 x2 x3 x4 =
   f1 x0 x1 x2 x3 x4
 
 let (!) x = inj @@ lift x
-                        
-let _ = run qr (fun q r -> appendo2 (!< !1) (!< !2 ) r (!< !3) q)
-               (fun q r -> Stream.iter (fun l -> Printf.printf "%s\n" @@ (show(List.ground) (show(int))) @@ l#prj) q)
+
+let reify_list l = l#reify @@ List.reify reify
+let show_list  l = show(List.logic) (show(logic) (show int)) l
+  
+let _ = run qr (fun q r -> appendo2 (!< !1) (!< !2) r (!< !3) q)
+               (fun q r -> List.iter (fun l -> Printf.printf "%s\n" @@ show_list @@ reify_list l) @@ Stream.take q)
