@@ -31,16 +31,20 @@ instance OCanren v => OCanren (G v) where
   ocanren (g1 :\/: g2)  = "(" ++ ocanren g1 ++ " ||| " ++ ocanren g2 ++ ")"
   ocanren (Fresh x g )  = let (names, goal) = freshVars [x] g in "(" ++ "fresh (" ++ intercalate " " names ++ ") (" ++ ocanren goal ++ "))"
   ocanren (Invoke f ts) = "(" ++ f ++ concat [' ' : ocanren t | t <- ts] ++ ")"
-  ocanren (Let (n, as, b) g) = "let rec " ++ n ++ concat [' ' : a | a <- as] ++ " = " ++ ocanren b ++ " in " ++ ocanren g
+  ocanren (Let (n, as, b) g) = 
+    case n of 
+      'f':_ -> "let rec " ++ n ++ concat [' ' : a | a <- as] ++ " = " ++ ocanren b ++ " in " ++ ocanren g
+      _ -> "let rec " ++ n ++ concat [' ' : a | a <- as] ++ " = " ++ ocanren b
 
-ocanrenize :: G X -> String
-ocanrenize = ocanren
+ocanrenize :: String -> [String] -> G X -> String
+ocanrenize topLevelName args g = 
+  "let " ++ topLevelName ++ " " ++ intercalate " " args ++ " = " ++ ocanren g
 
-toOCanren filename tree =
+toOCanren filename topLevelName (tree, args) =
   do
     withSystemTempFile filename (\ tmp_name tmp -> 
                                    do
-                                     hPutStrLn tmp (ocanren tree)
+                                     hPutStrLn tmp (ocanrenize topLevelName args tree)
                                      hClose tmp
                                      file <- openFile filename WriteMode
                                      hPutStrLn file "open GT"
@@ -49,12 +53,12 @@ toOCanren filename tree =
                                      hPutStrLn file "" 
                                      hClose file
                                      system $ "camlp5o pr_o.cmo " ++ tmp_name ++ " >> " ++ filename
-                                     system $ "ocamlformat " ++ filename ++ " -m 160 -i"
+                                     -- system $ "ocamlformat " ++ filename ++ " -m 160 -i"
                                      return ()
                                 )
 
-test = toOCanren "appendo2.ml" $ residualize tc
+test = toOCanren "appendo2.ml" "appendo2" $ residualize tc 
 
-test' = toOCanren "reverso.ml" $ residualize tc'
+test' = toOCanren "reverso.ml" "reverso" $ residualize tc'
 
-test'' = toOCanren "revacco.ml" $ residualize tc''
+test'' = toOCanren "revacco.ml" "revacco" $ residualize tc''

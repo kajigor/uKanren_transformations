@@ -46,7 +46,6 @@ simpl (Split id l r g s) =
               r'   -> Split id l' r' g s
 simpl t = t 
 
---simplConj = (&&&)
 simplConj (Invoke success []) g = g
 simplConj g (Invoke success []) = g
 simplConj g g1 = g &&& g1 
@@ -54,27 +53,29 @@ simplConj g g1 = g &&& g1
 success = "success"
 failure = "failure"
 
-residualize :: (TreeContext, Tree) -> G X
-residualize (tc, t) = E.post_eval' $ scope tc 0 $ residualizeGen [] tc (simpl t) [] where
-  residualizeGen _ _ Fail         _ = Invoke failure [] 
-  residualizeGen g _ (Success s ) ubst = 
-    let delta = s \\ ubst in
-    if delta == []
-    then Invoke success []
-    else residualizeSubst g delta
-  residualizeGen g tc (Rename id _ s r s' )  ubst = substCon g s' ubst $ simplConj (residualizeGen g tc (Success s) s') (Invoke (fident id) (reverse [V $ vident $ snd x | x <- r]))
-  residualizeGen g tc (Or     l r _    s' )  ubst = substCon g s' ubst $ residualizeGen g tc l s' ||| residualizeGen g tc r s'
-  residualizeGen g tc (Split  id l r _ s' )  ubst = substCon g s' ubst $ scope tc id $ simplConj (residualizeGen g tc l s') (residualizeGen g tc r s')
-  residualizeGen g tc (Gen    id g' t _ s' ) ubst = substCon g (s' ++ g') ubst $ scope tc id $ residualizeGen (g' `E.o` g) tc t s'
-  residualizeGen g tc (Call   id s    _ s' ) ubst = substCon g s' ubst $ scope tc id $ residualizeGen g tc s s'
-  fident id = "f" ++ show id  
-  vident id = "x" ++ show id 
-  scope tc@(sr, args, _) id g =
-    if Set.member id sr
-    then let as = reverse $ args Map.! id in 
-         let fargs = map vident as in 
-         Let (def (fident id) fargs g) (Invoke (fident id) $ map V fargs)
-    else g
+residualize :: (TreeContext, Tree, [Id]) -> (G X, [String])
+residualize (tc, t, args) = 
+  (E.post_eval' $ residualizeGen [] tc (simpl t) [], map vident args)
+  where
+    residualizeGen _ _ Fail         _ = Invoke failure [] 
+    residualizeGen g _ (Success s ) ubst = 
+      let delta = s \\ ubst in
+      if delta == []
+      then Invoke success []
+      else residualizeSubst g delta
+    residualizeGen g tc (Rename id _ s r s' )  ubst = substCon g s' ubst $ simplConj (residualizeGen g tc (Success s) s') (Invoke (fident id) (reverse [V $ vident $ snd x | x <- r]))
+    residualizeGen g tc (Or     l r _    s' )  ubst = substCon g s' ubst $ residualizeGen g tc l s' ||| residualizeGen g tc r s'
+    residualizeGen g tc (Split  id l r _ s' )  ubst = substCon g s' ubst $ scope tc id $ simplConj (residualizeGen g tc l s') (residualizeGen g tc r s')
+    residualizeGen g tc (Gen    id g' t _ s' ) ubst = substCon g (s' ++ g') ubst $ scope tc id $ residualizeGen (g' `E.o` g) tc t s'
+    residualizeGen g tc (Call   id s    _ s' ) ubst = substCon g s' ubst $ scope tc id $ residualizeGen g tc s s'
+    fident id = "f" ++ show id
+    vident id = "x" ++ show id 
+    scope tc@(sr, args, _) id g =
+      if Set.member id sr
+      then let as = reverse $ args Map.! id in 
+           let fargs = map vident as in 
+           Let (def (fident id) fargs g) (Invoke (fident id) $ map V fargs)
+      else g
 
 scoping = 
   let f g = 
@@ -106,10 +107,10 @@ appendo g =
          )
     ) g
 
-redtest   = let r = residualize tc in trace ("\n\n" ++ show r ++ "\n\n") r
-redtest'  = let r = residualize tc' 
-                ((x, y, _), _) = tc' 
+redtest   = let (r, _) = residualize tc in trace ("\n\n" ++ show r ++ "\n\n") r
+redtest'  = let (r, _) = residualize tc' 
+                ((x, y, _), _, _) = tc' 
             in trace ("\n\n" ++ show r ++ "\n\n" ++ show x ++ "\n\n" ++ show y) r
-redtest'' = let r = residualize tc'' in trace ("\n\n" ++ show r ++ "\n\n") r
+redtest'' = let (r, _) = residualize tc'' in trace ("\n\n" ++ show r ++ "\n\n") r
 
 

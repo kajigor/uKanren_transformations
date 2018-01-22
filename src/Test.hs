@@ -54,5 +54,5 @@ main =
     putStrLn $ show (toplevel 1 show (reverso $ fresh ["q"] (call "reverso" [a % b % nil, V "q"])))
     putStrLn $ show (toplevel 1 show (reverso $ fresh ["q"] (call "reverso" [V "q", a % b % nil])))
 -}
-    putStrLn $ show $ snd $ drive (reverso $ fresh ["q", "r", "s"] (call "reverso" [V "q", V "r", V "s"]))
+    putStrLn $ show $ snd' $ drive (reverso $ fresh ["q", "r", "s"] (call "reverso" [V "q", V "r", V "s"]))
 

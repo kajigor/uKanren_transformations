@@ -16,9 +16,7 @@ import List
 
 type TreeContext = (Set.Set Id, Map.Map Id [S], [Id])
 
-initContext as = 
-  let emptyContext = (Set.empty, Map.empty, [1..]) in 
-  updateTc emptyContext 0 as 
+emptyContext = (Set.empty, Map.empty, [0..])
 
 updateTc tc id as = 
   let (sr, args, ids) = tc in 
@@ -219,10 +217,10 @@ unfold (sr, args, ids) cs e s gen conjs =
   let (tc', node)  = eval (sr, args, ids') ((id, cs_conjs):cs) e' s gen [] h t in
   (tc', Call id node ( conj $ {- (Invoke (show s) [] ) : -} map trd' conjs) s)
 
-drive :: G X -> (TreeContext, Tree)
+drive :: G X -> (TreeContext, Tree, [Id])
 drive goal =
   let (goal', (g', i', d'), args) = E.pre_eval' E.env0 goal in
-  eval (initContext args) [] d' E.s0 [] [] (i', g', goal') []
+  let (x, y) = eval emptyContext [] d' E.s0 [] [] (i', g', goal') [] in (x, y, reverse args)
 
 
 tc' = drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
@@ -236,5 +234,5 @@ tc = drive (appendo
 
 tc'' = drive (revAcco $ fresh ["q", "s"] (call "revacco" [V "q", nil, V "s"])) 
 
-tree = snd $ tc
+tree = snd' $ tc
 
