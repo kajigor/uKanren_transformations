@@ -1,6 +1,6 @@
 module TreePrinter where 
 
-import Data.Text.Lazy (Text, pack, unpack)
+import Data.Text.Lazy (Text, pack, unpack, replace)
 import Data.Graph.Inductive (Gr, mkGraph)
 import Data.GraphViz (
   GraphvizParams,
@@ -41,7 +41,7 @@ import Tree
 treeToGraph :: Tree -> Gr Text Text
 treeToGraph tree = 
   let (vs, es) = label tree 
-  in  mkGraph (map (\(i, v) -> (i, pack v)) vs) (map (\(i,j,l) -> (i,j, pack l)) es)
+  in  mkGraph (map (\(i, v) -> (i, pack ("<" ++ v ++ ">"))) vs) (map (\(i,j,l) -> (i,j, pack l)) es)
 
 label :: Tree -> ([(Int,String)], [(Int,Int,String)])
 label tree = 
@@ -67,12 +67,12 @@ label tree =
     label' t@(Call _ ch _ _)              i ns es = addChild    i (showNode t) ns es ch
 
 showNode Fail = "_|_"
-showNode (Success s)           = "S\n"  ++ show s
-showNode (Rename id g s ts _)    = "R " ++ show id ++ "\n" ++ show s ++ "\n" ++ show g ++ "\n" ++ show (reverse ts)
-showNode (Gen id g _ curr _)     = "G " ++ show id ++ "\n" ++ show g ++ "\n" ++ show curr
-showNode (Or _ _ curr _)         = "O\n" ++ show curr
-showNode (Split id t1 t2 curr _) = "Splt " ++ show id ++ "\n" ++ show curr
-showNode (Call id t curr _)      = "Call " ++ show id ++ "\n" ++ show curr
+showNode (Success s)           = "S <BR/> " ++ E.showSigma s
+showNode (Rename id g s ts _)    = "R " ++ show id ++ " <BR/> " ++ E.showSigma s ++ " <BR/> " ++ show g ++ " <BR/> " ++ show (reverse ts)
+showNode (Gen id g _ curr _)     = "G " ++ show id ++ " <BR/> " ++ show g ++ " <BR/> " ++ show curr
+showNode (Or _ _ curr _)         = "O <BR/> " ++ show curr
+showNode (Split id t1 t2 curr _) = "Splt " ++ show id ++ " <BR/> " ++ show curr
+showNode (Call id t curr _)      = "Call " ++ show id ++ " <BR/> " ++ show curr
 
 params :: GraphvizParams n Text Text () Text
 params = nonClusteredParams {
@@ -96,5 +96,9 @@ params = nonClusteredParams {
     fn (n,l) = [(Label . StrLabel) l]
     fe (f,t,l) = [(Label . StrLabel) l]
 
+remove_quots t = 
+  replace (pack ">\"") (pack ">") $
+  replace (pack "\"<") (pack "<") t
+
 printTree filename tree =
-  writeFile filename $ unpack $ renderDot $ toDot $ graphToDot params (treeToGraph tree)
+  writeFile filename $ unpack $ remove_quots $ renderDot $ toDot $ graphToDot params (treeToGraph tree)

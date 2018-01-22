@@ -63,6 +63,8 @@ o sigma theta =
     [] -> map (\ (s, ts) -> (s, substitute sigma ts)) theta ++ sigma
     _  -> error "Non-disjoint domains in substitution composition"  
 
+showSigma s = " [ " ++ (intercalate ", " (map (\(x,y) -> show (V x) ++ " &rarr; " ++ show y) s)) ++ " ] "
+
 -- Pre-evaluation
 pre_eval' :: Gamma -> G X -> (G S, Gamma, [S])
 pre_eval' env goal = pre_eval [] env goal
