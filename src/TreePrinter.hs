@@ -67,12 +67,12 @@ label tree =
     label' t@(Call _ ch _ _)              i ns es = addChild    i (showNode t) ns es ch
 
 showNode Fail = "_|_"
-showNode (Success s)           = "S<BR/>"  ++ show s
-showNode (Rename id g s ts _)    = "R " ++ show id ++ "<BR/>" ++ show s ++ "<BR/>" ++ show g ++ "<BR/>" ++ show (reverse ts)
-showNode (Gen id g _ curr _)     = "G " ++ show id ++ "<BR/>" ++ show g ++ "<BR/>" ++ show curr
-showNode (Or _ _ curr _)         = "O<BR/>" ++ show curr
-showNode (Split id t1 t2 curr _) = "Splt " ++ show id ++ "<BR/>" ++ show curr
-showNode (Call id t curr _)      = "Call " ++ show id ++ "<BR/>" ++ show curr
+showNode (Success s)           = "S <BR/> " ++ E.showSigma s
+showNode (Rename id g s ts _)    = "R " ++ show id ++ " <BR/> " ++ E.showSigma s ++ " <BR/> " ++ show g ++ " <BR/> " ++ show (reverse ts)
+showNode (Gen id g _ curr _)     = "G " ++ show id ++ " <BR/> " ++ show g ++ " <BR/> " ++ show curr
+showNode (Or _ _ curr _)         = "O <BR/> " ++ show curr
+showNode (Split id t1 t2 curr _) = "Splt " ++ show id ++ " <BR/> " ++ show curr
+showNode (Call id t curr _)      = "Call " ++ show id ++ " <BR/> " ++ show curr
 
 params :: GraphvizParams n Text Text () Text
 params = nonClusteredParams {

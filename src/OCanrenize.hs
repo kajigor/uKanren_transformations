@@ -6,6 +6,7 @@ import System.Process
 import System.IO
 import System.IO.Temp
 import Data.Char
+import Data.List (intercalate)
 import Syntax
 import Test
 import Driving
@@ -28,7 +29,7 @@ instance OCanren v => OCanren (G v) where
   ocanren (t1 :=:  t2)  = "(" ++ ocanren t1 ++ " === " ++ ocanren t2 ++ ")"
   ocanren (g1 :/\: g2)  = "(" ++ ocanren g1 ++ " &&& " ++ ocanren g2 ++ ")"
   ocanren (g1 :\/: g2)  = "(" ++ ocanren g1 ++ " ||| " ++ ocanren g2 ++ ")"
-  ocanren (Fresh x g )  = "(" ++ "fresh (" ++ x ++ ") " ++ ocanren g ++ ")"
+  ocanren (Fresh x g )  = let (names, goal) = freshVars [x] g in "(" ++ "fresh (" ++ intercalate " " names ++ ") (" ++ ocanren goal ++ "))"
   ocanren (Invoke f ts) = "(" ++ f ++ concat [' ' : ocanren t | t <- ts] ++ ")"
   ocanren (Let (n, as, b) g) = "let rec " ++ n ++ concat [' ' : a | a <- as] ++ " = " ++ ocanren b ++ " in " ++ ocanren g
 
