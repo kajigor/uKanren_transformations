@@ -55,7 +55,7 @@ failure = "failure"
 
 residualize :: (TreeContext, Tree, [Id]) -> (G X, [String])
 residualize (tc, t, args) = 
-  (E.post_eval' $ residualizeGen [] tc (simpl t) [], map vident args)
+  (E.post_eval' (map vident args) $ residualizeGen [] tc (simpl t) [], map vident args)
   where
     residualizeGen _ _ Fail         _ = Invoke failure [] 
     residualizeGen g _ (Success s ) ubst = 

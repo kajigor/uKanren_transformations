@@ -46,19 +46,12 @@ data G a =
 
 instance Show a => Show (G a) where
   show (t1 :=:  t2)               = show t1 ++ " = "  ++ show t2
-{- <<<<<<< HEAD
-  show (g1 :/\: g2)               = {- "(" ++ -} show g1 ++ " /\\ " ++ show g2 {- ++ ")" -}
-  show (g1 :\/: g2)               = "(" ++ show g1 ++ " \\/ " ++ show g2 ++ ")"
-  show (Fresh name g)             = "Fresh " ++ name ++ " (" ++ show g ++ ")"
-  show (Invoke name ts)           = name ++ " " ++ {- "(" ++ -} intercalate " " (map show ts) {-  ++ ")" -}
-======= -}
   show (g1 :/\: g2)               = "(" ++ show g1 ++ " /\\ " ++ show g2 ++ ")"
   show (g1 :\/: g2)               = "(" ++ show g1 ++ " <BR/> \\/ " ++ show g2 ++ ")"
   show (Fresh name g)             = 
     let (names, goal) = freshVars [name] g in 
     "fresh " ++ show (reverse names) ++ " (" ++ show goal ++ ")"
   show (Invoke name ts)           = name ++ "(" ++ show ts ++ ")"
--- >>>>>>> master
   show (Let (name, args, body) g) = "let " ++ name ++ " " ++ (intercalate " " args) ++ " = " ++ show body ++ " in " ++ show g 
 
 freshVars names (Fresh name goal) = freshVars (name : names) goal

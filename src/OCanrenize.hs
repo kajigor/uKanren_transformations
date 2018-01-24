@@ -8,7 +8,6 @@ import System.IO.Temp
 import Data.Char
 import Data.List (intercalate)
 import Syntax
-import Test
 import Driving
 import Residualize
 
@@ -20,6 +19,8 @@ instance OCanren String where
 
 instance OCanren v => OCanren (Term v) where
   ocanren (V v)        = ocanren v
+  ocanren (C "Nil" _) = "nil ()"
+  ocanren (C "Cons" [h,t]) = ocanren h ++ " % " ++ ocanren t
   ocanren (C (f:o) ts) = "(" ++ (toLower f : o) ++ case ts of 
                                                      [] -> " ()" 
                                                      _  -> concat [' ' : ocanren t | t <- ts]
@@ -53,7 +54,7 @@ toOCanren filename topLevelName (tree, args) =
                                      hPutStrLn file "" 
                                      hClose file
                                      system $ "camlp5o pr_o.cmo " ++ tmp_name ++ " >> " ++ filename
-                                     -- system $ "ocamlformat " ++ filename ++ " -m 160 -i"
+                                     system $ "ocamlformat " ++ filename ++ " -m 160 -i"
                                      return ()
                                 )
 
@@ -62,3 +63,8 @@ test = toOCanren "appendo2.ml" "appendo2" $ residualize tc
 test' = toOCanren "reverso.ml" "reverso" $ residualize tc'
 
 test'' = toOCanren "revacco.ml" "revacco" $ residualize tc''
+
+main = do 
+  test 
+  test'
+  test''

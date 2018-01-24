@@ -81,15 +81,17 @@ pre_eval' env goal = pre_eval [] env goal
   pre_eval vars e           (Let    def g) = let (g', e', vars') = pre_eval vars e g in
                                              (Let def g', e', vars')
 
-post_eval' :: G X -> G X 
-post_eval' = post_eval []
- where
-  post_eval vars (Let (f, args, b) g) = 
-    Let (f, args, let freshs = ((fvg b) \\ args) \\ vars 
-                  in  foldr (\ x g  -> Fresh x g) (post_eval (vars ++ args ++ freshs) b) freshs) $ post_eval vars g
-  post_eval vars (g1 :/\: g2) = post_eval vars g1 :/\: post_eval vars g2
-  post_eval vars (g1 :\/: g2) = post_eval vars g1 :\/: post_eval vars g2
-  post_eval _ g = g
+post_eval' :: [X] -> G X -> G X 
+post_eval' as goal = 
+  let freshs = fvg goal \\ as in
+  foldr (\x g -> Fresh x g) (post_eval (freshs ++ as) goal) freshs
+  where
+    post_eval vars (Let (f, args, b) g) = 
+      Let (f, args, let freshs = ((fvg b) \\ args) \\ vars 
+                    in  foldr (\ x g  -> Fresh x g) (post_eval (vars ++ args ++ freshs) b) freshs) $ post_eval vars g
+    post_eval vars (g1 :/\: g2) = post_eval vars g1 :/\: post_eval vars g2
+    post_eval vars (g1 :\/: g2) = post_eval vars g1 :\/: post_eval vars g2
+    post_eval _ g = g
    
 
 -- Evaluation relation
