@@ -3,7 +3,7 @@
 OCAMLC = ocamlc
 OCAMLOPT = ocamlopt
 OCAMLDEP = ocamldep
-SOURCES = $(TOPFILE).ml
+SOURCES = appendo2.ml reverso.ml revacco.ml test.ml
 CAMLP5 = -pp "camlp5o -I `ocamlfind -query ocanren.syntax` -I `ocamlfind -query GT.syntax` pa_minikanren.cmo pa_gt.cmo -L `ocamlfind -query GT.syntax`"
 PXFLAGS = $(CAMLP5)
 BFLAGS = -rectypes -I `ocamlfind -query GT` -I `ocamlfind -query ocanren` 
