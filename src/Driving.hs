@@ -145,7 +145,7 @@ split gs1 gs2 =
 update :: (E.P, E.Delta) -> Def -> (E.P, E.Delta)
 update (p, d) def = let (p', _, d') = E.update (p, E.emptyIota, d) def in (p', d')
 
-invoke :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] -> (TreeContext, Tree) 
+invoke :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] -> (TreeContext, Tree, E.Delta) 
 invoke tc@(sr, args, ids) cs d s gen conjs =
   -- HERE WE HAVE TO SUBSTITUTE INTO THE CURRENT GOAL
 -- if head ids > 31 then (tc, Fail) 
@@ -160,7 +160,8 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
       let r = fromJust (renameGoals conjs' qqq_conjs) in
       (
         updateTc tc di (map fst r),
-        Rename di g s r s
+        Rename di g s r s,
+        d
       )
     Nothing -> 
       case find (\ (_, conjs') -> (isJust $ embedGoals conjs' qqq_conjs)) cs of
@@ -168,41 +169,41 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
           if length qqq == length conjs'
           then
                let (msg, s1, s2, d') = generalizeGoals d qqq_conjs conjs' in -- ADD GENERALIZER 
-               let (tc', node) = eval (sr, args, ids') ((id, qqq_conjs):cs) d' s s1 [] (fst' $ head conjs, p, msg) [] in
-               (tc', Gen id s1 node (msg :/\: g) s)
+               let (tc', node, d'') = eval (sr, args, ids') ((id, qqq_conjs):cs) d' s s1 [] (fst' $ head conjs, p, msg) [] in
+               (tc', Gen id s1 node (msg :/\: g) s, d'')
           else if length conjs' < length qqq 
                then let cs'            = (id, qqq_conjs):cs in
                     let (lh:lt, rh:rt) = split qqq conjs' in
-                    let (tc' , node' ) = eval (sr, args, ids') cs' d s gen [] lh lt in
-                    let (tc'', node'') = eval tc' cs' d s gen [] rh rt in
-                    (tc'', Split id node' node'' g s)
+                    let (tc' , node' , d' ) = eval (sr, args, ids') cs' d s gen [] lh lt in
+                    let (tc'', node'', d'') = eval tc' cs' d' s gen [] rh rt in
+                    (tc'', Split id node' node'' g s, d'')
                else error "Wow..."
         Nothing -> unfold tc cs d s gen qqq
 
 type Zeta = (E.Iota, E.P, G S)
 
-eval :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] -> Zeta -> [Zeta]  -> (TreeContext, Tree)
+eval :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] -> Zeta -> [Zeta]  -> (TreeContext, Tree, E.Delta)
 eval tc cs d s gen prev (i, p, Let def g) conjs = 
   let (p', d') = update (p, d) def in
   eval tc cs d' s gen prev (i, p', g) conjs  
 eval tc cs d s gen prev g@(i, p, t1 :=: t2) conjs =
   case takeS 1 $ E.eval (p, i, d) s (trd' g) of
-    []       -> (tc, Fail)
+    []       -> (tc, Fail, d)
     [(s, _)] -> case conjs of
                   []       -> case prev of
                                 [] -> unfold tc cs d s gen []  
                                 _  -> invoke tc cs d s gen $ reverse prev 
                   g':conj' -> eval tc cs d s gen prev g' conj' 
-eval tc cs e s gen prev g@(i, p, g1 :\/: g2) conjs = 
-  let (tc',  node' ) = eval tc  cs e s gen prev (i, p, g1) conjs in
-  let (tc'', node'') = eval tc' cs e s gen prev (i, p, g2) conjs in 
-  (tc'', Or node' node'' (conj $ map trd' $ (reverse prev) ++ g:conjs) s)
-eval tc cs e s gen prev (i, p, g1 :/\: g2) conjs = eval tc cs e s gen prev (i, p, g1) ((i, p, g2):conjs)
-eval tc cs e s gen prev g@(_, _, Invoke _ _) (g':conjs') = eval tc cs e s gen (g:prev) g' conjs'
-eval tc cs e s gen prev g@(_, _, Invoke _ _) []          = invoke tc cs e s gen (reverse $ g:prev)
+eval tc cs d s gen prev g@(i, p, g1 :\/: g2) conjs = 
+  let (tc',  node' , d' ) = eval tc  cs d  s gen prev (i, p, g1) conjs in
+  let (tc'', node'', d'') = eval tc' cs d' s gen prev (i, p, g2) conjs in 
+  (tc'', Or node' node'' (conj $ map trd' $ (reverse prev) ++ g:conjs) s, d'')
+eval tc cs d s gen prev (i, p, g1 :/\: g2) conjs = eval tc cs d s gen prev (i, p, g1) ((i, p, g2):conjs)
+eval tc cs d s gen prev g@(_, _, Invoke _ _) (g':conjs') = eval tc cs d s gen (g:prev) g' conjs'
+eval tc cs d s gen prev g@(_, _, Invoke _ _) []          = invoke tc cs d s gen (reverse $ g:prev)
 
-unfold :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] -> (TreeContext, Tree)
-unfold tc _ _ s _ []            = (tc, Success s)
+unfold :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] -> (TreeContext, Tree, E.Delta)
+unfold tc _ d s _ []            = (tc, Success s, d)
 unfold (sr, args, ids) cs e s gen conjs =
   let cs_conjs     = map (\ (_, _, Invoke f as) -> Invoke f $ map (E.substitute s) as) conjs in
   let (e', conjs') = foldl (\ (d, conj) (i, p, zyz@(Invoke f as)) ->
@@ -214,13 +215,13 @@ unfold (sr, args, ids) cs e s gen conjs =
   in
   let id:ids'      = ids    in  
   let h:t          = reverse conjs' in
-  let (tc', node)  = eval (sr, args, ids') ((id, cs_conjs):cs) e' s gen [] h t in
-  (tc', Call id node ( conj $ {- (Invoke (show s) [] ) : -} map trd' conjs) s)
+  let (tc', node, d')  = eval (sr, args, ids') ((id, cs_conjs):cs) e' s gen [] h t in
+  (tc', Call id node ( conj $ {- (Invoke (show s) [] ) : -} map trd' conjs) s, d')
 
 drive :: G X -> (TreeContext, Tree, [Id])
 drive goal =
   let (goal', (g', i', d'), args) = E.pre_eval' E.env0 goal in
-  let (x, y) = eval emptyContext [] d' E.s0 [] [] (i', g', goal') [] in (x, y, reverse args)
+  let (x, y, _) = eval emptyContext [] d' E.s0 [] [] (i', g', goal') [] in (x, y, reverse args)
 
 
 tc' = drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
