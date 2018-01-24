@@ -58,21 +58,13 @@ label tree =
           (ns',  es')  = label' ch1 i1 ns es
           (ns'', es'') = label' ch2 i2 ns es
       in  ((i, n) : (ns' ++ ns''), (i, i1, "") : (i, i2, "") : (es' ++ es''))
-    label' t@Fail                         i ns es = addLeaf     i (showNode t) ns es
-    label' t@(Success _)                  i ns es = addLeaf     i (showNode t) ns es
-    label' t@(Rename _ _ _ _ _)           i ns es = addLeaf     i (showNode t) ns es
-    label' t@(Gen _ _ ch _ _)             i ns es = addChild    i (showNode t) ns es ch
-    label' t@(Or ch1 ch2 _ _)             i ns es = addChildren i (showNode t) ns es ch1 ch2
-    label' t@(Split _ ch1 ch2 _ _)        i ns es = addChildren i (showNode t) ns es ch1 ch2
-    label' t@(Call _ ch _ _)              i ns es = addChild    i (showNode t) ns es ch
-
-showNode Fail = "_|_"
-showNode (Success s)           = "S <BR/> " ++ E.showSigma s
-showNode (Rename id g s ts _)    = "R " ++ show id ++ " <BR/> " ++ E.showSigma s ++ " <BR/> " ++ show g ++ " <BR/> " ++ show (reverse ts)
-showNode (Gen id g _ curr _)     = "G " ++ show id ++ " <BR/> " ++ show g ++ " <BR/> " ++ show curr
-showNode (Or _ _ curr _)         = "O <BR/> " ++ show curr
-showNode (Split id t1 t2 curr _) = "Splt " ++ show id ++ " <BR/> " ++ show curr
-showNode (Call id t curr _)      = "Call " ++ show id ++ " <BR/> " ++ show curr
+    label' t@Fail                         i ns es = addLeaf     i (dot t) ns es
+    label' t@(Success _)                  i ns es = addLeaf     i (dot t) ns es
+    label' t@(Rename _ _ _ _ _)           i ns es = addLeaf     i (dot t) ns es
+    label' t@(Gen _ _ ch _ _)             i ns es = addChild    i (dot t) ns es ch
+    label' t@(Or ch1 ch2 _ _)             i ns es = addChildren i (dot t) ns es ch1 ch2
+    label' t@(Split _ ch1 ch2 _ _)        i ns es = addChildren i (dot t) ns es ch1 ch2
+    label' t@(Call _ ch _ _)              i ns es = addChild    i (dot t) ns es ch
 
 params :: GraphvizParams n Text Text () Text
 params = nonClusteredParams {
