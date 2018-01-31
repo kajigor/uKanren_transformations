@@ -31,7 +31,7 @@ data G a =
   | G a :\/: G a
   | Fresh  Name (G a)
   | Invoke Name [Term a] 
---  | Zzz (G a)
+  | Zzz (G a)
   | Let Def (G a) deriving (Eq, Ord) 
 
 freshVars names (Fresh name goal) = freshVars (name : names) goal
@@ -67,6 +67,7 @@ fvg = nub . fv'
   fv' (Invoke _ ts) = concat $ map fv ts
   fv' (Fresh x g)   = fv' g \\ [x]
   fv' (Let (_, _, _) g) = fv' g
+  fv' (Zzz g) = fv' g
 
 instance Show a => Show (Term a) where
   show (V v) = "v." ++ show v
@@ -77,7 +78,7 @@ instance Show a => Show (Term a) where
                 in show h ++ " : " ++ show t
       _ -> case ts of 
              [] -> name 
-             _  -> "C " ++ name ++ " " ++ concatMap show ts
+             _  -> "C " ++ name ++ " " ++ "[" ++ intercalate ", " (map show ts) ++ "]"
 
 instance Show a => Show (G a) where
   show (t1 :=:  t2)               = show t1 ++ " = "  ++ show t2
@@ -113,7 +114,7 @@ instance Dot a => Dot (Term a) where
                 in dot h ++ " : " ++ dot t
       _ -> case ts of 
              [] -> name 
-             _  -> "C " ++ name ++ " " ++ concatMap dot ts
+             _  -> "C " ++ name ++ " " ++ "[" ++ intercalate " " (map dot ts) ++ "]"
 
 instance Dot a => Dot (G a) where
   dot (t1 :=:  t2)               = dot t1 ++ " = "  ++ dot t2

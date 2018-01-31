@@ -2,6 +2,7 @@ module Num where
 
 import Prelude hiding (succ)
 import Syntax
+import Bool
 import Debug.Trace
 
 peanify n | n <= 0 = zero
@@ -9,6 +10,11 @@ peanify n          = succ (peanify $ n - 1)
 
 zero   = C "O" []
 succ x = C "S" [x]
+
+notZero g = 
+  let x = V "x" in 
+  let y = V "y" in 
+  Let (def "notZero" ["x"] (fresh ["y"] (x === succ y))) g
 
 addo g =
   let x  = V "x" in 
@@ -52,6 +58,39 @@ mulo g =
         )
       )
     ) $ addo g
+
+leo g = 
+  let x  = V "x"  in 
+  let y  = V "y"  in 
+  let b  = V "b"  in 
+  let x' = V "x'" in 
+  let y' = V "y'" in 
+  Let 
+    ( def "leo" ["x", "y", "b"]
+      (
+        (x === zero &&& b === trueo) |||
+        (call "notZero" [x] &&& y === zero &&& b === falso) |||
+        (fresh ["x'", "y'"] (x === succ x' &&& y === succ y' &&& call "leo" [x', y', b]) )
+      )
+    ) (notZero g)
+
+geo g = Let (def "geo" ["x", "y", "z"] $ call "leo" [V "y", V "x", V "z"]) (leo g)
+
+gto g = 
+  let x  = V "x"  in 
+  let y  = V "y"  in 
+  let b  = V "b"  in 
+  let x' = V "x'" in 
+  let y' = V "y'" in 
+  Let (
+    def "gto" ["x", "y", "b"] (
+      (call "notZero" [x] &&& y === zero &&& b === trueo) |||
+      (x === zero &&& b === falso) |||
+      fresh ["x'", "y'"] (x === succ x' &&& y === succ y' &&& call "gto" [x', y', b])
+    )
+  ) (notZero g)
+
+lto g = Let (def "lto" ["x", "y", "z"] $ call "gto" [V "y", V "x", V "z"]) (gto g)
 
 num (V n) = "._" ++ show n
 num (C "O" []) = "O"

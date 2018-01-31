@@ -30,6 +30,7 @@ rename g1 g2 = rename' (Just []) (g1, g2) where
   rename' r (g1 :/\: g2, h1 :/\: h2)                                      = renameGoals r [g1, g2] [h1, h2]
   rename' r (g1 :\/: g2, h1 :\/: h2)                                      = renameGoals r [g1, g2] [h1, h2]
   rename' r (Invoke f as, Invoke g bs) | f == g && length as == length bs = renameTerms r as bs
+  rename' r (Zzz f, Zzz g) = rename' r (f, g) 
   rename' _  _                                                            = Nothing
   renameTerm r (C m ms, C n ns) | m == n && length ms == length ns = renameTerms r ms ns
   renameTerm r (V x, V y) = r >>= (\r -> case lookup x r of
@@ -55,6 +56,8 @@ embed g1 g2 = embedGoal (Just []) (g1, g2) where
          , embedGoal r (g1 :/\: g2, h1)
          , embedGoal r (g1 :/\: g2, h2)
          ]
+  embedGoal r (Zzz g, Zzz h) = embedGoal r (g, h)
+  embedGoal r (g, Zzz h) = embedGoal r (g, h)
   embedGoal r (Invoke f fs, Invoke g gs) | f == g && length fs == length gs = embedTerms r fs gs
   embedGoal r (Invoke _ _, g1 :/\: g2) = Nothing
   embedGoal r (g, g1 :/\: g2) = msum $ map (embedGoal r . (g,)) [g1, g2]
@@ -148,7 +151,7 @@ update (p, d) def = let (p', _, d') = E.update (p, E.emptyIota, d) def in (p', d
 invoke :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] -> (TreeContext, Tree, E.Delta) 
 invoke tc@(sr, args, ids) cs d s gen conjs =
   -- HERE WE HAVE TO SUBSTITUTE INTO THE CURRENT GOAL
--- if head ids > 31 then (tc, Fail) 
+-- if head ids >  then (tc, Fail, d) 
 -- else 
   let qqq = map (\(a, b, g) -> (a, b, substitute s g)) conjs in 
   let qqq_conjs = map trd' qqq in
@@ -199,6 +202,7 @@ eval tc cs d s gen prev g@(i, p, g1 :\/: g2) conjs =
   let (tc'', node'', d'') = eval tc' cs d' s gen prev (i, p, g2) conjs in 
   (tc'', Or node' node'' (conj $ map trd' $ (reverse prev) ++ g:conjs) s, d'')
 eval tc cs d s gen prev (i, p, g1 :/\: g2) conjs = eval tc cs d s gen prev (i, p, g1) ((i, p, g2):conjs)
+eval tc cs d s gen prev (i,p,Zzz g) conjs = eval tc cs d s gen prev (i,p,g) conjs
 eval tc cs d s gen prev g@(_, _, Invoke _ _) (g':conjs') = eval tc cs d s gen (g:prev) g' conjs'
 eval tc cs d s gen prev g@(_, _, Invoke _ _) []          = invoke tc cs d s gen (reverse $ g:prev)
 

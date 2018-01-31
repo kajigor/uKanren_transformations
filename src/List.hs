@@ -9,7 +9,7 @@ infixr 9 %
 
 nil   = C "Nil"  []
 x % y = C "Cons" [x, y]
-lit x   = C x      []
+lit x = C x      []
 
 a = lit "a"
 b = lit "b"
@@ -20,6 +20,16 @@ list (V n) = "._" ++ show n
 list (C "Cons" [h, t]) = list h ++ " % " ++ list t
 list (C "Nil"  _     ) = "nil"
 list (C s []) = s
+list x = show x
+
+nilo g = 
+  let l = V "l" in 
+  Let ( def "nilo" ["l"] ( l === nil ) ) g
+
+singletono g = 
+  let l = V "l" in 
+  let x = V "x" in 
+  Let ( def "singletono" ["l", "x"] ( l === x % nil ) ) g
 
 appendo g =
   let x  = V "x"  in

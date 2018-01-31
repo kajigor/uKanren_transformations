@@ -7,6 +7,8 @@ import System.IO
 import System.IO.Temp
 import Data.Char
 import Data.List (intercalate)
+import Num
+import Sort
 import Syntax
 import Driving
 import Residualize
@@ -32,10 +34,8 @@ instance OCanren v => OCanren (G v) where
   ocanren (g1 :\/: g2)  = "(" ++ ocanren g1 ++ " ||| " ++ ocanren g2 ++ ")"
   ocanren (Fresh x g )  = let (names, goal) = freshVars [x] g in "(" ++ "fresh (" ++ intercalate " " names ++ ") (" ++ ocanren goal ++ "))"
   ocanren (Invoke f ts) = "(" ++ f ++ concat [' ' : ocanren t | t <- ts] ++ ")"
-  ocanren (Let (n, as, b) g) = 
-    case n of 
-      'f':_ -> "let rec " ++ n ++ concat [' ' : a | a <- as] ++ " = " ++ ocanren b ++ " in " ++ ocanren g
-      _ -> "let rec " ++ n ++ concat [' ' : a | a <- as] ++ " = " ++ ocanren b
+  ocanren (Let (n, as, b) g) = "let rec " ++ n ++ concat [' ' : a | a <- as] ++ " = " ++ ocanren b ++ " in defer(" ++ ocanren g ++ ")"
+
 
 ocanrenize :: String -> [String] -> G X -> String
 ocanrenize topLevelName args g = 
@@ -63,6 +63,15 @@ test = toOCanren "appendo2.ml" "appendo2" $ residualize tc
 test' = toOCanren "reverso.ml" "reverso" $ residualize tc'
 
 test'' = toOCanren "revacco.ml" "revacco" $ residualize tc''
+
+test_gto = toOCanren "gto.ml" "gto" $ residualize $ drive $ gto $ fresh ["q", "p", "r"] (call "gto" [V "p", V "r", V "q"])
+
+test_leo = toOCanren "leo.ml" "leo" $ residualize $ drive $ leo $ fresh ["q", "p", "r"] (call "leo" [V "p", V "r", V "q"])
+
+test_smallesto = toOCanren "smallesto.ml" "smallesto" $ residualize $ drive $ smallesto $ fresh ["q", "p", "r"] (call "smallesto" [V "q", V "p", V "r"])
+
+test_minmax = toOCanren "minmaxo.ml" "minmaxo" $ residualize $ drive $ minmaxo $ fresh ["q", "p", "r", "s"] (call "minmaxo" [V "q", V "p", V "r", V "s"])
+
 
 main = do 
   test 

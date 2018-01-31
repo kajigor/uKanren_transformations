@@ -9,12 +9,16 @@ import Test hiding (main)
 import TreePrinter
 import List
 import Num
+import Sort
 import Prelude hiding (succ)
 import Residualize
 import qualified Debug.Trace as T 
 
 main = 
   do
+    let (_, t, _) = drive $ sorto $ fresh ["q"] $ call "sorto" [(peanify 0 % (peanify 1 % (peanify 1 % (peanify 0 % nil)))), V "q"] 
+    printTree "sort.dot" t
+    {-
     printTree "ehm.dot" tree 
 
     let (_, t', _) = tc'
@@ -26,4 +30,4 @@ main =
     let t'' = simpl t'
     printTree "revaccoSimpl.dot" t''
     printTree "revacco.dot" t'
-
+-}
