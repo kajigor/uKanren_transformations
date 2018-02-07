@@ -3,10 +3,10 @@
 OCAMLC = ocamlc
 OCAMLOPT = ocamlopt
 OCAMLDEP = ocamldep
-SOURCES = appendo2.ml reverso.ml revacco.ml test.ml
+SOURCES = appendo2.ml reverso.ml revacco.ml minmaxo.ml test.ml
 CAMLP5 = -pp "camlp5o -I `ocamlfind -query ocanren.syntax` -I `ocamlfind -query GT.syntax` pa_minikanren.cmo pa_gt.cmo -L `ocamlfind -query GT.syntax`"
 PXFLAGS = $(CAMLP5)
-BFLAGS = -rectypes -I `ocamlfind -query GT` -I `ocamlfind -query ocanren` 
+BFLAGS = -rectypes -I `ocamlfind -query GT` -I `ocamlfind -query ocanren` #-I `~/prj/OCanren/samples`
 OFLAGS = $(BFLAGS)
 
 all: .depend $(TOPFILE).opt
@@ -19,7 +19,7 @@ $(TOPFILE).opt: $(SOURCES:.ml=.cmx)
 	$(OCAMLOPT) -o $(TOPFILE).opt $(OFLAGS) GT.cmxa unix.cmxa MiniKanren.cmxa $(SOURCES:.ml=.cmx)
 
 $(TOPFILE).byte: $(SOURCES:.ml=.cmo)
-	$(OCAMLC) -o $(TOPFILE).byte $(BFLAGS) GT.cma unix.cma MiniKanren.cma $(SOURCES:.ml=.cmo)
+	$(OCAMLC) -o $(TOPFILE).byte $(BFLAGS) GT.cma unix.cma MiniKanren.cma  $(SOURCES:.ml=.cmo) #Sort.cmo
 
 clean:
 	rm -Rf *.cmi *.cmo *.cmx *.annot *.o *.opt *.byte *~

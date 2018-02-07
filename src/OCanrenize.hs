@@ -23,6 +23,8 @@ instance OCanren v => OCanren (Term v) where
   ocanren (V v)        = ocanren v
   ocanren (C "Nil" _) = "nil ()"
   ocanren (C "Cons" [h,t]) = ocanren h ++ " % " ++ ocanren t
+  ocanren (C "O" []) = "zero"
+  ocanren (C "S" [x]) = "succ (" ++ ocanren x ++ ")"
   ocanren (C (f:o) ts) = "(" ++ (toLower f : o) ++ case ts of 
                                                      [] -> " ()" 
                                                      _  -> concat [' ' : ocanren t | t <- ts]
@@ -51,6 +53,7 @@ toOCanren filename topLevelName (tree, args) =
                                      hPutStrLn file "open GT"
                                      hPutStrLn file "open MiniKanren"
                                      hPutStrLn file "open Std"
+                                     hPutStrLn file "open Nat"
                                      hPutStrLn file "" 
                                      hClose file
                                      system $ "camlp5o pr_o.cmo " ++ tmp_name ++ " >> " ++ filename
@@ -77,3 +80,7 @@ main = do
   test 
   test'
   test''
+  test_gto
+  test_leo
+--  test_smallesto
+  test_minmax

@@ -57,6 +57,14 @@ substitute :: Sigma -> Ts -> Ts
 substitute s t@(V x)  = case lookup x s of Nothing -> t ; Just tx -> substitute s tx
 substitute s (C m ts) = C m $ map (substitute s) ts
 
+substituteGoal :: Sigma -> G S -> G S
+substituteGoal s (Invoke name as) = Invoke name (map (substitute s) as)
+substituteGoal _ g = error $ "We have only planned to substitute into calls, and the goal now is " ++ show g
+
+substituteConjs :: Sigma -> [G S] -> [G S]
+substituteConjs s = trace "Substituting..." $ map $ substituteGoal s
+
+
 ---- Composing substitutions
 o :: Sigma -> Sigma -> Sigma
 o sigma theta =
@@ -64,7 +72,7 @@ o sigma theta =
     [] -> map (\ (s, ts) -> (s, substitute sigma ts)) theta ++ sigma
     _  -> error "Non-disjoint domains in substitution composition"  
 
-showSigma s = " [ " ++ (intercalate ", " (map (\(x,y) -> show (V x) ++ " &rarr; " ++ show y) s)) ++ " ] "
+showSigma s = "" -- " [ " ++ (intercalate ", " (map (\(x,y) -> show (V x) ++ " &rarr; " ++ show y) s)) ++ " ] "
 
 -- Pre-evaluation
 pre_eval' :: Gamma -> G X -> (G S, Gamma, [S])
@@ -79,7 +87,7 @@ pre_eval' env goal = pre_eval [] env goal
                                              (g1' :\/: g2', g'', vars'')
   pre_eval vars g@(p, i, d) (Fresh x g')   = pre_eval (y : vars) (p, extend i x (V y), d') g'
    where y : d' = d 
-  pre_eval vars g@(p, i, d) (Zzz g')       = pre_eval vars g g'
+  --pre_eval vars g@(p, i, d) (Zzz g')       = pre_eval vars g g'
   pre_eval vars g@(_, i, _) (Invoke f fs)  = (Invoke f (map (i <@>) fs), g, vars)
   pre_eval vars e           (Let    def g) = let (g', e', vars') = pre_eval vars e g in
                                              (Let def g', e', vars')
@@ -107,16 +115,8 @@ eval env@(p, i, d) s (Invoke f as) =
   let i'         = foldl (\ i' (f, a) -> extend i' f a) i $ zip fs as in
   let (g', env', _) = pre_eval' (p, i', d) g in
   eval env' s g'
-{-  if head d > 400
-  then Empty 
-  else
-    case f of 
-              "sorto" -> trace (f ++ " " ++ showInt i' ++ "\n" ++ show s ++ "\n") $ eval env' s g'
-              "smallesto" -> trace (f ++ " " ++ showInt i' ++ "\n" ++ show s ++ "\n") $ eval env' s g'
-              _ -> eval env' s g'
-              -}
 eval env s (Let def g) = eval (update env def) s g 
-eval env s (Zzz g) = Immature (eval env s g)
+-- eval env s (Zzz g) = Immature (eval env s g)
 
 env0 :: Gamma
 env0 = ((\ _ -> error "Empty environment"), emptyIota, [0..])

@@ -24,6 +24,6 @@ instance Dot Tree where
   dot (Success s)           = "S <BR/> " ++ E.showSigma s
   dot (Rename id g s ts _)    = "R " ++ show id ++ " <BR/> " ++ E.showSigma s ++ " <BR/> " ++ dot g ++ " <BR/> " ++ dot (reverse ts)
   dot (Gen id g _ curr _)     = "G " ++ show id ++ " <BR/> " ++ dot g ++ " <BR/> " ++ dot curr
-  dot (Or _ _ curr _)         = "O <BR/> " ++ dot curr
+  dot (Or _ _ curr _)         = "O" -- <BR/> " ++ dot curr
   dot (Split id t1 t2 curr _) = "Splt " ++ show id ++ " <BR/> " ++ dot curr
-  dot (Call id t curr _)      = "Call " ++ show id ++ " <BR/> " ++ dot curr
+  dot (Call id t curr s)      = "Call " ++ show id ++ " <BR/> " ++ dot curr -- ++ " <BR/> " ++ dot s 

@@ -65,6 +65,39 @@ leo g =
   let b  = V "b"  in 
   let x' = V "x'" in 
   let y' = V "y'" in 
+  let zz = V "zz" in
+  Let 
+    ( def "leo" ["x", "y", "b"]
+      (
+        (x === zero &&& b === trueo) |||
+        (fresh ["zz"] (x === succ zz &&& y === zero &&& b === falso)) |||
+        (fresh ["x'", "y'"] (x === succ x' &&& y === succ y' &&& call "leo" [x', y', b]) )
+      )
+    ) (g)
+
+gto g = 
+  let x  = V "x"  in 
+  let y  = V "y"  in 
+  let b  = V "b"  in 
+  let x' = V "x'" in 
+  let y' = V "y'" in 
+  let zz = V "zz" in 
+  Let (
+    def "gto" ["x", "y", "b"] (
+      (fresh ["zz"] (x === succ zz &&& y === zero &&& b === trueo)) |||
+      (x === zero &&& b === falso) |||
+      fresh ["x'", "y'"] (x === succ x' &&& y === succ y' &&& call "gto" [x', y', b])
+    )
+  ) (g)
+
+
+{-
+leo g = 
+  let x  = V "x"  in 
+  let y  = V "y"  in 
+  let b  = V "b"  in 
+  let x' = V "x'" in 
+  let y' = V "y'" in 
   Let 
     ( def "leo" ["x", "y", "b"]
       (
@@ -73,9 +106,9 @@ leo g =
         (fresh ["x'", "y'"] (x === succ x' &&& y === succ y' &&& call "leo" [x', y', b]) )
       )
     ) (notZero g)
-
+-}
 geo g = Let (def "geo" ["x", "y", "z"] $ call "leo" [V "y", V "x", V "z"]) (leo g)
-
+{-
 gto g = 
   let x  = V "x"  in 
   let y  = V "y"  in 
@@ -89,7 +122,7 @@ gto g =
       fresh ["x'", "y'"] (x === succ x' &&& y === succ y' &&& call "gto" [x', y', b])
     )
   ) (notZero g)
-
+-}
 lto g = Let (def "lto" ["x", "y", "z"] $ call "gto" [V "y", V "x", V "z"]) (gto g)
 
 num (V n) = "._" ++ show n

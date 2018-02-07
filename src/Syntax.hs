@@ -11,9 +11,16 @@ type S    = Int    -- Semantic variables
 type Name = String -- Names of variables/definitions
 
 -- Terms
-data Term v = V v | C String [Term v] deriving (Eq, Ord) 
+data Term v = V v | C String [Term v] deriving (Show, Eq, Ord) 
 type Tx     = Term X
 type Ts     = Term S
+
+{-
+instance Eq a => Eq (Term a) where 
+  V x == V y = x == y
+  C n xs == C n' xs' = n == n' && length xs == length xs' && isPrefixOf xs xs' 
+  _ == _ = False
+-}
 
 instance Functor Term where
   fmap f (V v)    = V $ f v
@@ -31,7 +38,7 @@ data G a =
   | G a :\/: G a
   | Fresh  Name (G a)
   | Invoke Name [Term a] 
-  | Zzz (G a)
+ -- | Zzz (G a)
   | Let Def (G a) deriving (Eq, Ord) 
 
 freshVars names (Fresh name goal) = freshVars (name : names) goal
@@ -67,8 +74,9 @@ fvg = nub . fv'
   fv' (Invoke _ ts) = concat $ map fv ts
   fv' (Fresh x g)   = fv' g \\ [x]
   fv' (Let (_, _, _) g) = fv' g
-  fv' (Zzz g) = fv' g
+--  fv' (Zzz g) = fv' g
 
+{-
 instance Show a => Show (Term a) where
   show (V v) = "v." ++ show v
   show (C name ts) = 
@@ -79,7 +87,7 @@ instance Show a => Show (Term a) where
       _ -> case ts of 
              [] -> name 
              _  -> "C " ++ name ++ " " ++ "[" ++ intercalate ", " (map show ts) ++ "]"
-
+-}
 instance Show a => Show (G a) where
   show (t1 :=:  t2)               = show t1 ++ " = "  ++ show t2
   show (g1 :/\: g2)               = "(" ++ show g1 ++ " /\\ " ++ show g2 ++ ")"

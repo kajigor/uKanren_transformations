@@ -14,8 +14,8 @@ minmaxo g =
   let max = V "max" in 
   Let (
     def "minmaxo" ["a", "b", "min", "max"] (
-      (min === a &&& max === b &&& (call "leo" [a, b, trueo])) ||| 
-      (max === a &&& min === b &&& (call "gto" [a, b, trueo]))
+      (min === a &&& max === b &&& call "leo" [a, b, trueo]) ||| 
+      (max === a &&& min === b &&& call "gto" [a, b, trueo])
     )
   ) (leo $ gto g) 
 
@@ -34,8 +34,8 @@ smallesto g =
       (fresh ["h", "t", "s'", "t'", "max"] (
         l' === max % t' &&& 
         l === h % t &&& 
-        Zzz (call "minmaxo" [h, s', s, max]) &&& 
-        Zzz (call "smallesto" [t, s', t'])
+        (call "minmaxo" [h, s', s, max]) &&& 
+        (call "smallesto" [t, s', t'])
       ) )
     )
   ) (minmaxo g)
@@ -50,7 +50,7 @@ sorto g =
     def "sorto" ["x", "y"] (
       (x === nil &&& y === nil) ||| 
       (fresh ["s", "xs", "xs'"] (
-        y === s % xs' &&& Zzz (call "sorto" [xs, xs']) &&& Zzz (call "smallesto" [x, s, xs])
+        y === s % xs' &&& call "sorto" [xs, xs'] &&& call "smallesto" [x, s, xs]
       )) 
     )
   ) (smallesto g)
