@@ -2,9 +2,12 @@ module Tree where
 
 import qualified Eval as E
 import Syntax
+import Data.List
+import Debug.Trace
 
 type Id = Int
 data Tree = 
+  Prune   [G S]                             | 
   Fail                                      |
   Success E.Sigma                           |
   Or      Tree Tree (G S) E.Sigma           |
@@ -19,7 +22,14 @@ type Renaming = [(S, S)]
 ---- Generalization
 type Generalizer = E.Sigma
 
+
+-- TODO remove
+conj [] = error "Empty conjunction"
+conj (a:as) = foldl (:/\:) a as 
+
+
 instance Dot Tree where
+  dot (Prune gs) = trace (case gs of [x] -> show x ; _ -> "") $ "Prune <BR/> " ++ dot (conj gs)
   dot Fail = "_|_"
   dot (Success s)           = "S <BR/> " ++ E.showSigma s
   dot (Rename id g s ts _)    = "R " ++ show id ++ " <BR/> " ++ E.showSigma s ++ " <BR/> " ++ dot g ++ " <BR/> " ++ dot (reverse ts)

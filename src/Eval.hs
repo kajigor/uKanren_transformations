@@ -54,12 +54,13 @@ app (_, i) x = i x
 
 ---- Applying substitution
 substitute :: Sigma -> Ts -> Ts
-substitute s t@(V x)  = case lookup x s of Nothing -> t ; Just tx -> substitute s tx
+substitute s t@(V x)  = 
+  case lookup x s of Nothing -> t ; Just tx -> substitute s tx
 substitute s (C m ts) = C m $ map (substitute s) ts
 
 substituteGoal :: Sigma -> G S -> G S
 substituteGoal s (Invoke name as) = Invoke name (map (substitute s) as)
-substituteGoal _ g = error $ "We have only planned to substitute into calls, and the goal now is " ++ show g
+substituteGoal _ g = error $ "We have only planned to substitute into calls, and you are trying to substitute into:\n" ++ show g
 
 substituteConjs :: Sigma -> [G S] -> [G S]
 substituteConjs s = trace "Substituting..." $ map $ substituteGoal s
