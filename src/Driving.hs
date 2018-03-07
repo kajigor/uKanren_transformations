@@ -55,7 +55,34 @@ rename g1 g2 = rename' (Just []) (g1, g2) where
 renameGoals :: [G S] -> [G S] -> Maybe Renaming
 renameGoals as bs = rename (conj as) (conj bs)
 
--- Embedding
+{-embed :: G S -> G S -> Bool
+embed g@(g1 :/\: g2) (h1 :/\: h2) = embed g1 h1 && embed g2 h2 || embed g h1 || embed g h2
+embed g (g1 :/\: g2) = embed g g1 || embed g g2
+embed (Invoke f fs) (Invoke g gs) | f == g && length fs == length gs = embedTerms fs gs
+embed _ _ = False
+-}
+embedTerm :: Ts -> Ts -> Bool
+embedTerm (V _) (V _) = True
+embedTerm (C n ns) (C m ms) | n == m && length ms == length ns = and $ zipWith embedTerm ns ms 
+embedTerm t (C _ ns) = or $ zipWith embedTerm (repeat t) ns
+embedTerm _ _ = False
+
+embedTerms :: [Ts] -> [Ts] -> Bool
+embedTerms ps qs | length ps == length qs = and $ zipWith embedTerm ps qs
+embedTerms _ _ = False
+
+embedGoals :: [G S] -> [G S] -> Bool
+embedGoals = coupleConj where
+  coupleConj [] [] = True
+  coupleConj ((Invoke f fs) : as) ((Invoke g gs) : bs) | f == g && length fs == length gs = embedTerms fs gs && embedConj as bs
+  coupleConj _ _ = False
+
+  embedConj as bs = coupleConj as bs || diveConj as bs 
+
+  diveConj as (b:bs) = embedConj as bs
+  diveConj _ _ = False
+
+{--- Embedding
 embed :: G S -> G S -> Maybe Renaming
 embed g1 g2 = embedGoal (Just []) (g1, g2) where
   embedGoal r (g1 :/\:  g2, h1 :/\: h2 ) =
@@ -91,11 +118,20 @@ embedGoals as bs = coupleConj [] as bs where
 
   diveConj r as' (b:bs') = embedConj r as' bs'
   diveConj _ _ _         = Nothing
-
+-}
 -- tttt = embedGoals [Invoke "MM" (map V [3,5,1,7]), Invoke "S" (map V [4,5,6])] [Invoke "L" [V 3, V 5, C "T" []], Invoke "MM" (map V [8, 10, 5, 12]), Invoke "S" (map V [9, 10, 11])]
 inv = Invoke
 -- ((leo([V 3,         V 5, C "true" []])  /\ minmaxo([V 8 ,V 10,V 5, V 12])) /\ smallesto([V 9,V 10,V 11]))
 -- (((gto([V 31,V 32,C "true" []]) /\ leo([C "S" [V 32],V 21,C "true" []])) /\ minmaxo([V 33,V 35,V 21,V 37])) /\ smallesto([V 34,V 35,V 36]))
+
+{-((gto( [V 8, V 10,C "true" []]) /\                                          minmaxo([V 19,V 21,V 10,V 23])) /\ smallesto([V 20,V 21,V 22]))
+(((gto([V 31,V 32,C "true" []]) /\ leo([C "S" [V 32],V 21,C "true" []])) /\ minmaxo([V 33,V 35,V 21,V 37])) /\ smallesto([V 34,V 35,V 36]))
+-}
+tt = embedGoals [inv "G" [V 8, V 10, C "T" []]] 
+                [inv "G" [V 31, V 32, C "T" []], inv "L" [C "S" [V 32], V 21, C "T" []], inv "M" [V 33,V 35,V 21,V 37], inv "S" [V 34,V 35,V 36]]
+
+ttt = embedGoals [inv "G" [V 8, V 10, C "T" []], inv "M" [V 19, V 21, V 10, V 23], inv "S" [V 20, V 21, V 22]] 
+                 [inv "G" [V 31, V 32, C "T" []], inv "L" [C "S" [V 32], V 21, C "T" []], inv "M" [V 33,V 35,V 21,V 37], inv "S" [V 34,V 35,V 36]]
 
 tttt = embedGoals [inv "L" [V 3, V 5, C "T" []]  , inv "M" [V 8 ,V 10,V 5, V 12],          inv "S" [V 9,V 10,V 11]]
                   [inv "G" [V 31, V 32, C "T" []], inv "L" [C "S" [V 32], V 21, C "T" []], inv "M" [V 33,V 35,V 21,V 37], inv "S" [V 34,V 35,V 36]]
@@ -249,13 +285,13 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
   -- HERE WE HAVE TO SUBSTITUTE INTO THE CURRENT GOAL
  let qqq = map (\(a, b, g) -> (a, b, substitute s g)) conjs in
  let qqq_conjs = map trd' qqq in
-  
+  {-
  if length conjs > 3 -- head ids > 100
  then 
-    case find (\ (_, conjs') -> (isJust $ embedGoals conjs' qqq_conjs)) cs of 
-      Nothing     -> (tc, Prune [conj qqq_conjs], d)
-      Just (_, j) -> (tc, Prune [conj qqq_conjs, conj j], d)
- else
+    case find (\ (_, conjs') -> ({-isJust $-} embedGoals conjs' qqq_conjs)) cs of 
+      Nothing     -> trace "AHA" $ (tc, Prune [conj qqq_conjs], d)
+      Just (_, j) -> (tc, Prune [conj qqq_conjs, inv "Embedding" [],  conj j], d)
+ else-}
   -- let qqq = map (\(a, b, g) -> (a, b, substitute s g)) conjs in
   -- let qqq_conjs = map trd' qqq in
   let p = snd' $ head conjs in
@@ -270,7 +306,7 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
         d
       )
     Nothing ->
-      case find (\ (_, conjs') -> (isJust $ embedGoals conjs' qqq_conjs)) cs of
+      case find (\ (_, conjs') -> ({-isJust $-} embedGoals conjs' qqq_conjs)) cs of
         Just (_, conjs') ->
           if length qqq == length conjs'
           then

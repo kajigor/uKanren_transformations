@@ -39,11 +39,14 @@ accumCalls _                   = []
 
 main =
   do
-    let (_, t, _) = drive $ smallesto $ fresh ["q", "r", "s"] $ call "smallesto" [V "q", V "r", V "s"]
+    let (_, t, _) = drive $ sorto $ fresh ["q", "r"] $ call "sorto" [V "q", V "r"]
+    printTree "sorto.dot" (simpl t) 
+    
+    {-let (_, t, _) = drive $ smallesto $ fresh ["q", "r", "s"] $ call "smallesto" [V "q", V "r", V "s"]
     putStrLn "\n\n\n"
     putStrLn (intercalate "\n\n" $ map (\x -> intercalate "\n" $ map show x) (accumCalls t))
     printTree "smallesto.dot" (simpl t) -- (upTo 10 t)
-
+-}
     {-
     let (_, t, _) = drive $ sorto $ fresh ["q"] $ call "sorto" [(peanify 0 % (peanify 1 % (peanify 1 % (peanify 0 % nil)))), V "q"]
     printTree "sort.dot" t

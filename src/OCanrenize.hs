@@ -73,6 +73,8 @@ test_leo = toOCanren "leo.ml" "leo" $ residualize $ drive $ leo $ fresh ["q", "p
 
 test_smallesto = toOCanren "smallesto.ml" "smallesto" $ residualize $ drive $ smallesto $ fresh ["q", "p", "r"] (call "smallesto" [V "q", V "p", V "r"])
 
+test_sorto = toOCanren "sorto.ml" "sorto" $ residualize $ drive $ sorto $ fresh ["q", "r"] (call "sorto" [V "q", V "r"])
+
 test_minmax = toOCanren "minmaxo.ml" "minmaxo" $ residualize $ drive $ minmaxo $ fresh ["q", "p", "r", "s"] (call "minmaxo" [V "q", V "p", V "r", V "s"])
 
 
@@ -83,4 +85,5 @@ main = do
   test_gto
   test_leo
 --  test_smallesto
+  test_sorto
   test_minmax

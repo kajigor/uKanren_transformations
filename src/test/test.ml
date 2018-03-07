@@ -84,9 +84,68 @@ let reversoTest =
   run_test test "reverso q q"
 
 
+let sortoTest = 
+  (* let sorto_exp = !!! in *)
+  let sorto_act = Sorto.sorto in 
+  
+  let run_test actual test testName = 
+    Printf.printf "\nTest: %s\nSorting" testName ; 
+    test actual in
 
+  let run_test = run_test (* sorto_exp *) sorto_act in
+  
+  let test f = 
+      run one (fun p -> sorto_act (nat_list [1;0;2;1;1]) p)
+          (fun p ->
+            Stream.take ~n:1 p |> List.iter (fun rr ->
+              Printf.printf "%s\n%!"  @@ (if rr#is_open
+              then
+                GT.(show List.logic (show Nat.logic)) @@
+                  rr#reify (List.reify Nat.reify)
+              else
+                GT.(show List.ground (show Nat.ground) rr#prj)
+              )
+            )
+          )
+    (* run q (fun q -> f q q)
+                     (fun q -> List.iter (fun l -> Printf.printf "%s\n" @@ show_list @@ reify_list l) @@ Stream.take ~n:5 q) *)
+  in run_test test "sorto [1,0,2,1,1] q" ;
 
+  let test f = 
+      run one (fun p -> sorto_act p p)
+          (fun p ->
+            Stream.take ~n:5 p |> List.iter (fun rr ->
+              Printf.printf "%s\n%!"  @@ (if rr#is_open
+              then
+                GT.(show List.logic (show Nat.logic)) @@
+                  rr#reify (List.reify Nat.reify)
+              else
+                GT.(show List.ground (show Nat.ground) rr#prj)
+              )
+            )
+          )
+    (* run q (fun q -> f q q)
+                     (fun q -> List.iter (fun l -> Printf.printf "%s\n" @@ show_list @@ reify_list l) @@ Stream.take ~n:5 q) *)
+  in run_test test "sorto q q"
+(* 
+let reify_nat n = n#reify Nat.reify 
+let show_nat n = show (Nat.logic) n
 
+let minmaxo_test = 
+  let minmaxo_act = Minmaxo.minmaxo in
+  
+  let run_test (* expected *) actual test testName = 
+(*     Printf.printf "\nTest: %s\nExpected:\n" testName ; 
+    test expected ;  *)
+    Printf.printf "And here is what we've got :(\n" ; 
+    test actual in
+
+  let run_test = run_test minmaxo_act in
+ 
+  let test f = run qrs (fun q r s -> f q s r r)
+                       (fun q r s -> List.iter (fun l -> Printf.printf "%s\n" @@ show_nat @@ reify_nat) @@ Stream.take ~n:3 q) in
+  run_test test "minmaxo q s r r" 
+ *)   
 
 
 
