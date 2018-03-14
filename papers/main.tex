@@ -89,28 +89,28 @@ language=ocanren
 
 \section{Conjunctive Partial Deduction for MiniKanren}
 
-Conjunctive partial deduction is done in two steps: driving and residualization. 
+The conjunctive partial deduction is done in two steps: driving and residualization. 
 The driving step constructs a directed graph which resembles a partial SLDNF tree for Prolog programs. Residual program is constructed from this graph in the straightest way possible.
 
-The graph is almost a tree in the sense that cycles are only possible in one case: the goal in the current node is a renaming of a goal encountered before. The graph is refered to as the driving tree henceforth.
+The graph is almost a tree in the sense that cycles are only possible in one case: the goal in the current node is a renaming of a goal encountered before. The graph is referred to as the driving tree henceforth.
 
-The driving tree is constructed in the process of driving a goal. Each node contains a current goal and a current substition and is related closely to the evaluation step which produced it. 
+The driving tree is constructed in the process of driving a goal. Each node contains a current goal and a current substitution and is related closely to the evaluation step which produced it. 
 
 There are several types of nodes in the driving tree: 
 \begin{enumerate}
   \item \emph{Fail} is a leaf node. It corresponds to the refutation of some goal.
   \item \emph{Success} is a leaf node. It contains a computed answer for the goal
-  \item \emph{Or} node means the current goal is a disjuction: $g_1 \vee   g_2$. The children nodes are the results of driving of goals $g_1$ and $g_2$. 
-  \item \emph{Call} node correspond to the conjunction of relation calls: $g_1 \wedge g_2 \wedge \dots \wedge g_n$, where $g_i = R^k_i t_1 \dots t_k$. It has a single child node which is produced by an unfolding of every call in the conjunction: $g_1' \wedge g_2' \wedge \dots \wedge g_n'$, where $g_i' = unfold \ g_i$.
+  \item \emph{Or} node means the current goal is a disjunction: $g_1 \vee   g_2$. The children nodes are the results of driving of goals $g_1$ and $g_2$. 
+  \item \emph{Call} node corresponds to the conjunction of relation calls: $g_1 \wedge g_2 \wedge \dots \wedge g_n$, where $g_i = R^k_i t_1 \dots t_k$. It has a single child node which is produced by an unfolding of every call in the conjunction: $g_1' \wedge g_2' \wedge \dots \wedge g_n'$, where $g_i' = unfold \ g_i$.
   \item \emph{Rename} node is a leaf node which means there is a node among the ancestors which is a renaming of the current goal. The index of the ancestor node is stored in the current node. 
   \item \emph{Gen} node corresponds to a result of generalization. If there is an ancestor node with a goal which is embedded in the current goal, and the goals contain the same number of conjuncts, an msg for them is computed and stored in the \emph{Gen} node. 
-  \item \emph{Split} node means that the ancestor embedded node contains less conjuncts that the current one. In this case, the conjunction is splitted into two which are driven independently. 
+  \item \emph{Split} node means that the ancestor embedded node contains fewer conjuncts than the current one. In this case, the conjunction is split into two which are driven independently. 
 \end{enumerate}
 
 First, a miniKanren goal is partially evaluated to a conjunction of relation calls.
 
 \begin{enumerate}
-  \item If there is a disjunction, the disjuncts are driven separatly. By distribution, we can get rid of disjunctions in any goal. 
+  \item If there is a disjunction, the disjuncts are driven separately. By distribution, we can get rid of disjunctions in any goal. 
   \item All fresh variables are lifted to a higher level and are made into semantic variables with a pre-evaluation step.
   \item Every unification is evaluated into a substitution which goes along with the goal while driving. A fail to unify means there is a refutation and a \emph{Fail} node is created. 
   \item If after these steps a goal is an empty list of conjunctions, a \emph{Success} node is created with a substitution computed. 
@@ -118,11 +118,11 @@ First, a miniKanren goal is partially evaluated to a conjunction of relation cal
 
 When the current goal is the conjunction of relation calls, one of the following cases takes place: 
 \begin{enumerate}
-  \item If the current goal is a renaming of some goal encountered before, then a \emph{Renaming} leaf node is created since there is no need in driving the goal further. 
+  \item If the current goal is a renaming of some goal encountered before, then a \emph{Renaming} leaf node is created since there is no need for driving the goal further. 
   \item If the current goal is not a renaming of some ancestor goal, check it for embedding of some ancestor goal. For an embedding, one of two options is possible:
   \begin{enumerate}
-    \item The number of conjuncts is the same, which means the ``larger'' conjunction is larger in the subterms. In this case, an msg is computed for the current and the ancestor conjunction and then the msg driven further. 
-    \item The current conjunction has more conjuncts than the ancestor conjunction. In this case, the conjunction is split into two using the \emph{split} funciton. Let $g_1 \wedge \dots \wedge g_n \trianglelefteq h_1 \wedge \dots \wedge h_k, n < k$. In this case, the conjunction $h_1 \wedge \dots \wedge h_k$ is split into two subconjunctions $h_1 \wedge \dots \wedge h_j$ and $h_{j+1} \wedge \dots \wedge h_k$, such that $g_i \trianglelefteq h_i$ for each $i \in [1..j]$ and $g_{j+1} \ntrianglelefteq h_{j+1}$. The two subconjunctions are then driven independently. 
+    \item The number of conjuncts is the same, which means the ``larger'' conjunction is larger in the subterms. In this case, an msg is computed for the current and the ancestor conjunction and then the msg is driven further. 
+    \item The current conjunction has more conjuncts than the ancestor conjunction. In this case, the conjunction is split into two using the \emph{split} function. Let $g_1 \wedge \dots \wedge g_n \trianglelefteq h_1 \wedge \dots \wedge h_k, n < k$. In this case, the conjunction $h_1 \wedge \dots \wedge h_k$ is split into two subconjunctions $h_1 \wedge \dots \wedge h_j$ and $h_{j+1} \wedge \dots \wedge h_k$, such that $g_i \trianglelefteq h_i$ for each $i \in [1..j]$ and $g_{j+1} \ntrianglelefteq h_{j+1}$. The two subconjunctions are then driven independently. 
   \end{enumerate}     
   \item If the current goal is neither renaming nor embedding of any ancestor, it is driven further. 
 \end{enumerate}
@@ -214,11 +214,11 @@ Several branches in the driving tree of \verb!smallesto x y z! with \verb!x!, \v
 5) ... 
 \end{verbatim}
 
-In this program, goals grow to the left while driving. Our embedding demands conjunctions to be coupled, which means that the first conjuncts should be calls of the same relation. Because of that, only the goal 4) can possibly be embedded into the goal 5). But, since the original embedding relation does not ignore variables, they are not. See, the thrid argument of \verb!minmaxo! in the goal 4) is \verb!V10! --- the same variable as the second in \verb!gto!. Unfortunatelly, the goal 5) the second variable of \verb!gto! is \verb!V32! while the third one of \verb!minmaxo! is \verb!V21!. In the goal 5) \verb!V21! is also present in the \verb!leo! relation --- and this link between the variables make it impossible for the driving to terminate on this branch. 
+In this program, goals grow to the left while driving. Our embedding demands conjunctions to be coupled, which means that the first conjuncts should be calls of the same relation. Because of that, only the goal 4) can possibly be embedded into the goal 5). But, since the original embedding relation does not ignore variables, they are not. See, the third argument of \verb!minmaxo! in the goal 4) is \verb!V10! --- the same variable as the second in \verb!gto!. Unfortunately, the goal 5) the second variable of \verb!gto! is \verb!V32! while the third one of \verb!minmaxo! is \verb!V21!. In the goal 5) \verb!V21! is also present in the \verb!leo! relation --- and this link between the variables make it impossible for the driving to terminate on this branch. 
 
 So, it seems that proposed new homeomorphic embedding does not ensure termination. Why is it even a wqo? 
 
-Another problem is that $split$ only splits a goal in two subgoals, and if each of the relation calls involved unfold in a conjunciton of at least two relation calls, goals are going to grow faster, than $split$ splits. 
+Another problem is that $split$ only splits a goal into two subgoals, and if each of the relation calls involved unfold in a conjunction of at least two relation calls, goals are going to grow faster, than $split$ splits. 
 
 If we have the following program: 
 
@@ -244,7 +244,7 @@ Driving of \verb!a(X)! goes like this:
 This can probably be fixed by some restriction on unfolding of relation calls, but I do not see a good way to do it. Before, we tried to unconditionally unfold only the first relation in the conjunction, and the following conjunctions are unfolded only if the unfolding is deterministic. This approach seems viable, but still quite heuristic, especially if we do not fix a left-to-right execution strategy. 
 
 
-The last problem we encountered is an enourmous size of the residualized programs. The biggest problem there is that we introduce dozens of definitions of the same relation. There can be a simple relation (as \verb!gto! or \verb!leo!) which gets to a renaming after one unfolding, but it occurs in different branches of the driving tree, it gets residualized into the same program each time it occurs. For a relational sorting program, the size of generated program is about 10000 lines. 
+The last problem we encountered is an enormous size of the residualized programs. The biggest problem is that we introduce dozens of definitions of the same relation. There can be a simple relation (as \verb!gto! or \verb!leo!) which gets to a renaming after one unfolding, but it occurs in different branches of the driving tree, it gets residualized into the same program each time it occurs. For a relational sorting program, the size of the generated program is about 10000 lines. 
 
 \newpage
 
@@ -336,7 +336,7 @@ $$
 $$
 
 $$
-\trule{\withenv{\Gamma}{\trans{\mathfrak{s}}{g_1}{\mathfrak{\bar{s_1}}}} \;\;\;\; \withenv{\Gamma}{\trans{\mathfrak{s}}{g_2}{\mathfrak{\bar{s_2}}}}}
+\trule{\withenv{\Gamma}{\trans{\mathfrak{s}}{g_1}{\mathfrak{\bar{s_1}}}} \;\;\;\; \withenv{\Gamma}{\trans{\mathfrak{s}}{g_2}{\mathfrak{•}\bar{s_2}}}}
       {\withenv{\Gamma}{\trans{\mathfrak{s}}{g_1 \vee g_2}{\mathfrak{\bar{s_1}} \oplus \mathfrak{\bar{s_2}}}}}
 $$
 
