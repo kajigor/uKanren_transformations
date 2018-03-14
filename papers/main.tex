@@ -102,13 +102,13 @@ There are several types of nodes in the driving tree:
   \item \emph{Fail} is a leaf node. It corresponds to the refutation of some goal.
   \item \emph{Success} is a leaf node. It contains a computed answer for the goal.
   \item \emph{Or} node means, that the current goal is a disjunction $g_1 \vee   g_2$. The children nodes are the results of driving of goals $g_1$ and $g_2$. 
-  \item \emph{Call} node corresponds to the conjunction of relation calls $g_1 \wedge g_2 \wedge \dots \wedge g_n$, where $g_i = R^k_i t_1 \dots t_k$. It has a single child node, which is produced by unfolding of every call in the conjunction $g_1' \wedge g_2' \wedge \dots \wedge g_n'$, where $g_i' = unfold \ g_i$.
+  \item \emph{Call} node corresponds to the conjunction of relational calls $g_1 \wedge g_2 \wedge \dots \wedge g_n$, where $g_i = R^k_i t_1 \dots t_k$. It has a single child node, which is produced by unfolding of every call in the conjunction $g_1' \wedge g_2' \wedge \dots \wedge g_n'$, where $g_i' = unfold \ g_i$.
   \item \emph{Rename} node is a leaf node which means there is a node among the ancestors which is a renaming of the current goal. The index of the ancestor node is stored in the current node. 
   \item \emph{Gen} node corresponds to a result of generalization. If there is an ancestor node with a goal, which is embedded in the current goal, and the goals contain the same number of conjuncts, the msg for them is computed and stored in the \emph{Gen} node. 
   \item \emph{Split} node means, that the embedded node contains fewer conjuncts, than the current one. In this case, the conjunction is split into two subconjunctions, which are driven independently. 
 \end{enumerate}
 
-First, a miniKanren goal is partially evaluated to a conjunction of relation calls.
+First, a miniKanren goal is partially evaluated to a conjunction of relational calls.
 
 \begin{enumerate}
   \item If there is a disjunction, the disjuncts are driven separately. Using the distribution law, we can get rid of disjunctions in any goal by generating \emph{Or}-nodes with no information loss. 
@@ -224,7 +224,7 @@ In this program, the goals grow ``to the left'' during the driving. Our embeddin
 
 %So, it seems, that the proposed new homeomorphic embedding does not ensure termination. Why is it even a wqo? 
 
-Another problem is that the $split$ only splits a goal into two subgoals, and if each of the relational calls involved unfolds in a conjunction of at least two relation calls, the goals are going to grow faster, than the $split$ splits. 
+Another problem is that the $split$ only splits a goal into two subgoals, and if each of the relational calls involved unfolds in a conjunction of at least two relational calls, the goals are going to grow faster, than the $split$ splits. 
 
 If we have the following program: 
 
