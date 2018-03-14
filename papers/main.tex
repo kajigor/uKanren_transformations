@@ -83,9 +83,170 @@ language=ocanren
 
 \mainmatter
 
-\title{MiniKanren Semantics for Programs Transformation}
+\title{Program Transformations for miniKanren}
 
 \maketitle
+
+\section{Conjunctive Partial Deduction for MiniKanren}
+
+Conjunctive partial deduction is done in two steps: driving and residualization. 
+The driving step constructs a directed graph which resembles a partial SLDNF tree for Prolog programs. Residual program is constructed from this graph in the straightest way possible.
+
+The graph is almost a tree in the sense that cycles are only possible in one case: the goal in the current node is a renaming of a goal encountered before. The graph is refered to as the driving tree henceforth.
+
+The driving tree is constructed in the process of driving a goal. Each node contains a current goal and a current substition and is related closely to the evaluation step which produced it. 
+
+There are several types of nodes in the driving tree: 
+\begin{enumerate}
+  \item \emph{Fail} is a leaf node. It corresponds to the refutation of some goal.
+  \item \emph{Success} is a leaf node. It contains a computed answer for the goal
+  \item \emph{Or} node means the current goal is a disjuction: $g_1 \vee   g_2$. The children nodes are the results of driving of goals $g_1$ and $g_2$. 
+  \item \emph{Call} node correspond to the conjunction of relation calls: $g_1 \wedge g_2 \wedge \dots \wedge g_n$, where $g_i = R^k_i t_1 \dots t_k$. It has a single child node which is produced by an unfolding of every call in the conjunction: $g_1' \wedge g_2' \wedge \dots \wedge g_n'$, where $g_i' = unfold \ g_i$.
+  \item \emph{Rename} node is a leaf node which means there is a node among the ancestors which is a renaming of the current goal. The index of the ancestor node is stored in the current node. 
+  \item \emph{Gen} node corresponds to a result of generalization. If there is an ancestor node with a goal which is embedded in the current goal, and the goals contain the same number of conjuncts, an msg for them is computed and stored in the \emph{Gen} node. 
+  \item \emph{Split} node means that the ancestor embedded node contains less conjuncts that the current one. In this case, the conjunction is splitted into two which are driven independently. 
+\end{enumerate}
+
+First, a miniKanren goal is partially evaluated to a conjunction of relation calls.
+
+\begin{enumerate}
+  \item If there is a disjunction, the disjuncts are driven separatly. By distribution, we can get rid of disjunctions in any goal. 
+  \item All fresh variables are lifted to a higher level and are made into semantic variables with a pre-evaluation step.
+  \item Every unification is evaluated into a substitution which goes along with the goal while driving. A fail to unify means there is a refutation and a \emph{Fail} node is created. 
+  \item If after these steps a goal is an empty list of conjunctions, a \emph{Success} node is created with a substitution computed. 
+\end{enumerate}
+
+When the current goal is the conjunction of relation calls, one of the following cases takes place: 
+\begin{enumerate}
+  \item If the current goal is a renaming of some goal encountered before, then a \emph{Renaming} leaf node is created since there is no need in driving the goal further. 
+  \item If the current goal is not a renaming of some ancestor goal, check it for embedding of some ancestor goal. For an embedding, one of two options is possible:
+  \begin{enumerate}
+    \item The number of conjuncts is the same, which means the ``larger'' conjunction is larger in the subterms. In this case, an msg is computed for the current and the ancestor conjunction and then the msg driven further. 
+    \item The current conjunction has more conjuncts than the ancestor conjunction. In this case, the conjunction is split into two using the \emph{split} funciton. Let $g_1 \wedge \dots \wedge g_n \trianglelefteq h_1 \wedge \dots \wedge h_k, n < k$. In this case, the conjunction $h_1 \wedge \dots \wedge h_k$ is split into two subconjunctions $h_1 \wedge \dots \wedge h_j$ and $h_{j+1} \wedge \dots \wedge h_k$, such that $g_i \trianglelefteq h_i$ for each $i \in [1..j]$ and $g_{j+1} \ntrianglelefteq h_{j+1}$. The two subconjunctions are then driven independently. 
+  \end{enumerate}     
+  \item If the current goal is neither renaming nor embedding of any ancestor, it is driven further. 
+\end{enumerate}
+
+Embedding we use currently is the classic one which ignores the variables by making any variable embed into any other variable: $X \trianglelefteq Y$ for any variables $X, Y$. The embedding on the lists of conjuncts demands the heads of the conjuncts to be calls of the same relation. 
+
+$$
+\crule{}
+      {X \trianglelefteq Y}
+      {variable \ embedding}
+$$
+
+$$
+\crule{\exists i \in [1..n]. X \trianglelefteq t_i}
+      {X \trianglelefteq C^n t_1 \dots t_n}
+      {term \ diving}
+$$
+
+$$
+\crule{\forall i \in [1..n]. \ t_i \trianglelefteq u_i}
+      {C^n t_1 \dots t_n \trianglelefteq C^n u_1 \dots u_n}
+      {term \ coupling}
+$$
+
+$$
+\crule{\forall i \in [1..n]. \ t_i \trianglelefteq u_i}
+      {R^n t_1 \dots t_n \trianglelefteq R^n u_1 \dots u_n}
+      {relation \ call}
+$$
+
+$$
+\crule{R_g^n t_1 \dots t_n \trianglelefteq R_h^n u_1 \dots u_n, g_2 \wedge \dots \wedge g_n \trianglelefteq h_2 \wedge \dots \wedge h_n}
+      {R_g^n t_1 \dots t_n \wedge g_2 \wedge \dots \wedge g_n \trianglelefteq R_h^n u_1 \dots u_n \wedge \dots \wedge h_n}
+      {conjunction \ coupling}
+$$
+
+$$
+\crule{g_1 \wedge \dots \wedge g_n \trianglelefteq h_2 \wedge \dots \wedge h_n}
+      {g_1 \wedge \dots \wedge g_n \trianglelefteq h_1 \wedge h_2 \wedge \dots \wedge h_n}
+      {conjunction \ diving}
+$$
+
+You proposed the different embedding before, the one named ``New homeomorphic embedding'', which keeps track of the variables. It is different in that a variable is only embedded into itself:
+
+$$
+\crule{}
+      {X \trianglelefteq X}
+      {variable \ embedding}
+$$
+
+And the top-level embedding checks, that there is a substitution which makes the goal to be embedded into the other goal by the classic homeomorphic embedding: 
+
+$$
+\crule{\exists \sigma. A \sigma \trianglelefteq B}
+      {A {\trianglelefteq}^{subst} B}
+      {toplevel}
+$$
+
+We found a program which fails to terminate with the new embedding. It is \verb!smallesto! --- a relation between a list, its smallest element and the rest of the elements. 
+
+In prolog syntax it is defined as the following: 
+
+\begin{verbatim}
+leo(0,Y,true).
+leo(succ(X),0,false).
+leo(succ(X),succ(Y),Z) <- leo(X,Y,Z).
+
+gto(0,Y,false).
+gto(succ(X),0,true).
+gto(succ(X),succ(Y),Z) <- gto(X,Y,Z).
+
+minmaxo(X,Y,X,Y) <- leo(X,Y,true).
+minmaxo(X,Y,Y,X) <- gto(X,Y,true).
+
+smallesto([S],S,[]).
+smallesto([H|T],S,[M|Tt]) <- minmaxo(H,Ss,S,M), smallesto(T,Ss,Tt).
+\end{verbatim}
+
+Several branches in the driving tree of \verb!smallesto x y z! with \verb!x!, \verb!y! and 
+\verb!z! fresh have the following pattern: 
+
+\begin{verbatim}
+0) smallesto(V0, V1, V2)
+1) minmaxo(V3, V5, V1, V7) /\ smallesto(V4, V5, V6)
+2) leo(V3, V5, true) /\ minmaxo(V8, V10, V5, V12]) /\ smallesto(V9, V10, V11)
+3) gto(V8, V10, true) /\ minmaxo(V19, V21, V10, V23) /\ smallesto(V20, V21, V22)
+4) gto(V31,V32, true) /\ leo(succ(V32), V21, true) /\ 
+       minmaxo(V33, V35, V21, V37])) /\ smallesto(V34, V35, V36])
+5) ... 
+\end{verbatim}
+
+In this program, goals grow to the left while driving. Our embedding demands conjunctions to be coupled, which means that the first conjuncts should be calls of the same relation. Because of that, only the goal 4) can possibly be embedded into the goal 5). But, since the original embedding relation does not ignore variables, they are not. See, the thrid argument of \verb!minmaxo! in the goal 4) is \verb!V10! --- the same variable as the second in \verb!gto!. Unfortunatelly, the goal 5) the second variable of \verb!gto! is \verb!V32! while the third one of \verb!minmaxo! is \verb!V21!. In the goal 5) \verb!V21! is also present in the \verb!leo! relation --- and this link between the variables make it impossible for the driving to terminate on this branch. 
+
+So, it seems that proposed new homeomorphic embedding does not ensure termination. Why is it even a wqo? 
+
+Another problem is that $split$ only splits a goal in two subgoals, and if each of the relation calls involved unfold in a conjunciton of at least two relation calls, goals are going to grow faster, than $split$ splits. 
+
+If we have the following program: 
+
+\begin{verbatim}
+a(X) <- b(X), c(X)
+b(X) <- a(X), b(X), c(X)
+c(X) <- a(X), b(X), c(X)
+\end{verbatim}
+
+Driving of \verb!a(X)! goes like this: 
+
+\begin{verbatim}
+1)  a(X)
+2)  b(X) /\ c(X) -- nothing is embedded into this goal
+3)  a(X) /\ b(X) /\ c(X) /\ a(X) /\ b(X) /\ c(X) -- 1) is embedded into 2); splitting
+4a) a(X) -- first subconjuction after split, renaming of 1)
+4b) b(X) /\ c(X) /\ a(X) /\ b(X) /\ c(X) -- second subconjunction after split
+5b) a(X) /\ b(X) /\ c(X) /\ a(X) /\ b(X) /\ c(X) /\ b(X) /\ c(X) /\ 
+         a(X) /\ b(X) /\ c(X) /\ a(X) /\ b(X) /\ c(X) 
+...
+\end{verbatim}
+
+This can probably be fixed by some restriction on unfolding of relation calls, but I do not see a good way to do it. Before, we tried to unconditionally unfold only the first relation in the conjunction, and the following conjunctions are unfolded only if the unfolding is deterministic. This approach seems viable, but still quite heuristic, especially if we do not fix a left-to-right execution strategy. 
+
+
+The last problem we encountered is an enourmous size of the residualized programs. The biggest problem there is that we introduce dozens of definitions of the same relation. There can be a simple relation (as \verb!gto! or \verb!leo!) which gets to a renaming after one unfolding, but it occurs in different branches of the driving tree, it gets residualized into the same program each time it occurs. For a relational sorting program, the size of generated program is about 10000 lines. 
+
+\newpage
 
 \section{Syntax}
 
@@ -190,6 +351,7 @@ $$
 $$
 
 \end{figure}
+
 
 \end{document}
 
