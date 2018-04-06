@@ -35,6 +35,8 @@ import Data.GraphViz.Attributes.Complete (
   toWColor,
   )
 
+import Data.List (sort)
+import Control.Monad (liftM)
 import qualified Eval as E
 import Syntax
 import Tree
@@ -52,29 +54,31 @@ label tree =
     treeId <- makeId tree
     label' tree treeId [] [] 
     where
-      label' t@(Call _ ch _ _)       i ns es = addChild    t i ns es ch
-      label' t@(Gen _ _ ch _ _)      i ns es = addChild    t i ns es ch
-      label' t@(Or ch1 ch2 _ _)      i ns es = addChildren t i ns es ch1 ch2
-      label' t@(Split _ ch1 ch2 _ _) i ns es = addChildren t i ns es ch1 ch2
-      label' t                       i ns es = addLeaf     t i ns es
+      label' t@(Call _ ch _ _)  i ns es = addChild    t i ns es ch
+      label' t@(Gen _ _ ch _ _) i ns es = addChild    t i ns es ch
+      label' t@(Or ch1 ch2 _ _) i ns es = addChildren t i ns es [ch1, ch2]
+      label' t@(Split _ ch _ _) i ns es = addChildren t i ns es ch
+      label' t                  i ns es = addLeaf     t i ns es
       addLeaf n nodeId ns es = return ((nodeId, dot n) : ns, es)
       addChild n nodeId ns es ch = 
         do 
           childId <- makeId ch 
           (ns', es') <- label' ch childId ns es 
           return ((nodeId, dot n) : ns', (nodeId, childId, "") : es')
-      addChildren n nodeId ns es ch1 ch2 = 
+      {-addTwoChildren n nodeId ns es ch1 ch2 = 
         do 
           cId1 <- makeId ch1
           cId2 <- makeId ch2
           let (childId1, childId2) = if cId1 > cId2 then (cId2, cId1) else (cId1, cId2)
           (ns',  es')  <- label' ch1 childId1 ns es
           (ns'', es'') <- label' ch2 childId2 ns es
-          return((nodeId, dot n) : (ns' ++ ns''), (nodeId, childId1, "") : (nodeId, childId2, "") : (es' ++ es''))
-      makeId t = 
+          return((nodeId, dot n) : (ns' ++ ns''), (nodeId, childId1, "") : (nodeId, childId2, "") : (es' ++ es''))-}
+      addChildren n nodeId ns es ch = 
         do 
-          stable <- makeStableName t 
-          return (hashStableName stable)
+          names <- mapM makeId ch
+          (nss, ess) <- (liftM unzip) $ mapM (\(ch, key) -> label' ch key ns es) (zip ch $ sort names)
+          return ((nodeId, dot n) : concat nss, map (\x -> (nodeId, x, "")) names ++ concat ess)
+      makeId t = liftM hashStableName (makeStableName t)
 
 params :: GraphvizParams n Text Text () Text
 params = nonClusteredParams {

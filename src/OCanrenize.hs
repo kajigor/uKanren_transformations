@@ -12,6 +12,7 @@ import Sort
 import Syntax
 import Driving
 import Residualize
+import Stlc
 
 class OCanren a where
   ocanren :: a -> String
@@ -77,6 +78,7 @@ test_sorto = toOCanren "sorto.ml" "sorto" $ residualize $ drive $ sorto $ fresh 
 
 test_minmax = toOCanren "minmaxo.ml" "minmaxo" $ residualize $ drive $ minmaxo $ fresh ["q", "p", "r", "s"] (call "minmaxo" [V "q", V "p", V "r", V "s"])
 
+test_evalo = toOCanren "evalo.ml" "evalo" $ residualize $ drive $ evalo $ fresh ["q", "p"] (call "evalo" [V "q", V "p"])
 
 main = do 
   test 

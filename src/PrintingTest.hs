@@ -14,6 +14,7 @@ import           Syntax
 import           Test        hiding (main)
 import           Tree
 import           TreePrinter
+import           Stlc
 
 upTo d x =
   trace ("\nDepth: " ++ show d) $
@@ -22,25 +23,34 @@ upTo d x =
   where
     upToDepth (Gen id gen t goal sigma) = Gen id gen (upTo (d-1) t) goal sigma
     upToDepth (Call id t goal sigma) = Call id (upTo (d-1) t) goal sigma
-    upToDepth (Split id t1 t2 goal sigma) = Split id (upTo (d-1) t1) (upTo (d-1) t2) goal sigma
+    upToDepth (Split id ts goal sigma) = Split id (map (\t -> upTo (d-1) t) ts) goal sigma
     upToDepth (Or t1 t2 goal sigma) = Or (upTo (d-1) t1) (upTo (d-1) t2)  goal sigma
     upToDepth (Fail) = Fail
     upToDepth (Success s) = Success s
     upToDepth (Rename id g s r ts) = Rename id g s r ts
 
 accumCalls :: Tree -> [[G S]]
-accumCalls (Or t1 t2 _ _)      = accumCalls t1 ++ accumCalls t2
-accumCalls (Split _ t1 t2 _ _) = accumCalls t1 ++ accumCalls t2
-accumCalls (Gen _ _ t _ _)     = accumCalls t
-accumCalls (Call _ t goal _)   = map (\xs -> goal : xs) $ accumCalls t
-accumCalls (Prune [g])          = [[g]]
+accumCalls (Or t1 t2 _ _)    = accumCalls t1 ++ accumCalls t2
+accumCalls (Split _ ts _ _)  = concatMap accumCalls ts
+accumCalls (Gen _ _ t _ _)   = accumCalls t
+accumCalls (Call _ t goal _) = map (\xs -> goal : xs) $ accumCalls t
+accumCalls (Prune [g])       = [[g]]
 --accumCalls (Prune gs)          = [[conj gs]]
-accumCalls _                   = []
+accumCalls _                 = []
 
 main =
   do
-    let (_, t, _) = drive $ sorto $ fresh ["q", "r"] $ call "sorto" [V "q", V "r"]
+{-    printTree "appendo2.dot" tree
+    printTree "reverso.dot" tree'
+    printTree "revacco.dot" tree''
+-}
+    {-let (_, t, _) = drive $ sorto $ fresh ["q", "r"] $ call "sorto" [V "q", V "r"]
     printTree "sorto.dot" (simpl t) 
+-}
+
+    let evaloTree = snd' $ drive $ evalo $ fresh ["q", "p"] (call "evalo" [V "q", V "p"])
+    printTree "evalo.dot" evaloTree
+
     
     {-let (_, t, _) = drive $ smallesto $ fresh ["q", "r", "s"] $ call "smallesto" [V "q", V "r", V "s"]
     putStrLn "\n\n\n"

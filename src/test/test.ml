@@ -83,7 +83,6 @@ let reversoTest =
   in
   run_test test "reverso q q"
 
-
 let sortoTest = 
   (* let sorto_exp = !!! in *)
   let sorto_act = Sorto.sorto in 
@@ -93,8 +92,27 @@ let sortoTest =
     test actual in
 
   let run_test = run_test (* sorto_exp *) sorto_act in
+
   
   let test f = 
+      run one (fun p -> sorto_act (nat_list [0;0;0;0;0]) p)
+          (fun p ->
+            Stream.take ~n:1 p |> List.iter (fun rr ->
+              Printf.printf "%s\n%!"  @@ (if rr#is_open
+              then
+                GT.(show List.logic (show Nat.logic)) @@
+                  rr#reify (List.reify Nat.reify)
+              else
+                GT.(show List.ground (show Nat.ground) rr#prj)
+              )
+            )
+          )
+    (* run q (fun q -> f q q)
+                     (fun q -> List.iter (fun l -> Printf.printf "%s\n" @@ show_list @@ reify_list l) @@ Stream.take ~n:5 q) *)
+  in run_test test "sorto [1,1,1,1] q" ;
+  
+
+(*  let test f = 
       run one (fun p -> sorto_act (nat_list [1;0;2;1;1]) p)
           (fun p ->
             Stream.take ~n:1 p |> List.iter (fun rr ->
@@ -127,6 +145,8 @@ let sortoTest =
     (* run q (fun q -> f q q)
                      (fun q -> List.iter (fun l -> Printf.printf "%s\n" @@ show_list @@ reify_list l) @@ Stream.take ~n:5 q) *)
   in run_test test "sorto q q"
+*)
+
 (* 
 let reify_nat n = n#reify Nat.reify 
 let show_nat n = show (Nat.logic) n

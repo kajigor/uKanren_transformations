@@ -61,7 +61,7 @@ embed g (g1 :/\: g2) = embed g g1 || embed g g2
 embed (Invoke f fs) (Invoke g gs) | f == g && length fs == length gs = embedTerms fs gs
 embed _ _ = False
 -}
-embedTerm :: Ts -> Ts -> Bool
+{-embedTerm :: Ts -> Ts -> Bool
 embedTerm (V _) (V _) = True
 embedTerm (C n ns) (C m ms) | n == m && length ms == length ns = and $ zipWith embedTerm ns ms 
 embedTerm t (C _ ns) = or $ zipWith embedTerm (repeat t) ns
@@ -81,8 +81,8 @@ embedGoals = coupleConj where
 
   diveConj as (b:bs) = embedConj as bs
   diveConj _ _ = False
-
-{--- Embedding
+-}
+-- Embedding
 embed :: G S -> G S -> Maybe Renaming
 embed g1 g2 = embedGoal (Just []) (g1, g2) where
   embedGoal r (g1 :/\:  g2, h1 :/\: h2 ) =
@@ -90,8 +90,6 @@ embed g1 g2 = embedGoal (Just []) (g1, g2) where
          , embedGoal r (g1 :/\: g2, h1)
          , embedGoal r (g1 :/\: g2, h2)
          ]
---  embedGoal r (Zzz g, Zzz h) = embedGoal r (g, h)
---  embedGoal r (g, Zzz h) = embedGoal r (g, h)
   embedGoal r (Invoke f fs, Invoke g gs) | f == g && length fs == length gs = embedTerms r fs gs
   embedGoal r (Invoke _ _, g1 :/\: g2) = Nothing
   embedGoal r (g, g1 :/\: g2) = msum $ map (embedGoal r . (g,)) [g1, g2]
@@ -109,7 +107,7 @@ embedTerms r ps qs | length ps == length qs = foldl embedTerm r $ zip ps qs
 embedTerms _ _  _  = Nothing
 
 embedGoals :: [G S] -> [G S] -> Maybe Renaming
-embedGoals as bs = coupleConj [] as bs where
+embedGoals as bs = embedConj [] as bs where -- coupling restriction relaxed
   embedConj r as bs = mplus (coupleConj r as bs) (diveConj r as bs)
 
   coupleConj r [] [] = Just r
@@ -118,7 +116,7 @@ embedGoals as bs = coupleConj [] as bs where
 
   diveConj r as' (b:bs') = embedConj r as' bs'
   diveConj _ _ _         = Nothing
--}
+
 -- tttt = embedGoals [Invoke "MM" (map V [3,5,1,7]), Invoke "S" (map V [4,5,6])] [Invoke "L" [V 3, V 5, C "T" []], Invoke "MM" (map V [8, 10, 5, 12]), Invoke "S" (map V [9, 10, 11])]
 inv = Invoke
 -- ((leo([V 3,         V 5, C "true" []])  /\ minmaxo([V 8 ,V 10,V 5, V 12])) /\ smallesto([V 9,V 10,V 11]))
@@ -270,11 +268,20 @@ fst' (x, _, _) = x
 snd' (_, x, _) = x
 trd' (_, _, x) = x
 
-split :: [Zeta] -> [G S] -> ([Zeta], [Zeta])
-split gs1 gs2 =
-  case elemIndex False $ map weakCouple $ zip (map trd' gs1) gs2 of
-    Nothing -> splitAt (length gs2) gs1
-    Just i  -> splitAt i            gs1
+split :: [Zeta] -> [G S] -> [[Zeta]] -- ([Zeta], [Zeta])
+split gs1 gs2 = 
+  filter (\x -> length x > 0) $ 
+  let (coupled, gs1', gs2') = getCoupledPref gs1 gs2 in 
+  case gs2' of 
+    []    -> [coupled, gs1']
+    (g:_) -> let (dived, rest) = getDivedPref gs1' $ g in
+             coupled : dived : split rest gs2'
+  where getCoupledPref gs1 gs2 = 
+          let ind = fromMaybe (length gs2) $ elemIndex False $ map weakCouple $ zip (map trd' gs1) gs2 in 
+          let (coupled, rest) = splitAt ind gs1 in 
+          (coupled, rest, drop ind gs2)
+        getDivedPref gs g = span (\(_,_,x) -> not $ weakCouple (g, x)) gs
+
 
 update :: (E.P, E.Delta) -> Def -> (E.P, E.Delta)
 update (p, d) def = let (p', _, d') = E.update (p, E.emptyIota, d) def in (p', d')
@@ -306,7 +313,7 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
         d
       )
     Nothing ->
-      case find (\ (_, conjs') -> ({-isJust $-} embedGoals conjs' qqq_conjs)) cs of
+      case find (\ (_, conjs') -> (isJust $ embedGoals conjs' qqq_conjs)) cs of
         Just (_, conjs') ->
           if length qqq == length conjs'
           then
@@ -315,12 +322,14 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
                let (tc', node, d'') = eval (sr, args, ids') ((id, qqq_conjs):cs) d' s s1 [] (fst' $ head conjs, p, msg) [] in
                (tc', Gen id s1 node msg s, d'')
           else if length conjs' < length qqq
-               then let context            = (id, qqq_conjs):cs in
-                    let gbp@(lh:lt, rh:rt) = split qqq conjs' in
-                    let (tc' , node' , d' ) = eval (sr, args, ids') context d s gen [] lh lt in
-                    let (tc'', node'', d'') = eval tc' context d' s gen [] rh rt in
-                    -- trace ("\nconjs': " ++ show conjs' ++ "\nqqq:    " ++ show qqq_conjs ++ "\n\nsplit: " ++ show (map trd' $ fst gbp) ++ "\n       " ++ show (map trd' $ snd gbp)) $
-                    (tc'', Split id node' node'' g s, d'')
+               then let context  = (id, qqq_conjs):cs in
+                    let splitted = split qqq conjs' in
+                    --trace ("\nSplitted " ++ show (map (map trd') splitted)) $ 
+                    let (tc'', d'', nodes) = foldl (\(tc, d, nodes) x -> 
+                                                       let (tc', node', d') = eval tc context d s gen [] (head x) (tail x)
+                                                       in  (tc', d', node' : nodes)
+                                                   ) ((sr, args, ids'), d, []) splitted
+                    in (tc'', Split id (reverse nodes) g s, d'') -- TODO check if reverse is ok!
                else error "Wow..."
         Nothing -> unfold tc cs d s gen qqq
 
@@ -369,7 +378,6 @@ drive goal =
   let (x, y, _) = eval emptyContext [] d' E.s0 [] [] (i', g', goal') [] in (x, y, reverse args)
 
 
-tc' = drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
 
 tc = drive (appendo
               (fresh ["q", "r", "s", "t", "p"]
@@ -378,7 +386,10 @@ tc = drive (appendo
               )
            )
 
+tc'  = drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
 tc'' = drive (revAcco $ fresh ["q", "s"] (call "revacco" [V "q", nil, V "s"]))
 
-tree = snd' $ tc
 
+tree   = snd' tc
+tree'  = snd' tc'
+tree'' = snd' tc''

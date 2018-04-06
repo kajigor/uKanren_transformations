@@ -38,17 +38,16 @@ simpl (Call id ch g s) =
   case simpl ch of 
     Fail -> Fail 
     ch'  -> Call id ch' g s
-simpl (Split id l r g s) = 
-  case simpl l of 
-    Fail -> Fail 
-    l'   -> case simpl r of 
-              Fail -> Fail
-              r'   -> Split id l' r' g s
+simpl (Split id ts g s) =
+  let simplified = map simpl ts
+  in  if any (\x -> case x of Fail -> True; _ -> False) simplified then Fail else Split id simplified g s
 simpl t = t 
 
-simplConj (Invoke success []) g = g
-simplConj g (Invoke success []) = g
-simplConj g g1 = g &&& g1 
+simplConj conj = 
+  let noSuccess = filter (\x -> case x of (Invoke success []) -> False; _ -> True) conj
+  in  if   length noSuccess > 0 
+      then foldl1 (&&&) noSuccess 
+      else (Invoke success [])
 
 success = "success"
 failure = "failure"
@@ -63,9 +62,9 @@ residualize (tc, t, args) =
       if delta == []
       then Invoke success []
       else residualizeSubst g delta
-    residualizeGen g tc (Rename id _ s r s' )  ubst = substCon g s' ubst $ simplConj (residualizeGen g tc (Success s) s') (Invoke (fident id) (reverse [V $ vident $ snd x | x <- r]))
+    residualizeGen g tc (Rename id _ s r s' )  ubst = substCon g s' ubst $ simplConj [residualizeGen g tc (Success s) s', Invoke (fident id) (reverse [V $ vident $ snd x | x <- r])]
     residualizeGen g tc (Or     l r _    s' )  ubst = substCon g s' ubst $ residualizeGen g tc l s' ||| residualizeGen g tc r s'
-    residualizeGen g tc (Split  id l r _ s' )  ubst = substCon g s' ubst $ scope tc id $ simplConj (residualizeGen g tc l s') (residualizeGen g tc r s')
+    residualizeGen g tc (Split  id ts _ s' )   ubst = substCon g s' ubst $ scope tc id $ simplConj $ map (\x -> residualizeGen g tc x s') ts
     residualizeGen g tc (Gen    id g' t _ s' ) ubst = substCon g (s' ++ g') ubst $ scope tc id $ residualizeGen (g' `E.o` g) tc t s'
     residualizeGen g tc (Call   id s    _ s' ) ubst = substCon g s' ubst $ scope tc id $ residualizeGen g tc s s'
     fident id = "f" ++ show id
