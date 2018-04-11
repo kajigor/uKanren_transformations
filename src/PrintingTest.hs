@@ -15,6 +15,7 @@ import           Test        hiding (main)
 import           Tree
 import           TreePrinter
 import           Stlc
+import           Programs
 
 upTo d x =
   trace ("\nDepth: " ++ show d) $
@@ -38,6 +39,19 @@ accumCalls (Prune [g])       = [[g]]
 --accumCalls (Prune gs)          = [[conj gs]]
 accumCalls _                 = []
 
+runTest name goal = 
+  do 
+    let tree = snd' $ drive $ goal
+    printTree (name ++ ".dot") tree
+    
+
+test_palindromo       = runTest "palindromo" $ palindromo $ fresh ["x"] (call "palindromo" [V "x"])
+test_doubleAppendo    = runTest "doubleAppendo" $ doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
+test_eveno            = runTest "eveno" $ eveno $ fresh ["x"] (call "eveno" [V "x"])
+test_doubleo          = runTest "doubleo" $ doubleo $ fresh ["x", "xx"] (call "doubleo" [V "x", V "xx"])
+test_empty_appendo    = runTest "emptyAppendo" $ emptyAppendo $ fresh ["x", "y"] (call "emptyAppendo" [V "x", V "y"])
+test_singletonReverso = runTest "singletonReverso" $ singletonReverso $ fresh ["x", "y"] (call "singletonReverso" [V "x", V "y"])
+
 main =
   do
 {-    printTree "appendo2.dot" tree
@@ -48,9 +62,18 @@ main =
     printTree "sorto.dot" (simpl t) 
 -}
 
-    let evaloTree = snd' $ drive $ evalo $ fresh ["q", "p"] (call "evalo" [V "q", V "p"])
-    printTree "evalo.dot" evaloTree
 
+    --runTest "evalo" $ evalo $ fresh ["q", "p"] (call "evalo" [V "q", V "p"])
+
+    test_palindromo 
+    --test_doubleo          
+
+
+{-    test_empty_appendo    
+    test_singletonReverso 
+    test_doubleAppendo    
+    test_eveno            
+-}
     
     {-let (_, t, _) = drive $ smallesto $ fresh ["q", "r", "s"] $ call "smallesto" [V "q", V "r", V "s"]
     putStrLn "\n\n\n"

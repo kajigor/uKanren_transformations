@@ -62,30 +62,37 @@ toOCanren filename topLevelName (tree, args) =
                                      return ()
                                 )
 
-test = toOCanren "appendo2.ml" "appendo2" $ residualize tc 
+runTest name goal = 
+  toOCanren (name ++ ".ml") name $ residualize $ drive goal
 
-test' = toOCanren "reverso.ml" "reverso" $ residualize tc'
+test   = toOCanren "appendo2.ml" "appendo2" $ residualize tc 
+test'  = toOCanren "reverso.ml"  "reverso"  $ residualize tc'
+test'' = toOCanren "revacco.ml"  "revacco"  $ residualize tc''
 
-test'' = toOCanren "revacco.ml" "revacco" $ residualize tc''
+test_gto = runTest "gto" $ gto $ fresh ["q", "p", "r"] (call "gto" [V "p", V "r", V "q"])
+test_leo = runTest "leo" $ leo $ fresh ["q", "p", "r"] (call "leo" [V "p", V "r", V "q"])
 
-test_gto = toOCanren "gto.ml" "gto" $ residualize $ drive $ gto $ fresh ["q", "p", "r"] (call "gto" [V "p", V "r", V "q"])
+test_smallesto = runTest "smallesto" $ smallesto $ fresh ["q", "p", "r"] (call "smallesto" [V "q", V "p", V "r"])
 
-test_leo = toOCanren "leo.ml" "leo" $ residualize $ drive $ leo $ fresh ["q", "p", "r"] (call "leo" [V "p", V "r", V "q"])
+test_sorto = runTest "sorto" $ sorto $ fresh ["q", "r"] (call "sorto" [V "q", V "r"])
 
-test_smallesto = toOCanren "smallesto.ml" "smallesto" $ residualize $ drive $ smallesto $ fresh ["q", "p", "r"] (call "smallesto" [V "q", V "p", V "r"])
+test_minmax = runTest "minmaxo" $ minmaxo $ fresh ["q", "p", "r", "s"] (call "minmaxo" [V "q", V "p", V "r", V "s"])
 
-test_sorto = toOCanren "sorto.ml" "sorto" $ residualize $ drive $ sorto $ fresh ["q", "r"] (call "sorto" [V "q", V "r"])
+test_evalo = runTest "evalo" $ evalo $ fresh ["q", "p"] (call "evalo" [V "q", V "p"])
 
-test_minmax = toOCanren "minmaxo.ml" "minmaxo" $ residualize $ drive $ minmaxo $ fresh ["q", "p", "r", "s"] (call "minmaxo" [V "q", V "p", V "r", V "s"])
-
-test_evalo = toOCanren "evalo.ml" "evalo" $ residualize $ drive $ evalo $ fresh ["q", "p"] (call "evalo" [V "q", V "p"])
-
+{-test_palindromo = runTest "palindromo" $ palindromo $ fresh ["x"] (call "palindromo" [V "x"])
+test_doubleAppendo = runTest "doubleAppendo" $ doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
+test_eveno = runTest "eveno" $ eveno $ fresh ["x"] (call "eveno" [V "x"])
+test_doubleo = runTest "doubleo" $ doubleo $ fresh ["x"] (call "doubleo" [V "x"])
+test_empty_appendo = runTest "emptyAppendo" $ emptyAppendo $ fresh ["x", "y"] (call "emptyAppendo" [V "x", V "y"])
+test_singletonReverso = runTest "singletonReverso" $ singletonReverso $ fresh ["x", "y"] (call "singletonReverso" [V "x", V "y"])
+-}
 main = do 
   test 
-  test'
-  test''
-  test_gto
-  test_leo
+  -- test'
+  -- test''
+  -- test_gto
+  -- test_leo
 --  test_smallesto
-  test_sorto
-  test_minmax
+  --test_sorto
+  --test_minmax

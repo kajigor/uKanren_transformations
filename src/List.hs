@@ -2,6 +2,7 @@ module List where
 
 import Syntax
 import Stream
+import Num
 import Prelude hiding (succ)
 
 -- Tests
@@ -30,6 +31,25 @@ singletono g =
   let l = V "l" in 
   let x = V "x" in 
   Let ( def "singletono" ["l", "x"] ( l === x % nil ) ) g
+
+lengtho g = 
+  let x = V "x" in 
+  let l = V "l" in 
+  let h = V "h" in 
+  let t = V "t" in
+  let z = V "z" in 
+  Let (def "lengtho" ["x", "l"] 
+        (
+          (x === nil &&& l === zero) |||
+          (fresh ["h", "t", "z"]
+            (
+              x === h % t &&&
+              l === succ z &&&
+              call "lengtho" [t, z]
+            )
+          )
+        )
+      ) g
 
 appendo g =
   let x  = V "x"  in
@@ -81,7 +101,7 @@ reverso g =
             (fresh ["h", "t", "rt"]
                (x === h % t &&&
                 call "reverso" [t, rt] &&& 
-                call "appendo" [rt, h % nil, y]  -- &&&
+                call "appendo" [rt, h % nil, y] -- &&&
                )
             )
            )
