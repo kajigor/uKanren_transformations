@@ -7,8 +7,9 @@
 
 module Term where
 
-import Data.Maybe 
+import Data.Maybe
 import Data.List
+import Text.Printf
 
 infixr 5 :+:
 
@@ -22,7 +23,7 @@ class Term t v s | t -> v s where
   make     :: t -> s -> t
 
 hom :: (Apply fs r, Lift r fs, MakeHom (t -> t) fs, Term t v r) => (t -> t) -> t -> t
-hom f t = 
+hom f t =
   let s = subterms t in
   f $ make t $ apply s $ makeHom (hom f) (lift s)
 
@@ -65,7 +66,7 @@ instance Apply (a -> a) [a] where
   apply x f = map f x
 
 instance Apply g a => Apply (f :+: g) a where
-  apply x (_ :+: g) = apply x g  
+  apply x (_ :+: g) = apply x g
 
 instance {-# OVERLAPPING #-} Apply ((a -> a) :+: g) [a] where
   apply x (f :+: g) = map f x
@@ -76,8 +77,8 @@ instance {-# OVERLAPPING #-} (Apply (fs :+: gs) a, Apply (fs :+: gs) b) => Apply
 class Eq v => FV t v | t -> v where
   fv :: t -> [v]
 
-instance (FV s v, Term t v s) => FV t v where
-  fv t = 
+instance (FV s v, Term t v s, Eq v) => FV t v where
+  fv t =
     let vars = fv $ subterms t in
     case var t of
       Just x  -> x : vars
@@ -98,9 +99,9 @@ empty = Just []
 class Eq v => Rename t v | t -> v where
   rename :: Maybe (Renaming v) -> t -> t -> Maybe (Renaming v)
 
-instance (Rename s v, Term t v s) => Rename t v where
-  rename r t1 t2 = 
-    if eq t1 t2 
+instance (Rename s v, Term t v s, Eq v) => Rename t v where
+  rename r t1 t2 =
+    if eq t1 t2
     then rename r (subterms t1) (subterms t2) >>= (\ r ->
            let rename x y = case lookup x r of
                               Nothing -> Just $ if x == y then r else (x, y) : r
@@ -121,7 +122,7 @@ instance {-# OVERLAPPING #-} (Rename h v, Rename t v) => Rename (h :+: t) v wher
   rename r (h1 :+: t1) (h2 :+: t2) = rename (rename r h1 h2) t1 t2
 
 alpha :: (Rename t v, Term t v s) => t -> t -> Maybe (Renaming v)
-alpha = rename empty 
+alpha = rename empty
 
 -------------------------------
 -------------------------------
@@ -196,11 +197,11 @@ instance Term T String [T] where
   eq (C _ _) (C _ _) = True
   eq  _         _        = False
 
-  subterms (V _)     = []  
+  subterms (V _)     = []
   subterms (C t1 t2) = [t1, t2]
 
   make t@(V x) _ = t
- 
+
 f :: T -> T
 f = id
 
@@ -214,11 +215,11 @@ id2 :: T2 String -> T2 String
 id2 = id
 
 f1 :: Apply fs ([T1 String] :+: [T2 String]) => T1 String -> fs -> T1 String
-f1 (T1A v) f = T1A (v ++ "!")
+f1 (T1A v) f = T1A (printf "%s!" v)
 f1 x       f = make x (apply (subterms x) f)
 
 f2 :: T2 String -> (((T1 String -> T1 String) :+: (T1 String -> T2 String))) -> T2 String
-f2 (T2A v) f = T2A (v ++ "!")
+f2 (T2A v) f = T2A (printf "%s!" v)
 f2 x       f = x
 
 instance Term (T1 v) v ([T1 v] :+: [T2 v]) where -- :+: Nil v) where
@@ -232,7 +233,7 @@ instance Term (T1 v) v ([T1 v] :+: [T2 v]) where -- :+: Nil v) where
   eq (T1C _ _) (T1C _ _) = True
   eq  _         _        = False
 
-  subterms (T1A _)     = [] :+: [] 
+  subterms (T1A _)     = [] :+: []
   subterms (T1B t1 t2) = [t1, t2] :+: []
   subterms (T1C t1 t2) = [] :+: [t1, t2]
 
@@ -286,12 +287,12 @@ infixr 5 :+:
 
 class TList t v s | t -> v s where
   fold :: (a -> v -> a) -> a -> t -> a
-  
+
 instance TList (Nil v s) v s where
   fold f a _ = a
 
 instance (Term a v s, TList t v s) => TList (a :+: t) v s where
-  fold f a (h :+: t) = 
+  fold f a (h :+: t) =
     let init = foldl (\ a h -> case var h of Nothing -> a ; Just v -> f a v) a h in
     --fold f init t
     init
@@ -308,10 +309,10 @@ instance Term (T1 v) v (S v) where
   subterms (T1A _)     = S $ [] :+: [] :+: Nil
   subterms (T1B t1 t2) = S $ [t1, t2] :+: [] :+: Nil
   subterms (T1C t1 t2) = S $ [] :+: [t1, t2] :+: Nil
-  
+
 instance Term (T2 v) v (S v) where
   var (T2A x) = Just x
-  var  _      = Nothing 
+  var  _      = Nothing
 
   subterms (T2A _)     = S $ [] :+: [] :+: Nil
   subterms (T2B t1 t2) = S $ [] :+: [t1, t2] :+: Nil
@@ -337,7 +338,7 @@ instance Term ST () ([ST] :+: [Int] :+: [String] :+: [Char] :+: Nil) where
 
 {-
 class HList Nil
-class HList t => 
+class HList t =>
 -}
 {-
 import Data.List
@@ -361,9 +362,9 @@ fv t = nub $ fold (\ vs t -> (maybeToList $ var t) ++ vs) [] t
 type Renaming v = [(v, v)]
 
 renaming :: (Eq v, FreeTerm t v) => t -> t -> Maybe (Renaming v)
-renaming = undefined 
+renaming = undefined
 
-data PTerm a b = V b | A a a 
+data PTerm a b = V b | A a a
 
 instance FreeTerm a b => FreeTerm (PTerm a b) b where
   var = undefined
@@ -396,27 +397,27 @@ fv :: Term t => t -> [String]
 fv t = fold (\ vs t -> (vs \\ (maybeToList $ binds t)) `union` (maybeToList $ var t)) [] t
 
 subst :: Term t => String -> t -> t -> t
-subst x s t = 
+subst x s t =
   case var t of
     Just y  -> if x == y then s else t
     Nothing -> case binds t of
-                 Just y  -> if x == y 
-                            then t 
-                            else if elem y vs 
+                 Just y  -> if x == y
+                            then t
+                            else if elem y vs
                                  then let y' = head $ names \\ (vs ++ fv t) in
                                       subst x s $ rename y' $ make t (map (subst y $ makeVar y') $ sub t)
                                  else recurse
                  Nothing -> recurse
   where
-    recurse = make t (map (subst x s) $ sub t) 
-    vs      = fv s    
+    recurse = make t (map (subst x s) $ sub t)
+    vs      = fv s
     names   = letters ++ [reverse $ a ++ n | n <- names, a <- letters] where
       letters = [[x] | x <- ['a'..'z']]
 
 alpha :: Term t => t -> t -> Maybe [(String, String)]
 alpha = alpha' (Just []) where
   alpha' f m n =
-    if eq m n 
+    if eq m n
     then case (binds m, binds n) of
            (Just mb, Just nb) -> recurse $ extend f mb nb
            _                  -> case (var m, var n) of
@@ -442,7 +443,7 @@ instance Term Lambda where
   sub   (Abs _ l) = [l]
   sub   (App l m) = [l, m]
   sub    _        = []
- 
+
   make (App _ _) [l, m] = App l m
   make (Abs x _) [l]    = Abs x l
   make v         _      = v
@@ -458,4 +459,4 @@ instance Term Lambda where
   eq (App _ _) (App _ _) = True
   eq  _         _        = False
 
--}  
+-}

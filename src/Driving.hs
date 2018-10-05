@@ -16,6 +16,7 @@ import           List
 import           Stream
 import           Syntax
 import           Tree
+import           Text.Printf
 
 type TreeContext = (Set.Set Id, Map.Map Id [S], [Id])
 
@@ -63,7 +64,7 @@ embed _ _ = False
 -}
 {-embedTerm :: Ts -> Ts -> Bool
 embedTerm (V _) (V _) = True
-embedTerm (C n ns) (C m ms) | n == m && length ms == length ns = and $ zipWith embedTerm ns ms 
+embedTerm (C n ns) (C m ms) | n == m && length ms == length ns = and $ zipWith embedTerm ns ms
 embedTerm t (C _ ns) = or $ zipWith embedTerm (repeat t) ns
 embedTerm _ _ = False
 
@@ -77,7 +78,7 @@ embedGoals = coupleConj where
   coupleConj ((Invoke f fs) : as) ((Invoke g gs) : bs) | f == g && length fs == length gs = embedTerms fs gs && embedConj as bs
   coupleConj _ _ = False
 
-  embedConj as bs = coupleConj as bs || diveConj as bs 
+  embedConj as bs = coupleConj as bs || diveConj as bs
 
   diveConj as (b:bs) = embedConj as bs
   diveConj _ _ = False
@@ -125,15 +126,15 @@ inv = Invoke
 {-((gto( [V 8, V 10,C "true" []]) /\                                          minmaxo([V 19,V 21,V 10,V 23])) /\ smallesto([V 20,V 21,V 22]))
 (((gto([V 31,V 32,C "true" []]) /\ leo([C "S" [V 32],V 21,C "true" []])) /\ minmaxo([V 33,V 35,V 21,V 37])) /\ smallesto([V 34,V 35,V 36]))
 -}
-tt = embedGoals [inv "G" [V 8, V 10, C "T" []]] 
+tt = embedGoals [inv "G" [V 8, V 10, C "T" []]]
                 [inv "G" [V 31, V 32, C "T" []], inv "L" [C "S" [V 32], V 21, C "T" []], inv "M" [V 33,V 35,V 21,V 37], inv "S" [V 34,V 35,V 36]]
 
-ttt = embedGoals [inv "G" [V 8, V 10, C "T" []], inv "M" [V 19, V 21, V 10, V 23], inv "S" [V 20, V 21, V 22]] 
+ttt = embedGoals [inv "G" [V 8, V 10, C "T" []], inv "M" [V 19, V 21, V 10, V 23], inv "S" [V 20, V 21, V 22]]
                  [inv "G" [V 31, V 32, C "T" []], inv "L" [C "S" [V 32], V 21, C "T" []], inv "M" [V 33,V 35,V 21,V 37], inv "S" [V 34,V 35,V 36]]
 
 tttt = embedGoals [inv "L" [V 3, V 5, C "T" []]  , inv "M" [V 8 ,V 10,V 5, V 12],          inv "S" [V 9,V 10,V 11]]
                   [inv "G" [V 31, V 32, C "T" []], inv "L" [C "S" [V 32], V 21, C "T" []], inv "M" [V 33,V 35,V 21,V 37], inv "S" [V 34,V 35,V 36]]
-                  
+
 
 --sub s [] = []
 --sub s ((Invoke name as):conjs) = (Invoke name (\x -> lookup x s)) : (sub s conjs)
@@ -146,7 +147,7 @@ refine msg@(g, s1, s2, d) =
   let newGoal = E.substituteConjs toSwap g in
   let s1' = filter (\(x,_) -> not $ elem x (concat $ map (\xs -> tail $ map fst xs ) similar1)) s1 in
   let s2' = filter (\(x,_) -> not $ elem x (concat $ map (\xs -> tail $ map fst xs ) similar2)) s2 in
-  trace ("\nSimilar1: " ++ show similar1 ++ "\nSimilar2: " ++ show similar2 ++ "\nToSwap: "  ++ show toSwap ++ "\nNewGoal: " ++ show newGoal ++ "\nS1': " ++ show s1' ++ "\nS2': " ++ show s2' ++ "\n") $
+  trace (printf "\nSimilar1: %s\nSimilar2: %s\nToSwap: %s\nNewGoal: %s\nS1': %s\nS2': %s\n" (show similar1) (show similar2) (show toSwap) (show newGoal) (show s1') (show s2')) $
   (newGoal, s1', s2', d)
   {-
  let grouped =  filter ((>1) . length) $ groupBy group s1 [] in
@@ -269,16 +270,16 @@ snd' (_, x, _) = x
 trd' (_, _, x) = x
 
 split :: [Zeta] -> [G S] -> [[Zeta]] -- ([Zeta], [Zeta])
-split gs1 gs2 = 
-  filter (\x -> length x > 0) $ 
-  let (coupled, gs1', gs2') = getCoupledPref gs1 gs2 in 
-  case gs2' of 
+split gs1 gs2 =
+  filter (\x -> length x > 0) $
+  let (coupled, gs1', gs2') = getCoupledPref gs1 gs2 in
+  case gs2' of
     []    -> [coupled, gs1']
     (g:_) -> let (dived, rest) = getDivedPref gs1' $ g in
              coupled : dived : split rest gs2'
-  where getCoupledPref gs1 gs2 = 
-          let ind = fromMaybe (length gs2) $ elemIndex False $ map weakCouple $ zip (map trd' gs1) gs2 in 
-          let (coupled, rest) = splitAt ind gs1 in 
+  where getCoupledPref gs1 gs2 =
+          let ind = fromMaybe (length gs2) $ elemIndex False $ map weakCouple $ zip (map trd' gs1) gs2 in
+          let (coupled, rest) = splitAt ind gs1 in
           (coupled, rest, drop ind gs2)
         getDivedPref gs g = span (\(_,_,x) -> not $ weakCouple (g, x)) gs
 
@@ -294,8 +295,8 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
  let qqq_conjs = map trd' qqq in
   {-
  if length conjs > 3 -- head ids > 100
- then 
-    case find (\ (_, conjs') -> ({-isJust $-} embedGoals conjs' qqq_conjs)) cs of 
+ then
+    case find (\ (_, conjs') -> ({-isJust $-} embedGoals conjs' qqq_conjs)) cs of
       Nothing     -> trace "AHA" $ (tc, Prune [conj qqq_conjs], d)
       Just (_, j) -> (tc, Prune [conj qqq_conjs, inv "Embedding" [],  conj j], d)
  else-}
@@ -324,8 +325,8 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
           else if length conjs' < length qqq
                then let context  = (id, qqq_conjs):cs in
                     let splitted = split qqq conjs' in
-                    --trace ("\nSplitted " ++ show (map (map trd') splitted)) $ 
-                    let (tc'', d'', nodes) = foldl (\(tc, d, nodes) x -> 
+                    --trace ("\nSplitted " ++ show (map (map trd') splitted)) $
+                    let (tc'', d'', nodes) = foldl (\(tc, d, nodes) x ->
                                                        let (tc', node', d') = eval tc context d s gen [] (head x) (tail x)
                                                        in  (tc', d', node' : nodes)
                                                    ) ((sr, args, ids'), d, []) splitted

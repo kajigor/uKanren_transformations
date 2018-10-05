@@ -1,5 +1,5 @@
 
-module TreePrinter where 
+module TreePrinter where
 
 import Data.Text.Lazy (Text, pack, unpack, replace)
 import Data.Graph.Inductive (Gr, mkGraph)
@@ -40,19 +40,20 @@ import Control.Monad (liftM)
 import qualified Eval as E
 import Syntax
 import Tree
-import System.Mem.StableName 
+import System.Mem.StableName
+import Text.Printf
 
 treeToGraph :: Tree -> IO (Gr Text Text)
-treeToGraph tree = 
-  do 
-    (vs, es) <- label tree 
-    return $ mkGraph (map (\(i, v) -> (i, pack ("<" ++ v ++ ">"))) vs) (map (\(i,j,l) -> (i,j, pack l)) es)
+treeToGraph tree =
+  do
+    (vs, es) <- label tree
+    return $ mkGraph (map (\(i, v) -> (i, pack (printf "<%s>" v))) vs) (map (\(i,j,l) -> (i,j, pack l)) es)
 
 label :: Tree -> IO ([(Int, String)], [(Int, Int, String)])
-label tree = 
-  do 
+label tree =
+  do
     treeId <- makeId tree
-    label' tree treeId [] [] 
+    label' tree treeId [] []
     where
       label' t@(Call _ ch _ _)  i ns es = addChild    t i ns es ch
       label' t@(Gen _ _ ch _ _) i ns es = addChild    t i ns es ch
@@ -60,21 +61,21 @@ label tree =
       label' t@(Split _ ch _ _) i ns es = addChildren t i ns es ch
       label' t                  i ns es = addLeaf     t i ns es
       addLeaf n nodeId ns es = return ((nodeId, dot n) : ns, es)
-      addChild n nodeId ns es ch = 
-        do 
-          childId <- makeId ch 
-          (ns', es') <- label' ch childId ns es 
+      addChild n nodeId ns es ch =
+        do
+          childId <- makeId ch
+          (ns', es') <- label' ch childId ns es
           return ((nodeId, dot n) : ns', (nodeId, childId, "") : es')
-      {-addTwoChildren n nodeId ns es ch1 ch2 = 
-        do 
+      {-addTwoChildren n nodeId ns es ch1 ch2 =
+        do
           cId1 <- makeId ch1
           cId2 <- makeId ch2
           let (childId1, childId2) = if cId1 > cId2 then (cId2, cId1) else (cId1, cId2)
           (ns',  es')  <- label' ch1 childId1 ns es
           (ns'', es'') <- label' ch2 childId2 ns es
           return((nodeId, dot n) : (ns' ++ ns''), (nodeId, childId1, "") : (nodeId, childId2, "") : (es' ++ es''))-}
-      addChildren n nodeId ns es ch = 
-        do 
+      addChildren n nodeId ns es ch =
+        do
           names <- mapM makeId ch
           (nss, ess) <- (liftM unzip) $ mapM (\(ch, key) -> label' ch key ns es) (zip ch $ sort names)
           return ((nodeId, dot n) : concat nss, map (\x -> (nodeId, x, "")) names ++ concat ess)
@@ -102,11 +103,11 @@ params = nonClusteredParams {
     fn (n,l) = [(Label . StrLabel) l]
     fe (f,t,l) = [(Label . StrLabel) l]
 
-remove_quots t = 
+remove_quots t =
   replace (pack ">\"") (pack ">") $
   replace (pack "\"<") (pack "<") t
 
-printTree filename tree = 
+printTree filename tree =
   do
-    graph <- treeToGraph tree 
+    graph <- treeToGraph tree
     writeFile filename $ unpack $ remove_quots $ renderDot $ toDot $ graphToDot params graph

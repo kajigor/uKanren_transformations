@@ -4,6 +4,7 @@ import Syntax
 import Stream
 import Num
 import Prelude hiding (succ)
+import Text.Printf
 
 -- Tests
 infixr 9 %
@@ -17,28 +18,28 @@ b = lit "b"
 c = lit "c"
 d = lit "d"
 
-list (V n) = "._" ++ show n
-list (C "Cons" [h, t]) = list h ++ " % " ++ list t
+list (V n) = printf "._%s" (show n)
+list (C "Cons" [h, t]) = printf "%s %% %s" (list h) (list t)
 list (C "Nil"  _     ) = "nil"
 list (C s []) = s
 list x = show x
 
-nilo g = 
-  let l = V "l" in 
+nilo g =
+  let l = V "l" in
   Let ( def "nilo" ["l"] ( l === nil ) ) g
 
-singletono g = 
-  let l = V "l" in 
-  let x = V "x" in 
+singletono g =
+  let l = V "l" in
+  let x = V "x" in
   Let ( def "singletono" ["l", "x"] ( l === x % nil ) ) g
 
-lengtho g = 
-  let x = V "x" in 
-  let l = V "l" in 
-  let h = V "h" in 
+lengtho g =
+  let x = V "x" in
+  let l = V "l" in
+  let h = V "h" in
   let t = V "t" in
-  let z = V "z" in 
-  Let (def "lengtho" ["x", "l"] 
+  let z = V "z" in
+  Let (def "lengtho" ["x", "l"]
         (
           (x === nil &&& l === zero) |||
           (fresh ["h", "t", "z"]
@@ -59,9 +60,9 @@ appendo g =
   let t  = V "t"  in
   let ty = V "ty" in
   Let
-    (def "appendo" ["x", "y", "xy"] 
-         ((x === nil &&& xy === y) ||| 
-          (fresh ["h", "t", "ty"] 
+    (def "appendo" ["x", "y", "xy"]
+         ((x === nil &&& xy === y) |||
+          (fresh ["h", "t", "ty"]
              (x  === h % t  &&&
               xy === h % ty &&&
               call "appendo" [t, y, ty]
@@ -77,10 +78,10 @@ appendo' g =
   let h  = V "h"  in
   let t  = V "t"  in
   let ty = V "ty" in
-  Let 
-    (def "appendo'" ["x", "y", "xy"] 
-           ((x === nil ||| xy === y) ||| 
-            (fresh ["h", "t", "ty"] 
+  Let
+    (def "appendo'" ["x", "y", "xy"]
+           ((x === nil ||| xy === y) |||
+            (fresh ["h", "t", "ty"]
                (x  === h % t  |||
                 xy === h % ty |||
                 call "appendo'" [t, y, ty]
@@ -95,12 +96,12 @@ reverso g =
   let h  = V "h"  in
   let t  = V "t"  in
   let rt = V "rt" in
-  Let 
+  Let
     (def "reverso" ["x", "y"]
            ((x === nil &&& y === nil) |||
             (fresh ["h", "t", "rt"]
                (x === h % t &&&
-                call "reverso" [t, rt] &&& 
+                call "reverso" [t, rt] &&&
                 call "appendo" [rt, h % nil, y] -- &&&
                )
             )
@@ -108,14 +109,14 @@ reverso g =
     ) $ appendo g
 
 revAcco g =
-  let xs = V "xs" 
-      acc = V "acc" 
-      sx = V "sx" 
+  let xs = V "xs"
+      acc = V "acc"
+      sx = V "sx"
       h = V "h"
       t = V "t"
-  in 
+  in
   Let
-    (def "revacco" ["xs", "acc", "sx"] 
+    (def "revacco" ["xs", "acc", "sx"]
        (
          (xs === nil &&& sx === acc) |||
          (fresh ["h", "t"]

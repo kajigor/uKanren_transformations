@@ -16,9 +16,10 @@ import           Tree
 import           TreePrinter
 import           Stlc
 import           Programs
+import           Text.Printf
 
 upTo d x =
-  trace ("\nDepth: " ++ show d) $
+  trace (printf "\nDepth: %s" $ show d) $
   if d == 0 then Fail
   else upToDepth x
   where
@@ -39,11 +40,11 @@ accumCalls (Prune [g])       = [[g]]
 --accumCalls (Prune gs)          = [[conj gs]]
 accumCalls _                 = []
 
-runTest name goal = 
-  do 
+runTest name goal =
+  do
     let tree = snd' $ drive $ goal
-    printTree (name ++ ".dot") tree
-    
+    printTree (printf "%s.dot" name) tree
+
 
 test_palindromo       = runTest "palindromo" $ palindromo $ fresh ["x"] (call "palindromo" [V "x"])
 test_doubleAppendo    = runTest "doubleAppendo" $ doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
@@ -54,27 +55,27 @@ test_singletonReverso = runTest "singletonReverso" $ singletonReverso $ fresh ["
 
 main =
   do
-{-    printTree "appendo2.dot" tree
+    printTree "appendo2.dot" tree
     printTree "reverso.dot" tree'
     printTree "revacco.dot" tree''
--}
+
     {-let (_, t, _) = drive $ sorto $ fresh ["q", "r"] $ call "sorto" [V "q", V "r"]
-    printTree "sorto.dot" (simpl t) 
+    printTree "sorto.dot" (simpl t)
 -}
 
 
     --runTest "evalo" $ evalo $ fresh ["q", "p"] (call "evalo" [V "q", V "p"])
 
-    test_palindromo 
-    --test_doubleo          
+    --test_palindromo
+    --test_doubleo
 
 
-{-    test_empty_appendo    
-    test_singletonReverso 
-    test_doubleAppendo    
-    test_eveno            
+{-    test_empty_appendo
+    test_singletonReverso
+    test_doubleAppendo
+    test_eveno
 -}
-    
+
     {-let (_, t, _) = drive $ smallesto $ fresh ["q", "r", "s"] $ call "smallesto" [V "q", V "r", V "s"]
     putStrLn "\n\n\n"
     putStrLn (intercalate "\n\n" $ map (\x -> intercalate "\n" $ map show x) (accumCalls t))

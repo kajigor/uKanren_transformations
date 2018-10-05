@@ -13,6 +13,7 @@ import Syntax
 import Driving
 import Residualize
 import Stlc
+import Text.Printf
 
 class OCanren a where
   ocanren :: a -> String
@@ -23,13 +24,12 @@ instance OCanren String where
 instance OCanren v => OCanren (Term v) where
   ocanren (V v)        = ocanren v
   ocanren (C "Nil" _) = "nil ()"
-  ocanren (C "Cons" [h,t]) = ocanren h ++ " % " ++ ocanren t
+  ocanren (C "Cons" [h,t]) = printf "%s %% %s" (ocanren h) (ocanren t)
   ocanren (C "O" []) = "zero"
-  ocanren (C "S" [x]) = "succ (" ++ ocanren x ++ ")"
-  ocanren (C (f:o) ts) = "(" ++ (toLower f : o) ++ case ts of 
-                                                     [] -> " ()" 
-                                                     _  -> concat [' ' : ocanren t | t <- ts]
-                         ++ ")"
+  ocanren (C "S" [x]) = printf "succ (%s)" (ocanren x)
+  ocanren (C (f:o) ts) = printf "(%s)" $ (toLower f : o) ++ case ts of
+                                                              [] -> " ()"
+                                                              _  -> ' ' :   unwords (map ocanren ts)
 
 instance OCanren v => OCanren (G v) where
   ocanren (t1 :=:  t2)  = "(" ++ ocanren t1 ++ " === " ++ ocanren t2 ++ ")"
@@ -41,12 +41,12 @@ instance OCanren v => OCanren (G v) where
 
 
 ocanrenize :: String -> [String] -> G X -> String
-ocanrenize topLevelName args g = 
+ocanrenize topLevelName args g =
   "let " ++ topLevelName ++ " " ++ intercalate " " args ++ " = " ++ ocanren g
 
 toOCanren filename topLevelName (tree, args) =
   do
-    withSystemTempFile filename (\ tmp_name tmp -> 
+    withSystemTempFile filename (\ tmp_name tmp ->
                                    do
                                      hPutStrLn tmp (ocanrenize topLevelName args tree)
                                      hClose tmp
@@ -55,17 +55,17 @@ toOCanren filename topLevelName (tree, args) =
                                      hPutStrLn file "open MiniKanren"
                                      hPutStrLn file "open Std"
                                      hPutStrLn file "open Nat"
-                                     hPutStrLn file "" 
+                                     hPutStrLn file ""
                                      hClose file
                                      system $ "camlp5o pr_o.cmo " ++ tmp_name ++ " >> " ++ filename
                                      system $ "ocamlformat " ++ filename ++ " -m 160 -i"
                                      return ()
                                 )
 
-runTest name goal = 
+runTest name goal =
   toOCanren (name ++ ".ml") name $ residualize $ drive goal
 
-test   = toOCanren "appendo2.ml" "appendo2" $ residualize tc 
+test   = toOCanren "appendo2.ml" "appendo2" $ residualize tc
 test'  = toOCanren "reverso.ml"  "reverso"  $ residualize tc'
 test'' = toOCanren "revacco.ml"  "revacco"  $ residualize tc''
 
@@ -87,8 +87,8 @@ test_doubleo = runTest "doubleo" $ doubleo $ fresh ["x"] (call "doubleo" [V "x"]
 test_empty_appendo = runTest "emptyAppendo" $ emptyAppendo $ fresh ["x", "y"] (call "emptyAppendo" [V "x", V "y"])
 test_singletonReverso = runTest "singletonReverso" $ singletonReverso $ fresh ["x", "y"] (call "singletonReverso" [V "x", V "y"])
 -}
-main = do 
-  test 
+main = do
+  test
   -- test'
   -- test''
   -- test_gto
