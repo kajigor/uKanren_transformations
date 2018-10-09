@@ -4,7 +4,6 @@ module Eval where
 
 import Control.Monad
 import Data.List
-import Data.Maybe
 import Syntax
 import Stream
 import Debug.Trace
@@ -22,18 +21,18 @@ unify :: Maybe Sigma -> Ts -> Ts -> Maybe Sigma
 unify Nothing _ _ = Nothing
 unify st@(Just subst) u v =
   unify' (walk u subst) (walk v subst)  where
-    unify' (V u) (V v) | u == v = Just subst
-    unify' (V u) t              = occursCheck u t $ Just $ (u, v) : subst
-    unify' t (V v)              = occursCheck v t $ Just $ (v, u) : subst
+    unify' (V u') (V v') | u' == v' = Just subst
+    unify' (V u') t = occursCheck u' t $ Just $ (u', v) : subst
+    unify' t (V v') = occursCheck v' t $ Just $ (v', u) : subst
     unify' (C a as) (C b bs) | a == b && length as == length bs =
-      foldl (\ st (u, v) -> unify st u v) st $ zip as bs
+      foldl (\ st' (u', v') -> unify st' u' v') st $ zip as bs
     unify' _ _ = Nothing
-    walk x@(V v) s =
-      case lookup v s of
+    walk x@(V v') s =
+      case lookup v' s of
         Nothing -> x
         Just t  -> walk t s
-    walk u     _ = u
-    occursCheck u t s = if elem u $ fv t then error "Occurs check!" else s
+    walk u' _ = u'
+    occursCheck u' t s = if elem u' $ fv t then error "Occurs check!" else s
 
 ---- Interpreting syntactic variables
 infix 9 <@>
@@ -41,17 +40,18 @@ infix 9 <@>
 (_, i) <@> (V x)    = i x
 i <@> (C c ts) = C c $ map (i<@>) ts
 
+showInt :: Iota -> String
 showInt (dom, f) = intercalate ", " $ map (\ x -> printf "%s -> %s" x (show $ f x)) dom
 
 ---- Extending variable interpretation
 extend :: Iota -> X -> Ts -> Iota
-extend (xs, i) x ts = (if elem x xs then xs else x : xs , \y -> if x == y then ts else i y)
+extend (xs, i) x ts = (if x `elem` xs then xs else x : xs , \y -> if x == y then ts else i y)
 
 emptyIota :: Iota
-emptyIota = ([], \ i -> error $ printf "Empty interpretation on %s" (show i))
+emptyIota = ([], error . printf "Empty interpretation on %s" . show)
 
 app :: Iota -> X -> Ts
-app (_, i) x = i x
+app (_, i) = i
 
 ---- Applying substitution
 substitute :: Sigma -> Ts -> Ts
@@ -78,59 +78,58 @@ showSigma :: Sigma -> String
 showSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (show $ V x) (show y)) s))
 
 -- Pre-evaluation
-pre_eval' :: Gamma -> G X -> (G S, Gamma, [S])
-pre_eval' env goal = pre_eval [] env goal
+preEval' :: Gamma -> G X -> (G S, Gamma, [S])
+preEval' = preEval []
  where
-  pre_eval vars g@(_, i, _) (t1 :=: t2)    = (i <@> t1 :=: i <@> t2, g, vars)
-  pre_eval vars g           (g1 :/\: g2)   = let (g1', g' , vars' ) = pre_eval vars  g  g1 in
-                                             let (g2', g'', vars'') = pre_eval vars' g' g2 in
-                                             (g1' :/\: g2', g'', vars'')
-  pre_eval vars g           (g1 :\/: g2)   = let (g1', g' , vars')  = pre_eval vars  g  g1 in
-                                             let (g2', g'', vars'') = pre_eval vars' g' g2 in
-                                             (g1' :\/: g2', g'', vars'')
-  pre_eval vars g@(p, i, d) (Fresh x g')   = pre_eval (y : vars) (p, extend i x (V y), d') g'
+  preEval vars g@(_, i, _) (t1 :=: t2)    = (i <@> t1 :=: i <@> t2, g, vars)
+  preEval vars g           (g1 :/\: g2)   = let (g1', g' , vars' ) = preEval vars  g  g1 in
+                                            let (g2', g'', vars'') = preEval vars' g' g2 in
+                                            (g1' :/\: g2', g'', vars'')
+  preEval vars g           (g1 :\/: g2)   = let (g1', g' , vars')  = preEval vars  g  g1 in
+                                            let (g2', g'', vars'') = preEval vars' g' g2 in
+                                            (g1' :\/: g2', g'', vars'')
+  preEval vars   (p, i, d) (Fresh x g')   = preEval (y : vars) (p, extend i x (V y), d') g'
    where y : d' = d
-  --pre_eval vars g@(p, i, d) (Zzz g')       = pre_eval vars g g'
-  pre_eval vars g@(_, i, _) (Invoke f fs)  = (Invoke f (map (i <@>) fs), g, vars)
-  pre_eval vars e           (Let    def g) = let (g', e', vars') = pre_eval vars e g in
-                                             (Let def g', e', vars')
+  preEval vars g@(_, i, _) (Invoke f fs)  = (Invoke f (map (i <@>) fs), g, vars)
+  preEval vars e           (Let    def' g) = let (g', e', vars') = preEval vars e g in
+                                             (Let def' g', e', vars')
 
-post_eval' :: [X] -> G X -> G X
-post_eval' as goal =
+postEval' :: [X] -> G X -> G X
+postEval' as goal =
   let freshs = fvg goal \\ as in
-  foldr (\x g -> Fresh x g) (post_eval (freshs ++ as) goal) freshs
+  foldr Fresh (postEval (freshs ++ as) goal) freshs
   where
-    post_eval vars (Let (f, args, b) g) =
-      Let (f, args, let freshs = ((fvg b) \\ args) \\ vars
-                    in  foldr (\ x g  -> Fresh x g) (post_eval (vars ++ args ++ freshs) b) freshs) $ post_eval vars g
-    post_eval vars (g1 :/\: g2) = post_eval vars g1 :/\: post_eval vars g2
-    post_eval vars (g1 :\/: g2) = post_eval vars g1 :\/: post_eval vars g2
-    post_eval _ g = g
+    postEval vars (Let (f, args, b) g) =
+      Let (f, args, let freshs = (fvg b \\ args) \\ vars
+                    in  foldr Fresh (postEval (vars ++ args ++ freshs) b) freshs) $ postEval vars g
+    postEval vars (g1 :/\: g2) = postEval vars g1 :/\: postEval vars g2
+    postEval vars (g1 :\/: g2) = postEval vars g1 :\/: postEval vars g2
+    postEval _ g = g
 
 
 -- Evaluation relation
 eval :: Gamma -> Sigma -> G S -> Stream (Sigma, Delta)
-eval     (p, i, d) s (t1 :=:  t2)  = fmap (,d) (maybeToStream $ unify (Just s) t1 t2)
+eval     (_, _, d) s (t1 :=:  t2)  = fmap (,d) (maybeToStream $ unify (Just s) t1 t2)
 eval env           s (g1 :\/: g2)  = eval env s g1 `mplus` eval env s g2
-eval env@(p, i, d) s (g1 :/\: g2)  = eval env s g1 >>= (\ (s', d') -> eval (p, i, d') s' g2)
-eval env@(p, i, d) s (Invoke f as) =
+eval env@(p, i, _) s (g1 :/\: g2)  = eval env s g1 >>= (\ (s', d') -> eval (p, i, d') s' g2)
+eval     (p, i, d) s (Invoke f as) =
   let (_, fs, g) = p f in
-  let i'         = foldl (\ i' (f, a) -> extend i' f a) i $ zip fs as in
-  let (g', env', _) = pre_eval' (p, i', d) g in
+  let i'         = foldl (\ i'' (f', a) -> extend i'' f' a) i $ zip fs as in
+  let (g', env', _) = preEval' (p, i', d) g in
   eval env' s g'
-eval env s (Let def g) = eval (update env def) s g
--- eval env s (Zzz g) = Immature (eval env s g)
+eval env s (Let def' g) = eval (update env def') s g
+eval _ _ _ = error "Impossible case in eval"
 
 env0 :: Gamma
-env0 = ((\ _ -> error "Empty environment"), emptyIota, [0..])
+env0 = (\ _ -> error "Empty environment", emptyIota, [0 ..])
 
 update :: Gamma -> Def -> Gamma
-update (p, i, d) def@(name, _, _) = ((\ name' -> if name == name' then def else p name'), i, d)
+update (p, i, d) def'@(name, _, _) = (\ name' -> if name == name' then def' else p name', i, d)
 
 s0 :: Sigma
 s0 = []
 
 run :: G X -> Stream Sigma
 run goal =
-  let (goal', env', _) = pre_eval' env0 goal in
+  let (goal', env', _) = preEval' env0 goal in
   fmap fst $ eval env' s0 goal'

@@ -15,13 +15,6 @@ data Term v = V v | C String [Term v] deriving (Show, Eq, Ord)
 type Tx     = Term X
 type Ts     = Term S
 
-{-
-instance Eq a => Eq (Term a) where
-  V x == V y = x == y
-  C n xs == C n' xs' = n == n' && length xs == length xs' && isPrefixOf xs xs'
-  _ == _ = False
--}
-
 instance Functor Term where
   fmap f (V v)    = V $ f v
   fmap f (C s ts) = C s $ map (fmap f) ts
@@ -29,6 +22,7 @@ instance Functor Term where
 -- Definitions
 type Def = (Name, [Name], G X)
 
+def :: Name -> [Name] -> G X -> Def
 def = (,,)
 
 -- Goals
@@ -38,9 +32,9 @@ data G a =
   | G a :\/: G a
   | Fresh  Name (G a)
   | Invoke Name [Term a]
- -- | Zzz (G a)
   | Let Def (G a) deriving (Eq, Ord)
 
+freshVars :: [Name] -> G t -> ([Name], G t)
 freshVars names (Fresh name goal) = freshVars (name : names) goal
 freshVars names goal = (names, goal)
 
@@ -52,18 +46,27 @@ infixr 7 &&&
 infixr 6 |||
 infix  8 ===
 
+(===) :: Term a -> Term a -> G a
 (===) = (:=:)
+
+(|||) :: G a -> G a -> G a
 (|||) = (:\/:)
+
+(&&&) :: G a -> G a -> G a
 (&&&) = (:/\:)
 
+
+fresh :: [Name] -> G a -> G a
 fresh xs g = foldr Fresh g xs
-call       = Invoke
+
+call :: Name -> [Term a] -> G a
+call = Invoke
 
 -- Free variables
 fv :: Eq v => Term v -> [v]
 fv t = nub $ fv' t where
   fv' (V v)    = [v]
-  fv' (C _ ts) = concat $ map fv' ts
+  fv' (C _ ts) = concatMap fv' ts
 
 fvg :: G X -> [X]
 fvg = nub . fv'
@@ -71,23 +74,10 @@ fvg = nub . fv'
   fv' (t1 :=:  t2) = fv t1 ++ fv t2
   fv' (g1 :/\: g2) = fv' g1 ++ fv' g2
   fv' (g1 :\/: g2) = fv' g1 ++ fv' g2
-  fv' (Invoke _ ts) = concat $ map fv ts
+  fv' (Invoke _ ts) = concatMap fv ts
   fv' (Fresh x g)   = fv' g \\ [x]
   fv' (Let (_, _, _) g) = fv' g
---  fv' (Zzz g) = fv' g
 
-{-
-instance Show a => Show (Term a) where
-  show (V v) = "v." ++ show v
-  show (C name ts) =
-    case name of
-      "Nil" -> "[]"
-      "Cons" -> let [h,t] = ts
-                in show h ++ " : " ++ show t
-      _ -> case ts of
-             [] -> name
-             _  -> "C " ++ name ++ " " ++ "[" ++ intercalate ", " (map show ts) ++ "]"
--}
 instance Show a => Show (G a) where
   show (t1 :=:  t2)               = printf "%s = %s" (show t1) (show t2)
   show (g1 :/\: g2)               = printf "(%s /\\ %s)" (show g1) (show g2)
@@ -110,7 +100,7 @@ instance Dot Int where
 instance (Dot a, Dot b) => Dot (a, b) where
   dot (x,y) = printf "(%s, %s)" (dot x) (dot y)
 
-instance Dot a => Dot ([a]) where
+instance Dot a => Dot [a] where
   dot x = unwords (map dot x)
 
 instance Dot a => Dot (Term a) where

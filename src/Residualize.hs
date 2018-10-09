@@ -5,62 +5,68 @@ import Tree
 import Driving
 import qualified Eval as E
 import Data.List
-import Data.Maybe
 import qualified Data.Set        as Set
 import qualified Data.Map.Strict as Map
 import Debug.Trace
-import List
+import List hiding (c)
 import Text.Printf
 
 
 toX :: Term S -> Term X
-toX (V x)    = V $ ('x' : show x)
+toX (V x)    = V ('x' : show x)
 toX (C c ts) = C c $ map toX ts
 
-residualizeSubst g s = conj $ map (\ (s, ts) -> (toX $ V s) :=: (toX $ E.substitute g ts)) $ reverse s
+residualizeSubst :: E.Sigma -> [(S, Ts)] -> G X
+residualizeSubst g s = conj $ map (\ (s', ts) -> toX (V s') :=: toX (E.substitute g ts)) $ reverse s
 
+substCon :: E.Sigma -> [(S, Ts)] -> [(S, Ts)] -> G X -> G X
 substCon gen s ubst g =
   let delta = s \\ ubst in
-  if delta == []
+  if null delta
   then g
   else residualizeSubst gen delta &&& g
 
+simpl :: Tree -> Tree
 simpl (Or l r g s) =
   case simpl l of
     Fail -> simpl r
     l'   -> case simpl r of
               Fail -> l'
               r'   -> Or l' r' g s
-simpl (Gen id gen ch g s) =
+simpl (Gen id' gen ch g s) =
   case simpl ch of
     Fail -> Fail
-    ch'  -> Gen id gen ch' g s
-simpl (Call id ch g s) =
+    ch'  -> Gen id' gen ch' g s
+simpl (Call id' ch g s) =
   case simpl ch of
     Fail -> Fail
-    ch'  -> Call id ch' g s
-simpl (Split id ts g s) =
+    ch'  -> Call id' ch' g s
+simpl (Split id' ts g s) =
   let simplified = map simpl ts
-  in  if any (\x -> case x of Fail -> True; _ -> False) simplified then Fail else Split id simplified g s
+  in  if any (\x -> case x of Fail -> True; _ -> False) simplified then Fail else Split id' simplified g s
 simpl t = t
 
-simplConj conj =
-  let noSuccess = filter (\x -> case x of (Invoke success []) -> False; _ -> True) conj
-  in  if   length noSuccess > 0
+simplConj :: [G a] -> G a
+simplConj conj' =
+  let noSuccess = filter (\x -> case x of (Invoke "success" []) -> False; _ -> True) conj'
+  in  if   not $ null noSuccess
       then foldl1 (&&&) noSuccess
-      else (Invoke success [])
+      else Invoke success []
 
+success :: String
 success = "success"
+
+failure :: String
 failure = "failure"
 
 residualize :: (TreeContext, Tree, [Id]) -> (G X, [String])
 residualize (tc, t, args) =
-  (E.post_eval' (map vident args) $ residualizeGen [] tc (simpl t) [], map vident args)
+  (E.postEval' (map vident args) $ residualizeGen [] tc (simpl t) [], map vident args)
   where
     residualizeGen _ _ Fail         _ = Invoke failure []
     residualizeGen g _ (Success s ) ubst =
       let delta = s \\ ubst in
-      if delta == []
+      if null delta
       then Invoke success []
       else residualizeSubst g delta
     residualizeGen g tc (Rename id _ s r s' )  ubst = substCon g s' ubst $ simplConj [residualizeGen g tc (Success s) s', Invoke (fident id) (reverse [V $ vident $ snd x | x <- r])]
@@ -68,15 +74,17 @@ residualize (tc, t, args) =
     residualizeGen g tc (Split  id ts _ s' )   ubst = substCon g s' ubst $ scope tc id $ simplConj $ map (\x -> residualizeGen g tc x s') ts
     residualizeGen g tc (Gen    id g' t _ s' ) ubst = substCon g (s' ++ g') ubst $ scope tc id $ residualizeGen (g' `E.o` g) tc t s'
     residualizeGen g tc (Call   id s    _ s' ) ubst = substCon g s' ubst $ scope tc id $ residualizeGen g tc s s'
-    fident id = 'f' : show id
-    vident id = 'x' : show id
-    scope tc@(sr, args, _) id g =
+    residualizeGen _ _ _ _ = error "Oops, something is wrong in residualizeGen"
+    fident id' = 'f' : show id'
+    vident id' = 'x' : show id'
+    scope (sr, args, _) id g =
       if Set.member id sr
       then let as = reverse $ args Map.! id in
            let fargs = map vident as in
            Let (def (fident id) fargs g) (Invoke (fident id) $ map V fargs)
       else g
 
+scoping :: (G X, [String])
 scoping =
   let f g =
         let x = V "x"
@@ -88,6 +96,7 @@ scoping =
                ) g
   in residualize (drive (f ( fresh ["x","y","t"] $ call "f" [V "x", V "y", V "t"])))
 
+appendo :: G a -> G a
 appendo g =
   let x  = V "x"  in
   let y  = V "y"  in
@@ -97,20 +106,20 @@ appendo g =
   let ty = V "ty" in
   Let
     (def "appendo" ["x", "y", "xy"]
-         ((x === nil &&& xy === y) |||
-          (fresh ["h", "t", "ty"]
-             (x  === h % t  &&&
-              xy === h % ty &&&
-              call "appendo" [t, y, ty]
-             )
-          )
+         ( (x === nil &&& xy === y) |||
+           fresh ["h", "t", "ty"]
+             (x === h % t &&& xy === h % ty &&& call "appendo" [t, y, ty])
          )
     ) g
 
+redtest :: G X
 redtest   = let (r, _) = residualize tc in trace (printf "\n\n%s\n\n" $ show r) r
+
+redtest' :: G X
 redtest'  = let (r, _) = residualize tc'
                 ((x, y, _), _, _) = tc'
             in trace (printf "\n\n%s\n\n%s\n\n%s" (show r) (show x) (show y)) r
+redtest'' :: G X
 redtest'' = let (r, _) = residualize tc'' in trace (printf "\n\n%s\n\n" $ show r) r
 
 
