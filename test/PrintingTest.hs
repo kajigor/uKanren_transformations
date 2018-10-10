@@ -45,6 +45,12 @@ runTest name goal =
     let tree = snd' $ drive $ goal
     printTree (printf "%s.dot" name) tree
 
+runTestSimplified name goal =
+  do
+    putStr $ printf "Running %s\n" name
+    let tree = simpl $ snd' $ drive $ goal
+    printTree (printf "%s.dot" name) tree
+    putStr $ printf "Finished %s\n" name
 
 test_palindromo       = runTest "palindromo" $ palindromo $ fresh ["x"] (call "palindromo" [V "x"])
 test_doubleAppendo    = runTest "doubleAppendo" $ doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
@@ -70,10 +76,13 @@ tree'' = snd' tc''
 
 main =
   do
-    printTree "appendo2.dot" tree
+--    test_doubleAppendo
+
+
+    {-printTree "appendo2.dot" tree
     printTree "reverso.dot" tree'
     printTree "revacco.dot" tree''
-
+-}
     {-let (_, t, _) = drive $ sorto $ fresh ["q", "r"] $ call "sorto" [V "q", V "r"]
     printTree "sorto.dot" (simpl t)
 -}
@@ -84,12 +93,13 @@ main =
     --test_palindromo
     --test_doubleo
 
-
-{-    test_empty_appendo
-    test_singletonReverso
+    --test_palindromo
     test_doubleAppendo
     test_eveno
--}
+    test_doubleo
+    test_empty_appendo
+    test_singletonReverso
+
 
     {-let (_, t, _) = drive $ smallesto $ fresh ["q", "r", "s"] $ call "smallesto" [V "q", V "r", V "s"]
     putStrLn "\n\n\n"
@@ -102,10 +112,10 @@ main =
 
     printTree "ehm.dot" tree
 -}
-    let (_, t', _) = drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
+    {-let (_, t', _) = drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
     let t'' = simpl t'
     printTree "reverso.dot" t'
-    printTree "reversoSimple.dot" t''
+    printTree "reversoSimple.dot" t''-}
 {-
     let ra@(_, t', _) = drive (revAcco $ fresh ["q", "s"] (call "revacco" [V "q", nil, V "s"]))
     let t'' = simpl t'

@@ -121,7 +121,7 @@ eval env s (Let def' g) = eval (update env def') s g
 eval _ _ _ = error "Impossible case in eval"
 
 env0 :: Gamma
-env0 = (\ _ -> error "Empty environment", emptyIota, [0 ..])
+env0 = (\ i -> error $ printf "Empty environment on %s" (show i), emptyIota, [0 ..])
 
 update :: Gamma -> Def -> Gamma
 update (p, i, d) def'@(name, _, _) = (\ name' -> if name == name' then def' else p name', i, d)

@@ -11,7 +11,7 @@ type S    = Int    -- Semantic variables
 type Name = String -- Names of variables/definitions
 
 -- Terms
-data Term v = V v | C String [Term v] deriving (Show, Eq, Ord)
+data Term v = V v | C String [Term v] deriving (Eq, Ord)
 type Tx     = Term X
 type Ts     = Term S
 
@@ -78,6 +78,19 @@ fvg = nub . fv'
   fv' (Fresh x g)   = fv' g \\ [x]
   fv' (Let (_, _, _) g) = fv' g
 
+instance Show a => Show (Term a) where
+  show (V v) = printf "v.%s" (show v)
+  show (C name ts) =
+    case name of
+      "Nil" -> "[]"
+      "Cons" -> let [h,t] = ts
+                in printf "%s : %s" (show h) (show t)
+      x | (x == "s" || x == "S") && length ts == 1 -> printf "S(%s)" (show $ head ts)
+      x | (x == "o" || x == "O") && null ts -> "O"
+      _ -> case ts of
+             [] -> name
+             _  -> printf "C %s [%s]" name (unwords $ map show ts)
+
 instance Show a => Show (G a) where
   show (t1 :=:  t2)               = printf "%s = %s" (show t1) (show t2)
   show (g1 :/\: g2)               = printf "(%s /\\ %s)" (show g1) (show g2)
@@ -110,6 +123,8 @@ instance Dot a => Dot (Term a) where
       "Nil" -> "[]"
       "Cons" -> let [h,t] = ts
                 in printf "%s : %s" (dot h) (dot t)
+      x | (x == "s" || x == "S") && length ts == 1 -> printf "S(%s)" (dot $ head ts)
+      x | (x == "o" || x == "O") && null ts -> "O"
       _ -> case ts of
              [] -> name
              _  -> printf "C %s [%s]" name (unwords $ map dot ts)
