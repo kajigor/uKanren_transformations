@@ -14,7 +14,7 @@ doubleAppendo g =
   let z = V "z" in
   let r = V "r" in
   let t = V "t" in
-  Let (def "doubleAppendo" ["x", "y", "z"]
+  Let (def "doubleAppendo" ["x", "y", "z", "r"]
         (
           fresh ["t"] ( call "appendo" [x, y, t] &&& call "appendo" [t, z, r] )
         )

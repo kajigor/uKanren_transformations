@@ -307,19 +307,3 @@ drive :: G X -> (TreeContext, Tree, [Id])
 drive goal =
   let (goal', (g', i', d'), args) = E.preEval' E.env0 goal in
   let (x, y, _) = eval emptyContext [] d' E.s0 [] [] (i', g', goal') [] in (x, y, reverse args)
-
-
-tc = drive (appendo
-              (fresh ["q", "r", "s", "t", "p"]
-                 (call "appendo" [V "q", V "r", V "s"] &&&
-                  call "appendo" [V "s", V "t", V "p"])
-              )
-           )
-
-tc'  = drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
-tc'' = drive (revAcco $ fresh ["q", "s"] (call "revacco" [V "q", nil, V "s"]))
-
-
-tree   = snd' tc
-tree'  = snd' tc'
-tree'' = snd' tc''

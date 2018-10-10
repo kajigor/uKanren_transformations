@@ -84,42 +84,4 @@ residualize (tc, t, args) =
            Let (def (fident id) fargs g) (Invoke (fident id) $ map V fargs)
       else g
 
-scoping :: (G X, [String])
-scoping =
-  let f g =
-        let x = V "x"
-            y = V "y"
-            z = V "z"
-            t = V "t"
-        in Let (def "f" ["x", "y", "t"]
-                 (fresh ["z"] ( z === x % y &&& t === z % nil))
-               ) g
-  in residualize (drive (f ( fresh ["x","y","t"] $ call "f" [V "x", V "y", V "t"])))
-
-appendo :: G a -> G a
-appendo g =
-  let x  = V "x"  in
-  let y  = V "y"  in
-  let xy = V "xy" in
-  let h  = V "h"  in
-  let t  = V "t"  in
-  let ty = V "ty" in
-  Let
-    (def "appendo" ["x", "y", "xy"]
-         ( (x === nil &&& xy === y) |||
-           fresh ["h", "t", "ty"]
-             (x === h % t &&& xy === h % ty &&& call "appendo" [t, y, ty])
-         )
-    ) g
-
-redtest :: G X
-redtest   = let (r, _) = residualize tc in trace (printf "\n\n%s\n\n" $ show r) r
-
-redtest' :: G X
-redtest'  = let (r, _) = residualize tc'
-                ((x, y, _), _, _) = tc'
-            in trace (printf "\n\n%s\n\n%s\n\n%s" (show r) (show x) (show y)) r
-redtest'' :: G X
-redtest'' = let (r, _) = residualize tc'' in trace (printf "\n\n%s\n\n" $ show r) r
-
 

@@ -53,6 +53,21 @@ test_doubleo          = runTest "doubleo" $ doubleo $ fresh ["x", "xx"] (call "d
 test_empty_appendo    = runTest "emptyAppendo" $ emptyAppendo $ fresh ["x", "y"] (call "emptyAppendo" [V "x", V "y"])
 test_singletonReverso = runTest "singletonReverso" $ singletonReverso $ fresh ["x", "y"] (call "singletonReverso" [V "x", V "y"])
 
+tc = drive (appendo
+              (fresh ["q", "r", "s", "t", "p"]
+                 (call "appendo" [V "q", V "r", V "s"] &&&
+                  call "appendo" [V "s", V "t", V "p"])
+              )
+           )
+
+tc'  = drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
+tc'' = drive (revAcco $ fresh ["q", "s"] (call "revacco" [V "q", nil, V "s"]))
+
+
+tree   = snd' tc
+tree'  = snd' tc'
+tree'' = snd' tc''
+
 main =
   do
     printTree "appendo2.dot" tree
@@ -86,12 +101,12 @@ main =
     printTree "sort.dot" t
 
     printTree "ehm.dot" tree
-
-    let (_, t', _) = tc'
+-}
+    let (_, t', _) = drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
     let t'' = simpl t'
     printTree "reverso.dot" t'
     printTree "reversoSimple.dot" t''
-
+{-
     let ra@(_, t', _) = drive (revAcco $ fresh ["q", "s"] (call "revacco" [V "q", nil, V "s"]))
     let t'' = simpl t'
     printTree "revaccoSimpl.dot" t''

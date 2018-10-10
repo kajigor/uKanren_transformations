@@ -1,24 +1,14 @@
------------------------------------------------------------------------------
---
--- Module      :  Main
--- Copyright   :  
--- License     :  AllRightsReserved
---
--- Maintainer  :  
--- Stability   :  
--- Portability :  
---
--- |
---
------------------------------------------------------------------------------
-
 module Main (
     main
 ) where
 
-import Test.DocTest
+import qualified OCanrenizeTest as OC
+import qualified ResidualizeTest as R
+import qualified DrivingTest as D
 
 main :: IO ()
-main = doctest ["-isrc", "src/Main.hs"]
+main = do
+  OC.main
+
 
 
