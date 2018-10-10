@@ -25,6 +25,7 @@ instance OCanren v => OCanren (Term v) where
   ocanren (V v)        = ocanren v
   ocanren (C "Nil" _) = "nil ()"
   ocanren (C "Cons" [h,t]) = printf "%s %% %s" (ocanren h) (ocanren t)
+  ocanren (C "%"    [h,t]) = printf "%s %% %s" (ocanren h) (ocanren t)
   ocanren (C "O" []) = "zero"
   ocanren (C "S" [x]) = printf "succ (%s)" (ocanren x)
   ocanren (C (f:o) ts) = printf "(%s)" $ (toLower f : o) ++ case ts of
@@ -32,17 +33,17 @@ instance OCanren v => OCanren (Term v) where
                                                               _  -> ' ' :   unwords (map ocanren ts)
 
 instance OCanren v => OCanren (G v) where
-  ocanren (t1 :=:  t2)  = "(" ++ ocanren t1 ++ " === " ++ ocanren t2 ++ ")"
-  ocanren (g1 :/\: g2)  = "(" ++ ocanren g1 ++ " &&& " ++ ocanren g2 ++ ")"
-  ocanren (g1 :\/: g2)  = "(" ++ ocanren g1 ++ " ||| " ++ ocanren g2 ++ ")"
-  ocanren (Fresh x g )  = let (names, goal) = freshVars [x] g in "(" ++ "fresh (" ++ intercalate " " names ++ ") (" ++ ocanren goal ++ "))"
-  ocanren (Invoke f ts) = "(" ++ f ++ concat [' ' : ocanren t | t <- ts] ++ ")"
-  ocanren (Let (n, as, b) g) = "let rec " ++ n ++ concat [' ' : a | a <- as] ++ " = " ++ ocanren b ++ " in defer(" ++ ocanren g ++ ")"
+  ocanren (t1 :=:  t2)  = printf "(%s === %s)" (ocanren t1) (ocanren t2)
+  ocanren (g1 :/\: g2)  = printf "(%s &&& %s)" (ocanren g1) (ocanren g2)
+  ocanren (g1 :\/: g2)  = printf "(%s ||| %s)" (ocanren g1) (ocanren g2)
+  ocanren (Fresh x g )  = let (names, goal) = freshVars [x] g in printf "(fresh (%s) (%s))" (intercalate " " names) (ocanren goal)
+  ocanren (Invoke f ts) = printf "(%s)" (f ++ concat [' ' : ocanren t | t <- ts])
+  ocanren (Let (n, as, b) g) = printf "let rec %s = %s in defer(%s)" (n ++ concat [' ' : a | a <- as]) (ocanren b) (ocanren g)
 
 
 ocanrenize :: String -> [String] -> G X -> String
 ocanrenize topLevelName args g =
-  "let " ++ topLevelName ++ " " ++ intercalate " " args ++ " = " ++ ocanren g
+  printf "let %s %s = %s" topLevelName (intercalate " " args) (ocanren g)
 
 toOCanren filename topLevelName (tree, args) =
   do

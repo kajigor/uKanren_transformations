@@ -17,6 +17,7 @@ import           TreePrinter
 import           Stlc
 import           Programs
 import           Text.Printf
+import           ConjRetriever
 
 upTo d x =
   trace (printf "\nDepth: %s" $ show d) $
@@ -40,6 +41,12 @@ accumCalls (Prune [g])       = [[g]]
 --accumCalls (Prune gs)          = [[conj gs]]
 accumCalls _                 = []
 
+showConjStack :: [[G S]] -> String
+showConjStack gss = unlines $ map (\gs -> '\n' : '\n' : (unlines $ map (\g -> '\n' : (unwords $ map show $ unconj g)) gs) ) gss where
+  unconj (g1 :/\: g2) = unconj g1 ++ unconj g2
+  unconj g@(Invoke _ _) = [g]
+  unconj _ = error "Here could only be conjunctions"
+
 runTest name goal =
   do
     let tree = snd' $ drive $ goal
@@ -49,15 +56,16 @@ runTestSimplified name goal =
   do
     putStr $ printf "Running %s\n" name
     let tree = simpl $ snd' $ drive $ goal
+    writeFile (printf "%s.log" name) $ showConjStack $ retrieve tree
     printTree (printf "%s.dot" name) tree
     putStr $ printf "Finished %s\n" name
 
-test_palindromo       = runTest "palindromo" $ palindromo $ fresh ["x"] (call "palindromo" [V "x"])
-test_doubleAppendo    = runTest "doubleAppendo" $ doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
-test_eveno            = runTest "eveno" $ eveno $ fresh ["x"] (call "eveno" [V "x"])
-test_doubleo          = runTest "doubleo" $ doubleo $ fresh ["x", "xx"] (call "doubleo" [V "x", V "xx"])
-test_empty_appendo    = runTest "emptyAppendo" $ emptyAppendo $ fresh ["x", "y"] (call "emptyAppendo" [V "x", V "y"])
-test_singletonReverso = runTest "singletonReverso" $ singletonReverso $ fresh ["x", "y"] (call "singletonReverso" [V "x", V "y"])
+test_palindromo       = runTestSimplified "palindromo" $ palindromo $ fresh ["x"] (call "palindromo" [V "x"])
+test_doubleAppendo    = runTestSimplified "doubleAppendo" $ doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
+test_eveno            = runTestSimplified "eveno" $ eveno $ fresh ["x"] (call "eveno" [V "x"])
+test_doubleo          = runTestSimplified "doubleo" $ doubleo $ fresh ["x", "xx"] (call "doubleo" [V "x", V "xx"])
+test_empty_appendo    = runTestSimplified "emptyAppendo" $ emptyAppendo $ fresh ["x", "y"] (call "emptyAppendo" [V "x", V "y"])
+test_singletonReverso = runTestSimplified "singletonReverso" $ singletonReverso $ fresh ["x", "y"] (call "singletonReverso" [V "x", V "y"])
 
 tc = drive (appendo
               (fresh ["q", "r", "s", "t", "p"]

@@ -96,14 +96,17 @@ embed g1' g2' = embedGoal (Just []) (g1', g2') where
   embedGoal _ _ = Nothing
 
 embedTerm :: Maybe Renaming -> (Term S, Term S) -> Maybe Renaming
-embedTerm r (V x, V y) | x == y = r
+embedTerm r _ = r
+{-embedTerm r (V x, V y) | x == y = r
 embedTerm r (V x, V y) = r >>= (\ r' -> case lookup x r' of
                                          Just z  -> if z == y then Just r' else Nothing
                                          Nothing -> Just $ (x, y) : r'
                                )
 embedTerm r (C m ms, C n ns) | m == n && length ms == length ns = foldl embedTerm r $ zip ms ns
 embedTerm r (t     , C _ ns) = msum $ map (embedTerm r . (t,)) ns
+embedTerm r (C _ ns, t     ) = msum $ map (embedTerm r . (t,)) ns -- TODO: RECONSIDER THIS
 embedTerm _ _ = Nothing
+-}
 
 embedTerms :: Maybe Renaming -> [Term S] -> [Term S] -> Maybe Renaming
 embedTerms r ps qs | length ps == length qs = foldl embedTerm r $ zip ps qs

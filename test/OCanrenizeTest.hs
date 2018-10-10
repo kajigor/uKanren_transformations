@@ -8,6 +8,7 @@ import Sort
 import Residualize
 import Driving
 import Stlc
+import BridgeTest
 
 runTest name goal =
   toOCanren (name ++ ".ml") name $ residualize $ drive goal
@@ -35,7 +36,9 @@ test_empty_appendo = runTest "emptyAppendo" $ emptyAppendo $ fresh ["x", "y"] (c
 test_singletonReverso = runTest "singletonReverso" $ singletonReverso $ fresh ["x", "y"] (call "singletonReverso" [V "x", V "y"])
 -}
 main = do
-  test
+  runTest "bridge" game2goal
+  runTest "bigBridge" game2'goal
+  --test
   -- test'
   -- test''
   -- test_gto
