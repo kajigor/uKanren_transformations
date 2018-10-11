@@ -38,6 +38,25 @@ emptyAppendo g =
   let y = V "y" in
   Let (def "emptyAppendo" ["x", "y"] (call "appendo" [nil, x, y])) $ appendo g
 
+toList [] = nil
+toList (c:cs) = peanify c % toList cs
+
+appendo123 :: G a -> G a
+appendo123 g =
+  let x = V "x" in
+  let y = V "y" in
+  Let (def "appendo123" ["x", "y"] (call "appendo" [toList [1..3], x, y])) $ appendo g
+
+appendoXyz :: G a -> G a
+appendoXyz g =
+  let x = V "x" in
+  let y = V "y" in
+  let z = V "z" in
+  let t = V "t" in
+  let r = V "r" in
+  Let (def "appendoXyz" ["x", "y", "z", "t", "r"] (call "appendo" [x % (y % (z % nil)), t, r])) $ appendo g
+
+
 singletonReverso :: G a -> G a
 singletonReverso g =
   let x = V "x" in

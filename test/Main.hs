@@ -8,6 +8,7 @@ import qualified DrivingTest as D
 import qualified BridgeTest as BT
 import qualified PrintingTest as PT
 import qualified EmbedTest as ET
+import qualified SomeTest as ST
 
 main :: IO ()
 main = do
@@ -20,5 +21,5 @@ main = do
   --BT.test
 
   OC.main
-
-
+  ST.test
+  ST.test'
