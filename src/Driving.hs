@@ -5,17 +5,17 @@ module Driving where
 import           Control.Exception.Base
 import           Control.Monad          (mplus)
 import           Data.Foldable
-import           Data.Function
-import           Data.List
+import           Data.List hiding (group, groupBy)
 import qualified Data.Map.Strict        as Map
 import           Data.Maybe
 import qualified Data.Set               as Set
 import           Debug.Trace
 import qualified Eval                   as E
-import           List
+import           List hiding (a, b, d)
 import           Stream
 import           Syntax
 import           Tree
+import           Text.Printf
 
 type TreeContext = (Set.Set Id, Map.Map Id [S], [Id])
 
@@ -61,9 +61,9 @@ embed g (g1 :/\: g2) = embed g g1 || embed g g2
 embed (Invoke f fs) (Invoke g gs) | f == g && length fs == length gs = embedTerms fs gs
 embed _ _ = False
 -}
-embedTerm :: Ts -> Ts -> Bool
+{-embedTerm :: Ts -> Ts -> Bool
 embedTerm (V _) (V _) = True
-embedTerm (C n ns) (C m ms) | n == m && length ms == length ns = and $ zipWith embedTerm ns ms 
+embedTerm (C n ns) (C m ms) | n == m && length ms == length ns = and $ zipWith embedTerm ns ms
 embedTerm t (C _ ns) = or $ zipWith embedTerm (repeat t) ns
 embedTerm _ _ = False
 
@@ -77,141 +77,65 @@ embedGoals = coupleConj where
   coupleConj ((Invoke f fs) : as) ((Invoke g gs) : bs) | f == g && length fs == length gs = embedTerms fs gs && embedConj as bs
   coupleConj _ _ = False
 
-  embedConj as bs = coupleConj as bs || diveConj as bs 
+  embedConj as bs = coupleConj as bs || diveConj as bs
 
   diveConj as (b:bs) = embedConj as bs
   diveConj _ _ = False
-
-{--- Embedding
+-}
+-- Embedding
 embed :: G S -> G S -> Maybe Renaming
-embed g1 g2 = embedGoal (Just []) (g1, g2) where
+embed g1' g2' = embedGoal (Just []) (g1', g2') where
   embedGoal r (g1 :/\:  g2, h1 :/\: h2 ) =
-    msum [ foldl embedGoal r $ [(g1, h1), (g2, h2)]
+    msum [ foldl embedGoal r [(g1, h1), (g2, h2)]
          , embedGoal r (g1 :/\: g2, h1)
          , embedGoal r (g1 :/\: g2, h2)
          ]
---  embedGoal r (Zzz g, Zzz h) = embedGoal r (g, h)
---  embedGoal r (g, Zzz h) = embedGoal r (g, h)
   embedGoal r (Invoke f fs, Invoke g gs) | f == g && length fs == length gs = embedTerms r fs gs
-  embedGoal r (Invoke _ _, g1 :/\: g2) = Nothing
+  embedGoal _ (Invoke _ _, _ :/\: _) = Nothing
   embedGoal r (g, g1 :/\: g2) = msum $ map (embedGoal r . (g,)) [g1, g2]
   embedGoal _ _ = Nothing
 
+embedTerm :: Maybe Renaming -> (Term S, Term S) -> Maybe Renaming
 embedTerm r (V x, V y) | x == y = r
-embedTerm r (V x, V y) = r >>= (\ r -> case lookup x r of
-                                         Just z  -> if z == y then Just r else Nothing
-                                         Nothing -> Just $ (x, y) : r
+embedTerm r (V x, V y) = r >>= (\ r' -> case lookup x r' of
+                                         Just z  -> if z == y then Just r' else Nothing
+                                         Nothing -> Just $ (x, y) : r'
                                )
 embedTerm r (C m ms, C n ns) | m == n && length ms == length ns = foldl embedTerm r $ zip ms ns
-embedTerm r (t     , C n ns)                = msum $ map (embedTerm r . (t,)) ns
-embedTerm _  _                              = Nothing
+embedTerm r (t     , C _ ns) = msum $ map (embedTerm r . (t,)) ns
+embedTerm _ _ = Nothing
+
+embedTerms :: Maybe Renaming -> [Term S] -> [Term S] -> Maybe Renaming
 embedTerms r ps qs | length ps == length qs = foldl embedTerm r $ zip ps qs
 embedTerms _ _  _  = Nothing
 
 embedGoals :: [G S] -> [G S] -> Maybe Renaming
-embedGoals as bs = coupleConj [] as bs where
-  embedConj r as bs = mplus (coupleConj r as bs) (diveConj r as bs)
+embedGoals = embedConj [] where -- coupling restriction relaxed
+  embedConj r as' bs' = mplus (coupleConj r as' bs') (diveConj r as' bs')
 
   coupleConj r [] [] = Just r
-  coupleConj r ((Invoke f fs):as) ((Invoke g gs):bs) | f == g && length fs == length gs = embedTerms (Just r)  fs gs >>= \r -> embedConj r as bs
+  coupleConj r (Invoke f fs : as) (Invoke g gs : bs) | f == g && length fs == length gs =
+    embedTerms (Just r)  fs gs >>= \r' -> embedConj r' as bs
   coupleConj _ _ _ = Nothing
 
-  diveConj r as' (b:bs') = embedConj r as' bs'
+  diveConj r as' (_:bs') = embedConj r as' bs'
   diveConj _ _ _         = Nothing
--}
--- tttt = embedGoals [Invoke "MM" (map V [3,5,1,7]), Invoke "S" (map V [4,5,6])] [Invoke "L" [V 3, V 5, C "T" []], Invoke "MM" (map V [8, 10, 5, 12]), Invoke "S" (map V [9, 10, 11])]
-inv = Invoke
--- ((leo([V 3,         V 5, C "true" []])  /\ minmaxo([V 8 ,V 10,V 5, V 12])) /\ smallesto([V 9,V 10,V 11]))
--- (((gto([V 31,V 32,C "true" []]) /\ leo([C "S" [V 32],V 21,C "true" []])) /\ minmaxo([V 33,V 35,V 21,V 37])) /\ smallesto([V 34,V 35,V 36]))
-
-{-((gto( [V 8, V 10,C "true" []]) /\                                          minmaxo([V 19,V 21,V 10,V 23])) /\ smallesto([V 20,V 21,V 22]))
-(((gto([V 31,V 32,C "true" []]) /\ leo([C "S" [V 32],V 21,C "true" []])) /\ minmaxo([V 33,V 35,V 21,V 37])) /\ smallesto([V 34,V 35,V 36]))
--}
-tt = embedGoals [inv "G" [V 8, V 10, C "T" []]] 
-                [inv "G" [V 31, V 32, C "T" []], inv "L" [C "S" [V 32], V 21, C "T" []], inv "M" [V 33,V 35,V 21,V 37], inv "S" [V 34,V 35,V 36]]
-
-ttt = embedGoals [inv "G" [V 8, V 10, C "T" []], inv "M" [V 19, V 21, V 10, V 23], inv "S" [V 20, V 21, V 22]] 
-                 [inv "G" [V 31, V 32, C "T" []], inv "L" [C "S" [V 32], V 21, C "T" []], inv "M" [V 33,V 35,V 21,V 37], inv "S" [V 34,V 35,V 36]]
-
-tttt = embedGoals [inv "L" [V 3, V 5, C "T" []]  , inv "M" [V 8 ,V 10,V 5, V 12],          inv "S" [V 9,V 10,V 11]]
-                  [inv "G" [V 31, V 32, C "T" []], inv "L" [C "S" [V 32], V 21, C "T" []], inv "M" [V 33,V 35,V 21,V 37], inv "S" [V 34,V 35,V 36]]
-                  
-
---sub s [] = []
---sub s ((Invoke name as):conjs) = (Invoke name (\x -> lookup x s)) : (sub s conjs)
 
 refine :: ([G S], Generalizer, Generalizer, [S]) ->  ([G S], Generalizer, Generalizer, [S])
 refine msg@(g, s1, s2, d) =
   let similar1 = filter ((>1) . length) $ groupBy group s1 [] in
   let similar2 = filter ((>1) . length) $ groupBy group s2 [] in
-  let toSwap = concat $ map (\((x,_):xs) -> map (\(y, _) -> (y, V x)) xs) similar1 in
+  let toSwap = concatMap (\((x,_):xs) -> map (\(y, _) -> (y, V x)) xs) similar1 in
   let newGoal = E.substituteConjs toSwap g in
-  let s1' = filter (\(x,_) -> not $ elem x (concat $ map (\xs -> tail $ map fst xs ) similar1)) s1 in
-  let s2' = filter (\(x,_) -> not $ elem x (concat $ map (\xs -> tail $ map fst xs ) similar2)) s2 in
-  trace ("\nSimilar1: " ++ show similar1 ++ "\nSimilar2: " ++ show similar2 ++ "\nToSwap: "  ++ show toSwap ++ "\nNewGoal: " ++ show newGoal ++ "\nS1': " ++ show s1' ++ "\nS2': " ++ show s2' ++ "\n") $
+  let s1' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar1)) s1 in
+  let s2' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar2)) s2 in
+  trace (printf "\nSimilar1: %s\nSimilar2: %s\nToSwap: %s\nNewGoal: %s\nS1': %s\nS2': %s\n" (show similar1) (show similar2) (show toSwap) (show newGoal) (show s1') (show s2'))
   (newGoal, s1', s2', d)
-  {-
- let grouped =  filter ((>1) . length) $ groupBy group s1 [] in
-  trace ("\nIn refine\ns1: " ++ show s1 ++ "\ngrouped: " ++ show grouped) $
-  case filter ((>1) . length) $ groupBy group s1 [] of
-    [] -> msg
-    gs -> foldl (\ _ g1 ->
-                    let restriction = filter (\ (x, _) -> isJust $ lookup x g1) s2 in
-                    trace ("\nRestriction: " ++ show restriction) $
-                    case filter ((>1) . length) $ groupBy group restriction [] of
-                      [] -> msg
-                      g2 ->
-                            trace ("\nmsg: "  ++ show ((\(x, y, z, _) -> (x, y, z)) msg) ++ "\ng2:  " ++ show g2) $
-
-                            foldl (\ (g, s1, s2, d) ((x, _):bs) ->
-                                     (
-                                      -- let substituted = E.substituteConjs (map (\ (y, _) -> (y, V x)) bs) g in trace ("\nBefore: " ++ show g ++ "\nAfter:  " ++ show substituted ) substituted,
-                                      trace ("\nAND THIS IS BS:  " ++ show bs ++ "\nAND THIS IS G:   " ++ show g  ++ "\nAND THIS IS BS': " ++ show (map (\ (y, _) -> (y, V x)) bs) ++ "\n") $ E.substituteConjs (map (\ (y, _) -> (y, V x)) bs) g,
-                                      filter (\ (x, _) -> isNothing $ lookup x bs) s1,
-                                      filter (\ (x, _) -> isNothing $ lookup x bs) s2,
-                                      d
-                                     )
-                                  )
-                                  msg
-                                  g2
-                )
-                msg
-                gs  -}
   where
     groupBy _ [] acc = acc
-    groupBy p xs acc = let (similar, rest) = partition (\y -> p (head xs) y) xs in assert (similar /= []) $ groupBy p rest (similar : acc)
+    groupBy p xs acc = let (similar, rest) = partition (p (head xs)) xs in assert (similar /= []) $ groupBy p rest (similar : acc)
     group x y = snd x == snd y
 
-{-
-refine msg@(g, s1, s2) =
- let grouped =  filter ((>1) . length) $ groupBy group s1 [] in
-  trace ("\nIn refine\ns1: " ++ show s1 ++ "\ngrouped: " ++ show grouped) $
-  case filter ((>1) . length) $ groupBy group s1 [] of
-    [] -> msg
-    gs -> foldl (\ acc g1 ->
-                    let restriction = filter (\ (x, _) -> isJust $ lookup x g1) s2 in
-                    trace ("\nRestriction: " ++ show restriction) $
-                    case filter ((>1) . length) $ groupBy group restriction [] of
-                      [] -> msg
-                      g2 ->
-                            trace ("\nmsg: "  ++ show msg ++ "\ng2:  " ++ show g2) $
-                            foldl (\ (g, s1, s2) ((x, _):bs) ->
-                                     (
-                                      let substituted = E.substitute (map (\ (y, _) -> (y, V x)) bs) g in trace ("\nBefore: " ++ show g ++ "\nAfter:  " ++ show substituted ) substituted,
-                                      filter (\ (x, _) -> isNothing $ lookup x bs) s1,
-                                      filter (\ (x, _) -> isNothing $ lookup x bs) s2
-                                     )
-                                  )
-                                  msg
-                                  g2
-                )
-                msg
-                gs
-  where
-    groupBy _ [] acc = acc
-    groupBy p xs acc = let (similar, rest) = partition (\y -> p (head xs) y) xs in groupBy p rest (similar : acc)
-    group x y = snd x == snd y
--}
 generalize :: [S] -> (Generalizer, Generalizer) -> [G S] -> [G S] -> ([G S], Generalizer, Generalizer, [S])
 generalize d gg gs hs =
   (\(x, (y,z), t) -> (reverse x, y, z, t)) $
@@ -266,18 +190,32 @@ weakCouple :: (G S, G S) -> Bool
 weakCouple (Invoke f _, Invoke g _) | f == g = True
 weakCouple _                        = False
 
+fst' :: (a, b, c) -> a
 fst' (x, _, _) = x
+
+snd' :: (a, b, c) -> b
 snd' (_, x, _) = x
+
+trd' :: (a, b, c) -> c
 trd' (_, _, x) = x
 
-split :: [Zeta] -> [G S] -> ([Zeta], [Zeta])
+split :: [Zeta] -> [G S] -> [[Zeta]]
 split gs1 gs2 =
-  case elemIndex False $ map weakCouple $ zip (map trd' gs1) gs2 of
-    Nothing -> splitAt (length gs2) gs1
-    Just i  -> splitAt i            gs1
+  filter (not . null) $
+  let (coupled, gs1', gs2') = getCoupledPref gs1 gs2 in
+  case gs2' of
+    []    -> [coupled, gs1']
+    (g:_) -> let (dived, rest) = getDivedPref gs1' g in
+             coupled : dived : split rest gs2'
+  where getCoupledPref gs1' gs2' =
+          let ind = fromMaybe (length gs2') $ elemIndex False $ zipWith (curry weakCouple) (map trd' gs1') gs2' in
+          let (coupled, rest) = splitAt ind gs1' in
+          (coupled, rest, drop ind gs2')
+        getDivedPref gs g = span (\(_,_,x) -> not $ weakCouple (g, x)) gs
+
 
 update :: (E.P, E.Delta) -> Def -> (E.P, E.Delta)
-update (p, d) def = let (p', _, d') = E.update (p, E.emptyIota, d) def in (p', d')
+update (p, d) def' = let (p', _, d') = E.update (p, E.emptyIota, d) def' in (p', d')
 
 
 invoke :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] -> (TreeContext, Tree, E.Delta)
@@ -287,8 +225,8 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
  let qqq_conjs = map trd' qqq in
   {-
  if length conjs > 3 -- head ids > 100
- then 
-    case find (\ (_, conjs') -> ({-isJust $-} embedGoals conjs' qqq_conjs)) cs of 
+ then
+    case find (\ (_, conjs') -> ({-isJust $-} embedGoals conjs' qqq_conjs)) cs of
       Nothing     -> trace "AHA" $ (tc, Prune [conj qqq_conjs], d)
       Just (_, j) -> (tc, Prune [conj qqq_conjs, inv "Embedding" [],  conj j], d)
  else-}
@@ -306,7 +244,7 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
         d
       )
     Nothing ->
-      case find (\ (_, conjs') -> ({-isJust $-} embedGoals conjs' qqq_conjs)) cs of
+      case find (\ (_, conjs') -> (isJust $ embedGoals conjs' qqq_conjs)) cs of
         Just (_, conjs') ->
           if length qqq == length conjs'
           then
@@ -315,12 +253,14 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
                let (tc', node, d'') = eval (sr, args, ids') ((id, qqq_conjs):cs) d' s s1 [] (fst' $ head conjs, p, msg) [] in
                (tc', Gen id s1 node msg s, d'')
           else if length conjs' < length qqq
-               then let context            = (id, qqq_conjs):cs in
-                    let gbp@(lh:lt, rh:rt) = split qqq conjs' in
-                    let (tc' , node' , d' ) = eval (sr, args, ids') context d s gen [] lh lt in
-                    let (tc'', node'', d'') = eval tc' context d' s gen [] rh rt in
-                    -- trace ("\nconjs': " ++ show conjs' ++ "\nqqq:    " ++ show qqq_conjs ++ "\n\nsplit: " ++ show (map trd' $ fst gbp) ++ "\n       " ++ show (map trd' $ snd gbp)) $
-                    (tc'', Split id node' node'' g s, d'')
+               then let context  = (id, qqq_conjs):cs in
+                    let splitted = split qqq conjs' in
+                    --trace ("\nSplitted " ++ show (map (map trd') splitted)) $
+                    let (tc'', d'', nodes) = foldl (\(tc, d, nodes) x ->
+                                                       let (tc', node', d') = eval tc context d s gen [] (head x) (tail x)
+                                                       in  (tc', d', node' : nodes)
+                                                   ) ((sr, args, ids'), d, []) splitted
+                    in (tc'', Split id (reverse nodes) g s, d'') -- TODO check if reverse is ok!
                else error "Wow..."
         Nothing -> unfold tc cs d s gen qqq
 
@@ -354,7 +294,7 @@ unfold (sr, args, ids) cs e s gen conjs =
   let (e', conjs') = foldl (\ (d, conj) (i, p, zyz@(Invoke f as)) ->
                                let (_, fs, g) = p f in
                                let i'         = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
-                               let (g', (p', i'', d'), _) = E.pre_eval' (p, i', d) g in
+                               let (g', (p', i'', d'), _) = E.preEval' (p, i', d) g in
                                (d', (i'', p', g'):conj)
                            ) (e, []) conjs
   in
@@ -365,20 +305,5 @@ unfold (sr, args, ids) cs e s gen conjs =
 
 drive :: G X -> (TreeContext, Tree, [Id])
 drive goal =
-  let (goal', (g', i', d'), args) = E.pre_eval' E.env0 goal in
+  let (goal', (g', i', d'), args) = E.preEval' E.env0 goal in
   let (x, y, _) = eval emptyContext [] d' E.s0 [] [] (i', g', goal') [] in (x, y, reverse args)
-
-
-tc' = drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
-
-tc = drive (appendo
-              (fresh ["q", "r", "s", "t", "p"]
-                 (call "appendo" [V "q", V "r", V "s"] &&&
-                  call "appendo" [V "s", V "t", V "p"])
-              )
-           )
-
-tc'' = drive (revAcco $ fresh ["q", "s"] (call "revacco" [V "q", nil, V "s"]))
-
-tree = snd' $ tc
-

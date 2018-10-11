@@ -10,11 +10,13 @@ data Stream a = Empty
               | Immature (Stream a)
               deriving Show
 
+takeS :: (Num n, Eq n) => n -> Stream a -> [a]
 takeS 0 _            = []
-takeS n Empty        = []
+takeS _ Empty        = []
 takeS n (Mature a s) = a : takeS (n-1) s
 takeS n (Immature s) = takeS n s
 
+maybeToStream :: Maybe a -> Stream a
 maybeToStream Nothing  = Empty
 maybeToStream (Just a) = return a
 
@@ -26,7 +28,7 @@ instance Functor Stream where
 instance Applicative Stream where
   pure a = Mature a Empty
   Empty        <*> _            = Empty
-  (Mature f s) <*> Empty        = Empty
+  (Mature _ _) <*> Empty        = Empty
   (Immature s) <*> x            = s <*> x
   (Mature f s) <*> (Mature x t) = Mature (f x) (s <*> t)
   s            <*> (Immature t) = s <*> t
