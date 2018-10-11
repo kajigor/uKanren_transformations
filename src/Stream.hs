@@ -1,17 +1,53 @@
 module Stream where
-import Data
 
-mzero :: Stream a
-mzero = Empty
+import Control.Monad
+import Control.Applicative
 
--- used for disjunctions, interleaves streams
-mplus :: Stream a -> Stream a -> Stream a
-mplus Empty r = r
-mplus (Mature h t) r = Mature h (r `mplus` t)
-mplus (Immature l) r = Immature (r `mplus` l)
+-- Stream
+data Stream a = Empty
+              | Mature a (Stream a)
+              -- we need this in case of left recursion (who would have known)
+              | Immature (Stream a)
+              deriving Show
 
--- used for conjuctions
-bind :: Stream  a -> (a -> Stream a) -> Stream a
-bind Empty g = mzero
-bind (Mature h t) g = g h `mplus` bind t g
-bind (Immature l) r = Immature (bind l r)
+takeS :: (Num n, Eq n) => n -> Stream a -> [a]
+takeS 0 _            = []
+takeS _ Empty        = []
+takeS n (Mature a s) = a : takeS (n-1) s
+takeS n (Immature s) = takeS n s
+
+maybeToStream :: Maybe a -> Stream a
+maybeToStream Nothing  = Empty
+maybeToStream (Just a) = return a
+
+instance Functor Stream where
+  fmap _ Empty        = Empty
+  fmap f (Mature a s) = Mature (f a) (fmap f s)
+  fmap f (Immature s) = Immature (fmap f s)
+
+instance Applicative Stream where
+  pure a = Mature a Empty
+  Empty        <*> _            = Empty
+  (Mature _ _) <*> Empty        = Empty
+  (Immature s) <*> x            = s <*> x
+  (Mature f s) <*> (Mature x t) = Mature (f x) (s <*> t)
+  s            <*> (Immature t) = s <*> t
+
+instance Alternative Stream where
+  empty = Empty
+  Empty <|> s = s
+  s <|> Empty = s
+  Immature s <|> t = s <|> t
+  s <|> Immature t = s <|> t
+  Mature a s <|> t = Mature a (s <|> t)
+
+instance Monad Stream where
+  Empty >>= _ = mzero
+  Mature x xs >>= g = g x `mplus` (xs >>= g)
+  Immature x  >>= y = Immature $ x >>= y
+
+instance MonadPlus Stream where
+  mzero = Empty
+  mplus (Mature h tl) y = Mature h $ y `mplus` tl
+  mplus (Immature  x) y = Immature $ y `mplus` x
+  mplus Empty         y = y
