@@ -45,20 +45,29 @@ ocanrenize :: String -> [String] -> G X -> String
 ocanrenize topLevelName args g =
   printf "let %s %s = %s" topLevelName (intercalate " " args) (ocanren g)
 
-toOCanren filename topLevelName (tree, args) =
+toOCanren filename topLevelName environment (tree, args) =
   do
     withSystemTempFile filename (\ tmp_name tmp ->
                                    do
                                      hPutStrLn tmp (ocanrenize topLevelName args tree)
                                      hClose tmp
-                                     file <- openFile filename WriteMode
-                                     hPutStrLn file "open GT"
-                                     hPutStrLn file "open MiniKanren"
-                                     hPutStrLn file "open Std"
-                                     hPutStrLn file "open Nat"
-                                     hPutStrLn file ""
-                                     hClose file
+                                     printEnvironment filename environment
                                      system $ "camlp5o pr_o.cmo " ++ tmp_name ++ " >> " ++ filename
                                      system $ "ocamlformat " ++ filename ++ " -m 160 -i"
                                      return ()
                                 )
+  where
+    printEnvironment filename (Just env) =
+      do
+        file <- openFile filename WriteMode
+        hPutStrLn file env
+        hClose file
+    printEnvironment filename Nothing =
+      do
+        file <- openFile filename WriteMode
+        hPutStrLn file "open GT"
+        hPutStrLn file "open MiniKanren"
+        hPutStrLn file "open Std"
+        hPutStrLn file "open Nat"
+        hPutStrLn file ""
+        hClose file

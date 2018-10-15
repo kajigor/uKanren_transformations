@@ -15,11 +15,15 @@ import qualified PrintingTest as PT
 
 runTest name goal = do
   PT.runTestSimplified name goal
-  toOCanren (name ++ ".ml") name $ residualize $ drive goal
+  toOCanren (name ++ ".ml") name Nothing $ residualize $ drive goal
 
-test   = toOCanren "appendo2.ml" "appendo2" $ residualize tc
-test'  = toOCanren "reverso.ml"  "reverso"  $ residualize tc'
-test'' = toOCanren "revacco.ml"  "revacco"  $ residualize tc''
+runTestWithEnv name env goal = do
+  PT.runTestSimplified name goal
+  toOCanren (name ++ ".ml") name (Just env) $ residualize $ drive goal
+
+test   = toOCanren "appendo2.ml" "appendo2" Nothing $ residualize tc
+test'  = toOCanren "reverso.ml"  "reverso"  Nothing $ residualize tc'
+test'' = toOCanren "revacco.ml"  "revacco"  Nothing $ residualize tc''
 
 test_gto = runTest "gto" $ gto $ fresh ["q", "p", "r"] (call "gto" [V "p", V "r", V "q"])
 test_leo = runTest "leo" $ leo $ fresh ["q", "p", "r"] (call "leo" [V "p", V "r", V "q"])
