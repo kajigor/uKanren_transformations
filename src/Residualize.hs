@@ -111,6 +111,11 @@ purification (goal, args) = (fresh finalVars purifiedGoal, args) where
 
   (vars, unfreshGoal)   = freshVars [] goal
 
-  essentialVars     = getAllEssentialVars unfreshGoal $ Set.fromList args
-  Just purifiedGoal = purificationGoal essentialVars unfreshGoal
-  finalVars         = (Set.toList $ Set.intersection essentialVars $ Set.fromList vars) \\ args
+  essentialVars = getAllEssentialVars unfreshGoal $ Set.fromList args
+  
+  purifiedGoal = 
+    case purificationGoal essentialVars unfreshGoal of
+      Just g  -> g
+      Nothing -> call success []
+  
+  finalVars = (Set.toList $ Set.intersection essentialVars $ Set.fromList vars) \\ args
