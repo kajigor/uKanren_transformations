@@ -80,6 +80,18 @@ fvg = nub . fv'
   fv' (Fresh x g)   = filter (x /=) $ fv' g
   fv' (Let (_, _, _) g) = fv' g
 
+subst_in_term :: Eq v => v -> Term v -> Term v -> Term v
+subst_in_term v t t0@(V v0)     = if v == v0 then t else t0
+subst_in_term v t    (C n args) = C n $ map (subst_in_term v t) args
+
+subst_in_goal :: X -> Term X -> G X -> G X
+subst_in_goal v t   (t1 :=:  t2)        = subst_in_term v t t1 === subst_in_term v t t2
+subst_in_goal v t   (g1 :/\: g2)        = subst_in_goal v t g1 &&& subst_in_goal v t g2
+subst_in_goal v t   (g1 :\/: g2)        = subst_in_goal v t g1 ||| subst_in_goal v t g2
+subst_in_goal v t g@(Fresh n g')        = if v == n then g else Fresh n $ subst_in_goal v t g'
+subst_in_goal v t   (Invoke n ts)       = Invoke n $ map (subst_in_term v t) ts
+subst_in_goal v t   (Let (n, a, g1) g2) = Let (n, a, if elem v a then g1 else subst_in_goal v t g1) $ subst_in_goal v t g2
+
 instance Show a => Show (Term a) where
   show (V v) = printf "v.%s" (show v)
   show (C name ts) =
