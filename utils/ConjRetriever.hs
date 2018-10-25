@@ -23,3 +23,4 @@ retrieve tree = map reverse $ Set.toList $ Set.fromList $ retrieve' tree [[]] wh
   retrieve' (Call _ t g _) acc = retrieve' t (map (g :) acc)
   retrieve' (Or t1 t2 _ _) acc = retrieve' t1 acc ++ retrieve' t2 acc
   retrieve' (Split _ ts _ _) acc = concatMap (\t -> retrieve' t acc) ts
+  retrieve' (Prune gs) acc = acc

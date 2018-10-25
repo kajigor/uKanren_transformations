@@ -17,9 +17,14 @@ main = do
 
   --print ET.test
 
-  --BT.test'
+  --print ET.g1
+  --print ET.g2
+  --print ET.test'
+
   --BT.test
+  --BT.testBig
+  --BT.testEq
 
   OC.main
-  ST.test
-  ST.test'
+  --ST.test
+  --ST.test'

@@ -4,8 +4,11 @@ import Bridge
 import Syntax
 import qualified PrintingTest as PT
 
-game2goal = game2 $ fresh ["a", "b"] (call "result" [V "b"] &&& call "getAnswer" [V "a", C "some" [V "b"]])
-game2'goal = game2' $ fresh ["a", "b"] (call "getAnswer" [V "a", C "some" [V "b"]])
+game2BigGoal = game2Big $ fresh ["a", "b"] (call "result" [V "b"] &&& call "getAnswer" [V "a", C "some" [V "b"]])
+game2Goal = game2 $ fresh ["a", "b"] (call "getAnswer" [V "a", C "some" [V "b"]])
 
-test = PT.runTestSimplified "bigbridge" $ game2goal
-test' = PT.runTestSimplified "bridge" $ game2'goal
+eqForBoolTest = game2 $ call "eqForBool" [C "true" [], C "true" [], C "true" []]
+
+testBig = PT.runTestSimplified "bigbridge" $ game2BigGoal
+test    = PT.runTestSimplified "bridge" $ game2Goal
+testEq  = PT.runTestSimplified "eqForBool" $ eqForBoolTest

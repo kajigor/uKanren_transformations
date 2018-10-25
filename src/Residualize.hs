@@ -84,38 +84,3 @@ residualize (tc, t, args) =
            let fargs = map vident as in
            Let (def (fident id) fargs g) (Invoke (fident id) $ map V fargs)
       else g
-
-
--- Purification of non-essential variables
-purification :: (G X, [String]) -> (G X, [String])
-purification (goal, args) = (fresh finalVars purifiedGoal, args) where
-  getEssentialVars (g1 :/\: g2)        s = getEssentialVars g2 $ getEssentialVars g1 s
-  getEssentialVars (g1 :\/: g2)        s = getEssentialVars g2 $ getEssentialVars g1 s
-  getEssentialVars (Let (_, _, g1) g2) s = getEssentialVars g2 $ getEssentialVars g1 s
-  getEssentialVars (t1 :=:  t2)        s = let vars = Set.fromList $ fv t1 ++ fv t2 in
-                                           if Set.null $ Set.intersection s vars then s else Set.union s vars
-  getEssentialVars (Invoke _ args)     s = let vars = Set.fromList $ concatMap fv args in Set.union s vars
-  getEssentialVars g                   s = getEssentialVars (snd $ freshVars [] g) s
-
-  getAllEssentialVars g s = let s' = getEssentialVars g s in if s == s' then s else getAllEssentialVars g s'
-
-  purificationGoal s g@(t1 :=:  t2) = if Set.null $ Set.intersection s $ Set.fromList $ fv t1 ++ fv t2 then Nothing else Just g
-  purificationGoal s   (g1 :\/: g2) = Just $ fromMaybe (call success []) (purificationGoal s g1) :\/: fromMaybe (call success []) (purificationGoal s g2)
-  purificationGoal s   (g1 :/\: g2) =
-    case (purificationGoal s g1, purificationGoal s g2) of
-      (Nothing, Nothing) -> Nothing
-      (Just g,  Nothing) -> Just g
-      (Nothing, Just g ) -> Just g
-      (Just g1, Just g2) -> Just $ g1 :/\: g2
-  purificationGoal s   g            = Just g
-
-  (vars, unfreshGoal)   = freshVars [] goal
-
-  essentialVars = getAllEssentialVars unfreshGoal $ Set.fromList args
-  
-  purifiedGoal = 
-    case purificationGoal essentialVars unfreshGoal of
-      Just g  -> g
-      Nothing -> call success []
-  
-  finalVars = (Set.toList $ Set.intersection essentialVars $ Set.fromList vars) \\ args

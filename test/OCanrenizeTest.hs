@@ -9,17 +9,28 @@ import Residualize
 import Driving
 import Stlc
 import Programs
+import IsTest
+import Bridge
+import List
+import TreeGen
 import qualified BridgeTest as BT
 import qualified SomeTest as ST
 import qualified PrintingTest as PT
 
+import Debug.Trace
+import Purification
+
 runTest name goal = do
   PT.runTestSimplified name goal
-  toOCanren (name ++ ".ml") name Nothing $ residualize $ drive goal
+  let res = residualize $ drive goal
+  toOCanren (name ++ ".ml") name Nothing res
+  toOCanren (name ++ "_pur.ml") name Nothing $ purification res
 
 runTestWithEnv name env goal = do
   PT.runTestSimplified name goal
-  toOCanren (name ++ ".ml") name (Just env) $ residualize $ drive goal
+  let res = residualize $ drive goal
+  --toOCanren (name ++ ".ml") name (Just env) res
+  toOCanren (name ++ "_pur.ml") name (Just env) $ purification res
 
 test   = toOCanren "appendo2.ml" "appendo2" Nothing $ residualize tc
 test'  = toOCanren "reverso.ml"  "reverso"  Nothing $ residualize tc'
@@ -41,6 +52,20 @@ testAppendo123 = runTest "appendo123" $ appendo123 $ fresh ["x", "y"] (call "app
 
 testAppendoXyz = runTest "appendoXyz" $ appendoXyz $ fresh ["x", "y", "z", "t", "q"] (call "appendoXyz" [V "x", V "y", V "z", V "t", V "q"])
 
+toNat i = if i == 0 then C "o" [] else C "s" [toNat $ i - 1]
+
+testTreeGen = runTestWithEnv "treeGen" (snd treeGen) $ fst treeGen $ fresh ["x", "y"] (call "tree_generator" [toNat 4, V "x"] &&& call "eq_tree" [V "x", V "y", C "true" []])
+
+testBadAppendo =
+  let tlist rest = C "%" [C "true" [], C "%" [C "false" [], rest]] in
+  runTestWithEnv "badAppendo" (snd badAppendo) $ fst badAppendo $ fresh ["x", "y", "z"] (call "badAppendo" [tlist (V "x"), tlist (V "y"), V "z"])
+
+testUnclosedLet =
+  let tlist rest = C "%" [C "true" [], C "%" [C "false" [], rest]] in
+  runTestWithEnv "unclosedLet" (snd badAppendo) $ fst badAppendo $ fresh ["x", "y", "z"] (call "append" [tlist (V "x"), tlist (V "y"), V "z"])
+
+
+test_bridge = runTestWithEnv "bridge" (snd pair_bridge) $ fst pair_bridge $ fresh ["a", "b"] (call "getAnswer" [V "a", C "some" [V "b"]])
 
 {-test_palindromo = runTest "palindromo" $ palindromo $ fresh ["x"] (call "palindromo" [V "x"])
 test_doubleAppendo = runTest "doubleAppendo" $ doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
@@ -51,10 +76,15 @@ test_singletonReverso = runTest "singletonReverso" $ singletonReverso $ fresh ["
 -}
 main = do
   --testAppendo123
-  testAppendoXyz
+  --testBadAppendo
+  --testUnclosedLet
+  --runTest "bridge" BT.game2Goal
+  test_bridge
+  --testAppendoXyz
+  --testTreeGen
 {-  runTest "sum" ST.someGoal
   runTest "biggerSum" ST.someGoal'
-  --runTest "bridge" BT.game2goal
+
   --runTest "bigBridge" BT.game2'goal
   test
   test'

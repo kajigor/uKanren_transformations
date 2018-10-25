@@ -62,3 +62,20 @@ singletonReverso g =
   let x = V "x" in
   let y = V "y" in
   Let (def "singletonReverso" ["x", "y"] (fresh ["l"] (call "lengtho" [x, peanify 1] &&& call "reverso" [x, y]))) $ reverso $ lengtho g
+
+externalVar :: G [Char]
+externalVar =
+  let x  = V "x"  in
+  let y  = V "y"  in
+--let z  = V "z"  in
+  let a  = V "a"  in
+  let b  = V "b"  in
+  let c  = V "c"  in
+  let cs = V "cs" in
+  let ds = V "ds" in
+  fresh ["x", "y"{-, "z"-}] (
+    x === toList [2..4] &&&
+    Let (def "appendo" ["a", "b"] (
+      a === nil &&& b === x |||
+      fresh ["c", "cs", "d", "ds"] (a === c % cs &&& b === c % ds &&& call "appendo" [cs, ds])))
+    (call "appendo" [y, {-z-} toList [0..5]]))
