@@ -6,6 +6,8 @@ module Syntax where
 import Data.List
 import Text.Printf
 
+import Debug.Trace
+
 type X    = String -- Syntactic variables
 type S    = Int    -- Semantic variables
 type Name = String -- Names of variables/definitions
@@ -75,7 +77,7 @@ fvg = nub . fv'
   fv' (g1 :/\: g2) = fv' g1 ++ fv' g2
   fv' (g1 :\/: g2) = fv' g1 ++ fv' g2
   fv' (Invoke _ ts) = concatMap fv ts
-  fv' (Fresh x g)   = fv' g \\ [x]
+  fv' (Fresh x g)   = filter (x /=) $ fv' g
   fv' (Let (_, _, _) g) = fv' g
 
 instance Show a => Show (Term a) where
@@ -138,5 +140,3 @@ instance Dot a => Dot (G a) where
     printf "fresh %s (%s)" (dot $ reverse names) (dot goal)
   dot (Invoke name ts)           = printf "%s(%s)" name (dot ts)
   dot (Let (name, args, body) g) = printf "let %s = %s in %s" name (unwords args) (dot body) (dot g)
-
-
