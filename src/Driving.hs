@@ -199,19 +199,22 @@ snd' (_, x, _) = x
 trd' :: (a, b, c) -> c
 trd' (_, _, x) = x
 
+
 split :: [Zeta] -> [G S] -> [[Zeta]]
-split gs1 gs2 =
-  filter (not . null) $
-  let (coupled, gs1', gs2') = getCoupledPref gs1 gs2 in
-  case gs2' of
-    []    -> [coupled, gs1']
-    (g:_) -> let (dived, rest) = getDivedPref gs1' g in
-             coupled : dived : split rest gs2'
-  where getCoupledPref gs1' gs2' =
-          let ind = fromMaybe (length gs2') $ elemIndex False $ zipWith (curry weakCouple) (map trd' gs1') gs2' in
-          let (coupled, rest) = splitAt ind gs1' in
-          (coupled, rest, drop ind gs2')
-        getDivedPref gs g = span (\(_,_,x) -> not $ weakCouple (g, x)) gs
+split gs1 gs2 = filter (not . null) $ split' gs1 gs2 where
+  split' gs1 gs2 = -- map (:[]) gs1
+    -- filter (not . null) $
+    let (coupled, gs1', gs2') = getCoupledPref gs1 gs2 in
+    case gs2' of
+      []    -> [coupled, gs1']
+      (g:_) -> let (dived, rest) = getDivedPref gs1' g in
+               let (hd : tl) = split' rest gs2' in
+               (coupled ++ hd) : dived : tl
+    where getCoupledPref gs1' gs2' =
+            let ind = fromMaybe (length gs2') $ elemIndex False $ zipWith (curry weakCouple) (map trd' gs1') gs2' in
+            let (coupled, rest) = splitAt ind gs1' in
+            (coupled, rest, drop ind gs2')
+          getDivedPref gs g = span (\(_,_,x) -> not $ weakCouple (g, x)) gs
 
 
 update :: (E.P, E.Delta) -> Def -> (E.P, E.Delta)
@@ -226,9 +229,9 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
   {-
  if length conjs > 3 -- head ids > 100
  then
-    case find (\ (_, conjs') -> ({-isJust $-} embedGoals conjs' qqq_conjs)) cs of
+    case find (\ (_, conjs') -> (isJust $ embedGoals conjs' qqq_conjs)) cs of
       Nothing     -> trace "AHA" $ (tc, Prune [conj qqq_conjs], d)
-      Just (_, j) -> (tc, Prune [conj qqq_conjs, inv "Embedding" [],  conj j], d)
+      Just (_, j) -> (tc, Prune [conj qqq_conjs, Invoke "Embedding" [],  conj j], d)
  else-}
   -- let qqq = map (\(a, b, g) -> (a, b, substitute s g)) conjs in
   -- let qqq_conjs = map trd' qqq in
