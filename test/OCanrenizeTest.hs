@@ -67,6 +67,9 @@ testUnclosedLet =
 
 test_bridge = runTestWithEnv "bridge" (snd pair_bridge) $ fst pair_bridge $ fresh ["a", "b"] (call "getAnswer" [V "a", C "some" [V "b"]])
 
+test_sud4x4 = runTestWithEnv "sudoku" (snd sudoku4x4) $ fst sudoku4x4 $ fresh ["a"] (call "check_sudoku" [V "a", C "true" []])
+
+
 {-test_palindromo = runTest "palindromo" $ palindromo $ fresh ["x"] (call "palindromo" [V "x"])
 test_doubleAppendo = runTest "doubleAppendo" $ doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
 test_eveno = runTest "eveno" $ eveno $ fresh ["x"] (call "eveno" [V "x"])
@@ -80,6 +83,7 @@ main = do
   --testUnclosedLet
   --runTest "bridge" BT.game2Goal
   test_bridge
+  --test_sud4x4
   --testAppendoXyz
   --testTreeGen
 {-  runTest "sum" ST.someGoal
