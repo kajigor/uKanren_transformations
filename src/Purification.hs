@@ -14,10 +14,11 @@ import Text.Printf
 type Set = Set.Set
 
 -- Purification of non-essential variables
-purification :: (G X, [String]) -> (G X, [String])
+purification :: (G X, [String]) -> (G X, [String], [Def])
 purification (goal, args) =
   let purG = totalPurification goalWithClosedLets args in
-  (trace ("purification(fresh,unify): " ++ show (countFVandUni goal) ++ " -> " ++ show (countFVandUni purG)) purG, args) where
+  let (res, defs) = takeOutLets purG in
+  (printStat goal purG $ res, args, defs) where
 
   add (a, b) (c, d) = (a + c, b + d)
 
@@ -27,6 +28,9 @@ purification (goal, args) =
   countFVandUni (Let (_, _, g1) g2) = countFVandUni g1 `add` countFVandUni g2
   countFVandUni (_ :=: _)           = (0, 1)
   countFVandUni _                   = (0, 0)
+
+  printStat g1 g2 =
+    trace ("purification(fresh,unify): " ++ show (countFVandUni g1) ++ " -> " ++ show (countFVandUni g2))
 
   {-------------------------------------------}
   renameLetArgs :: [Id] -> G X -> (G X, [Id])
@@ -190,24 +194,22 @@ purification (goal, args) =
   toV :: Show a => a -> String
   toV = ('y':) . show
 
-  {--------------------------------------------
-  unnestLets :: G X -> G X
-  unnestLets g = let (g', lets) = unnestLets' g in foldl (flip Let) g' lets where
-    unnestLets' :: G X -> (G X, [Def])
-    unnestLets' (g1 :/\: g2)        = let (g1', lets1) = unnestLets' g1 in
-                                      let (g2', lets2) = unnestLets' g2 in
-                                      (g1' &&& g2', lets1 ++ lets2)
-    unnestLets' (g1 :\/: g2)        = let (g1', lets1) = unnestLets' g1 in
-                                      let (g2', lets2) = unnestLets' g2 in
-                                      (g1' ||| g2', lets1 ++ lets2)
-    unnestLets' (Fresh n g)         = let (g', lets) = unnestLets' g in
-                                      (Fresh n g', lets)
-    unnestLets' (Let (n, a, g1) g2) = let (g1', lets1) = unnestLets' g1 in
-                                      let (g2', lets2) = unnestLets' g2 in
-                                      (g2', (n, a, g1') : lets1 ++ lets2)
-    unnestLets' g                   = (g, [])
+  {-------------------------------------------}
+  takeOutLets :: G X -> (G X, [Def])
+  takeOutLets (g1 :/\: g2)        = let (g1', lets1) = takeOutLets g1 in
+                                    let (g2', lets2) = takeOutLets g2 in
+                                    (g1' &&& g2', lets1 ++ lets2)
+  takeOutLets (g1 :\/: g2)        = let (g1', lets1) = takeOutLets g1 in
+                                    let (g2', lets2) = takeOutLets g2 in
+                                    (g1' ||| g2', lets1 ++ lets2)
+  takeOutLets (Fresh n g)         = let (g', lets) = takeOutLets g in
+                                    (Fresh n g', lets)
+  takeOutLets (Let (n, a, g1) g2) = let (g1', lets1) = takeOutLets g1 in
+                                    let (g2', lets2) = takeOutLets g2 in
+                                    (g2', (n, a, g1') : lets1 ++ lets2)
+  takeOutLets g                   = (g, [])
 
-  --------------------------------------------}
+  {-------------------------------------------}
 
   success'                   = call "success" []
   initialFvs                 = [0..]

@@ -42,18 +42,30 @@ instance OCanren v => OCanren (G v) where
   ocanren (Fresh x g )  = let (names, goal) = freshVars [x] g in printf "(fresh (%s) (%s))" (intercalate " " names) (ocanren goal)
 --ocanren (Invoke f ts) = printf "(print_string \"%s\\n\";%s)" (f ++ concat [' ' : ocanren t | t <- ts]) (f ++ concat [' ' : ocanren t | t <- ts])
   ocanren (Invoke f ts) = printf "(%s)" (f ++ concat [' ' : ocanren t | t <- ts])
-  ocanren (Let (n, as, b) g) = printf "let rec %s = %s in defer(%s)" (n ++ concat [' ' : a | a <- as]) (ocanren b) (ocanren g)
+  ocanren (Let (n, as, b) g) = printf "let rec %s = %s in %s" (n ++ concat [' ' : a | a <- as]) (ocanren b) (ocanren g)
 
 
-ocanrenize :: String -> [String] -> G X -> String
-ocanrenize topLevelName args g =
+ocanrenize :: String -> (G X, [String]) -> String
+ocanrenize topLevelName (g, args) =
   printf "let %s %s = %s" topLevelName (intercalate " " args) (ocanren g)
 
-toOCanren filename topLevelName environment (tree, args) =
+ocanrenize' :: String -> (G X, [String], [Def]) -> String
+ocanrenize' topLevelName (g, args, defs) = printf "let %s %s = %s %s" topLevelName (intercalate " " args) (printDefs defs) (ocanren g) where
+  printFstDef (n, as, g) = printf "let rec %s = %s" (n ++ concat [' ' : a | a <- as]) (ocanren g)
+  printLastDefs [] = "in "
+  printLastDefs ((n, as, g) : ds) =
+    printf "and %s = %s %s " (n ++ concat [' ' : a | a <- as]) (ocanren g) $ printLastDefs ds
+
+  printDefs []     = ""
+  printDefs (d:ds) = (printFstDef d) ++ " " ++ (printLastDefs ds)
+
+toOCanren = toOCanren' ocanrenize
+
+toOCanren' printer filename topLevelName environment prog =
   do
     withSystemTempFile filename (\ tmp_name tmp ->
                                    do
-                                     hPutStrLn tmp (ocanrenize topLevelName args tree)
+                                     hPutStrLn tmp (printer topLevelName prog)
                                      hClose tmp
                                      printEnvironment filename environment
                                      system $ "cat " ++ tmp_name ++ " >> " ++ filename

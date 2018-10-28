@@ -13,6 +13,7 @@ import IsTest
 import Bridge
 import List
 import TreeGen
+import Sudoku4x4
 import qualified BridgeTest as BT
 import qualified SomeTest as ST
 import qualified PrintingTest as PT
@@ -24,13 +25,13 @@ runTest name goal = do
   PT.runTestSimplified name goal
   let res = residualize $ drive goal
   toOCanren (name ++ ".ml") name Nothing res
-  toOCanren (name ++ "_pur.ml") name Nothing $ purification res
+  toOCanren' ocanrenize' (name ++ "_pur.ml") name Nothing $ purification res
 
 runTestWithEnv name env goal = do
   PT.runTestSimplified name goal
   let res = residualize $ drive goal
   --toOCanren (name ++ ".ml") name (Just env) res
-  toOCanren (name ++ "_pur.ml") name (Just env) $ purification res
+  toOCanren' ocanrenize' (name ++ "_pur.ml") name (Just env) $ purification res
 
 test   = toOCanren "appendo2.ml" "appendo2" Nothing $ residualize tc
 test'  = toOCanren "reverso.ml"  "reverso"  Nothing $ residualize tc'
