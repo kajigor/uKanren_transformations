@@ -128,8 +128,8 @@ purification (goal, args) =
         (_,     False) -> if hasVar (branch success') x2 then Nothing else Just (disjC, conjC success', x2, t1)
         (False, True)  -> if hasVar (branch success') x1 then Nothing else Just (disjC, conjC success', x1, t2)
         _              -> Nothing
-  getFstLink a disjC conjC branch g@((V x) :=: t@(C _ [])) =
-    if Set.member x a || hasVar (branch success') x then Nothing else Just (disjC, conjC success', x, t)
+  getFstLink a disjC conjC branch g@((V x) :=: t@(C _ _)) =
+    if Set.member x a || hasVar (branch success') x || termHasVars t then Nothing else Just (disjC, conjC success', x, t)
   getFstLink a disjC conjC branch (g1 :\/: g2) =
     case getFstLink a (disjC . conjC . (||| g2)) id (branch . conjC . (||| success')) g1 of
       v@(Just x) -> v
@@ -141,6 +141,11 @@ purification (goal, args) =
   getFstLink a disjC conjC branch (Fresh n g) = getFstLink a disjC (conjC . Fresh n) branch g
   getFstLink a disjC conjC branch (Let d g)   = getFstLink a disjC (conjC . Let d) branch g
   getFstLink _ _     _     _      _           = Nothing
+
+  {-------------------------------------------}
+  termHasVars :: Term X -> Bool
+  termHasVars (V _)   = True
+  termHasVars (C _ a) = any termHasVars a
 
   {-------------------------------------------}
   removeLinks :: Set X -> G X -> G X
