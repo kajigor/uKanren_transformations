@@ -13,9 +13,11 @@ import Text.Printf
 
 type Set = Set.Set
 
+purification = purification'
+
 -- Purification of non-essential variables
-purification :: (G X, [String]) -> (G X, [String], [Def])
-purification (goal, args) =
+purification'' :: (G X, [String]) -> (G X, [String], [Def])
+purification'' (goal, args) =
   let purG = totalPurification goalWithClosedLets args in
   let (res, defs) = takeOutLets purG in
   (printStat goal purG $ res, args, defs) where
@@ -33,54 +35,6 @@ purification (goal, args) =
     trace ("purification(fresh,unify): " ++ show (countFVandUni g1) ++ " -> " ++ show (countFVandUni g2))
 
   {-------------------------------------------}
-  renameLetArgs :: [Id] -> G X -> (G X, [Id])
-  renameLetArgs fvs (g1 :/\: g2)        = let (g1', fvs')   = renameLetArgs fvs  g1 in
-                                          let (g2', fvs'')  = renameLetArgs fvs' g2 in
-                                          (g1' &&& g2', fvs'')
-  renameLetArgs fvs (g1 :\/: g2)        = let (g1', fvs')   = renameLetArgs fvs  g1 in
-                                          let (g2', fvs'')  = renameLetArgs fvs' g2 in
-                                          (g1' ||| g2', fvs'')
-  renameLetArgs fvs (Fresh n g)         = let (g', fvs')    = renameLetArgs fvs g in
-                                          (Fresh n g', fvs')
-  renameLetArgs fvs (Let (n, a, g1) g2) = let (na, fvs')    = splitAt (length a) fvs in
-                                          let na'           = map toV na in
-                                          let ng1           = foldr (\(o, n) -> subst_in_goal o $ V n) g1 $ zip a na' in
-                                          let (ng1', fvs'') = renameLetArgs fvs' ng1 in
-                                          let (g2', fvs''') = renameLetArgs fvs'' g2 in
-                                          (Let (n, na', ng1') g2', fvs''')
-  renameLetArgs fvs x                   = (x, fvs)
-
-  {-------------------------------------------}
-  addArgsInCall :: Name -> [Term X] -> G X -> G X
-  addArgsInCall n na   (g1 :/\: g2)         = addArgsInCall n na g1 &&& addArgsInCall n na g2
-  addArgsInCall n na   (g1 :\/: g2)         = addArgsInCall n na g1 ||| addArgsInCall n na g2
-  addArgsInCall n na   (Fresh v g)          = Fresh v $ addArgsInCall n na g
-  addArgsInCall n na   (Let (n', a, g1) g2) = Let (n', a, addArgsInCall n na g1) $ addArgsInCall n na g2
-  addArgsInCall n na g@(Invoke n' a)        = if n == n' then Invoke n (na ++ a) else g
-  addArgsInCall _ _  g                      = g
-
-  {-------------------------------------------}
-  escapeFreeVars :: [Id] -> G X -> (G X, [Id])
-  escapeFreeVars fvs (g1 :/\: g2)        = let (g1', fvs')   = escapeFreeVars fvs  g1 in
-                                           let (g2', fvs'')  = escapeFreeVars fvs' g2 in
-                                           (g1' &&& g2', fvs'')
-  escapeFreeVars fvs (g1 :\/: g2)        = let (g1', fvs')   = escapeFreeVars fvs  g1 in
-                                           let (g2', fvs'')  = escapeFreeVars fvs' g2 in
-                                           (g1' ||| g2', fvs'')
-  escapeFreeVars fvs (Fresh n g)         = let (g', fvs')    = escapeFreeVars fvs g in
-                                           (Fresh n g', fvs')
-  escapeFreeVars fvs (Let (n, a, g1) g2) = let (g1', fvs')   = escapeFreeVars fvs  g1 in
-                                           let (g2', fvs'')  = escapeFreeVars fvs' g2 in
-                                           let freeVars      = fvg g1' \\ a in
-                                           let (nvs, fvs''') = splitAt (length freeVars) fvs'' in
-                                           let nvs'          = map toV nvs in
-                                           let g1''          = addArgsInCall n (map V nvs') g1' in
-                                           let g1'''         = foldr (\(o,n) -> subst_in_goal o $ V n) g1'' $ zip freeVars nvs' in
-                                           let g2''          = addArgsInCall n (map V freeVars) g2' in
-                                           (Let (n, nvs' ++ a, g1''') g2'', fvs''')
-  escapeFreeVars fvs x                   = (x, fvs)
-
-  {-------------------------------------------}
   getEssentialVars :: G X -> Set X -> Set X
   getEssentialVars (g1 :/\: g2)    s = getEssentialVars g2 $ getEssentialVars g1 s
   getEssentialVars (g1 :\/: g2)    s = getEssentialVars g2 $ getEssentialVars g1 s
@@ -96,10 +50,10 @@ purification (goal, args) =
 
   {-------------------------------------------}
   removeUnifications :: (Term X -> Term X -> Bool) -> G X -> G X
-  removeUnifications p g@(t1 :=:  t2) = if p t1 t2 then success' else g
+  removeUnifications p g@(t1 :=:  t2) = if p t1 t2 then success else g
   removeUnifications p   (g1 :\/: g2) = removeUnifications p g1 :\/: removeUnifications p g2
   removeUnifications p   (g1 :/\: g2) = case (removeUnifications p g1, removeUnifications p g2) of
-                                          (Invoke "success" [], Invoke "success" []) -> success'
+                                          (Invoke "success" [], Invoke "success" []) -> success
                                           (g,                   Invoke "success" []) -> g
                                           (Invoke "success" [], g                  ) -> g
                                           (g1,                  g2                 ) -> g1 :/\: g2
@@ -129,15 +83,15 @@ purification (goal, args) =
   getFstLink a disjC conjC branch g@(t1@(V x1) :=: t2@(V x2)) =
     if x1 == x2 then Nothing else
       case (Set.member x1 a, Set.member x2 a) of
-        (_,     False) -> if hasVar (branch success') x2 then Nothing else Just (disjC, conjC success', x2, t1)
-        (False, True)  -> if hasVar (branch success') x1 then Nothing else Just (disjC, conjC success', x1, t2)
+        (_,     False) -> if hasVar (branch success) x2 then Nothing else Just (disjC, conjC success, x2, t1)
+        (False, True)  -> if hasVar (branch success) x1 then Nothing else Just (disjC, conjC success, x1, t2)
         _              -> Nothing
   getFstLink a disjC conjC branch g@((V x) :=: t@(C _ _)) =
-    if Set.member x a || hasVar (branch success') x || termHasVars t then Nothing else Just (disjC, conjC success', x, t)
+    if Set.member x a || hasVar (branch success) x || termHasVars t then Nothing else Just (disjC, conjC success, x, t)
   getFstLink a disjC conjC branch (g1 :\/: g2) =
-    case getFstLink a (disjC . conjC . (||| g2)) id (branch . conjC . (||| success')) g1 of
+    case getFstLink a (disjC . conjC . (||| g2)) id (branch . conjC . (||| success)) g1 of
       v@(Just x) -> v
-      Nothing    -> getFstLink a (disjC . conjC . (g1 |||)) id (branch . conjC . (success' |||)) g2
+      Nothing    -> getFstLink a (disjC . conjC . (g1 |||)) id (branch . conjC . (success |||)) g2
   getFstLink a disjC conjC branch (g1 :/\: g2) =
     case getFstLink a disjC (conjC . (&&& g2)) branch g1 of
       v@(Just x) -> v
@@ -191,27 +145,216 @@ purification (goal, args) =
     purifyInternalLets totalG
 
   {-------------------------------------------}
-  toV :: Show a => a -> String
-  toV = ('y':) . show
 
-  {-------------------------------------------}
-  takeOutLets :: G X -> (G X, [Def])
-  takeOutLets (g1 :/\: g2)        = let (g1', lets1) = takeOutLets g1 in
-                                    let (g2', lets2) = takeOutLets g2 in
-                                    (g1' &&& g2', lets1 ++ lets2)
-  takeOutLets (g1 :\/: g2)        = let (g1', lets1) = takeOutLets g1 in
-                                    let (g2', lets2) = takeOutLets g2 in
-                                    (g1' ||| g2', lets1 ++ lets2)
-  takeOutLets (Fresh n g)         = let (g', lets) = takeOutLets g in
-                                    (Fresh n g', lets)
-  takeOutLets (Let (n, a, g1) g2) = let (g1', lets1) = takeOutLets g1 in
-                                    let (g2', lets2) = takeOutLets g2 in
-                                    (g2', (n, a, g1') : lets1 ++ lets2)
-  takeOutLets g                   = (g, [])
-
-  {-------------------------------------------}
-
-  success'                   = call "success" []
   initialFvs                 = [0..]
   (goalWithoutClashs,  fvs ) = renameLetArgs initialFvs goal
   (goalWithClosedLets, fvs') = escapeFreeVars fvs goalWithoutClashs
+
+
+{-------------------------------------------}
+{-------------------------------------------}
+{-------------------------------------------}
+
+type Map = Map.Map
+
+type Subst       = [(X, Term X)]
+type Func        = (Name, [Term X])
+type Funcs       = [Func]
+type Rule        = (Func, [Func])
+type Rules       = [Rule]
+type Erasure     = Map Name [Int]
+type ErasureElem = (Name, Int)
+
+
+purification' :: (G X, [String]) -> (G X, [String], [Def])
+purification' (goal, args) = (g', args', defs') where
+  initialFvs                 = [0..]
+  (goalWithoutClashs,  fvs ) = renameLetArgs initialFvs goal
+  (goalWithClosedLets, fvs') = escapeFreeVars fvs goalWithoutClashs
+  (goalWithoutLets,    defs) = takeOutLets goalWithClosedLets
+
+  mainFuncs      = defToProlog ("main", args, goalWithoutLets)
+  internalFuncs  = map defToProlog defs
+  initialErasure = Map.fromList $ map (\(n,a,_) -> (n, [1..length a])) defs
+  erasure        = removeRedundantArgs (mainFuncs ++ concat internalFuncs) initialErasure
+
+  mainFuncs'     = map (applyErasureToRule erasure) mainFuncs
+  internalFuncs' = map (map (applyErasureToRule erasure)) internalFuncs
+
+  defs'          = map rulesToDef internalFuncs'
+  (_,args',g')   = rulesToDef mainFuncs'
+
+  {-------------------------------------------}
+  ruleToOcanren :: [X] -> Rule -> G X
+  ruleToOcanren v ((_, a), bd) =
+    let unifies = map (\(v, t) -> V v === t) $ zip v a in
+    let calls   = map (\(n, a) -> Invoke n a) bd in
+    foldl1 (&&&) $ unifies ++ calls
+
+  {-------------------------------------------}
+  rulesToDef :: Rules -> Def
+  rulesToDef rules@(((n,a),_):_) =
+    let v = map (toV "z") [1..length a] in
+    let g = foldl1 (|||) $ map (ruleToOcanren v) rules in
+    (n, v, fresh (fvg g \\ v) g)
+
+  {-------------------------------------------}
+  removeRedundantArgs :: Rules -> Erasure -> Erasure
+  removeRedundantArgs r e =
+    case find (isBadErasureElem r e) $ erasureToList e of
+      Nothing     -> e
+      Just (f, i) -> removeRedundantArgs r $ Map.insert f (delete i $ e Map.! f) e
+
+  {-------------------------------------------}
+  erasureToList :: Erasure -> [ErasureElem]
+  erasureToList = concatMap (\(n,i) -> map ((,) n) i) . Map.toList
+
+  {-------------------------------------------}
+  isBadErasureElem :: Rules -> Erasure -> ErasureElem -> Bool
+  isBadErasureElem rules er el = any (isBadForRule er el) rules
+
+  {-------------------------------------------}
+  isBadForRule :: Erasure -> ErasureElem -> Rule -> Bool
+  isBadForRule er el (hd, bd) = isBadForFunc er el hd [] bd
+
+  {-------------------------------------------}
+  isBadForFunc :: Erasure -> ErasureElem -> Func -> Funcs -> Funcs -> Bool
+  isBadForFunc _ _ _ _ [] = False
+  isBadForFunc er p@(n, i) hd pref (f@(n', a):suff) =
+    if n /= n' then isBadForFunc er p hd (f:pref) suff
+      else case splitAt (i-1) a of
+        (_,  C _ _ : _ ) -> True
+        (a1, V v   : a2) ->
+          if any (hasVarInTerm v) a1 ||
+             any (hasVarInTerm v) a2 ||
+             any (hasVarInFunc v) pref ||
+             any (hasVarInFunc v) suff ||
+             hasVarInFunc v (applyErasureToFunc er hd)
+          then True
+          else isBadForFunc er p hd (f:pref) suff
+
+  {-------------------------------------------}
+  hasVarInFunc :: X -> Func -> Bool
+  hasVarInFunc v (_, a) = any (hasVarInTerm v) a
+
+  {-------------------------------------------}
+  hasVarInTerm :: X -> Term X -> Bool
+  hasVarInTerm v1 (V v2)  = v1 == v2
+  hasVarInTerm v  (C _ a) = any (hasVarInTerm v) a
+
+  {-------------------------------------------}
+  defToProlog :: Def -> Rules
+  defToProlog (n, a, g) = map (\(s, f) -> (applyInFunc s (n, ta), map (applyInFunc s) f)) $ toProlog g where
+    ta = map V a
+
+    toProlog :: G X -> [(Subst, Funcs)]
+    toProlog ((V v) :=: t) = [([(v, t)], [])]
+    toProlog (Invoke n a)  = [([], [(n, a)])]
+    toProlog (Fresh _ g)   = toProlog g
+    toProlog (g1 :\/: g2)  = toProlog g1 ++ toProlog g2
+    toProlog (g1 :/\: g2)  = [(s1 ++ s2, f1 ++ f2) | (s1, f1) <- toProlog g1, (s2, f2) <- toProlog g2]
+
+    applySubst :: Subst -> Term X -> Term X
+    applySubst s t@(V v) = case lookup v s of
+                             Nothing -> t
+                             Just t' -> applySubst s t'
+    applySubst s (C n a) = C n $ map (applySubst s) a
+
+    applyInFunc :: Subst -> Func -> Func
+    applyInFunc s (n, a) = (n, map (applySubst s) a)
+
+  {-------------------------------------------}
+  applyErasureToRule :: Erasure -> Rule -> Rule
+  applyErasureToRule e (hd, tl) = (applyErasureToFunc e hd, map (applyErasureToFunc e) tl)
+
+  {-------------------------------------------}
+  applyErasureToFunc :: Erasure -> Func -> Func
+  applyErasureToFunc e f@(n, args) =
+    case Map.lookup n e of
+      Nothing -> f
+      Just i  -> (n, removeElems i args)
+
+  {-------------------------------------------}
+  removeElems :: [Int] -> [a] -> [a]
+  removeElems rs es = remove 1 rs es where
+    remove _ []     es     = es
+    remove i (r:rs) (e:es) = if i == r then remove (i+1) rs es else e : remove (i+1) rs es
+    remove _ _      _      = error "Index is out of elements."
+
+{-------------------------------------------}
+{-------------------------------------------}
+{-------------------------------------------}
+success :: G a
+success = call "success" []
+
+
+{-------------------------------------------}
+addArgsInCall :: Name -> [Term X] -> G X -> G X
+addArgsInCall n na   (g1 :/\: g2)         = addArgsInCall n na g1 &&& addArgsInCall n na g2
+addArgsInCall n na   (g1 :\/: g2)         = addArgsInCall n na g1 ||| addArgsInCall n na g2
+addArgsInCall n na   (Fresh v g)          = Fresh v $ addArgsInCall n na g
+addArgsInCall n na   (Let (n', a, g1) g2) = Let (n', a, addArgsInCall n na g1) $ addArgsInCall n na g2
+addArgsInCall n na g@(Invoke n' a)        = if n == n' then Invoke n (na ++ a) else g
+addArgsInCall _ _  g                      = g
+
+
+{-------------------------------------------}
+takeOutLets :: G X -> (G X, [Def])
+takeOutLets (g1 :/\: g2)        = let (g1', lets1) = takeOutLets g1 in
+                                  let (g2', lets2) = takeOutLets g2 in
+                                  (g1' &&& g2', lets1 ++ lets2)
+takeOutLets (g1 :\/: g2)        = let (g1', lets1) = takeOutLets g1 in
+                                  let (g2', lets2) = takeOutLets g2 in
+                                  (g1' ||| g2', lets1 ++ lets2)
+takeOutLets (Fresh n g)         = let (g', lets) = takeOutLets g in
+                                  (Fresh n g', lets)
+takeOutLets (Let (n, a, g1) g2) = let (g1', lets1) = takeOutLets g1 in
+                                  let (g2', lets2) = takeOutLets g2 in
+                                  (g2', (n, a, g1') : lets1 ++ lets2)
+takeOutLets g                   = (g, [])
+
+
+{-------------------------------------------}
+escapeFreeVars :: [Id] -> G X -> (G X, [Id])
+escapeFreeVars fvs (g1 :/\: g2)        = let (g1', fvs')   = escapeFreeVars fvs  g1 in
+                                         let (g2', fvs'')  = escapeFreeVars fvs' g2 in
+                                         (g1' &&& g2', fvs'')
+escapeFreeVars fvs (g1 :\/: g2)        = let (g1', fvs')   = escapeFreeVars fvs  g1 in
+                                         let (g2', fvs'')  = escapeFreeVars fvs' g2 in
+                                         (g1' ||| g2', fvs'')
+escapeFreeVars fvs (Fresh n g)         = let (g', fvs')    = escapeFreeVars fvs g in
+                                         (Fresh n g', fvs')
+escapeFreeVars fvs (Let (n, a, g1) g2) = let (g1', fvs')   = escapeFreeVars fvs  g1 in
+                                         let (g2', fvs'')  = escapeFreeVars fvs' g2 in
+                                         let freeVars      = fvg g1' \\ a in
+                                         let (nvs, fvs''') = splitAt (length freeVars) fvs'' in
+                                         let nvs'          = map (toV "y") nvs in
+                                         let g1''          = addArgsInCall n (map V nvs') g1' in
+                                         let g1'''         = foldr (\(o,n) -> subst_in_goal o $ V n) g1'' $ zip freeVars nvs' in
+                                         let g2''          = addArgsInCall n (map V freeVars) g2' in
+                                         (Let (n, nvs' ++ a, g1''') g2'', fvs''')
+escapeFreeVars fvs x                   = (x, fvs)
+
+
+{-------------------------------------------}
+toV :: Show a => String -> a -> String
+toV pref = (pref++) . show
+
+
+{-------------------------------------------}
+renameLetArgs :: [Id] -> G X -> (G X, [Id])
+renameLetArgs fvs (g1 :/\: g2)        = let (g1', fvs')   = renameLetArgs fvs  g1 in
+                                        let (g2', fvs'')  = renameLetArgs fvs' g2 in
+                                        (g1' &&& g2', fvs'')
+renameLetArgs fvs (g1 :\/: g2)        = let (g1', fvs')   = renameLetArgs fvs  g1 in
+                                        let (g2', fvs'')  = renameLetArgs fvs' g2 in
+                                        (g1' ||| g2', fvs'')
+renameLetArgs fvs (Fresh n g)         = let (g', fvs')    = renameLetArgs fvs g in
+                                        (Fresh n g', fvs')
+renameLetArgs fvs (Let (n, a, g1) g2) = let (na, fvs')    = splitAt (length a) fvs in
+                                        let na'           = map (toV "y") na in
+                                        let ng1           = foldr (\(o, n) -> subst_in_goal o $ V n) g1 $ zip a na' in
+                                        let (ng1', fvs'') = renameLetArgs fvs' ng1 in
+                                        let (g2', fvs''') = renameLetArgs fvs'' g2 in
+                                        (Let (n, na', ng1') g2', fvs''')
+renameLetArgs fvs x                   = (x, fvs)
