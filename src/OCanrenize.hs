@@ -24,8 +24,8 @@ instance OCanren String where
 instance OCanren v => OCanren (Term v) where
   ocanren (V v)        = ocanren v
   ocanren (C "Nil" _) = "nil ()"
-  ocanren (C "Cons" [h,t]) = printf "%s %% %s" (ocanren h) (ocanren t)
-  ocanren (C "%"    [h,t]) = printf "%s %% %s" (ocanren h) (ocanren t)
+  ocanren (C "Cons" [h,t]) = printf "(%s %% %s)" (ocanren h) (ocanren t)
+  ocanren (C "%"    [h,t]) = printf "(%s %% %s)" (ocanren h) (ocanren t)
   ocanren (C "O" []) = "zero"
   ocanren (C "S" [x]) = printf "succ (%s)" (ocanren x)
   ocanren (C (f:o) ts) = printf "(%s)" $ (toLower f : o) ++ case ts of
