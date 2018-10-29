@@ -13,26 +13,31 @@ import Text.Printf
 
 type Set = Set.Set
 
-purification = purification'
+-- Purification of non-essential variables and arguments
+purification x = trace_pur x $
+  --identity x
+  --justTakeOutLets x
+  --purification_old x
+  purification' x
 
--- Purification of non-essential variables
-purification'' :: (G X, [String]) -> (G X, [String], [Def])
-purification'' (goal, args) =
+{-------------------------------------------}
+identity :: (G X, [String]) -> (G X, [String], [Def])
+identity (g, a) = (g, a, [])
+
+{-------------------------------------------}
+justTakeOutLets :: (G X, [String]) -> (G X, [String], [Def])
+justTakeOutLets (goal, args) = (goalWithoutLets, args, defs) where
+  initialFvs                 = [0..]
+  (goalWithoutClashs,  fvs ) = renameLetArgs initialFvs goal
+  (goalWithClosedLets, fvs') = escapeFreeVars fvs goalWithoutClashs
+  (goalWithoutLets,    defs) = takeOutLets goalWithClosedLets
+
+{-------------------------------------------}
+purification_old :: (G X, [String]) -> (G X, [String], [Def])
+purification_old (goal, args) =
   let purG = totalPurification goalWithClosedLets args in
   let (res, defs) = takeOutLets purG in
-  (printStat goal purG $ res, args, defs) where
-
-  add (a, b) (c, d) = (a + c, b + d)
-
-  countFVandUni (g1 :/\: g2)        = countFVandUni g1 `add` countFVandUni g2
-  countFVandUni (g1 :\/: g2)        = countFVandUni g1 `add` countFVandUni g2
-  countFVandUni (Fresh _ g)         = (1, 0) `add` countFVandUni g
-  countFVandUni (Let (_, _, g1) g2) = countFVandUni g1 `add` countFVandUni g2
-  countFVandUni (_ :=: _)           = (0, 1)
-  countFVandUni _                   = (0, 0)
-
-  printStat g1 g2 =
-    trace ("purification(fresh,unify): " ++ show (countFVandUni g1) ++ " -> " ++ show (countFVandUni g2))
+  (res, args, defs) where
 
   {-------------------------------------------}
   getEssentialVars :: G X -> Set X -> Set X
@@ -49,19 +54,6 @@ purification'' (goal, args) =
   getAllEssentialVars g s = let s' = getEssentialVars g s in if s == s' then s else getAllEssentialVars g s'
 
   {-------------------------------------------}
-  removeUnifications :: (Term X -> Term X -> Bool) -> G X -> G X
-  removeUnifications p g@(t1 :=:  t2) = if p t1 t2 then success else g
-  removeUnifications p   (g1 :\/: g2) = removeUnifications p g1 :\/: removeUnifications p g2
-  removeUnifications p   (g1 :/\: g2) = case (removeUnifications p g1, removeUnifications p g2) of
-                                          (Invoke "success" [], Invoke "success" []) -> success
-                                          (g,                   Invoke "success" []) -> g
-                                          (Invoke "success" [], g                  ) -> g
-                                          (g1,                  g2                 ) -> g1 :/\: g2
-  removeUnifications p   (Fresh v g)  = Fresh v $ removeUnifications p g
-  removeUnifications p   (Let def g)  = Let def $ removeUnifications p g
-  removeUnifications _ g              = g
-
-  {-------------------------------------------}
   findQuasiEssentialVars :: G X -> (Set X, Set X)
   findQuasiEssentialVars (t1 :=:  t2) = (Set.fromList $ fv t1, Set.fromList $ fv t2)
   findQuasiEssentialVars (Invoke _ a) = (Set.empty, Set.fromList $ concatMap fv a)
@@ -75,41 +67,6 @@ purification'' (goal, args) =
                                         (Set.union qevs1 qevs2 Set.\\ evs, evs)
   findQuasiEssentialVars (Fresh _ g)  = findQuasiEssentialVars g
   findQuasiEssentialVars (Let _ g)    = findQuasiEssentialVars g
-
-  hasVar g x = elem x $ fvg g
-
-  {-------------------------------------------}
-  getFstLink :: Set X -> (G X -> G X) -> (G X -> G X) -> (G X -> G X) -> G X -> Maybe (G X -> G X, G X, X, Term X)
-  getFstLink a disjC conjC branch g@(t1@(V x1) :=: t2@(V x2)) =
-    if x1 == x2 then Nothing else
-      case (Set.member x1 a, Set.member x2 a) of
-        (_,     False) -> if hasVar (branch success) x2 then Nothing else Just (disjC, conjC success, x2, t1)
-        (False, True)  -> if hasVar (branch success) x1 then Nothing else Just (disjC, conjC success, x1, t2)
-        _              -> Nothing
-  getFstLink a disjC conjC branch g@((V x) :=: t@(C _ _)) =
-    if Set.member x a || hasVar (branch success) x || termHasVars t then Nothing else Just (disjC, conjC success, x, t)
-  getFstLink a disjC conjC branch (g1 :\/: g2) =
-    case getFstLink a (disjC . conjC . (||| g2)) id (branch . conjC . (||| success)) g1 of
-      v@(Just x) -> v
-      Nothing    -> getFstLink a (disjC . conjC . (g1 |||)) id (branch . conjC . (success |||)) g2
-  getFstLink a disjC conjC branch (g1 :/\: g2) =
-    case getFstLink a disjC (conjC . (&&& g2)) branch g1 of
-      v@(Just x) -> v
-      Nothing    -> getFstLink a disjC (conjC . (g1 &&&)) branch g2
-  getFstLink a disjC conjC branch (Fresh n g) = getFstLink a disjC (conjC . Fresh n) branch g
-  getFstLink a disjC conjC branch (Let d g)   = getFstLink a disjC (conjC . Let d) branch g
-  getFstLink _ _     _     _      _           = Nothing
-
-  {-------------------------------------------}
-  termHasVars :: Term X -> Bool
-  termHasVars (V _)   = True
-  termHasVars (C _ a) = any termHasVars a
-
-  {-------------------------------------------}
-  removeLinks :: Set X -> G X -> G X
-  removeLinks a g = case getFstLink a id id id g of
-                      Nothing                  -> g
-                      Just (disjC, conj, x, y) -> removeLinks a $ disjC $ subst_in_goal x y conj
 
   {-------------------------------------------}
   removeUnessentialVars :: Set X -> G X -> G X
@@ -167,7 +124,7 @@ type ErasureElem = (Name, Int)
 
 
 purification' :: (G X, [String]) -> (G X, [String], [Def])
-purification' (goal, args) = (g', args', defs') where
+purification' (goal, args) = (g'', args', defs'') where
   initialFvs                 = [0..]
   (goalWithoutClashs,  fvs ) = renameLetArgs initialFvs goal
   (goalWithClosedLets, fvs') = escapeFreeVars fvs goalWithoutClashs
@@ -183,6 +140,13 @@ purification' (goal, args) = (g', args', defs') where
 
   defs'          = map rulesToDef internalFuncs'
   (_,args',g')   = rulesToDef mainFuncs'
+
+  defs''         = map (\(n, a, g) -> (n, a, removeSuccess $ removeLinks (Set.fromList a) g)) defs'
+  g''            = removeSuccess $ removeLinks (Set.fromList args') g'
+
+  {-------------------------------------------}
+  removeSuccess :: G X -> G X
+  removeSuccess = removeUnifications (\_ _ -> False)
 
   {-------------------------------------------}
   ruleToOcanren :: [X] -> Rule -> G X
@@ -277,9 +241,9 @@ purification' (goal, args) = (g', args', defs') where
   {-------------------------------------------}
   removeElems :: [Int] -> [a] -> [a]
   removeElems rs es = remove 1 rs es where
-    remove _ []     es     = es
-    remove i (r:rs) (e:es) = if i == r then remove (i+1) rs es else e : remove (i+1) rs es
-    remove _ _      _      = error "Index is out of elements."
+    remove _   []     es     = es
+    remove i l@(r:rs) (e:es) = if i == r then remove (i+1) rs es else e : remove (i+1) l es
+    remove _ _      _        = error "Index is out of elements."
 
 {-------------------------------------------}
 {-------------------------------------------}
@@ -358,3 +322,82 @@ renameLetArgs fvs (Let (n, a, g1) g2) = let (na, fvs')    = splitAt (length a) f
                                         let (g2', fvs''') = renameLetArgs fvs'' g2 in
                                         (Let (n, na', ng1') g2', fvs''')
 renameLetArgs fvs x                   = (x, fvs)
+
+
+{-------------------------------------------}
+getFstLink :: Set X -> (G X -> G X) -> (G X -> G X) -> (G X -> G X) -> G X -> Maybe (G X -> G X, G X, X, Term X)
+getFstLink a disjC conjC branch g@(t1@(V x1) :=: t2@(V x2)) =
+  if x1 == x2 then Nothing else
+    case (Set.member x1 a, Set.member x2 a) of
+      (_,     False) -> if hasVar (branch success) x2 then Nothing else Just (disjC, conjC success, x2, t1)
+      (False, True)  -> if hasVar (branch success) x1 then Nothing else Just (disjC, conjC success, x1, t2)
+      _              -> Nothing
+getFstLink a disjC conjC branch g@((V x) :=: t@(C _ _)) =
+  if Set.member x a || hasVar (branch success) x || termHasVars t then Nothing else Just (disjC, conjC success, x, t)
+getFstLink a disjC conjC branch (g1 :\/: g2) =
+  case getFstLink a (disjC . conjC . (||| g2)) id (branch . conjC . (||| success)) g1 of
+    v@(Just x) -> v
+    Nothing    -> getFstLink a (disjC . conjC . (g1 |||)) id (branch . conjC . (success |||)) g2
+getFstLink a disjC conjC branch (g1 :/\: g2) =
+  case getFstLink a disjC (conjC . (&&& g2)) branch g1 of
+    v@(Just x) -> v
+    Nothing    -> getFstLink a disjC (conjC . (g1 &&&)) branch g2
+getFstLink a disjC conjC branch (Fresh n g) = getFstLink a disjC (conjC . Fresh n) branch g
+getFstLink a disjC conjC branch (Let d g)   = getFstLink a disjC (conjC . Let d) branch g
+getFstLink _ _     _     _      _           = Nothing
+
+{-------------------------------------------}
+termHasVars :: Term X -> Bool
+termHasVars (V _)   = True
+termHasVars (C _ a) = any termHasVars a
+
+{-------------------------------------------}
+removeLinks :: Set X -> G X -> G X
+removeLinks a g = case getFstLink a id id id g of
+                    Nothing                  -> g
+                    Just (disjC, conj, x, y) -> removeLinks a $ disjC $ subst_in_goal x y conj
+
+{-------------------------------------------}
+hasVar g x = elem x $ fvg g
+
+{-------------------------------------------}
+removeUnifications :: (Term X -> Term X -> Bool) -> G X -> G X
+removeUnifications p g@(t1 :=:  t2) = if p t1 t2 then success else g
+removeUnifications p   (g1 :\/: g2) = removeUnifications p g1 :\/: removeUnifications p g2
+removeUnifications p   (g1 :/\: g2) = case (removeUnifications p g1, removeUnifications p g2) of
+                                        (Invoke "success" [], Invoke "success" []) -> success
+                                        (g,                   Invoke "success" []) -> g
+                                        (Invoke "success" [], g                  ) -> g
+                                        (g1,                  g2                 ) -> g1 :/\: g2
+removeUnifications p   (Fresh v g)  = Fresh v $ removeUnifications p g
+removeUnifications p   (Let def g)  = Let def $ removeUnifications p g
+removeUnifications _ g              = g
+
+{-------------------------------------------}
+{-------------------------------------------}
+{-------------------------------------------}
+
+
+trace_pur :: (G X, [String]) -> (G X, [String], [Def]) -> (G X, [String], [Def])
+trace_pur (g1, _) result@(g2, _, defs) =
+  let test_g       = foldr Let g2 defs in
+  trace ("pur(fresh,unify,arg,constr,var,calls): " ++
+           show (calc g1) ++
+           " -> " ++
+           show (calc test_g)) result where
+
+      (a1,b1,c1,d1,e1,f1) <+> (a2,b2,c2,d2,e2,f2) = (a1+a2,b1+b2,c1+c2,d1+d2,e1+e2,f1+f2)
+
+      constrs (C _ a) = 1 + sum (map constrs a)
+      constrs _       = 0
+
+      vars (C _ a) = sum (map constrs a)
+      vars _       = 1
+
+      calc (g1 :/\: g2)          = calc g1 <+> calc g2
+      calc (g1 :\/: g2)          = calc g1 <+> calc g2
+      calc (Fresh _ g)           = (1, 0, 0, 0, 0, 0) <+> calc g
+      calc (Let (_, a, g1) g2)   = (0, 0, length a, 0, 0, 0) <+> calc g1 <+> calc g2
+      calc (t1 :=: t2)           = (0, 1, 0, constrs t1 + constrs t2, vars t1 + vars t2, 0)
+      calc (Invoke "success" []) = (0, 0, 0, 0, 0, 0)
+      calc (Invoke _ a)          = (0, 0, 0, sum $ map constrs a, sum $ map vars a, 1)
