@@ -12,14 +12,26 @@ import List hiding (c)
 import Text.Printf
 
 type Set = Set.Set
+type Map = Map.Map
+
+type Subst       = [(X, Term X)]
+type Func        = (Name, [Term X])
+type Funcs       = [Func]
+type Rule        = (Func, [Func])
+type Rules       = [Rule]
+type Erasure     = Map Name [Int]
+type ErasureElem = (Name, Int)
 
 -- Purification of non-essential variables and arguments
 purification x = trace_pur x $
   --identity x
   --justTakeOutLets x
   --purification_old x
-  purification' x
+  --purificationWithErasure x
+  conservativePurificationWithErasure x
 
+{-------------------------------------------}
+{-------------------------------------------}
 {-------------------------------------------}
 identity :: (G X, [String]) -> (G X, [String], [Def])
 identity (g, a) = (g, a, [])
@@ -107,31 +119,17 @@ purification_old (goal, args) =
   (goalWithoutClashs,  fvs ) = renameLetArgs initialFvs goal
   (goalWithClosedLets, fvs') = escapeFreeVars fvs goalWithoutClashs
 
-
 {-------------------------------------------}
 {-------------------------------------------}
 {-------------------------------------------}
 
-type Map = Map.Map
+purificationWithErasure :: (G X, [String]) -> (G X, [String], [Def])
+purificationWithErasure x = (g''', args', defs''') where
 
-type Subst       = [(X, Term X)]
-type Func        = (Name, [Term X])
-type Funcs       = [Func]
-type Rule        = (Func, [Func])
-type Rules       = [Rule]
-type Erasure     = Map Name [Int]
-type ErasureElem = (Name, Int)
+  (goalWithoutLets, args, defs) = justTakeOutLets x
 
-
-purification' :: (G X, [String]) -> (G X, [String], [Def])
-purification' (goal, args) = (g'', args', defs'') where
-  initialFvs                 = [0..]
-  (goalWithoutClashs,  fvs ) = renameLetArgs initialFvs goal
-  (goalWithClosedLets, fvs') = escapeFreeVars fvs goalWithoutClashs
-  (goalWithoutLets,    defs) = takeOutLets goalWithClosedLets
-
-  mainFuncs      = defToProlog ("main", args, goalWithoutLets)
-  internalFuncs  = map defToProlog defs
+  mainFuncs      = defToRules ("main", args, goalWithoutLets)
+  internalFuncs  = map defToRules defs
   initialErasure = Map.fromList $ map (\(n,a,_) -> (n, [1..length a])) defs
   erasure        = removeRedundantArgs (mainFuncs ++ concat internalFuncs) initialErasure
 
@@ -144,9 +142,8 @@ purification' (goal, args) = (g'', args', defs'') where
   defs''         = map (\(n, a, g) -> (n, a, removeSuccess $ removeLinks (Set.fromList a) g)) defs'
   g''            = removeSuccess $ removeLinks (Set.fromList args') g'
 
-  {-------------------------------------------}
-  removeSuccess :: G X -> G X
-  removeSuccess = removeUnifications (\_ _ -> False)
+  defs'''        = map (\(n, a, g) -> (n, a, renameFreshVars $ closeByFresh a g)) defs''
+  g'''           = renameFreshVars $ closeByFresh args' g''
 
   {-------------------------------------------}
   ruleToOcanren :: [X] -> Rule -> G X
@@ -160,107 +157,163 @@ purification' (goal, args) = (g'', args', defs'') where
   rulesToDef rules@(((n,a),_):_) =
     let v = map (toV "z") [1..length a] in
     let g = foldl1 (|||) $ map (ruleToOcanren v) rules in
-    (n, v, fresh (fvg g \\ v) g)
+    (n, v, g)
 
   {-------------------------------------------}
-  removeRedundantArgs :: Rules -> Erasure -> Erasure
-  removeRedundantArgs r e =
-    case find (isBadErasureElem r e) $ erasureToList e of
-      Nothing     -> e
-      Just (f, i) -> removeRedundantArgs r $ Map.insert f (delete i $ e Map.! f) e
-
-  {-------------------------------------------}
-  erasureToList :: Erasure -> [ErasureElem]
-  erasureToList = concatMap (\(n,i) -> map ((,) n) i) . Map.toList
-
-  {-------------------------------------------}
-  isBadErasureElem :: Rules -> Erasure -> ErasureElem -> Bool
-  isBadErasureElem rules er el = any (isBadForRule er el) rules
-
-  {-------------------------------------------}
-  isBadForRule :: Erasure -> ErasureElem -> Rule -> Bool
-  isBadForRule er el (hd, bd) = isBadForFunc er el hd [] bd
-
-  {-------------------------------------------}
-  isBadForFunc :: Erasure -> ErasureElem -> Func -> Funcs -> Funcs -> Bool
-  isBadForFunc _ _ _ _ [] = False
-  isBadForFunc er p@(n, i) hd pref (f@(n', a):suff) =
-    if n /= n' then isBadForFunc er p hd (f:pref) suff
-      else case splitAt (i-1) a of
-        (_,  C _ _ : _ ) -> True
-        (a1, V v   : a2) ->
-          if any (hasVarInTerm v) a1 ||
-             any (hasVarInTerm v) a2 ||
-             any (hasVarInFunc v) pref ||
-             any (hasVarInFunc v) suff ||
-             hasVarInFunc v (applyErasureToFunc er hd)
-          then True
-          else isBadForFunc er p hd (f:pref) suff
-
-  {-------------------------------------------}
-  hasVarInFunc :: X -> Func -> Bool
-  hasVarInFunc v (_, a) = any (hasVarInTerm v) a
-
-  {-------------------------------------------}
-  hasVarInTerm :: X -> Term X -> Bool
-  hasVarInTerm v1 (V v2)  = v1 == v2
-  hasVarInTerm v  (C _ a) = any (hasVarInTerm v) a
-
-  {-------------------------------------------}
-  defToProlog :: Def -> Rules
-  defToProlog (n, a, g) = map (\(s, f) -> (applyInFunc s (n, ta), map (applyInFunc s) f)) $ toProlog g where
-    ta = map V a
-
-    toProlog :: G X -> [(Subst, Funcs)]
-    toProlog ((V v) :=: t) = [([(v, t)], [])]
-    toProlog (Invoke n a)  = [([], [(n, a)])]
-    toProlog (Fresh _ g)   = toProlog g
-    toProlog (g1 :\/: g2)  = toProlog g1 ++ toProlog g2
-    toProlog (g1 :/\: g2)  = [(s1 ++ s2, f1 ++ f2) | (s1, f1) <- toProlog g1, (s2, f2) <- toProlog g2]
-
-    applySubst :: Subst -> Term X -> Term X
-    applySubst s t@(V v) = case lookup v s of
-                             Nothing -> t
-                             Just t' -> applySubst s t'
-    applySubst s (C n a) = C n $ map (applySubst s) a
-
-    applyInFunc :: Subst -> Func -> Func
-    applyInFunc s (n, a) = (n, map (applySubst s) a)
-
-  {-------------------------------------------}
-  applyErasureToRule :: Erasure -> Rule -> Rule
-  applyErasureToRule e (hd, tl) = (applyErasureToFunc e hd, map (applyErasureToFunc e) tl)
-
-  {-------------------------------------------}
-  applyErasureToFunc :: Erasure -> Func -> Func
-  applyErasureToFunc e f@(n, args) =
-    case Map.lookup n e of
-      Nothing -> f
-      Just i  -> (n, removeElems i args)
-
-  {-------------------------------------------}
-  removeElems :: [Int] -> [a] -> [a]
-  removeElems rs es = remove 1 rs es where
-    remove _   []     es     = es
-    remove i l@(r:rs) (e:es) = if i == r then remove (i+1) rs es else e : remove (i+1) l es
-    remove _ _      _        = error "Index is out of elements."
+  removeSuccess :: G X -> G X
+  removeSuccess = removeUnifications (\_ _ -> False)
 
 {-------------------------------------------}
 {-------------------------------------------}
+{-------------------------------------------}
+conservativePurificationWithErasure :: (G X, [String]) -> (G X, [String], [Def])
+conservativePurificationWithErasure x = (goalAfterPurification, args, defsAfterPurification) where
+
+  (goalWithoutLets, args, defs) = justTakeOutLets x
+
+  mainFuncs      = defToRules ("main", args, goalWithoutLets)
+  internalFuncs  = map defToRules defs
+  initialErasure = Map.fromList $ map (\(n,a,_) -> (n, [1..length a])) defs
+  erasure        = removeRedundantArgs (mainFuncs ++ concat internalFuncs) initialErasure
+
+  goalAfterPurification  = snd $ purify "main" args goalWithoutLets
+  defsAfterPurification  = map (\(n, a, g) -> let (a', g') = purify n a g in (n, a', g')) defs
+
+  purify :: Name -> [X] -> G X -> ([X], G X)
+  purify n a = let a' = applyErasure erasure n a in
+    ((,) a') . renameFreshVars . closeByFresh a' . purifyUni a' . applyErasureToG erasure . snd . freshVars []
+
+  purifyUni :: [X] -> G X -> G X
+  purifyUni a g = snd $ purifyU (Set.fromList a) [] g where
+    purifyU :: Set X -> [G X] -> G X -> ([G X], G X)
+    purifyU constrV conjs g@(l@(V x) :=: r@(V y)) = if Set.member y constrV then
+                                                      if Set.member x constrV then (conjs, g)
+                                                      else (map (subst_in_goal x r) conjs, success)
+                                                    else (map (subst_in_goal y l) conjs, success)
+    purifyU constrV conjs g@(V x :=: t)           = if Set.member x constrV then (conjs, g)
+                                                    else (map (subst_in_goal x t) conjs, success)
+    purifyU constrV conjs (g1 :\/: g2)            = let constrV' = foldl (\s -> Set.union s . Set.fromList . fvg) constrV conjs in
+                                                    let ([], g1') = purifyU constrV' [] g1 in
+                                                    let ([], g2') = purifyU constrV' [] g2 in
+                                                    (conjs, g1' ||| g2')
+    purifyU constrV conjs (g1 :/\: g2)            = let (g2' :conjs' , g1' ) = purifyU constrV (g2 :conjs ) g1  in
+                                                    let (g1'':conjs'', g2'') = purifyU constrV (g1':conjs') g2' in
+                                                    case (g1'', g2'') of
+                                                      (Invoke "success" [], Invoke "success" []) -> (conjs'', success      )
+                                                      (Invoke "success" [], _                  ) -> (conjs'', g2''         )
+                                                      (_                  , Invoke "success" []) -> (conjs'', g1''         )
+                                                      _                                          -> (conjs'', g1'' &&& g2'')
+    purifyU constrV conjs g                       = (conjs, g)
+
+{-------------------------------------------}
+{-------------------------------------------}
+{-------------------------------------------}
+
+removeRedundantArgs :: Rules -> Erasure -> Erasure
+removeRedundantArgs r e =
+  case find (isBadErasureElem r e) $ erasureToList e of
+    Nothing     -> e
+    Just (f, i) -> removeRedundantArgs r $ Map.insert f (delete i $ e Map.! f) e
+  where
+
+    {-------------------------------------------}
+    erasureToList :: Erasure -> [ErasureElem]
+    erasureToList = concatMap (\(n,i) -> map ((,) n) i) . Map.toList
+
+    {-------------------------------------------}
+    isBadErasureElem :: Rules -> Erasure -> ErasureElem -> Bool
+    isBadErasureElem rules er el = any (isBadForRule er el) rules
+
+    {-------------------------------------------}
+    isBadForRule :: Erasure -> ErasureElem -> Rule -> Bool
+    isBadForRule er el (hd, bd) = isBadForFunc er el hd [] bd
+
+    {-------------------------------------------}
+    isBadForFunc :: Erasure -> ErasureElem -> Func -> Funcs -> Funcs -> Bool
+    isBadForFunc _ _ _ _ [] = False
+    isBadForFunc er p@(n, i) hd pref (f@(n', a):suff) =
+      if n /= n' then isBadForFunc er p hd (f:pref) suff
+        else case splitAt (i-1) a of
+          (_,  C _ _ : _ ) -> True
+          (a1, V v   : a2) ->
+            if any (hasVarInTerm v) a1 ||
+               any (hasVarInTerm v) a2 ||
+               any (hasVarInFunc v) pref ||
+               any (hasVarInFunc v) suff ||
+               hasVarInFunc v (applyErasureToFunc er hd)
+            then True
+            else isBadForFunc er p hd (f:pref) suff
+
+    {-------------------------------------------}
+    hasVarInFunc :: X -> Func -> Bool
+    hasVarInFunc v (_, a) = any (hasVarInTerm v) a
+
+    {-------------------------------------------}
+    hasVarInTerm :: X -> Term X -> Bool
+    hasVarInTerm v1 (V v2)  = v1 == v2
+    hasVarInTerm v  (C _ a) = any (hasVarInTerm v) a
+
+{-------------------------------------------}
+applyErasureToRule :: Erasure -> Rule -> Rule
+applyErasureToRule e (hd, tl) = (applyErasureToFunc e hd, map (applyErasureToFunc e) tl)
+
+{-------------------------------------------}
+applyErasureToFunc :: Erasure -> Func -> Func
+applyErasureToFunc e f@(n, args) = (n, applyErasure e n args)
+
+{-------------------------------------------}
+applyErasureToG :: Erasure -> G X -> G X
+applyErasureToG e (Invoke n a) = Invoke n $ applyErasure e n a
+applyErasureToG e (g1 :/\: g2) = applyErasureToG e g1 &&& applyErasureToG e g2
+applyErasureToG e (g1 :\/: g2) = applyErasureToG e g1 ||| applyErasureToG e g2
+applyErasureToG e (Fresh n g)  = Fresh n $ applyErasureToG e g
+applyErasureToG e g            = g
+
+{-------------------------------------------}
+applyErasure :: Erasure -> Name -> [a] -> [a]
+applyErasure e n a =
+  case Map.lookup n e of
+    Nothing -> a
+    Just i  -> removeElems i a
+
+{-------------------------------------------}
+removeElems :: [Int] -> [a] -> [a]
+removeElems rs es = remove 1 rs es where
+  remove _   []     es     = es
+  remove i l@(r:rs) (e:es) = if i == r then remove (i+1) rs es else e : remove (i+1) l es
+  remove _ _      _        = error "Index is out of elements."
+
+{-------------------------------------------}
+defToRules :: Def -> Rules
+defToRules (n, a, g) = map (\(s, f) -> (applyInFunc s (n, ta), map (applyInFunc s) f)) $ gToRules g where
+  ta = map V a
+
+  gToRules :: G X -> [(Subst, Funcs)]
+  gToRules ((V v) :=: t) = [([(v, t)], [])]
+  gToRules (Invoke n a)  = [([], [(n, a)])]
+  gToRules (Fresh _ g)   = gToRules g
+  gToRules (g1 :\/: g2)  = gToRules g1 ++ gToRules g2
+  gToRules (g1 :/\: g2)  = [(s1 ++ s2, f1 ++ f2) | (s1, f1) <- gToRules g1, (s2, f2) <- gToRules g2]
+
+  applySubst :: Subst -> Term X -> Term X
+  applySubst s t@(V v) = case lookup v s of
+                           Nothing -> t
+                           Just t' -> applySubst s t'
+  applySubst s (C n a) = C n $ map (applySubst s) a
+
+  applyInFunc :: Subst -> Func -> Func
+  applyInFunc s (n, a) = (n, map (applySubst s) a)
+
+{-------------------------------------------}
+{-------------------------------------------}
+{-------------------------------------------}
+
+closeByFresh :: [X] -> G X -> G X
+closeByFresh a g = fresh (fvg g \\ a) g
+
 {-------------------------------------------}
 success :: G a
 success = call "success" []
-
-
-{-------------------------------------------}
-addArgsInCall :: Name -> [Term X] -> G X -> G X
-addArgsInCall n na   (g1 :/\: g2)         = addArgsInCall n na g1 &&& addArgsInCall n na g2
-addArgsInCall n na   (g1 :\/: g2)         = addArgsInCall n na g1 ||| addArgsInCall n na g2
-addArgsInCall n na   (Fresh v g)          = Fresh v $ addArgsInCall n na g
-addArgsInCall n na   (Let (n', a, g1) g2) = Let (n', a, addArgsInCall n na g1) $ addArgsInCall n na g2
-addArgsInCall n na g@(Invoke n' a)        = if n == n' then Invoke n (na ++ a) else g
-addArgsInCall _ _  g                      = g
-
 
 {-------------------------------------------}
 takeOutLets :: G X -> (G X, [Def])
@@ -276,6 +329,24 @@ takeOutLets (Let (n, a, g1) g2) = let (g1', lets1) = takeOutLets g1 in
                                   let (g2', lets2) = takeOutLets g2 in
                                   (g2', (n, a, g1') : lets1 ++ lets2)
 takeOutLets g                   = (g, [])
+
+{-------------------------------------------}
+renameLetArgs :: [Id] -> G X -> (G X, [Id])
+renameLetArgs fvs (g1 :/\: g2)        = let (g1', fvs')   = renameLetArgs fvs  g1 in
+                                        let (g2', fvs'')  = renameLetArgs fvs' g2 in
+                                        (g1' &&& g2', fvs'')
+renameLetArgs fvs (g1 :\/: g2)        = let (g1', fvs')   = renameLetArgs fvs  g1 in
+                                        let (g2', fvs'')  = renameLetArgs fvs' g2 in
+                                        (g1' ||| g2', fvs'')
+renameLetArgs fvs (Fresh n g)         = let (g', fvs')    = renameLetArgs fvs g in
+                                        (Fresh n g', fvs')
+renameLetArgs fvs (Let (n, a, g1) g2) = let (na, fvs')    = splitAt (length a) fvs in
+                                        let na'           = map (toV "y") na in
+                                        let ng1           = foldr (\(o, n) -> subst_in_goal o $ V n) g1 $ zip a na' in
+                                        let (ng1', fvs'') = renameLetArgs fvs' ng1 in
+                                        let (g2', fvs''') = renameLetArgs fvs'' g2 in
+                                        (Let (n, na', ng1') g2', fvs''')
+renameLetArgs fvs x                   = (x, fvs)
 
 
 {-------------------------------------------}
@@ -299,31 +370,21 @@ escapeFreeVars fvs (Let (n, a, g1) g2) = let (g1', fvs')   = escapeFreeVars fvs 
                                          (Let (n, nvs' ++ a, g1''') g2'', fvs''')
 escapeFreeVars fvs x                   = (x, fvs)
 
+{-------------------------------------------}
+addArgsInCall :: Name -> [Term X] -> G X -> G X
+addArgsInCall n na   (g1 :/\: g2)         = addArgsInCall n na g1 &&& addArgsInCall n na g2
+addArgsInCall n na   (g1 :\/: g2)         = addArgsInCall n na g1 ||| addArgsInCall n na g2
+addArgsInCall n na   (Fresh v g)          = Fresh v $ addArgsInCall n na g
+addArgsInCall n na   (Let (n', a, g1) g2) = Let (n', a, addArgsInCall n na g1) $ addArgsInCall n na g2
+addArgsInCall n na g@(Invoke n' a)        = if n == n' then Invoke n (na ++ a) else g
+addArgsInCall _ _  g                      = g
 
 {-------------------------------------------}
 toV :: Show a => String -> a -> String
 toV pref = (pref++) . show
 
-
 {-------------------------------------------}
-renameLetArgs :: [Id] -> G X -> (G X, [Id])
-renameLetArgs fvs (g1 :/\: g2)        = let (g1', fvs')   = renameLetArgs fvs  g1 in
-                                        let (g2', fvs'')  = renameLetArgs fvs' g2 in
-                                        (g1' &&& g2', fvs'')
-renameLetArgs fvs (g1 :\/: g2)        = let (g1', fvs')   = renameLetArgs fvs  g1 in
-                                        let (g2', fvs'')  = renameLetArgs fvs' g2 in
-                                        (g1' ||| g2', fvs'')
-renameLetArgs fvs (Fresh n g)         = let (g', fvs')    = renameLetArgs fvs g in
-                                        (Fresh n g', fvs')
-renameLetArgs fvs (Let (n, a, g1) g2) = let (na, fvs')    = splitAt (length a) fvs in
-                                        let na'           = map (toV "y") na in
-                                        let ng1           = foldr (\(o, n) -> subst_in_goal o $ V n) g1 $ zip a na' in
-                                        let (ng1', fvs'') = renameLetArgs fvs' ng1 in
-                                        let (g2', fvs''') = renameLetArgs fvs'' g2 in
-                                        (Let (n, na', ng1') g2', fvs''')
-renameLetArgs fvs x                   = (x, fvs)
-
-
+{-------------------------------------------}
 {-------------------------------------------}
 getFstLink :: Set X -> (G X -> G X) -> (G X -> G X) -> (G X -> G X) -> G X -> Maybe (G X -> G X, G X, X, Term X)
 getFstLink a disjC conjC branch g@(t1@(V x1) :=: t2@(V x2)) =
@@ -373,10 +434,16 @@ removeUnifications p   (Fresh v g)  = Fresh v $ removeUnifications p g
 removeUnifications p   (Let def g)  = Let def $ removeUnifications p g
 removeUnifications _ g              = g
 
-{-------------------------------------------}
-{-------------------------------------------}
-{-------------------------------------------}
 
+renameFreshVars g =
+  let (vars, g') = freshVars [] g in
+  let vars' = reverse $ map (toV "q") [1..length vars] in
+  let g'' = foldr (\(v, v') -> subst_in_goal v (V v')) g' $ zip vars vars' in
+  fresh vars'   g''
+
+{-------------------------------------------}
+{-------------------------------------------}
+{-------------------------------------------}
 
 trace_pur :: (G X, [String]) -> (G X, [String], [Def]) -> (G X, [String], [Def])
 trace_pur (g1, _) result@(g2, _, defs) =
