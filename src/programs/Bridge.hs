@@ -233,7 +233,7 @@ game2Big last_goal =
     Let (def "finish" ["q2"] (
       V "q2" === C "st" [C "false" [], C "false" [], C "false" [], C "false" [], C "false" []]
     )) (
-    Let (def "getAnswer" ["answer", "state", "q3"] (
+    Let (def "getAnswer'" ["answer", "state", "q3"] (
       (fresh ["x", "xs"] (
          (V "answer" === C "%" [V "x", V "xs"]) &&&
          (fresh ["q5"] (
@@ -242,7 +242,7 @@ game2Big last_goal =
             (fresh ["q7"] (
                (fresh ["q13"] (
                   (call "step" [V "state", V "x", V "q13"]) &&&
-                  (call "getAnswer" [V "xs", V "q13", V "q7"]))) &&&
+                  (call "getAnswer'" [V "xs", V "q13", V "q7"]))) &&&
                (((V "q7" === C "none" []) &&&
                (V "q3" === C "none" [])) |||
                (fresh ["t1"] (
@@ -266,7 +266,7 @@ game2Big last_goal =
     )) (
     fresh ["q22"] (
       (call "start" [V "q22"]) &&&
-      (call "getAnswer" [V "answer", V "q22", V "q26"])))))
+      (call "getAnswer'" [V "answer", V "q22", V "q26"])))))
   )) (
   Let (def "result" ["q0"] (
     V "q0" === C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]]]]]]]]
