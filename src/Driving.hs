@@ -61,7 +61,7 @@ embed g (g1 :/\: g2) = embed g g1 || embed g g2
 embed (Invoke f fs) (Invoke g gs) | f == g && length fs == length gs = embedTerms fs gs
 embed _ _ = False
 -}
-{-embedTerm :: Ts -> Ts -> Bool
+embedTerm :: Ts -> Ts -> Bool
 embedTerm (V _) (V _) = True
 embedTerm (C n ns) (C m ms) | n == m && length ms == length ns = and $ zipWith embedTerm ns ms
 embedTerm t (C _ ns) = or $ zipWith embedTerm (repeat t) ns
@@ -72,7 +72,7 @@ embedTerms ps qs | length ps == length qs = and $ zipWith embedTerm ps qs
 embedTerms _ _ = False
 
 embedGoals :: [G S] -> [G S] -> Bool
-embedGoals = coupleConj where
+embedGoals gs hs = coupleConj gs hs || diveConj gs hs where
   coupleConj [] [] = True
   coupleConj ((Invoke f fs) : as) ((Invoke g gs) : bs) | f == g && length fs == length gs = embedTerms fs gs && embedConj as bs
   coupleConj _ _ = False
@@ -81,45 +81,45 @@ embedGoals = coupleConj where
 
   diveConj as (b:bs) = embedConj as bs
   diveConj _ _ = False
--}
+
 -- Embedding
-embed :: G S -> G S -> Maybe Renaming
-embed g1' g2' = embedGoal (Just []) (g1', g2') where
-  embedGoal r (g1 :/\:  g2, h1 :/\: h2 ) =
-    msum [ foldl embedGoal r [(g1, h1), (g2, h2)]
-         , embedGoal r (g1 :/\: g2, h1)
-         , embedGoal r (g1 :/\: g2, h2)
-         ]
-  embedGoal r (Invoke f fs, Invoke g gs) | f == g && length fs == length gs = embedTerms r fs gs
-  embedGoal _ (Invoke _ _, _ :/\: _) = Nothing
-  embedGoal r (g, g1 :/\: g2) = msum $ map (embedGoal r . (g,)) [g1, g2]
-  embedGoal _ _ = Nothing
-
-embedTerm :: Maybe Renaming -> (Term S, Term S) -> Maybe Renaming
-embedTerm r (V x, V y) | x == y = r
-embedTerm r (V x, V y) = r >>= (\ r' -> case lookup x r' of
-                                         Just z  -> if z == y then Just r' else Nothing
-                                         Nothing -> Just $ (x, y) : r'
-                               )
-embedTerm r (C m ms, C n ns) | m == n && length ms == length ns = foldl embedTerm r $ zip ms ns
-embedTerm r (t     , C _ ns) = msum $ map (embedTerm r . (t,)) ns
-embedTerm _ _ = Nothing
-
-embedTerms :: Maybe Renaming -> [Term S] -> [Term S] -> Maybe Renaming
-embedTerms r ps qs | length ps == length qs = foldl embedTerm r $ zip ps qs
-embedTerms _ _  _  = Nothing
-
-embedGoals :: [G S] -> [G S] -> Maybe Renaming
-embedGoals = embedConj [] where -- coupling restriction relaxed
-  embedConj r as' bs' = mplus (coupleConj r as' bs') (diveConj r as' bs')
-
-  coupleConj r [] [] = Just r
-  coupleConj r (Invoke f fs : as) (Invoke g gs : bs) | f == g && length fs == length gs =
-    embedTerms (Just r)  fs gs >>= \r' -> embedConj r' as bs
-  coupleConj _ _ _ = Nothing
-
-  diveConj r as' (_:bs') = embedConj r as' bs'
-  diveConj _ _ _         = Nothing
+-- embed :: G S -> G S -> Maybe Renaming
+-- embed g1' g2' = embedGoal (Just []) (g1', g2') where
+--   embedGoal r (g1 :/\:  g2, h1 :/\: h2 ) =
+--     msum [ foldl embedGoal r [(g1, h1), (g2, h2)]
+--          , embedGoal r (g1 :/\: g2, h1)
+--          , embedGoal r (g1 :/\: g2, h2)
+--          ]
+--   embedGoal r (Invoke f fs, Invoke g gs) | f == g && length fs == length gs = embedTerms r fs gs
+--   embedGoal _ (Invoke _ _, _ :/\: _) = Nothing
+--   embedGoal r (g, g1 :/\: g2) = msum $ map (embedGoal r . (g,)) [g1, g2]
+--   embedGoal _ _ = Nothing
+--
+-- embedTerm :: Maybe Renaming -> (Term S, Term S) -> Maybe Renaming
+-- embedTerm r (V x, V y) | x == y = r
+-- embedTerm r (V x, V y) = r >>= (\ r' -> case lookup x r' of
+--                                          Just z  -> if z == y then Just r' else Nothing
+--                                          Nothing -> Just $ (x, y) : r'
+--                                )
+-- embedTerm r (C m ms, C n ns) | m == n && length ms == length ns = foldl embedTerm r $ zip ms ns
+-- embedTerm r (t     , C _ ns) = msum $ map (embedTerm r . (t,)) ns
+-- embedTerm _ _ = Nothing
+--
+-- embedTerms :: Maybe Renaming -> [Term S] -> [Term S] -> Maybe Renaming
+-- embedTerms r ps qs | length ps == length qs = foldl embedTerm r $ zip ps qs
+-- embedTerms _ _  _  = Nothing
+--
+-- embedGoals :: [G S] -> [G S] -> Maybe Renaming
+-- embedGoals = embedConj [] where -- coupling restriction relaxed
+--   embedConj r as' bs' = mplus (coupleConj r as' bs') (diveConj r as' bs')
+--
+--   coupleConj r [] [] = Just r
+--   coupleConj r (Invoke f fs : as) (Invoke g gs : bs) | f == g && length fs == length gs =
+--     embedTerms (Just r)  fs gs >>= \r' -> embedConj r' as bs
+--   coupleConj _ _ _ = Nothing
+--
+--   diveConj r as' (_:bs') = embedConj r as' bs'
+--   diveConj _ _ _         = Nothing
 
 refine :: ([G S], Generalizer, Generalizer, [S]) ->  ([G S], Generalizer, Generalizer, [S])
 refine msg@(g, s1, s2, d) =
@@ -229,7 +229,7 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
   {-
  if length conjs > 3 -- head ids > 100
  then
-    case find (\ (_, conjs') -> (isJust $ embedGoals conjs' qqq_conjs)) cs of
+    case find (\ (_, conjs') -> (embedGoals conjs' qqq_conjs)) cs of
       Nothing     -> trace "AHA" $ (tc, Prune [conj qqq_conjs], d)
       Just (_, j) -> (tc, Prune [conj qqq_conjs, Invoke "Embedding" [],  conj j], d)
  else-}
@@ -247,7 +247,7 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
         d
       )
     Nothing ->
-      case find (\ (_, conjs') -> (isJust $ embedGoals conjs' qqq_conjs)) cs of
+      case find (\ (_, conjs') -> (embedGoals conjs' qqq_conjs)) cs of
         Just (_, conjs') ->
           if length qqq == length conjs'
           then
