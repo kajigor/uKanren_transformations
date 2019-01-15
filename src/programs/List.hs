@@ -2,6 +2,7 @@ module List where
 
 import Syntax
 import Num
+import Bool
 import Prelude hiding (succ)
 import Text.Printf
 
@@ -47,6 +48,14 @@ singletono g =
   let x = V "x" in
   Let ( def "singletono" ["l", "x"] ( l === x % nil ) ) g
 
+maxLengtho :: G a -> G a
+maxLengtho g =
+  Let (def "maxLengtho" ["x", "m", "l"] (call "maxo" [x, m] &&& call "lengtho" [x, l])) $ maxo $ lengtho g
+  where
+    x = V "x"
+    m = V "m"
+    l = V "l"
+
 lengtho :: G a -> G a
 lengtho g =
   let x = V "x" in
@@ -61,6 +70,26 @@ lengtho g =
              (x === h % t &&& l === succ z &&& call "lengtho" [t, z])
         )
       ) g
+
+maxo :: G a -> G a
+maxo g =
+  Let (def "maxo" ["x", "m"] (call "maxo1" [x, zero, m])) $ maxo1 g
+  where
+    maxo1 g =
+      Let (def "maxo1" ["x", "n", "m" ]
+            (
+              (x === nil &&& m === n) |||
+              fresh ["h", "t", "z"] (x === h % t &&& call "leo" [h, n, trueo]  &&& call "maxo1" [t, n, m]) |||
+              fresh ["h", "t", "z"] (x === h % t &&& call "gto" [h, n, trueo]  &&& call "maxo1" [t, h, m])
+            )
+          ) $ leo $ gto g
+    x = V "x"
+    m = V "m"
+    n = V "n"
+    h = V "h"
+    t = V "t"
+    z = V "z"
+
 
 appendo :: G a -> G a
 appendo g =

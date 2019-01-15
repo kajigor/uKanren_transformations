@@ -152,3 +152,6 @@ instance Dot a => Dot (G a) where
     printf "fresh %s (%s)" (dot $ reverse names) (dot goal)
   dot (Invoke name ts)           = printf "%s(%s)" name (dot ts)
   dot (Let (name, args, body) g) = printf "let %s = %s in %s" name (unwords args) (dot body) (dot g)
+
+instance {-# OVERLAPPING #-} Dot a => Dot [G a] where
+  dot gs = intercalate " /\\ " (map dot gs)

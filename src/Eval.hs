@@ -126,6 +126,9 @@ env0 = (\ i -> error $ printf "Empty environment on %s" (show i), emptyIota, [0 
 update :: Gamma -> Def -> Gamma
 update (p, i, d) def'@(name, _, _) = (\ name' -> if name == name' then def' else p name', i, d)
 
+updateDefsInGamma :: Gamma -> [Def] -> Gamma
+updateDefsInGamma = foldl update
+
 s0 :: Sigma
 s0 = []
 
