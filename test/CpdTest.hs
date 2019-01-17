@@ -24,6 +24,12 @@ tests = do
   testNormalization
   testUnifyStuff
   testLocalControl
+  testMCS
+  testMsgExists
+  testSubconjs
+  testMinimallyGeneral
+  testComplementSubconjs
+  testSplit
   printStuff
 
 reportError :: Show a => String -> a -> a -> IO ()
@@ -57,23 +63,28 @@ printStuff = do
   printTree "maxo.dot" $ topLevel (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
 
 testEmbedding = do
-  testHomeoTerm
-  testHomeoGoal
-  testHomeoConj
-  testInstTerm
-  testInstGoal
-  testInstConj
-  testEmbedGoal
+  testHomeo
+  testInst
+  testStrictInst
+  testEmbed
+  testVariant
+  testRenaming
   where
-    x = V "x"
-    y = V "y"
-    z = V "z"
-    v = V ""
-    c = C ""
-    n = C "n"
-    m = C "m"
-    f = Invoke "f"
-    g = Invoke "g"
+    testHomeo = do
+      testHomeoTerm
+      testHomeoGoal
+      testHomeoConj
+    testInst = do
+      testInstTerm
+      testInstGoal
+      testInstConj
+    testStrictInst = do
+      testStrictInstTerm
+      testStrictInstGoal
+      testStrictInstConj
+    testEmbed = do
+      testEmbedGoal
+      testEmbedConj
     testHomeoTerm = do
       manyAssert "homeo term" True homeo  [ (x, y)
                                           , (v, c [v])
@@ -141,6 +152,48 @@ testEmbedding = do
                                             , ([f [x, y], g [x]], [f [x, x], g [y]])
                                             ]
 
+
+    testStrictInstTerm = do
+      manyAssert "isStrictInst term" True isStrictInst  [ (v, n [])
+                                                        , (n [x, y], n [x, x])
+                                                        ]
+
+      manyAssert "isStrictInst term" False isStrictInst [ (v, x)
+                                                        , (n [], v)
+                                                        , (n [], n [])
+                                                        , (n [v], n [])
+                                                        , (n [x, y], n [y, x])
+                                                        , (n [x, x], n [y, x])
+                                                        , (n [x, m [x]], n [y, m [y]])
+                                                        , (n [x, m [x]], n [x, y])
+                                                        , (n [x, m [x]], n [x, m [y]])
+                                                        ]
+
+    testStrictInstGoal = do
+      manyAssert "isStrictInst goal" True isStrictInst  [ (f [v], f [n [x]])
+                                                        , (f [x, y], f [x, x])
+                                                        ]
+
+      manyAssert "isStrictInst goal" False isStrictInst [ (f [], g [])
+                                                        , (f [n [x, m [x]]], f [n [x, m [y]]])
+                                                        , (f [], f [v])
+                                                        , (f [v], f [])
+                                                        , (f [x, y], f [y, x])
+                                                        ]
+    testStrictInstConj = do
+      manyAssert "isStrictInst conj" True isStrictInst  [ ([f [v]], [f [n [x]]])
+                                                        , ([f [x, y], g [v]], [f [x, x], g [x]])
+                                                        , ([f [x, y], g [y]], [f [x, x], g [x]])
+                                                        , ([f [x, y]], [f [x, x]])
+                                                        ]
+
+      manyAssert "isStrictInst conj" False isStrictInst [ ([], [f []])
+                                                        , ([f [n [x, m [x]]]], [f [n [x, m [y]]]])
+                                                        , ([f [x, y], g [x]], [f [x, x], g [y]])
+                                                        ]
+
+
+
     testEmbedGoal = do
       manyAssert "embed goal" False embed [ (f [n [x, v], x, y], f [v, x, y])
                                           , (f [x, x], f [x, y])
@@ -158,6 +211,49 @@ testEmbedding = do
                                           , (f [v, x, y], f [n [x, v], x, y]) -- not a strict instance
                                           , (f [c [], m [x, x]], f [n [c []], m [x, y]])
                                           ]
+    testEmbedConj = do
+      manyAssert "embed conj" False embed [ ([f [n [x, v], x, y]], [f [v, x, y]])
+                                          , ([f [x, x]], [f [x, y]])
+                                          , ([f [x, x, y, y]], [f [x, x, y, z]])
+                                          , ([f [x, y], g []], [f [x, x]])
+                                          , ([g [], f [x, y]], [f [x, x]])
+                                          , ([f [x, x], f [x, x]], [f [x, x]])
+                                          , ([f [x, y], f [x, y]], [f [x, x]])
+                                          ]
+
+      manyAssert "embed conj" True embed  [ ([f [x, y]], [f [x, x]])
+                                          , ([f [x, y]], [g [x], f [x, x]])
+                                          , ([f [x, y]], [g [], f [x, x], g []])
+                                          , ([f [x, x, y, y]], [f [x, z, z, x]])
+                                          , ([f [x, z, z, x]], [f [x, x, y, z]])
+                                          , ([f [v, x, x]], [f [n [x, v], x, y]])
+                                          , ([f [x, x, y, y], f [x, z, z, x], f [v, x, x]], [f [x, z, z, x], g [], g[], f [x, x, y, z], f [n [x, v], x, y]])
+                                          , ([f [v, x, n [y, x]]], [f [v, x, n [y, x]]])
+                                          , ([f [x, y, x]], [f [x, y, y]])
+                                          , ([f [x, y, y]], [f [x, y, x]])
+                                          , ([f [v, x, y]], [f [x, y, v]]) -- variant
+                                          , ([f [v, x, y]], [f [n [x, v], x, y]]) -- not a strict instance
+                                          , ([f [c [], m [x, x]]], [f [n [c []], m [x, y]]])
+                                          ]
+    testVariant = do -- TODO more  tests
+      manyAssert "variant goal" False isVariant [ (f [x, y], f [x, x])
+                                               , (f [x, x], f [x, y])
+                                               ]
+    testRenaming = do -- TODO more tests
+      manyAssert "renaming goal" True  isRenaming [ (f [x, y], f [x, x])
+                                                  ]
+      manyAssert "renaming goal" False isRenaming [ (f [x, x], f [x, y])
+                                                  ]
+
+    x = V "x"
+    y = V "y"
+    z = V "z"
+    v = V ""
+    c = C ""
+    n = C "n"
+    m = C "m"
+    f = Invoke "f"
+    g = Invoke "g"
 
 testSelect = do
   testSelect1
@@ -341,3 +437,122 @@ testLocalControl = do
     z = V 3
     r = V 4
     u = V 5
+
+testMCS = do
+  assert "mcs 0" [[p x y, q x], [p t u], [q v]] (mcs [p x y, p t u, q x, q v])
+  assert "mcs 1" [] (mcs ([] :: [G X]))
+  assert "mcs 2" [[p x y, p x z, p y z]] (mcs [p x y, p x z, p y z])
+  assert "mcs 3" [[p x y, p x y, p x y, p z y, q x, q y], [p t u, p u v, p v t]] (mcs [p x y, p x y, p x y, p z y, q x, p t u, p u v, p v t, q y])
+  where
+    p x y = Invoke "p" [x, y]
+    q x = Invoke "q" [x]
+    x = V "x"
+    y = V "y"
+    z = V "z"
+    t = V "t"
+    u = V "u"
+    v = V "v"
+
+testMsgExists = do
+  manyAssert "MSG exists" False msgExists [ ([], [f])
+                                          , ([f], [])
+                                          , ([f, f], [f, g])
+                                          , ([f, g, f], [f, f, g])
+                                          , ([f], [g])
+                                          ]
+  manyAssert "MSG exists" True  msgExists [ ([h (m x y) x, h y x], [h x y, h (n (m x y)) z])
+                                          , ([f, g], [f, g])
+                                          , ([f], [f])
+                                          , ([], [])
+                                          ]
+  where
+    f = Invoke "f" []
+    g = Invoke "g" []
+    h x y = Invoke "h" [x, y]
+    k x = Invoke "k" [x]
+    true = C "True" []
+    false = C "False" []
+    m x y = C "m" [x, y]
+    n x = C "n" [x]
+    x = V "x"
+    y = V "y"
+    z = V "z"
+
+testSubconjs = do
+  assert "subconjs 0" 3  (length $ subconjs [f, g, f] 2)
+  assert "subconjs 1" 10 (length $ subconjs [f, g, f, f, f] 3)
+  assert "subconjs 2" 0  (length $ subconjs [f] 2)
+  assert "subconjs 3" True (all (\x -> x `elem` [ [f, g, l]
+                                                , [f, g, f]
+                                                , [f, g, p]
+                                                , [f, l, f]
+                                                , [f, l, p]
+                                                , [f, f, p]
+                                                , [g, l, f]
+                                                , [g, l, p]
+                                                , [g, f, p]
+                                                , [l, f, p]
+                                                ]) (subconjs [f, g, l, f, p] 3))
+  where
+    f = Invoke "f" []
+    g = Invoke "g" []
+    h x y = Invoke "h" [x, y]
+    x = V "x"
+    y = V "y"
+    m x = C "m" [x]
+    l = h x y
+    p = h (m x) x
+
+testComplementSubconjs = do
+  assert "complement subconjuncions 0" [] (complementSubconjs [f, g, l, f, p] [f, g, l, f, p])
+  assert "complement subconjuncions 1" [f, p] (complementSubconjs [f, g, l] [f, g, l, f, p])
+  assert "complement subconjuncions 2" [l, p] (complementSubconjs [f, g, f] [f, g, l, f, p])
+  assert "complement subconjuncions 3" [l, f] (complementSubconjs [f, g, p] [f, g, l, f, p])
+  assert "complement subconjuncions 4" [g, p] (complementSubconjs [f, l, f] [f, g, l, f, p])
+  assert "complement subconjuncions 5" [g, f] (complementSubconjs [f, l, p] [f, g, l, f, p])
+  assert "complement subconjuncions 6" [g, l] (complementSubconjs [f, f, p] [f, g, l, f, p])
+  assert "complement subconjuncions 7" [f, f] (complementSubconjs [g, l, p] [f, g, l, f, p])
+  assert "complement subconjuncions 8" [f, l] (complementSubconjs [g, f, p] [f, g, l, f, p])
+  assert "complement subconjuncions 9" [f, g] (complementSubconjs [l, f, p] [f, g, l, f, p])
+  where
+    f = Invoke "f" []
+    g = Invoke "g" []
+    h x y = Invoke "h" [x, y]
+    x = V "x"
+    y = V "y"
+    m x = C "m" [x]
+    l = h x y
+    p = h (m x) x
+
+testMinimallyGeneral = do
+  assert "minimally general 0" [f x x] (minimallyGeneral [[f x y], [f x x]])
+  assert "minimally general 1" [f x x] (minimallyGeneral [[f x x], [f x y]])
+  assert "minimally general 2" [g x x y]  (minimallyGeneral [[g x x y], [g x y y], [g x y x], [g x y z]])
+  assert "minimally general 3" [g x y y]  (minimallyGeneral [[g x y z], [g x y y], [g x y x], [g x x y]])
+  assert "minimally general 4" [f x y, g x y z] (minimallyGeneral [[f x y, g x y z], [f x z], [f x x], [f x x, g x y z]]) -- y and x are linked and the selected one is the first
+  assert "minimally general 5" [f x x] (minimallyGeneral [[f x z], [f x x], [f x x, g y y z], [f x y, g z t u]])
+  assert "minimally general 6" [f x z, g x y z] (minimallyGeneral [[f x z, g x y z], [f x x, g y y z], [f x y, g z t u]])
+  assert "minimally general 7" [f x x, g y y z] (minimallyGeneral [[f x x, g y y z], [f x y, g z t u], [f x z, g x y z]])
+  assert "minimally general 8" [p u y, q y z] (minimallyGeneral [[p u y, q y z], [p x u, q y z]])
+  assert "minimally general 9" [p u y, q y z] (minimallyGeneral [[p x u, q y z], [p u y, q y z]])
+  where
+    f x y = Invoke "f" [x, y]
+    g x y z = Invoke "g" [x, y, z]
+    p x y = Invoke "p" [x, y]
+    q x y = Invoke "q" [x, y]
+    x = V "x"
+    y = V "y"
+    z = V "z"
+    t = V "t"
+    u = V "u"
+
+testSplit = do -- TODO more tests
+  assert "split 0" ([f x x], [g x]) (split [2..] [f x x] [f x x, g x] )
+  assert "split 1" ([f x x], [g x]) (split [2..] [f x x] [g x, f x x] ) -- TODO fails
+  assert "split 2" ([f x z], [g x]) (split [2..] [f x y] [g x, f x x] )
+  where
+    x = V 0
+    y = V 1
+    z = V 2
+    f x y = Invoke "f" [x, y]
+    g x = Invoke "g" [x]

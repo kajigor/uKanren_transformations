@@ -129,7 +129,7 @@ refine msg@(g, s1, s2, d) =
   let newGoal = E.substituteConjs toSwap g in
   let s1' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar1)) s1 in
   let s2' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar2)) s2 in
-  trace (printf "\nSimilar1: %s\nSimilar2: %s\nToSwap: %s\nNewGoal: %s\nS1': %s\nS2': %s\n" (show similar1) (show similar2) (show toSwap) (show newGoal) (show s1') (show s2'))
+  --trace (printf "\nSimilar1: %s\nSimilar2: %s\nToSwap: %s\nNewGoal: %s\nS1': %s\nS2': %s\n" (show similar1) (show similar2) (show toSwap) (show newGoal) (show s1') (show s2'))
   (newGoal, s1', s2', d)
   where
     groupBy _ [] acc = acc
@@ -146,7 +146,7 @@ generalize d gg gs hs =
         ([], gg, d)
         (zip gs hs)
 
-generalizeCall d gg (Invoke f as, Invoke g bs) =
+generalizeCall d gg (Invoke f as, Invoke g bs) | f == g =
   let ((C _ cs, s1, s2), d') = generalizeTerm d gg (C "()" as, C "()" bs) in
   ((Invoke f cs, s1, s2), d')
 

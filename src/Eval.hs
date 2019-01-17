@@ -64,7 +64,8 @@ substituteGoal s (Invoke name as) = Invoke name (map (substitute s) as)
 substituteGoal _ g = error $ printf "We have only planned to substitute into calls, and you are trying to substitute into:\n%s" (show g)
 
 substituteConjs :: Sigma -> [G S] -> [G S]
-substituteConjs s = trace "Substituting..." $ map $ substituteGoal s
+substituteConjs s = -- trace "Substituting..." $
+                    map $ substituteGoal s
 
 
 ---- Composing substitutions

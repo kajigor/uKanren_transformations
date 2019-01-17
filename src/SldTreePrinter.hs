@@ -111,7 +111,7 @@ printTree filename tree =
     --              | Leaf [Descend]
 
 instance Dot SldTree where
-  dot (Leaf gs) = printf "Leaf <BR/> %s"  $ dot (map getGoal gs)
+  dot (Leaf gs s) = printf "Leaf <BR/> %s <BR/> %s" (dot (map getGoal gs)) (E.showSigma s)
   dot Fail = "_|_"
   dot (Success s) = printf "S <BR/> %s" (E.showSigma s)
   dot (Or _ _ ) = printf "O" -- <BR/> " ++ dot curr
