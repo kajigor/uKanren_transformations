@@ -5,7 +5,10 @@ import CPD
 import Control.Monad
 import Data.Maybe
 import Data.List
+import DotPrinter
 import qualified Eval as E
+import qualified GlobalControl as GC
+import GlobalTreePrinter
 import List
 import Num
 import Programs
@@ -31,6 +34,7 @@ tests = do
   testComplementSubconjs
   testSplit
   printStuff
+  printGlobalStuff
 
 reportError :: Show a => String -> a -> a -> IO ()
 reportError name expected actual =
@@ -57,10 +61,18 @@ manyAssert name expected f =
   mapM_ (\(x, y) -> assert name expected (f x y))
 
 printStuff = do
-  printTree "sldDouble.dot" (topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])))
+  printTree "sldDouble.dot" $ topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
   printTree "sldAppNil.dot" $ topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
   printTree "maxLengtho.dot" $ topLevel (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
   printTree "maxo.dot" $ topLevel (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
+
+printGlobalStuff = do
+  printTree "globalDouble.dot"     $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
+  printTree "globalAppNil.dot"     $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
+  -- printTree "globalMaxLengtho.dot" $ GC.topLevel (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
+  printTree "globalMaxo.dot"       $ GC.topLevel (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
+
+
 
 testEmbedding = do
   testHomeo
@@ -237,8 +249,8 @@ testEmbedding = do
                                           ]
     testVariant = do -- TODO more  tests
       manyAssert "variant goal" False isVariant [ (f [x, y], f [x, x])
-                                               , (f [x, x], f [x, y])
-                                               ]
+                                                , (f [x, x], f [x, y])
+                                                ]
     testRenaming = do -- TODO more tests
       manyAssert "renaming goal" True  isRenaming [ (f [x, y], f [x, x])
                                                   ]
@@ -548,11 +560,34 @@ testMinimallyGeneral = do
 
 testSplit = do -- TODO more tests
   assert "split 0" ([f x x], [g x]) (split [2..] [f x x] [f x x, g x] )
-  assert "split 1" ([f x x], [g x]) (split [2..] [f x x] [g x, f x x] ) -- TODO fails
+  assert "split 1" ([f x x], [g x]) (split [2..] [f x x] [g x, f x x] )
   assert "split 2" ([f x z], [g x]) (split [2..] [f x y] [g x, f x x] )
+  assert "split 3" ([maxo1 (v150 % v153) (s v152) v1, lengtho v153 v154], [leo v121 v122])
+                   (split [150..]
+                          [maxo1 (v51 % v52) (s v33) v1, lengtho v52 v53]
+                          [leo v121 v122, maxo1 (v126 % v127) (s (s (s (s (s v122))))) v1, lengtho v127 v128])
   where
     x = V 0
     y = V 1
     z = V 2
     f x y = Invoke "f" [x, y]
     g x = Invoke "g" [x]
+    maxo1 x y z = Invoke "maxo1" [x, y, z]
+    leo x y = Invoke "leo" [x, y, trueo]
+    lengtho x y = Invoke "lengtho" [x, y]
+    s x = C "S" [x]
+    v51 = V 51
+    v52 = V 52
+    v33 = V 33
+    v1  = V 1
+    v53 = V 53
+    v121 = V 121
+    v122 = V 122
+    v126 = V 126
+    v127 = V 127
+    v128 = V 128
+    v150 = V 150
+    v151 = V 151
+    v152 = V 152
+    v153 = V 153
+    v154 = V 154

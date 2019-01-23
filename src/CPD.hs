@@ -18,22 +18,24 @@ import qualified Data.Map.Strict as Map
 import Debug.Trace
 import qualified Driving as D
 
-data Descend = Descend { getGoal :: G S, getAncs :: [G S] } deriving (Show, Eq)
+data Descend a = Descend { getCurr :: a, getAncs :: [a] } deriving (Show, Eq)
+
+type DescendGoal = Descend (G S)
 
 data SldTree = Fail
              | Success E.Sigma
              | Or [SldTree] E.Sigma
-             | Conj SldTree [Descend] E.Sigma
-             | Leaf [Descend] E.Sigma
+             | Conj SldTree [DescendGoal] E.Sigma
+             | Leaf [DescendGoal] E.Sigma E.Gamma
 
-select :: [Descend] -> Maybe Descend
-select = find (\x -> isSelectable embed (getGoal x) (getAncs x))
+select :: [DescendGoal] -> Maybe DescendGoal
+select = find (\x -> isSelectable embed (getCurr x) (getAncs x))
 
-selecter :: [Descend] -> ([Descend], [Descend])
-selecter ds = span (\x -> not $ isSelectable embed (getGoal x) (getAncs x)) ds
-  -- trace (printf "Selecting in %s" (show $ map getGoal ds)) $
-  -- let (x, y) = span (\x -> not $ isSelectable embed (getGoal x) (getAncs x)) ds in
-  -- trace (printf "Result:\n%s\n%s" (show $ map getGoal x) (show $ map getGoal y)) (x,y)
+selecter :: [DescendGoal] -> ([DescendGoal], [DescendGoal])
+selecter ds = span (\x -> not $ isSelectable embed (getCurr x) (getAncs x)) ds
+  -- trace (printf "Selecting in %s" (show $ map getCurr ds)) $
+  -- let (x, y) = span (\x -> not $ isSelectable embed (getCurr x) (getAncs x)) ds in
+  -- trace (printf "Result:\n%s\n%s" (show $ map getCurr x) (show $ map getCurr y)) (x,y)
 
 -- TODO reconsider hardcoded list of basic function names
 isSelectable :: (G a -> G a -> Bool) -> G a -> [G a] -> Bool
@@ -46,13 +48,13 @@ isSelectable emb goal ancs =
 
 substituteDescend s = map $ \(Descend g ancs) -> Descend (E.substituteGoal s g) ancs
 
-sldResolutionStep :: [Descend] -> E.Gamma -> E.Sigma -> [[G S]] ->SldTree
+sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> [[G S]] ->SldTree
 sldResolutionStep gs env@(p, i, d) s seen =
-  if variantCheck (map getGoal gs) seen
-  then Leaf gs s
+  if variantCheck (map getCurr gs) seen
+  then Leaf gs s env
   else
     case selecter gs of
-      (_, []) -> Leaf gs s
+      (_, []) -> Leaf gs s env
       (ls, Descend g@(Invoke f as) ancs : rs) ->
         let (_, fs, body) = p f in
         if length fs == length as
@@ -71,9 +73,9 @@ sldResolutionStep gs env@(p, i, d) s seen =
                   case rs of
                     [] -> Success s'
                     _  -> let newDescends = addDescends [] s' in
-                          Conj (sldResolutionStep newDescends env' s' (map getGoal gs : seen)) newDescends s'
+                          Conj (sldResolutionStep newDescends env' s' (map getCurr gs : seen)) newDescends s'
                 step (xs, s') = let newDescends = addDescends xs s'
-                                in  Conj (sldResolutionStep newDescends env' s' (map getGoal gs : seen)) newDescends s'
+                                in  Conj (sldResolutionStep newDescends env' s' (map getCurr gs : seen)) newDescends s'
         else error "Unfolding error: different number of factual and actual arguments"
 
 normalize :: G S -> [[G S]] -- disjunction of conjunctions of calls and unifications
@@ -91,29 +93,21 @@ unifyStuff state gs = go gs state [] where
     s <- E.unify (Just state) t u
     go gs s conjs
 
-sldResolution :: [Descend] -> SldTree
-sldResolution gs = undefined
-  --maybe (Leaf gs) (\sel -> undefined) (select gs)
-
 bodies :: SldTree -> [[G S]]
 bodies = leaves
 
 leaves :: SldTree -> [[G S]]
 leaves (Or disjs _) = concatMap leaves disjs
 leaves (Conj ch  _ _) = leaves ch
-leaves (Leaf ds _) =  [map getGoal ds]
+leaves (Leaf ds _ _) =  [map getCurr ds]
 leaves _ = []
 
-resultants :: SldTree -> [(E.Sigma, [G S])]
-resultants (Success s) = [(s, [])]
+resultants :: SldTree -> [(E.Sigma, [G S], Maybe E.Gamma)]
+resultants (Success s) = [(s, [], Nothing)]
 resultants (Or disjs _) = concatMap resultants disjs
 resultants (Conj ch _ _) = resultants ch
-resultants (Leaf ds s) = [(s, map getGoal ds)]
-
-unfold :: [G S] -> [[G S]]
-unfold gs =
-  let trivialDescend = map (\g -> Descend g []) gs in
-  leaves $ Conj (sldResolution trivialDescend) trivialDescend E.s0
+resultants (Leaf ds s env) = [(s, map getCurr ds, Just env)]
+resultants Fail = []
 
 topLevel :: G X -> SldTree
 topLevel goal =
@@ -154,8 +148,9 @@ complementSubconjs :: (Instance a (Term a), Eq a, Ord a, Show a) => [G a] -> [G 
 complementSubconjs [] xs = xs
 complementSubconjs (x:xs) (y:ys) | x == y = complementSubconjs xs ys
 complementSubconjs (x:xs) (y:ys) | isRenaming x y = complementSubconjs xs ys
+complementSubconjs (x:xs) (y:ys) | isInst x y = complementSubconjs xs ys
 complementSubconjs xs (y:ys) = y : complementSubconjs xs ys
--- complementSubconjs xs ys = error (printf "complementing %s by %s" (show xs) (show ys))
+complementSubconjs xs ys = error (printf "complementing %s by %s" (show xs) (show ys))
 
 -- TODO : implemented literally according to the definition, may be inefficient. Look at the graph approach again.
 -- elem q is minimally general of Q iff there doesn't exist another elem q' \in Q which is a strict instance (q' = q \Theta)
@@ -163,7 +158,6 @@ complementSubconjs xs (y:ys) = y : complementSubconjs xs ys
 minimallyGeneral :: Ord a => [[G a]] -> [G a]
 minimallyGeneral xs = go xs xs where
   go [x] _ = x
-  --minimallyGeneral (x:xs) = if any (\g -> isStrictInst x g) xs then trace (show (map (\g -> (x, g, isStrictInst x g)) xs)) $  minimallyGeneral xs else x
   go (x:xs) ys | any (\g -> isStrictInst x g) ys = go xs ys
   go (x:xs) _ = x
   go [] _ = error "Empty list of best matching conjunctions"
@@ -178,6 +172,7 @@ split d q q' = -- q <= q'
   let n = length q in
   let qCurly = filter (\q'' -> q `embed` q'') $ subconjs q' n in
   let b = minimallyGeneral $ bmc d q qCurly in
+  --trace (printf "Splitting\nq:  %s\nq': %s\nqCurly: %s\nb:  %s\n" (show q) (show q') (show qCurly) (show b)) $
   (b, complementSubconjs b q')
 
 class Homeo a where
