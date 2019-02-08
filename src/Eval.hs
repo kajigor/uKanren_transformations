@@ -32,7 +32,10 @@ unify st@(Just subst) u v =
         Nothing -> x
         Just t  -> walk t s
     walk u' _ = u'
-    occursCheck u' t s = if elem u' $ fv t then error "Occurs check!" else s
+    occursCheck u' t s = if elem u' $ fv t
+                         then Nothing
+                              --error "Occurs check!"
+                         else s
 
 ---- Interpreting syntactic variables
 infix 9 <@>
@@ -56,7 +59,7 @@ app (_, i) = i
 ---- Applying substitution
 substitute :: Sigma -> Ts -> Ts
 substitute s t@(V x)  =
-  case lookup x s of Nothing -> t ; Just tx -> substitute s tx
+  case lookup x s of Nothing -> t ; Just tx -> {- trace "??" $ -} substitute s tx
 substitute s (C m ts) = C m $ map (substitute s) ts
 
 substituteGoal :: Sigma -> G S -> G S
@@ -77,6 +80,9 @@ o sigma theta =
 
 showSigma :: Sigma -> String
 showSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (show $ V x) (show y)) s))
+
+showSigma' :: Sigma -> String
+showSigma' s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s -> %s" (show $ V x) (show y)) s))
 
 -- Pre-evaluation
 preEval' :: Gamma -> G X -> (G S, Gamma, [S])

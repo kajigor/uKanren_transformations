@@ -1,3 +1,4 @@
+
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -33,9 +34,6 @@ select = find (\x -> isSelectable embed (getCurr x) (getAncs x))
 
 selecter :: [DescendGoal] -> ([DescendGoal], [DescendGoal])
 selecter ds = span (\x -> not $ isSelectable embed (getCurr x) (getAncs x)) ds
-  -- trace (printf "Selecting in %s" (show $ map getCurr ds)) $
-  -- let (x, y) = span (\x -> not $ isSelectable embed (getCurr x) (getAncs x)) ds in
-  -- trace (printf "Result:\n%s\n%s" (show $ map getCurr x) (show $ map getCurr y)) (x,y)
 
 -- TODO reconsider hardcoded list of basic function names
 isSelectable :: (G a -> G a -> Bool) -> G a -> [G a] -> Bool
@@ -48,8 +46,12 @@ isSelectable emb goal ancs =
 
 substituteDescend s = map $ \(Descend g ancs) -> Descend (E.substituteGoal s g) ancs
 
+sldResolution :: [G S] -> E.Gamma -> E.Sigma -> SldTree
+sldResolution goal gamma subst =
+  sldResolutionStep (map (\x -> Descend x []) goal) gamma subst []
+
 sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> [[G S]] ->SldTree
-sldResolutionStep gs env@(p, i, d) s seen =
+sldResolutionStep gs env@(p, i, d@(temp:_)) s seen =
   if variantCheck (map getCurr gs) seen
   then Leaf gs s env
   else
@@ -59,6 +61,7 @@ sldResolutionStep gs env@(p, i, d) s seen =
         let (_, fs, body) = p f in
         if length fs == length as
         then
+          --trace (printf "\nSLD resolution: %s\n%s\n%s\n%s\n\n" (show gs) (show temp) (show seen) (E.showSigma' s)) $
           let i' = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
           let (g', env', _) = E.preEval' (p, i', d) body in
           let normalized = normalize g' in
@@ -90,6 +93,7 @@ unifyStuff state gs = go gs state [] where
   go [] state conjs = Just (reverse conjs, state)
   go (g@(Invoke _ _) : gs) state conjs = go gs state (g : conjs)
   go ((t :=: u) : gs) state conjs = do
+    -- s <- trace (printf "Unifying %s\nt: %s\nu: %s\ns: %s" (show gs) (show t) (show u) (show state))  $  E.unify (Just state) t u
     s <- E.unify (Just state) t u
     go gs s conjs
 
@@ -162,18 +166,30 @@ minimallyGeneral xs = go xs xs where
   go (x:xs) _ = x
   go [] _ = error "Empty list of best matching conjunctions"
 
-bmc :: E.Delta -> [G S] -> [[G S]] -> [[G S]]
-bmc d q qCurly = [(\(x,_,_,_) -> x) $ D.generalizeGoals d q q' | q' <- qCurly, msgExists q q']
-  -- let res = [(\(x,_,_,_) -> x) $ D.generalizeGoals d q q' | q' <- qCurly, msgExists q q']
-  -- in trace (show res) res
+bmc :: E.Delta -> [G S] -> [[G S]] -> ([[G S]], E.Delta)
+bmc d q [] = ([], d)
+bmc d q (q':qCurly) | msgExists q q' =
+  let (generalized, _, _, delta) = D.generalizeGoals d q q in
+  let (gss, delta') = bmc delta q qCurly in
+  (generalized : gss, delta')
+bmc d q (q':qCurly) = bmc d q qCurly
+-- bmc d q qCurly = [(\(x,_,_,_) -> x) $ D.generalizeGoals d q q' | q' <- qCurly, msgExists q q']
 
-split :: E.Delta -> [G S] -> [G S] -> ([G S], [G S])
+split :: E.Delta -> [G S] -> [G S] -> (([G S], [G S]), E.Delta)
 split d q q' = -- q <= q'
   let n = length q in
   let qCurly = filter (\q'' -> q `embed` q'') $ subconjs q' n in
-  let b = minimallyGeneral $ bmc d q qCurly in
-  --trace (printf "Splitting\nq:  %s\nq': %s\nqCurly: %s\nb:  %s\n" (show q) (show q') (show qCurly) (show b)) $
-  (b, complementSubconjs b q')
+  let (bestMC, delta) = bmc d q qCurly in
+  let b = minimallyGeneral bestMC in
+  ((b, complementSubconjs b q'), delta)
+
+
+-- split :: E.Delta -> [G S] -> [G S] -> ([G S], [G S])
+-- split d q q' = -- q <= q'
+--   let n = length q in
+--   let qCurly = filter (\q'' -> q `embed` q'') $ subconjs q' n in
+--   let b = minimallyGeneral $ bmc d q qCurly in
+--   (b, complementSubconjs b q')
 
 class Homeo a where
   couple :: a -> a -> Bool

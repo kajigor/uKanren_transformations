@@ -20,20 +20,22 @@ import Debug.Trace
 import Prelude hiding (succ)
 
 tests = do
-  testEmbedding
-  testSelect
-  testTakingOutLets
-  testPopingOutFreshes
-  testNormalization
-  testUnifyStuff
-  testLocalControl
-  testMCS
-  testMsgExists
-  testSubconjs
-  testMinimallyGeneral
-  testComplementSubconjs
-  testSplit
-  printStuff
+  -- testEmbedding
+  -- testSelect
+  -- testTakingOutLets
+  -- testPopingOutFreshes
+  -- testNormalization
+  -- testUnifyStuff
+  -- testLocalControl
+  -- testMCS
+  -- testMsgExists
+  -- testSubconjs
+  -- testMinimallyGeneral
+  -- testComplementSubconjs
+  -- testSplit
+  -- printStuff
+
+  --testAbstract
   printGlobalStuff
 
 reportError :: Show a => String -> a -> a -> IO ()
@@ -70,7 +72,7 @@ printGlobalStuff = do
   printTree "globalDouble.dot"     $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
   printTree "globalAppNil.dot"     $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
   -- printTree "globalMaxLengtho.dot" $ GC.topLevel (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
-  printTree "globalMaxo.dot"       $ GC.topLevel (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
+  -- printTree "globalMaxo.dot"       $ GC.topLevel (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
 
 
 
@@ -222,6 +224,7 @@ testEmbedding = do
                                           , (f [v, x, y], f [x, y, v]) -- variant
                                           , (f [v, x, y], f [n [x, v], x, y]) -- not a strict instance
                                           , (f [c [], m [x, x]], f [n [c []], m [x, y]])
+                                          , (maxo1 v15 (s (s v20)) v1, maxo1 v50 (s (s v51)) v1)
                                           ]
     testEmbedConj = do
       manyAssert "embed conj" False embed [ ([f [n [x, v], x, y]], [f [v, x, y]])
@@ -266,6 +269,13 @@ testEmbedding = do
     m = C "m"
     f = Invoke "f"
     g = Invoke "g"
+    maxo1 x y z = Invoke "maxo1" [x, y, z]
+    v1 = V "1"
+    v15 = V "15"
+    v20 = V "20"
+    v50 = V "50"
+    v51 = V "51"
+    s x = C "s" [x]
 
 testSelect = do
   testSelect1
@@ -559,14 +569,20 @@ testMinimallyGeneral = do
     u = V "u"
 
 testSplit = do -- TODO more tests
-  assert "split 0" ([f x x], [g x]) (split [2..] [f x x] [f x x, g x] )
-  assert "split 1" ([f x x], [g x]) (split [2..] [f x x] [g x, f x x] )
-  assert "split 2" ([f x z], [g x]) (split [2..] [f x y] [g x, f x x] )
-  assert "split 3" ([maxo1 (v150 % v153) (s v152) v1, lengtho v153 v154], [leo v121 v122])
-                   (split [150..]
-                          [maxo1 (v51 % v52) (s v33) v1, lengtho v52 v53]
-                          [leo v121 v122, maxo1 (v126 % v127) (s (s (s (s (s v122))))) v1, lengtho v127 v128])
+  assertCustom "split 0" checkVariant ([f x x], [g x]) (fst $ split [2..] [f x x] [f x x, g x] )
+  assertCustom "split 1" checkVariant ([f x x], [g x]) (fst $ split [2..] [f x x] [g x, f x x] )
+  assertCustom "split 2" checkVariant ([f x z], [g x]) (fst $ split [2..] [f x y] [g x, f x x] )
+  assertCustom "split 3" checkVariant ([maxo1 (v150 % v153) (s v152) v1, lengtho v153 v154], [leo v121 v122])
+                                      (fst $
+                                       split [150..]
+                                             [maxo1 (v51 % v52) (s v33) v1, lengtho v52 v53]
+                                             [leo v121 v122, maxo1 (v126 % v127) (s (s (s (s (s v122))))) v1, lengtho v127 v128])
+  assertCustom "split 4" checkVariant ([maxo1 v50 (s (s v51)) v1], [])
+                                      (fst $
+                                       split [50..] [maxo1 v15 (s (s v20)) v1] [maxo1 v50 (s (s v51)) v1])
   where
+    checkVariant (x, x') (y, y') = isVariant x y && isVariant x' y'
+
     x = V 0
     y = V 1
     z = V 2
@@ -576,10 +592,13 @@ testSplit = do -- TODO more tests
     leo x y = Invoke "leo" [x, y, trueo]
     lengtho x y = Invoke "lengtho" [x, y]
     s x = C "S" [x]
+    v1  = V 1
+    v15 = V 15
+    v20 = V 20
+    v33 = V 33
+    v50 = V 50
     v51 = V 51
     v52 = V 52
-    v33 = V 33
-    v1  = V 1
     v53 = V 53
     v121 = V 121
     v122 = V 122
@@ -591,3 +610,12 @@ testSplit = do -- TODO more tests
     v152 = V 152
     v153 = V 153
     v154 = V 154
+
+testAbstract = do
+  assert "abstract" [goal] (fst $ GC.abstract (Descend goal []) goal [11..])
+  where
+    goal = [maxo1 v3 zero v1]
+    maxo1 x y z = Invoke "maxo1" [x, y, z]
+    v3 = V 3
+    v1 = V 1
+    zero = C "O" []
