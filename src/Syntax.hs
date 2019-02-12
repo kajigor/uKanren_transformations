@@ -128,7 +128,7 @@ instance (Dot a, Dot b) => Dot (a, b) where
   dot (x,y) = printf "(%s, %s)" (dot x) (dot y)
 
 instance Dot a => Dot [a] where
-  dot x = unwords (map dot x)
+  dot x = intercalate ", " (map dot x)
 
 instance Dot a => Dot (Term a) where
   dot (V v) = printf "v<SUB>%s</SUB>" (dot v)

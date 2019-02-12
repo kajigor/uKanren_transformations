@@ -74,7 +74,7 @@ whistle descend m =
 generalize :: [G S] -> [G S] -> E.Delta -> ([[G S]], E.Delta)
 generalize m b d =
   -- trace "generalize" $
-  let ((m1, m2), delta) = CPD.split d b m in -- TODO keep track of DELTA!!! otherwise you'll end up colliding var names
+  let ((m1, m2), delta) = CPD.split d b m in
   let (generalized, _, _, delta') = D.generalizeGoals d m1 b in
   (CPD.mcs generalized ++ CPD.mcs m2, delta')
 
@@ -102,16 +102,19 @@ second (_, x, _) = x
 
 topLevel :: G X -> GlobalTree
 topLevel goal =
-  let (goal', _, defs) = justTakeOutLets (goal, []) in
+  trace (printf "TopLevel: %s\n" (show goal)) $
+  let (goal', defs) = takeOutLets goal in
+  trace (printf "Goal' %s\n" (show goal')) $
   let gamma = E.updateDefsInGamma E.env0 defs in
   let (logicGoal, gamma', names) = E.preEval' gamma goal' in
+  trace (printf "PreEvaled: %s\n" (show logicGoal)) $
   let nodes = [[logicGoal]] in
   go nodes (CPD.Descend [logicGoal] []) gamma' E.s0 where
     go nodes d@(CPD.Descend goal ancs) gamma subst =
-      if length nodes < 30
-      then
+      -- if length nodes < 30
+      -- then
         let sldTree = CPD.sldResolution goal gamma subst in
-        let bodies = CPD.resultants sldTree in
+        let (substs, bodies) = partition (null . second) $ CPD.resultants sldTree in
         let abstracted = map (abstractChild ancs) bodies in
         let (toUnfold, toNotUnfold, newNodes) =
                 foldl (\ (yes, no, seen) gs ->
@@ -123,9 +126,12 @@ topLevel goal =
             in
         -- let leafGoals = map second toUnfold in
         let ch = map (\(subst, g, env) -> go newNodes (CPD.Descend g (goal:ancs)) env subst) toUnfold in
-        Node d (map (\(subst, g, _) -> Leaf (CPD.Descend g []) subst) toNotUnfold ++ ch)
-      else
-        Prune d subst
+        let forgetEnv = map (\(x, y, _) -> (x, y)) in
+        let substLeaves = forgetEnv substs in
+        let leaves = forgetEnv toNotUnfold in
+        Node d (map (\(subst, g) -> Leaf (CPD.Descend g []) subst) (substLeaves ++ leaves) ++ ch)
+      -- else
+      --   Prune d subst
       -- let ch = map (\((subst, g, env), ns) ->
       --                        go (ns ++ leafGoals ++ nodes) (CPD.Descend g (goal:ancs)) env subst) (zip qs (map (map second) $ inits qs)) in -- add qs where appropriate
       --       Node d (map (\(subst, g, _) -> Leaf (CPD.Descend g []) subst) chToNotUnfold ++ ch)

@@ -33,53 +33,62 @@ select :: [DescendGoal] -> Maybe DescendGoal
 select = find (\x -> isSelectable embed (getCurr x) (getAncs x))
 
 selecter :: [DescendGoal] -> ([DescendGoal], [DescendGoal])
-selecter ds = span (\x -> not $ isSelectable embed (getCurr x) (getAncs x)) ds
+selecter gs =
+  let result = span (\x -> not $ isSelectable embed (getCurr x) (getAncs x)) gs in
+  trace (printf "Selecter: %s\n" (show result)) result
 
 -- TODO reconsider hardcoded list of basic function names
 isSelectable :: (G a -> G a -> Bool) -> G a -> [G a] -> Bool
+isSelectable _ _ [] = True
 isSelectable emb goal ancs =
-  not $ any (`emb` goal) ancs -- && fineToUnfold goal
-  -- where
-  --   fineToUnfold (Invoke f _) = f `notElem` basics
-  --   fineToUnfold _ = False
-  --   basics = ["leo", "gto"]
+  (not $ any (`emb` goal) ancs) && fineToUnfold goal
+  where
+    fineToUnfold (Invoke f _) = f `notElem` basics
+    fineToUnfold _ = False
+    basics = ["leo", "gto"]
 
 substituteDescend s = map $ \(Descend g ancs) -> Descend (E.substituteGoal s g) ancs
 
 sldResolution :: [G S] -> E.Gamma -> E.Sigma -> SldTree
 sldResolution goal gamma subst =
+  -- trace (printf "SldResolution:\ngoal: %s\n" (show goal)) $
   sldResolutionStep (map (\x -> Descend x []) goal) gamma subst []
 
 sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> [[G S]] ->SldTree
 sldResolutionStep gs env@(p, i, d@(temp:_)) s seen =
+  trace (printf "sld resolution: %s\nSeen: %s" (show gs) (show seen) )  $
   if variantCheck (map getCurr gs) seen
   then Leaf gs s env
   else
     case selecter gs of
       (_, []) -> Leaf gs s env
       (ls, Descend g@(Invoke f as) ancs : rs) ->
+        trace "selected" $
         let (_, fs, body) = p f in
         if length fs == length as
         then
           --trace (printf "\nSLD resolution: %s\n%s\n%s\n%s\n\n" (show gs) (show temp) (show seen) (E.showSigma' s)) $
           let i' = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
           let (g', env', _) = E.preEval' (p, i', d) body in
-          let normalized = normalize g' in
-          let unified = mapMaybe (unifyStuff s) normalized in
-          let addDescends xs s = substituteDescend s (ls ++ map (\x -> Descend x (g : ancs)) xs ++ rs) in
-          case unified of
-            [] -> Fail
-            ns ->
-              Or (map step ns) s
-              where
-                step ([], s') =
-                  case rs of
-                    [] -> Success s'
-                    _  -> let newDescends = addDescends [] s' in
-                          Conj (sldResolutionStep newDescends env' s' (map getCurr gs : seen)) newDescends s'
-                step (xs, s') = let newDescends = addDescends xs s'
-                                in  Conj (sldResolutionStep newDescends env' s' (map getCurr gs : seen)) newDescends s'
+          go g' env' ls rs g ancs
         else error "Unfolding error: different number of factual and actual arguments"
+      (ls, Descend g ancs : rs) ->
+        go g env ls rs g ancs 
+  where
+    go g' env' ls rs g ancs =
+      let normalized = normalize g' in
+      let unified = mapMaybe (unifyStuff s) normalized in
+      let addDescends xs s = substituteDescend s (ls ++ map (\x -> Descend x (g : ancs)) xs ++ rs) in
+      case unified of
+        [] -> Fail
+        ns ->
+          Or (map step ns) s
+          where
+            step (xs, s') =
+              if null xs && null rs
+              then Success s'
+              else let newDescends = addDescends xs s' in
+                   Conj (sldResolutionStep newDescends env' s' (map getCurr gs : seen)) newDescends s'
 
 normalize :: G S -> [[G S]] -- disjunction of conjunctions of calls and unifications
 normalize (f :\/: g) = normalize f ++ normalize g
@@ -159,8 +168,8 @@ complementSubconjs xs ys = error (printf "complementing %s by %s" (show xs) (sho
 -- TODO : implemented literally according to the definition, may be inefficient. Look at the graph approach again.
 -- elem q is minimally general of Q iff there doesn't exist another elem q' \in Q which is a strict instance (q' = q \Theta)
 -- isStrictInst q t iff q = t \Theta
-minimallyGeneral :: Ord a => [[G a]] -> [G a]
-minimallyGeneral xs = go xs xs where
+minimallyGeneral :: (Show a, Ord a) => [[G a]] -> [G a]
+minimallyGeneral xs = trace (printf "minimally general %s\n" (show xs) ) $ go xs xs where
   go [x] _ = x
   go (x:xs) ys | any (\g -> isStrictInst x g) ys = go xs ys
   go (x:xs) _ = x
@@ -179,9 +188,11 @@ split :: E.Delta -> [G S] -> [G S] -> (([G S], [G S]), E.Delta)
 split d q q' = -- q <= q'
   let n = length q in
   let qCurly = filter (\q'' -> q `embed` q'') $ subconjs q' n in
-  let (bestMC, delta) = bmc d q qCurly in
+  let (bestMC, delta) =
+        trace (printf "Splitting\nq:  %s\nq': %s\nQC: %s\nSub %s\n" (show q) (show q') (show qCurly) (show $ subconjs q' n)) $
+        bmc d q qCurly in
   let b = minimallyGeneral bestMC in
-  ((b, complementSubconjs b q'), delta)
+  ((b, if length q' > n then complementSubconjs b q' else []), delta)
 
 
 -- split :: E.Delta -> [G S] -> [G S] -> ([G S], [G S])
@@ -191,7 +202,7 @@ split d q q' = -- q <= q'
 --   let b = minimallyGeneral $ bmc d q qCurly in
 --   (b, complementSubconjs b q')
 
-class Homeo a where
+class AlwaysEmbeddable a => Homeo a where
   couple :: a -> a -> Bool
   diving :: a -> a -> Bool
   homeo  :: a -> a -> Bool
@@ -208,14 +219,14 @@ instance Homeo (Term a) where
   homeo (V _) (V _) = True
   homeo x y = couple x y || diving x y
 
-instance Homeo (G a) where
-  couple (Invoke f as) (Invoke g bs) | f == g && length as == length bs =
+instance Show a => Homeo (G a) where
+  couple goal@(Invoke f as) (Invoke g bs) | (trace (printf "Goal: %s\nAlwaysEmbeddable? %s\n" (show goal) (show $ isAlwaysEmbeddable goal)) $ isAlwaysEmbeddable goal) || f == g && length as == length bs =
     all (uncurry homeo) $ zip as bs
   couple _ _ = False
 
   diving _ _ = False
 
-instance Homeo [G a] where
+instance Show a => Homeo [G a] where
   couple = undefined
   diving = undefined
 
@@ -271,10 +282,23 @@ instance (Eq a, Ord a) => Instance a [G a] where
     foldl (\s (a, b) -> s >>= \s -> inst a b s) (Just subst) (zip as bs)
   inst _ _ _ = Nothing
 
--- Strict homeomorphic embedding. Explore: use a variants check instead of the instance check.
-class (Homeo b, Instance a b, Eq b) => Embed a b | b -> a where
-  embed :: b -> b -> Bool
-  embed g h = g == h || homeo g h && not (isStrictInst h g)
+class AlwaysEmbeddable a where
+  isAlwaysEmbeddable :: a -> Bool
 
-instance (Ord a, Eq a) => Embed a (G a)
-instance (Ord a, Eq a) => Embed a [G a]
+instance AlwaysEmbeddable (G a) where
+  isAlwaysEmbeddable (Invoke f _) = f `elem` ["leo", "gto"]
+  isAlwaysEmbeddable _ = False
+
+instance AlwaysEmbeddable [G a] where
+  isAlwaysEmbeddable = null
+
+instance AlwaysEmbeddable (Term a) where
+  isAlwaysEmbeddable = const True
+
+-- Strict homeomorphic embedding. Explore: use a variants check instead of the instance check.
+class (Homeo b, Instance a b, Eq b, Show a) => Embed a b | b -> a where
+  embed :: b -> b -> Bool
+  embed g h = isAlwaysEmbeddable g || g == h || homeo g h && not (isStrictInst h g)
+
+instance (Ord a, Eq a, Show a) => Embed a (G a)
+instance (Ord a, Eq a, Show a) => Embed a [G a]

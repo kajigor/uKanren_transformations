@@ -33,7 +33,7 @@ tests = do
   -- testMinimallyGeneral
   -- testComplementSubconjs
   -- testSplit
-  -- printStuff
+  --printStuff
 
   --testAbstract
   printGlobalStuff
@@ -67,12 +67,15 @@ printStuff = do
   printTree "sldAppNil.dot" $ topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
   printTree "maxLengtho.dot" $ topLevel (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
   printTree "maxo.dot" $ topLevel (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
+  printTree "commute.dot" $ topLevel (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
 
 printGlobalStuff = do
   printTree "globalDouble.dot"     $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
+  printTree "globalCommute.dot"    $ GC.topLevel (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
   printTree "globalAppNil.dot"     $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
+  printTree "globalRevAcco.dot"    $ GC.topLevel (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
   -- printTree "globalMaxLengtho.dot" $ GC.topLevel (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
-  -- printTree "globalMaxo.dot"       $ GC.topLevel (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
+  --printTree "globalMaxo.dot"       $ GC.topLevel (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
 
 
 
