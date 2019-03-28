@@ -59,7 +59,7 @@ app (_, i) = i
 ---- Applying substitution
 substitute :: Sigma -> Ts -> Ts
 substitute s t@(V x)  =
-  case lookup x s of Nothing -> t ; Just tx -> {- trace "??" $ -} substitute s tx
+  case lookup x s of Nothing -> t ; Just tx -> substitute s tx
 substitute s (C m ts) = C m $ map (substitute s) ts
 
 substituteGoal :: Sigma -> G S -> G S
@@ -67,8 +67,7 @@ substituteGoal s (Invoke name as) = Invoke name (map (substitute s) as)
 substituteGoal _ g = error $ printf "We have only planned to substitute into calls, and you are trying to substitute into:\n%s" (show g)
 
 substituteConjs :: Sigma -> [G S] -> [G S]
-substituteConjs s = -- trace "Substituting..." $
-                    map $ substituteGoal s
+substituteConjs s = map $ substituteGoal s
 
 
 ---- Composing substitutions
@@ -95,10 +94,9 @@ preEval' = preEval []
   preEval vars g           (g1 :\/: g2)   = let (g1', g' , vars')  = preEval vars  g  g1 in
                                             let (g2', g'', vars'') = preEval vars' g' g2 in
                                             (g1' :\/: g2', g'', vars'')
-  preEval vars   (p, i, y : d') (Fresh x g')   =
-    trace (printf "fresh %s\n" x) $
+  preEval vars   (p, i, y : d') (Fresh x g') =
     preEval (y : vars) (p, extend i x (V y), d') g'
-  preEval vars g@(_, i, _) (Invoke f fs)  = trace (printf "fs: %s\n" (show fs)) (Invoke f (map (i <@>) fs), g, vars)
+  preEval vars g@(_, i, _) (Invoke f fs)  = (Invoke f (map (i <@>) fs), g, vars)
   preEval vars e           (Let    def' g) = let (g', e', vars') = preEval vars e g in
                                              (Let def' g', e', vars')
 

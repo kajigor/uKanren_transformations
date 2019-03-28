@@ -3,6 +3,7 @@ module Programs where
 import List
 import Num
 import Syntax
+import Prelude hiding (succ)
 
 palindromo :: G a -> G a
 palindromo g = let x = V "x" in Let (def "palindromo" ["x"] (call "reverso" [x, x])) $ reverso g
@@ -79,3 +80,19 @@ externalVar =
       a === nil &&& b === x |||
       fresh ["c", "cs", "d", "ds"] (a === c % cs &&& b === c % ds &&& call "appendo" [cs, ds])))
     (call "appendo" [y, {-z-} toList [0..5]]))
+
+is5 :: G a -> G a
+is5 g = Let (def "is5" ["x"] (V "x" === peanify 5)) g
+
+isNum :: G a -> G a
+isNum g =
+  Let (def "isNum" ["x"] ((x === zero) ||| (fresh ["y"] (x === succ y)))) g
+    where
+      x = V "x"
+      y = V "y"
+
+check5 :: G a -> G a
+check5 g =
+  Let (def "check5" ["x"] (call "isNum" [x] &&& call "is5" [x])) $ isNum $ is5 g
+    where
+      x = V "x"

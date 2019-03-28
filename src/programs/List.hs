@@ -37,6 +37,37 @@ list (C "Nil"  _     ) = "nil"
 list (C s []) = s
 list x = show x
 
+listo :: G a -> G a
+listo g =
+  let x = V "x" in
+  let h = V "h" in
+  let t = V "t" in
+  Let (def "listo" ["x"] (( x === nil ) ||| (fresh ["h", "t"] (x === h % t &&& call "listo" [t])))
+      ) g
+
+membero :: G a -> G a
+membero g =
+  let x = V "x" in
+  let list = V "list" in
+  let h = V "h" in
+  let t = V "t" in
+  Let ( def "membero" ["x", "list"]
+        (
+          fresh ["h", "t"] ( ( list === h % t ) &&&
+                             ( ( x === h ) |||
+                               ( call "membero" [x, t])
+                             )
+                           )
+        )
+      ) g
+
+inBotho :: G a -> G a
+inBotho g =
+  let x = V "x" in
+  let ys = V "ys" in
+  let zs = V "zs" in
+  Let ( def "inBotho" ["x", "ys", "zs"] ( call "membero" [x, ys] &&& call "membero" [x, zs]) ) $ membero g
+
 nilo :: G a -> G a
 nilo g =
   let l = V "l" in
@@ -55,6 +86,59 @@ maxLengtho g =
     x = V "x"
     m = V "m"
     l = V "l"
+
+copy :: G a -> G a
+copy g =
+  Let (def "copy" ["l", "c"]
+        (
+          (l === nil &&& c === nil) |||
+          (fresh ["h", "t", "t'"]
+            (
+              l === h % t &&& c === h % t' &&& call "copy" [t, t']
+            )
+          )
+        )
+      ) g
+    where
+      l = V "l"
+      c = V "c"
+      h = V "h"
+      t = V "t"
+      t' = V "t'"
+
+copy2 :: G a -> G a
+copy2 g =
+  Let (def "copy2" ["l", "c"]
+        (
+          (l === nil &&& c === nil) |||
+          (fresh ["h"] (l === h % nil &&& c === h % nil)) |||
+          (fresh ["h1", "h2", "t", "t'"]
+            (
+              l === h1 % (h2 % t) &&& c === h1 % t' &&& call "copy2" [t, t']
+            )
+          )
+        )
+      ) g
+    where
+      l = V "l"
+      c = V "c"
+      h = V "h"
+      h1 = V "h1"
+      h2 = V "h2"
+      t = V "t"
+      t' = V "t'"
+
+copycopy :: G a -> G a
+copycopy g =
+  Let (def "copycopy" ["l", "l1", "l2"]
+        (call "copy" [l, l1] &&& call "copy2" [l, l2])
+      ) $ copy $ copy2 g
+    where
+      l = V "l"
+      l1 = V "l1"
+      l2 = V "l2"
+
+
 
 lengtho :: G a -> G a
 lengtho g =

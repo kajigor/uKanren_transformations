@@ -16,10 +16,11 @@ import Data.Maybe
 import Data.List (find, nub, intersect, partition, subsequences)
 import Purification
 import qualified Data.Map.Strict as Map
-import Debug.Trace
+-- import Debug.Trace
 import qualified Driving as D
+import qualified Data.Set as Set
 
-data Descend a = Descend { getCurr :: a, getAncs :: [a] } deriving (Show, Eq)
+data Descend a = Descend { getCurr :: a, getAncs :: Set a } deriving (Show, Eq)
 
 type DescendGoal = Descend (G S)
 
@@ -33,62 +34,77 @@ select :: [DescendGoal] -> Maybe DescendGoal
 select = find (\x -> isSelectable embed (getCurr x) (getAncs x))
 
 selecter :: [DescendGoal] -> ([DescendGoal], [DescendGoal])
-selecter gs =
-  let result = span (\x -> not $ isSelectable embed (getCurr x) (getAncs x)) gs in
-  trace (printf "Selecter: %s\n" (show result)) result
+selecter gs = span (\x -> not $ isSelectable embed (getCurr x) (getAncs x)) gs
 
 -- TODO reconsider hardcoded list of basic function names
-isSelectable :: (G a -> G a -> Bool) -> G a -> [G a] -> Bool
-isSelectable _ _ [] = True
+isSelectable :: Show a => (G a -> G a -> Bool) -> G a -> Set (G a) -> Bool
+isSelectable _ _ ancs | Set.null ancs = True
 isSelectable emb goal ancs =
   (not $ any (`emb` goal) ancs) && fineToUnfold goal
   where
     fineToUnfold (Invoke f _) = f `notElem` basics
     fineToUnfold _ = False
-    basics = ["leo", "gto"]
+    basics = [] -- ["leo", "gto"]
 
-substituteDescend s = map $ \(Descend g ancs) -> Descend (E.substituteGoal s g) ancs
+substituteDescend s =
+  map $ \(Descend g ancs) -> Descend (E.substituteGoal s g) ancs
 
 sldResolution :: [G S] -> E.Gamma -> E.Sigma -> SldTree
 sldResolution goal gamma subst =
-  -- trace (printf "SldResolution:\ngoal: %s\n" (show goal)) $
-  sldResolutionStep (map (\x -> Descend x []) goal) gamma subst []
+  sldResolutionStep (map (\x -> Descend x Set.empty) goal) gamma subst Set.empty True
 
-sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> [[G S]] ->SldTree
-sldResolutionStep gs env@(p, i, d@(temp:_)) s seen =
-  trace (printf "sld resolution: %s\nSeen: %s" (show gs) (show seen) )  $
+sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> Set [G S] -> Bool -> SldTree
+sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
   if variantCheck (map getCurr gs) seen
   then Leaf gs s env
   else
-    case selecter gs of
-      (_, []) -> Leaf gs s env
-      (ls, Descend g@(Invoke f as) ancs : rs) ->
-        trace "selected" $
-        let (_, fs, body) = p f in
-        if length fs == length as
-        then
-          --trace (printf "\nSLD resolution: %s\n%s\n%s\n%s\n\n" (show gs) (show temp) (show seen) (E.showSigma' s)) $
-          let i' = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
-          let (g', env', _) = E.preEval' (p, i', d) body in
-          go g' env' ls rs g ancs
-        else error "Unfolding error: different number of factual and actual arguments"
-      (ls, Descend g ancs : rs) ->
-        go g env ls rs g ancs 
+    maybe (Leaf gs s env)
+          (\(ls, Descend g ancs, rs) ->
+              let (g', env') = unfold g env in
+              go g' env' ls rs g ancs isFirstTime
+          )
+          (selectNext gs)
   where
-    go g' env' ls rs g ancs =
+    unfold g@(Invoke f as) env@(p, i, d)  =
+      let (_, fs, body) = p f in
+      if length fs == length as
+      then
+        let i' = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
+        let (g', env', _) = E.preEval' (p, i', d) body in
+        (g', env')
+      else error "Unfolding error: different number of factual and actual arguments"
+    unfold g env = (g, env)
+
+    selectNext gs =
+      let (ls, rs) = selecter gs in
+      if null rs then Nothing else Just (ls, head rs, tail rs)
+
+    go g' env' ls rs g ancs isFirstTime =
       let normalized = normalize g' in
       let unified = mapMaybe (unifyStuff s) normalized in
-      let addDescends xs s = substituteDescend s (ls ++ map (\x -> Descend x (g : ancs)) xs ++ rs) in
+      let addDescends xs s =
+            substituteDescend s (ls ++ map (\x -> Descend x (Set.insert g ancs)) xs ++ rs) in
       case unified of
-        [] -> Fail
-        ns ->
+        [] ->
+          Fail
+        ns | length ns == 1 || isFirstTime ->
           Or (map step ns) s
           where
             step (xs, s') =
               if null xs && null rs
               then Success s'
               else let newDescends = addDescends xs s' in
-                   Conj (sldResolutionStep newDescends env' s' (map getCurr gs : seen)) newDescends s'
+                   Conj (sldResolutionStep newDescends env' s' (Set.insert (map getCurr gs) seen) (length ns /= 1)) newDescends s'
+        ns | not $ null rs ->
+          maybe (Leaf gs s env)
+                (\(ls', Descend nextAtom nextAtomsAncs, rs')  ->
+                        let (g'', env'') = unfold nextAtom env in
+                        go g'' env'' (ls ++ (Descend (getCurr $ head rs) ancs : ls')) rs' g nextAtomsAncs False
+                )
+                (selectNext rs)
+        ns ->
+          Leaf gs s env
+
 
 normalize :: G S -> [[G S]] -- disjunction of conjunctions of calls and unifications
 normalize (f :\/: g) = normalize f ++ normalize g
@@ -102,36 +118,35 @@ unifyStuff state gs = go gs state [] where
   go [] state conjs = Just (reverse conjs, state)
   go (g@(Invoke _ _) : gs) state conjs = go gs state (g : conjs)
   go ((t :=: u) : gs) state conjs = do
-    -- s <- trace (printf "Unifying %s\nt: %s\nu: %s\ns: %s" (show gs) (show t) (show u) (show state))  $  E.unify (Just state) t u
-    s <- E.unify (Just state) t u
+    s <- E.unify  (Just state) t u
     go gs s conjs
 
 bodies :: SldTree -> [[G S]]
 bodies = leaves
 
 leaves :: SldTree -> [[G S]]
-leaves (Or disjs _) = concatMap leaves disjs
+leaves (Or disjs _)   = concatMap leaves disjs
 leaves (Conj ch  _ _) = leaves ch
-leaves (Leaf ds _ _) =  [map getCurr ds]
+leaves (Leaf ds _ _)  = [map getCurr ds]
 leaves _ = []
 
 resultants :: SldTree -> [(E.Sigma, [G S], Maybe E.Gamma)]
-resultants (Success s) = [(s, [], Nothing)]
-resultants (Or disjs _) = concatMap resultants disjs
-resultants (Conj ch _ _) = resultants ch
+resultants (Success s)     = [(s, [], Nothing)]
+resultants (Or disjs _)    = concatMap resultants disjs
+resultants (Conj ch _ _)   = resultants ch
 resultants (Leaf ds s env) = [(s, map getCurr ds, Just env)]
-resultants Fail = []
+resultants Fail            = []
 
 topLevel :: G X -> SldTree
 topLevel goal =
   let (goal', _, defs) = justTakeOutLets (goal, []) in
   let gamma = E.updateDefsInGamma E.env0 defs in
   let (logicGoal, gamma', names) = E.preEval' gamma goal' in
-  sldResolutionStep [Descend logicGoal []] gamma' E.s0 []
+  sldResolutionStep [Descend logicGoal Set.empty] gamma' E.s0 Set.empty True
 
 mcs :: (Eq a, Show a) => [G a] -> [[G a]]
-mcs [] = []
-mcs [g] = [[g]]
+mcs []     = []
+mcs [g]    = [[g]]
 mcs (g:gs) =
   let (con, non, _) =
         foldl (\(con, non, vs) x -> if null (vs `intersect` vars x)
@@ -169,16 +184,17 @@ complementSubconjs xs ys = error (printf "complementing %s by %s" (show xs) (sho
 -- elem q is minimally general of Q iff there doesn't exist another elem q' \in Q which is a strict instance (q' = q \Theta)
 -- isStrictInst q t iff q = t \Theta
 minimallyGeneral :: (Show a, Ord a) => [[G a]] -> [G a]
-minimallyGeneral xs = trace (printf "minimally general %s\n" (show xs) ) $ go xs xs where
-  go [x] _ = x
-  go (x:xs) ys | any (\g -> isStrictInst x g) ys = go xs ys
-  go (x:xs) _ = x
-  go [] _ = error "Empty list of best matching conjunctions"
+minimallyGeneral xs = go xs xs
+  where
+    go [x] _ = x
+    go (x:xs) ys | any (\g -> isStrictInst x g) ys = go xs ys
+    go (x:xs) _ = x
+    go [] _ = error "Empty list of best matching conjunctions"
 
 bmc :: E.Delta -> [G S] -> [[G S]] -> ([[G S]], E.Delta)
 bmc d q [] = ([], d)
 bmc d q (q':qCurly) | msgExists q q' =
-  let (generalized, _, _, delta) = D.generalizeGoals d q q in
+  let (generalized, _, _, delta) = D.generalizeGoals d q q' in
   let (gss, delta') = bmc delta q qCurly in
   (generalized : gss, delta')
 bmc d q (q':qCurly) = bmc d q qCurly
@@ -187,10 +203,9 @@ bmc d q (q':qCurly) = bmc d q qCurly
 split :: E.Delta -> [G S] -> [G S] -> (([G S], [G S]), E.Delta)
 split d q q' = -- q <= q'
   let n = length q in
-  let qCurly = filter (\q'' -> q `embed` q'') $ subconjs q' n in
-  let (bestMC, delta) =
-        trace (printf "Splitting\nq:  %s\nq': %s\nQC: %s\nSub %s\n" (show q) (show q') (show qCurly) (show $ subconjs q' n)) $
-        bmc d q qCurly in
+  -- let qCurly = filterTrace (\q'' -> q `embed` q'') $ subconjs q' n in
+  let qCurly = filter (\q'' -> and $ zipWith embed q q'') $ subconjs q' n in
+  let (bestMC, delta) = bmc d q qCurly in
   let b = minimallyGeneral bestMC in
   ((b, if length q' > n then complementSubconjs b q' else []), delta)
 
@@ -220,7 +235,7 @@ instance Homeo (Term a) where
   homeo x y = couple x y || diving x y
 
 instance Show a => Homeo (G a) where
-  couple goal@(Invoke f as) (Invoke g bs) | (trace (printf "Goal: %s\nAlwaysEmbeddable? %s\n" (show goal) (show $ isAlwaysEmbeddable goal)) $ isAlwaysEmbeddable goal) || f == g && length as == length bs =
+  couple goal@(Invoke f as) (Invoke g bs) | isAlwaysEmbeddable goal || f == g && length as == length bs =
     all (uncurry homeo) $ zip as bs
   couple _ _ = False
 
@@ -258,7 +273,7 @@ class (Eq b) => Instance a b | b -> a where
   instanceCheck :: b -> [b] -> Bool
   instanceCheck g = any (isInst g)
 
-  variantCheck :: b -> [b] -> Bool
+  variantCheck :: Foldable t => b -> t b -> Bool
   variantCheck g = any (isVariant g)
 
 instance (Eq a, Ord a) => Instance a (Term a) where
@@ -286,7 +301,7 @@ class AlwaysEmbeddable a where
   isAlwaysEmbeddable :: a -> Bool
 
 instance AlwaysEmbeddable (G a) where
-  isAlwaysEmbeddable (Invoke f _) = f `elem` ["leo", "gto"]
+  isAlwaysEmbeddable (Invoke f _) = f `elem` [] -- ["leo", "gto"]
   isAlwaysEmbeddable _ = False
 
 instance AlwaysEmbeddable [G a] where

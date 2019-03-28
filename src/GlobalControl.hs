@@ -9,7 +9,8 @@ import qualified Eval as E
 import qualified Driving as D
 import Purification
 import Text.Printf
-import Debug.Trace
+--import Debug.Trace
+import qualified Data.Set as Set
 
 type Descend = CPD.Descend
 
@@ -17,17 +18,19 @@ data GlobalTree = Leaf (Descend [G S]) E.Sigma
                 | Node (Descend [G S]) [GlobalTree]
                 | Prune (Descend [G S]) E.Sigma
 
-sequence :: Descend a -> [a]
+sequence :: Descend a -> Set a
 --sequence d = CPD.getCurr d : CPD.getAncs d
 sequence d = CPD.getAncs d
 
-branch :: GlobalTree -> [[G S]]
+branch :: GlobalTree -> Set [G S]
 branch (Leaf d _) = sequence d
 branch (Node d _) = sequence d
 
-leaves :: GlobalTree -> [[G S]]
-leaves (Leaf d _ ) = [CPD.getCurr d]
-leaves (Node _ ch) = concatMap leaves ch
+leaves :: GlobalTree -> Set [G S]
+leaves (Leaf d _ ) = Set.singleton $ CPD.getCurr d
+leaves (Node _ ch) =
+  let sets = map leaves ch in
+  foldr Set.union Set.empty sets
 
 -- initial splitting into maximally connected suconjunctions, may be something else
 part :: [G S] -> [[G S]]
@@ -35,24 +38,16 @@ part = CPD.mcs
 
 abstract :: Descend [G S] -> [G S] -> E.Delta -> ([[G S]], E.Delta)
 abstract descend goals d =
-  --trace (printf "abstract\nDescend: %s\nGoals: %s\nd: %s\n" (show descend) (show goals) (show $ head d)) $
   let qCurly = part goals in
-  --trace (printf "qCurly: %s" (show qCurly)) $
   go qCurly d
-  -- let result = go qCurly d
-  -- in trace (printf "Abstracting\n%s\nIn the context of\n%s\nWith result\n%s\n" (show goals) (show (sequence descend)) (show $ fst result) )  $ result
    where
-    go [] d@(x:_) = -- trace (printf "trivial %s" (show x)) $
-                    ([], d)
+    go [] d@(x:_) = ([], d)
     go (m:gs) d =
-      -- trace (printf "go\nm:  %s\ngs: %s" (show m) (show gs)) $
       case whistle descend m of
         Nothing ->
-          -- trace "Nothing" $
           let (goals, delta) = go gs d in
           (m : goals, delta)
-        Just b -> -- trace "Just" $
-                  let (goals, delta) = generalize m b d
+        Just b -> let (goals, delta) = generalize m b d
                   in go (gs ++ goals) delta
 
 
@@ -73,10 +68,11 @@ whistle descend m =
 
 generalize :: [G S] -> [G S] -> E.Delta -> ([[G S]], E.Delta)
 generalize m b d =
-  -- trace "generalize" $
   let ((m1, m2), delta) = CPD.split d b m in
   let (generalized, _, _, delta') = D.generalizeGoals d m1 b in
   (CPD.mcs generalized ++ CPD.mcs m2, delta')
+
+
 
 -- generalize :: [G S] -> [G S] -> E.Delta -> [[G S]]
 -- generalize m b d =
@@ -92,7 +88,7 @@ generalize m b d =
 --   -- trace (printf "abstractChildren: %s" (show $ map second result)) $
 --   result
 
-abstractChild :: [[G S]] -> (E.Sigma, [G S], Maybe E.Gamma) -> [(E.Sigma, [G S], E.Gamma)]
+abstractChild :: Set [G S] -> (E.Sigma, [G S], Maybe E.Gamma) -> [(E.Sigma, [G S], E.Gamma)]
 abstractChild _ (_, _, Nothing) = []
 abstractChild ancs (subst, g, Just env@(x, y, d)) =
   let (abstracted, delta) = abstract (CPD.Descend g ancs) g d in
@@ -102,16 +98,13 @@ second (_, x, _) = x
 
 topLevel :: G X -> GlobalTree
 topLevel goal =
-  trace (printf "TopLevel: %s\n" (show goal)) $
   let (goal', defs) = takeOutLets goal in
-  trace (printf "Goal' %s\n" (show goal')) $
   let gamma = E.updateDefsInGamma E.env0 defs in
   let (logicGoal, gamma', names) = E.preEval' gamma goal' in
-  trace (printf "PreEvaled: %s\n" (show logicGoal)) $
   let nodes = [[logicGoal]] in
-  go nodes (CPD.Descend [logicGoal] []) gamma' E.s0 where
+  go nodes (CPD.Descend [logicGoal] Set.empty) gamma' E.s0 where
     go nodes d@(CPD.Descend goal ancs) gamma subst =
-      -- if length nodes < 30
+      -- if any (\g -> any (\g -> case g of Invoke "add" [_, C "S" [C "S" [C "S" [C "S" [C "S" [_]]]]], _] -> True ; _ -> False) g) $ Set.toList ancs
       -- then
         let sldTree = CPD.sldResolution goal gamma subst in
         let (substs, bodies) = partition (null . second) $ CPD.resultants sldTree in
@@ -125,11 +118,11 @@ topLevel goal =
                       abstracted
             in
         -- let leafGoals = map second toUnfold in
-        let ch = map (\(subst, g, env) -> go newNodes (CPD.Descend g (goal:ancs)) env subst) toUnfold in
+        let ch = map (\(subst, g, env) -> go newNodes (CPD.Descend g (Set.insert goal ancs)) env subst) toUnfold in
         let forgetEnv = map (\(x, y, _) -> (x, y)) in
         let substLeaves = forgetEnv substs in
         let leaves = forgetEnv toNotUnfold in
-        Node d (map (\(subst, g) -> Leaf (CPD.Descend g []) subst) (substLeaves ++ leaves) ++ ch)
+        Node d (map (\(subst, g) -> Leaf (CPD.Descend g Set.empty) subst) (substLeaves ++ leaves) ++ ch)
       -- else
       --   Prune d subst
       -- let ch = map (\((subst, g, env), ns) ->

@@ -1,6 +1,7 @@
 module CpdTest (tests) where
 
 import Bool
+import Bridge
 import CPD
 import Control.Monad
 import Data.Maybe
@@ -10,6 +11,7 @@ import qualified Eval as E
 import qualified GlobalControl as GC
 import GlobalTreePrinter
 import List
+import LogicInterpreter
 import Num
 import Programs
 import Purification
@@ -18,25 +20,28 @@ import Syntax
 import Text.Printf
 import Debug.Trace
 import Prelude hiding (succ)
+import qualified Data.Set as Set
 
 tests = do
-  -- testEmbedding
-  -- testSelect
-  -- testTakingOutLets
-  -- testPopingOutFreshes
-  -- testNormalization
-  -- testUnifyStuff
-  -- testLocalControl
-  -- testMCS
-  -- testMsgExists
-  -- testSubconjs
-  -- testMinimallyGeneral
-  -- testComplementSubconjs
-  -- testSplit
-  --printStuff
+  testEmbedding
+  testSelect
+  testTakingOutLets
+  testPopingOutFreshes
+  testNormalization
+  testUnifyStuff
+  testLocalControl
+  testMCS
+  testMsgExists
+  testSubconjs
+  testMinimallyGeneral
+  testComplementSubconjs
+  testSplit
+  printStuff
 
-  --testAbstract
+  testAbstract
   printGlobalStuff
+
+  littleTest
 
 reportError :: Show a => String -> a -> a -> IO ()
 reportError name expected actual =
@@ -68,15 +73,33 @@ printStuff = do
   printTree "maxLengtho.dot" $ topLevel (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
   printTree "maxo.dot" $ topLevel (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
   printTree "commute.dot" $ topLevel (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
+  printTree "listo.dot" $ topLevel (appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
+                                                                             call "listo" [V "b"] &&&
+                                                                             call "listo" [V "c"] &&&
+                                                                             call "appendo" [V "a", V "b", V "c"] &&&
+                                                                             call "appendo" [V "b", V "a", V "c"]))
+  printTree "inBotho.dot" $ topLevel (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", (C "a" [] % nil), V "l" ]))
+  printTree "copycopy.dot" $ topLevel (copycopy $ fresh ["l", "l1", "l2"] (call "copycopy" [V "l", V "l1", V "l2"]))
+  printTree "global_copycopy.dot" $ GC.topLevel (copycopy $ fresh ["l", "l1", "l2"] (call "copycopy" [V "l", V "l1", V "l2"]))
 
 printGlobalStuff = do
   printTree "globalDouble.dot"     $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
   printTree "globalCommute.dot"    $ GC.topLevel (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
   printTree "globalAppNil.dot"     $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
   printTree "globalRevAcco.dot"    $ GC.topLevel (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
-  -- printTree "globalMaxLengtho.dot" $ GC.topLevel (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
-  --printTree "globalMaxo.dot"       $ GC.topLevel (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
+  printTree "globalListo.dot"      $ GC.topLevel ((appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
+                                                                                            call "listo" [V "b"] &&&
+                                                                                            call "listo" [V "c"] &&&
+                                                                                            call "appendo" [V "a", V "b", V "c"] &&&
+                                                                                            call "appendo" [V "b", V "a", V "c"])))
+  printTree "globalInBotho.dot"    $ GC.topLevel (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", (C "a" [] % nil), V "l" ]))
+  printTree "globalMaxLengtho.dot" $ GC.topLevel (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
+  printTree "globalMaxo.dot"       $ GC.topLevel (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
+  printTree "globalSmallBridge.dot" $ GC.topLevel (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]]))
 
+  printTree "globalBigBridge.dot" $ GC.topLevel (game2Big $ fresh ["a", "b"] (call "result" [V "b"] &&& call "getAnswer" [V "a", C "some" [V "b"]]))
+  printTree "globalCheck5.dot"    $ GC.topLevel (check5 $ fresh ["x"] (call "check5" [V "x"]))
+  -- printTree "logicInterpreter.dot" $ GC.topLevel (logic_interpreter $ fresh ["subst", "fml", "res"] (call "check_subst" [V "subst", V "fml", V "res"]))
 
 
 testEmbedding = do
@@ -257,6 +280,18 @@ testEmbedding = do
       manyAssert "variant goal" False isVariant [ (f [x, y], f [x, x])
                                                 , (f [x, x], f [x, y])
                                                 ]
+      manyAssert "variant goal" False isVariant [ (app v19 (cons v18 (cons v12 nil)) (cons v12 (cons v18 v19)),
+                                                   app v22 (cons v18 (cons v21 nil)) (cons v18 (cons v21 v22)))
+                                                ]
+      where
+        app x y xy = Invoke "appendo" [x, y, xy]
+        v12 = V 12
+        v19 = V 19
+        v18 = V 18
+        v21 = V 21
+        v22 = V 22
+        nil = C "Nil" []
+        cons h t = C "Cons" [h, t]
     testRenaming = do -- TODO more tests
       manyAssert "renaming goal" True  isRenaming [ (f [x, y], f [x, x])
                                                   ]
@@ -302,16 +337,16 @@ testSelect = do
         app  x y z = Invoke "app"  [x, y, z]
         app00 = app xs ys t
         app01 = app t zs r
-        app00D = Descend app00 []
-        app01D = Descend app01 []
+        app00D = Descend app00 Set.empty
+        app01D = Descend app01 Set.empty
         app10 = app xs' ys t'
         app11 = app (cons h t') zs r
-        app10D = Descend app10 [app00]
-        app11D = Descend app11 []
+        app10D = Descend app10 $ Set.singleton app00
+        app11D = Descend app11 Set.empty
         app20 = app10
         app21 = app t' zs r'
-        app20D = Descend app20 [app00]
-        app21D = Descend app21 [app11]
+        app20D = Descend app20 $ Set.singleton app00
+        app21D = Descend app21 $ Set.singleton app11
     testSelect2 = do
       assert "select 0" (Just max0D) (select [max0D, len0D])
       assert "select 1" (Just len1D) (select [max1D, len1D])
@@ -331,16 +366,16 @@ testSelect = do
         len  x y   = Invoke "len"  [x, y]
         max0 = max' x n m
         len0 = len x l
-        max0D = Descend max0 []
-        len0D = Descend len0 []
+        max0D = Descend max0 Set.empty
+        len0D = Descend len0 Set.empty
         max1 = max' t n m
         len1 = len (cons h t) l
-        max1D = Descend max1 [max0]
-        len1D = Descend len1 []
+        max1D = Descend max1 $ Set.singleton max0
+        len1D = Descend len1 Set.empty
         max2 = max' t n m
         len2 = len t k
-        max2D = Descend max2 [max0]
-        len2D = Descend len2 [len1]
+        max2D = Descend max2 $ Set.singleton max0
+        len2D = Descend len2 $ Set.singleton len1
 
 testTakingOutLets = do
   assert "taking out lets 0" (uni0, [], []) (justTakeOutLets (uni0, []))
@@ -615,10 +650,39 @@ testSplit = do -- TODO more tests
     v154 = V 154
 
 testAbstract = do
-  assert "abstract" [goal] (fst $ GC.abstract (Descend goal []) goal [11..])
+  assert "abstract" [goal] (fst $ GC.abstract (Descend goal Set.empty) goal [11..])
   where
     goal = [maxo1 v3 zero v1]
     maxo1 x y z = Invoke "maxo1" [x, y, z]
     v3 = V 3
     v1 = V 1
     zero = C "O" []
+
+littleTest = do
+  manyAssert "embed conj1" False embed [ ( [getAnswer' [v4,   st [false, true, false, true, false], some [v8]],  add [v10,v8, s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o)))))))))))))))))]]
+                                         , [getAnswer' [v140, st [false, true, false, true, false], some [v144]],add [v10,v77,s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o)))))))))))))))))]]
+                                         )
+                                       ]
+  manyAssert "embed conj2" True  embed [ ( [getAnswer' [v4,   st [false, true, false, true, false], some [v8]],  add [v10,v8,s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o)))))))))))))))))]]
+                                         , [getAnswer' [v140, st [false, true, false, true, false], some [v144]],add [v146,v144,v145], add [v78,v145,v77],add [v10,v77,s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o)))))))))))))))))]]
+                                         )
+                                       ]
+  where
+    v4 = V 4
+    v8 = V 8
+    v9 = V 9
+    v10 = V 10
+    v77 = V 77
+    v78 = V 78
+    v140 = V 140
+    v144 = V 144
+    v145 = V 145
+    v146 = V 146
+    st = C "st"
+    some = C "some"
+    false = C "false" []
+    true = C "true" []
+    s x = C "s" [x]
+    o = C "o" []
+    getAnswer' x = Invoke "ga" x
+    add x = Invoke "a" x

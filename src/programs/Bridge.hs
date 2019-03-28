@@ -438,7 +438,7 @@ game2 last_goal =
           (call "times" [V "q", V "q28"]) &&&
           (call "max" [V "q27", V "q28", V "q26"])))))
   )) (
-  Let (def "getAnswer" ["answer", "q25"] (
+  Let (def "getAnswer'" ["answer", "q25"] (
     Let (def "start" ["q0"] (
       V "q0" === C "st" [C "true" [], C "true" [], C "true" []]
     )) (
