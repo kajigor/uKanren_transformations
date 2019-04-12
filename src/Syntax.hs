@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Syntax where
 
@@ -26,6 +27,9 @@ type Def = (Name, [Name], G X)
 
 def :: Name -> [Name] -> G X -> Def
 def = (,,)
+
+instance {-# OVERLAPPING #-} Show Def where
+  show (name, args, body) = printf "%s %s = %s" name (unwords args) (show body)
 
 -- Goals
 data G a =
@@ -111,8 +115,8 @@ instance Show a => Show (G a) where
   show (g1 :\/: g2)               = printf "(%s \\/ %s)" (show g1) (show g2)
   show (Fresh name g)             =
     let (names, goal) = freshVars [name] g in
-    printf "fresh %s (%s)" (show $ reverse names) (show goal)
-  show (Invoke name ts)           = printf "%s(%s)" name (show ts)
+    printf "fresh %s (%s)" (unwords $ map show $ reverse names) (show goal)
+  show (Invoke name ts)           = printf "%s %s" name (unwords $ map show ts)
   show (Let (name, args, body) g) = printf "let %s %s = %s in %s" name (unwords args) (show body) (show g)
 
 class Dot a where

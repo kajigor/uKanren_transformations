@@ -17,7 +17,7 @@ toX :: Term S -> Term X
 toX (V x)    = V ('x' : show x)
 toX (C c ts) = C c $ map toX ts
 
-residualizeSubst :: E.Sigma -> [(S, Ts)] -> G X
+residualizeSubst :: E.Sigma -> E.Sigma -> G X
 residualizeSubst g s = conj $ map (\ (s', ts) -> toX (V s') :=: toX (E.substitute g ts)) $ reverse s
 
 substCon :: E.Sigma -> [(S, Ts)] -> [(S, Ts)] -> G X -> G X
@@ -60,6 +60,8 @@ success = "success"
 failure :: String
 failure = "failure"
 
+vident = ('x' :) . show 
+
 residualize :: (TreeContext, Tree, [Id]) -> (G X, [String])
 residualize (tc, t, args) =
   (E.postEval' (map vident args) $ residualizeGen [] tc (simpl t) [], map vident args)
@@ -77,7 +79,6 @@ residualize (tc, t, args) =
     residualizeGen g tc (Call   id s    _ s' ) ubst = substCon g s' ubst $ scope tc id $ residualizeGen g tc s s'
     residualizeGen _ _ _ _ = error "Oops, something is wrong in residualizeGen"
     fident id' = 'f' : show id'
-    vident id' = 'x' : show id'
     scope (sr, args, _) id g =
       if Set.member id sr
       then let as = reverse $ args Map.! id in

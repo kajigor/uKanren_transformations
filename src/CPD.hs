@@ -16,11 +16,15 @@ import Data.Maybe
 import Data.List (find, nub, intersect, partition, subsequences)
 import Purification
 import qualified Data.Map.Strict as Map
--- import Debug.Trace
+import Debug.Trace
+import Data.List
 import qualified Driving as D
 import qualified Data.Set as Set
 
-data Descend a = Descend { getCurr :: a, getAncs :: Set a } deriving (Show, Eq)
+data Descend a = Descend { getCurr :: a, getAncs :: Set a } deriving (Eq)
+
+instance (Show a) => Show (Descend a) where
+  show (Descend curr ancs) = printf "%s <- %s" (show curr) (show $ Set.toList ancs)
 
 type DescendGoal = Descend (G S)
 
@@ -55,11 +59,13 @@ sldResolution goal gamma subst =
 
 sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> Set [G S] -> Bool -> SldTree
 sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
+  -- trace (printf "\nResolution step:\ngs: \n%s" $ intercalate "\n" (map show gs)) $
   if variantCheck (map getCurr gs) seen
   then Leaf gs s env
   else
     maybe (Leaf gs s env)
           (\(ls, Descend g ancs, rs) ->
+              -- trace (printf "\nSelected: %s\nAncs: %s" (show g) (show $ Set.toList ancs)) $
               let (g', env') = unfold g env in
               go g' env' ls rs g ancs isFirstTime
           )
@@ -80,20 +86,24 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
       if null rs then Nothing else Just (ls, head rs, tail rs)
 
     go g' env' ls rs g ancs isFirstTime =
+      -- trace (printf "\nGo: %s" (show g')) $
       let normalized = normalize g' in
       let unified = mapMaybe (unifyStuff s) normalized in
       let addDescends xs s =
             substituteDescend s (ls ++ map (\x -> Descend x (Set.insert g ancs)) xs ++ rs) in
+      -- trace (printf "\nUnified (%s): %s\n" (show $ length unified) (show unified)) $
       case unified of
         [] ->
           Fail
-        ns | length ns == 1 || isFirstTime ->
+        ns | length ns == 1 || isFirstTime -> -- unfold only if it's deterministic or haven't been unfolded before
+          -- trace "In Or" $
           Or (map step ns) s
           where
             step (xs, s') =
               if null xs && null rs
               then Success s'
               else let newDescends = addDescends xs s' in
+                   -- trace (printf "New descends: %s" (show newDescends)) $
                    Conj (sldResolutionStep newDescends env' s' (Set.insert (map getCurr gs) seen) (length ns /= 1)) newDescends s'
         ns | not $ null rs ->
           maybe (Leaf gs s env)

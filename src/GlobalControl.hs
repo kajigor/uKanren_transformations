@@ -9,8 +9,9 @@ import qualified Eval as E
 import qualified Driving as D
 import Purification
 import Text.Printf
---import Debug.Trace
+import Debug.Trace
 import qualified Data.Set as Set
+import CpdResidualization (residualizeSldTree)
 
 type Descend = CPD.Descend
 
@@ -96,18 +97,27 @@ abstractChild ancs (subst, g, Just env@(x, y, d)) =
 
 second (_, x, _) = x
 
+conjToList :: G a -> [G a]
+conjToList (g :/\: h) = conjToList g ++ conjToList h
+conjToList x@(Invoke _ _) = [x]
+conjToList _ = error "This conjunction is not a list of calls"
+
 topLevel :: G X -> GlobalTree
 topLevel goal =
   let (goal', defs) = takeOutLets goal in
   let gamma = E.updateDefsInGamma E.env0 defs in
   let (logicGoal, gamma', names) = E.preEval' gamma goal' in
   let nodes = [[logicGoal]] in
-  go nodes (CPD.Descend [logicGoal] Set.empty) gamma' E.s0 where
-    go nodes d@(CPD.Descend goal ancs) gamma subst =
+  go nodes (CPD.Descend [logicGoal] Set.empty) gamma' E.s0 [] where
+    go nodes d@(CPD.Descend goal ancs) gamma subst defs =
       -- if any (\g -> any (\g -> case g of Invoke "add" [_, C "S" [C "S" [C "S" [C "S" [C "S" [_]]]]], _] -> True ; _ -> False) g) $ Set.toList ancs
       -- then
+        -- trace "\n\nglobal level\n\n" $
+        let subst = E.s0 in
         let sldTree = CPD.sldResolution goal gamma subst in
         let (substs, bodies) = partition (null . second) $ CPD.resultants sldTree in
+        let (def, newDefs) = residualizeSldTree (concatMap conjToList goal) sldTree defs in
+        trace (printf "\nResidualized\n%s" (show def)) $
         let abstracted = map (abstractChild ancs) bodies in
         let (toUnfold, toNotUnfold, newNodes) =
                 foldl (\ (yes, no, seen) gs ->
@@ -118,7 +128,7 @@ topLevel goal =
                       abstracted
             in
         -- let leafGoals = map second toUnfold in
-        let ch = map (\(subst, g, env) -> go newNodes (CPD.Descend g (Set.insert goal ancs)) env subst) toUnfold in
+        let ch = map (\(subst, g, env) -> go newNodes (CPD.Descend g (Set.insert goal ancs)) env subst newDefs) toUnfold in
         let forgetEnv = map (\(x, y, _) -> (x, y)) in
         let substLeaves = forgetEnv substs in
         let leaves = forgetEnv toNotUnfold in

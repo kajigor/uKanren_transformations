@@ -96,3 +96,41 @@ check5 g =
   Let (def "check5" ["x"] (call "isNum" [x] &&& call "is5" [x])) $ isNum $ is5 g
     where
       x = V "x"
+
+genLists :: G a -> G a
+genLists g =
+  Let (def "genLists" ["x"]
+        (
+          (fresh ["y"] (x === y % nil &&& call "isNum" [y])) |||
+          (fresh ["h", "t"] (x === h % t &&& call "isNum" [h] &&& call "genLists" [t]))
+        )
+      ) $ isNum g
+    where
+      x = V "x"
+      y = V "y"
+      h = V "h"
+      t = V "t"
+
+has5 :: G a -> G a
+has5 g =
+  Let (def "has5" ["x"]
+        ( fresh ["h", "t"]
+            ((x === h % t &&& call "is5" [h]) |||
+             (x === h % t &&& call "has5" [t])
+            )
+        )
+      ) $ is5 g
+    where
+      x = V "x"
+      h = V "h"
+      t = V "t"
+
+checkList5 :: G a -> G a
+checkList5 g =
+  Let (def "checkList5" ["x"] (call "has5" [x] &&& call "genLists" [x])) $ genLists $ has5 g
+    where x = V "x"
+
+checkList5' :: G a -> G a
+checkList5' g =
+  Let (def "checkList5" ["x"] (call "genLists" [x] &&& call "has5" [x])) $ genLists $ has5 g
+    where x = V "x"
