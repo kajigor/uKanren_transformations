@@ -11,12 +11,12 @@ import Purification
 import Text.Printf
 import Debug.Trace
 import qualified Data.Set as Set
-import CpdResidualization (residualizeSldTree)
+-- import CpdResidualization (residualizeSldTree)
 
 type Descend = CPD.Descend
 
 data GlobalTree = Leaf (Descend [G S]) E.Sigma
-                | Node (Descend [G S]) [GlobalTree]
+                | Node (Descend [G S]) CPD.SldTree [GlobalTree]
                 | Prune (Descend [G S]) E.Sigma
 
 sequence :: Descend a -> Set a
@@ -25,11 +25,11 @@ sequence d = CPD.getAncs d
 
 branch :: GlobalTree -> Set [G S]
 branch (Leaf d _) = sequence d
-branch (Node d _) = sequence d
+branch (Node d _ _) = sequence d
 
 leaves :: GlobalTree -> Set [G S]
 leaves (Leaf d _ ) = Set.singleton $ CPD.getCurr d
-leaves (Node _ ch) =
+leaves (Node _ _ ch) =
   let sets = map leaves ch in
   foldr Set.union Set.empty sets
 
@@ -116,8 +116,8 @@ topLevel goal =
         let subst = E.s0 in
         let sldTree = CPD.sldResolution goal gamma subst in
         let (substs, bodies) = partition (null . second) $ CPD.resultants sldTree in
-        let (def, newDefs) = residualizeSldTree (concatMap conjToList goal) sldTree defs in
-        trace (printf "\nResidualized\n%s" (show def)) $
+        let (def, newDefs) = undefined in --  residualizeSldTree (concatMap conjToList goal) sldTree defs in
+        -- trace (printf "\nResidualized\n%s" (show def)) $
         let abstracted = map (abstractChild ancs) bodies in
         let (toUnfold, toNotUnfold, newNodes) =
                 foldl (\ (yes, no, seen) gs ->
@@ -132,7 +132,7 @@ topLevel goal =
         let forgetEnv = map (\(x, y, _) -> (x, y)) in
         let substLeaves = forgetEnv substs in
         let leaves = forgetEnv toNotUnfold in
-        Node d (map (\(subst, g) -> Leaf (CPD.Descend g Set.empty) subst) (substLeaves ++ leaves) ++ ch)
+        Node d sldTree (map (\(subst, g) -> Leaf (CPD.Descend g Set.empty) subst) (substLeaves ++ leaves) ++ ch)
       -- else
       --   Prune d subst
       -- let ch = map (\((subst, g, env), ns) ->

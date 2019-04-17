@@ -24,28 +24,28 @@ import qualified Data.Set as Set
 import CpdResidualization
 
 tests = do
-  testEmbedding
-  testSelect
-  testTakingOutLets
-  testPopingOutFreshes
-  testNormalization
-  testUnifyStuff
-  testLocalControl
-  testMCS
-  testMsgExists
-  testSubconjs
-  testMinimallyGeneral
-  testComplementSubconjs
-  testSplit
-  testIsGroundTerm
-  testGenerateFreshName
-  testRenameGoals
-  testUnifyInvokationsStuff
-  testResidualize
+  -- testEmbedding
+  -- testSelect
+  -- testTakingOutLets
+  -- testPopingOutFreshes
+  -- testNormalization
+  -- testUnifyStuff
+  -- testLocalControl
+  -- testMCS
+  -- testMsgExists
+  -- testSubconjs
+  -- testMinimallyGeneral
+  -- testComplementSubconjs
+  -- testSplit
+  -- testIsGroundTerm
+  -- testGenerateFreshName
+  -- testRenameGoals
+  -- testUnifyInvokationsStuff
+  -- testResidualize
   -- printStuff
   --
-  testAbstract
-  -- printGlobalStuff
+  -- testAbstract
+  printGlobalStuff
 
   -- littleTest
 
@@ -98,6 +98,8 @@ printStuff = do
 
 printGlobalStuff = do
   printTree "globalDouble.dot"     $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
+  let f = residualizeGlobalTree $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
+  print $ f (V "x" === V "x")
   -- printTree "globalCommute.dot"    $ GC.topLevel (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
   -- printTree "globalAppNil.dot"     $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
   -- printTree "globalRevAcco.dot"    $ GC.topLevel (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))

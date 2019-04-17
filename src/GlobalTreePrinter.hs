@@ -13,8 +13,8 @@ instance DotPrinter GlobalTree where
   -- labelNode t@(Prune _ _) i vs es ids = addLeaf     t    i vs es ids
   -- labelNode _ _ vs es ids = (vs, es, ids)
 
-  labelNode t@(Node _ ch) i vs es ids = addChildren t ch i vs es ids -- (filter (\t -> not $ case t of Leaf _ _ -> True ; _ -> False) ch) i vs es ids
-  labelNode t             i vs es ids = addLeaf     t    i vs es ids
+  labelNode t@(Node _ _ ch) i vs es ids = addChildren t ch i vs es ids -- (filter (\t -> not $ case t of Leaf _ _ -> True ; _ -> False) ch) i vs es ids
+  labelNode t               i vs es ids = addLeaf     t    i vs es ids
 
 
   -- -- addChild :: a -> a -> Id -> [Vertex] -> [Edge] -> [Id] -> ([Vertex], [Edge], [Id])
@@ -31,7 +31,7 @@ instance DotPrinter GlobalTree where
  --a -> Id -> [Vertex] -> [Edge] -> [Id] -> ([Vertex], [Edge], [Id])
 
 instance Dot GlobalTree where
-  dot (Leaf gs s) = printf "L <BR/> %s <BR/> %s" (dot $ getCurr gs) (dot s)
+  dot (Leaf gs s)   = printf "L <BR/> %s <BR/> %s" (dot $ getCurr gs) (dot s)
   --dot (Leaf gs _)  = printf "L <BR/> %s" (dot $ getCurr gs)
-  dot (Node gs _)  = printf "N <BR/> %s" (dot $ getCurr gs)
-  dot (Prune gs _) = printf "P <BR/> %s" (dot $ getCurr gs)
+  dot (Node gs _ _) = printf "N <BR/> %s" (dot $ getCurr gs)
+  dot (Prune gs _)  = printf "P <BR/> %s" (dot $ getCurr gs)
