@@ -72,13 +72,13 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
           (selectNext gs)
   where
     unfold g@(Invoke f as) env@(p, i, d)  =
-      let (_, fs, body) = p f in
+      let (n, fs, body) = p f in
       if length fs == length as
       then
         let i' = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
         let (g', env', _) = E.preEval' (p, i', d) body in
         (g', env')
-      else error "Unfolding error: different number of factual and actual arguments"
+      else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
     unfold g env = (g, env)
 
     selectNext gs =

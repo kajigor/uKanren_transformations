@@ -448,10 +448,11 @@ renameFreshVars g =
 trace_pur :: (G X, [String]) -> (G X, [String], [Def]) -> (G X, [String], [Def])
 trace_pur (g1, _) result@(g2, _, defs) =
   let test_g       = foldr Let g2 defs in
-  trace ("pur(fresh,unify,arg,constr,var,calls): " ++
-           show (calc g1) ++
-           " -> " ++
-           show (calc test_g)) result where
+  -- trace ("pur(fresh,unify,arg,constr,var,calls): " ++
+  --          show (calc g1) ++
+  --          " -> " ++
+  --          show (calc test_g)) $
+  result where
 
       (a1,b1,c1,d1,e1,f1) <+> (a2,b2,c2,d2,e2,f2) = (a1+a2,b1+b2,c1+c2,d1+d2,e1+e2,f1+f2)
 

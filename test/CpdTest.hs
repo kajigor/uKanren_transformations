@@ -15,6 +15,7 @@ import LogicInterpreter
 import Num
 import Programs
 import Purification
+import Residualize
 import SldTreePrinter
 import Syntax
 import Text.Printf
@@ -22,6 +23,11 @@ import Debug.Trace
 import Prelude hiding (succ)
 import qualified Data.Set as Set
 import CpdResidualization
+import System.Directory
+import qualified Desert
+import qualified Sudoku4x4
+import qualified OCanrenize as OC
+import Miscellaneous
 
 tests = do
   -- testEmbedding
@@ -40,7 +46,7 @@ tests = do
   -- testIsGroundTerm
   -- testGenerateFreshName
   -- testRenameGoals
-  -- testUnifyInvokationsStuff
+  -- testUnifyInvocationsStuff
   -- testResidualize
   -- printStuff
   --
@@ -78,47 +84,113 @@ manyAssertOne name expected f =
   mapM_ (assert name expected . f)
 
 printStuff = do
-  printTree "sldDouble.dot" $ topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
-  -- printTree "simpleDouble.dot" $ topLevel (appendo $ fresh ["x", "y", "z", "t", "r"] (call "appendo" [V "x", V "y", V "t"] &&& call "appendo" [V "t", V "z", V "r"]))
-  printTree "sldAppNil.dot" $ topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
-  printTree "maxLengtho.dot" $ topLevel (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
-  printTree "maxo.dot" $ topLevel (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
-  printTree "commute.dot" $ topLevel (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
-  printTree "listo.dot" $ topLevel (appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
-                                                                             call "listo" [V "b"] &&&
-                                                                             call "listo" [V "c"] &&&
-                                                                             call "appendo" [V "a", V "b", V "c"] &&&
-                                                                             call "appendo" [V "b", V "a", V "c"]))
-  printTree "inBotho.dot" $ topLevel (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", (C "a" [] % nil), V "l" ]))
-  printTree "copycopy.dot" $ topLevel (copycopy $ fresh ["l", "l1", "l2"] (call "copycopy" [V "l", V "l1", V "l2"]))
-  printTree "global_copycopy.dot" $ GC.topLevel (copycopy $ fresh ["l", "l1", "l2"] (call "copycopy" [V "l", V "l1", V "l2"]))
+  test "sldDouble" (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
+  -- test "simpleDouble" (appendo $ fresh ["x", "y", "z", "t", "r"] (call "appendo" [V "x", V "y", V "t"] &&& call "appendo" [V "t", V "z", V "r"]))
+  test "sldAppNil"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
+  test "maxLengtho" (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
+  test "maxo"       (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
+  test "commute"    (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
+  test "listo"      (appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
+                                                              call "listo" [V "b"] &&&
+                                                              call "listo" [V "c"] &&&
+                                                              call "appendo" [V "a", V "b", V "c"] &&&
+                                                              call "appendo" [V "b", V "a", V "c"]))
+  test "inBotho"  (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", (C "a" [] % nil), V "l" ]))
+  test "copycopy" (copycopy $ fresh ["l", "l1", "l2"] (call "copycopy" [V "l", V "l1", V "l2"]))
 
-  printTree "globalSimpleDouble.dot" $ GC.topLevel (appendo $ fresh ["x", "y", "z", "t", "r"] (call "appendo" [V "x", V "y", V "t"] &&& call "appendo" [V "t", V "z", V "r"]))
+  test "allDiff.dot" Sudoku4x4.queryAllDiff
+  where
+    test filename goal =
+      printTree (printf "%s.dot" filename) $ topLevel goal
+
+doOcanrenize = do
+  ocanren "desert"          Desert.query  $ Just Desert.env
+  ocanren "desertSecond"    Desert.query' $ Just Desert.env
+  ocanren "maxLengtho"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"])) Nothing
+  ocanren "maxo"            (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"])) Nothing
+  ocanren "revAcco"         (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])) Nothing
+  ocanren "double"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" $ map V ["x", "y", "z", "r"])) Nothing
+  ocanren "appNil"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"])) Nothing
+  ocanren "inBotho"         (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ])) Nothing
+  ocanren "smallBridge"     (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]])) Nothing
+  ocanren "bigBridge"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"])) Nothing
+  ocanren "check5"          (check5 $ fresh ["x"] (call "check5" [V "x"])) Nothing
+  ocanren "checkList5"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"])) Nothing
+  ocanren "checkListOther5" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"])) Nothing
+    where
+      ocanren filename goal env = do
+        let (tree, logicGoal, names) = GC.topLevel goal
+        let f = residualizeGlobalTree tree
+        let pur = purification (f $ vident <$> logicGoal, vident <$> reverse names)
+        OC.topLevel (printf "%s.ml" filename) "topLevel" env pur
+
+doResidualization = do
+  purify "maxLengtho.mk"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
+  purify "maxo.mk"            (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
+
+  purify "revAcco.mk"         (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
+  purify "double.mk"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" $ map V ["x", "y", "z", "r"]))
+  purify "appNil.mk"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
+  purify "inBotho.mk"         (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ]))
+  purify "smallBridge.mk"     (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]]))
+  purify "bigBridge.mk"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"]))
+  purify "check5.mk"          (check5 $ fresh ["x"] (call "check5" [V "x"]))
+  purify "checkList5.mk"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"]))
+  purify "checkListOther5.mk" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"]))
+  purify "desert.mk"          (Desert.query)
+  purify "desertSecond.mk"    (Desert.query')
+  --
+  -- -- purify "sudoku.mk"          (Sudoku4x4.query)
+  -- -- purify "sudokuValid.mk"     (Sudoku4x4.queryValid)
+  -- -- purify "sudokuInvalid.mk"   (Sudoku4x4.queryInvalid)
+  --
+  -- -- purify "logicInterpreter.mk" (logic_interpreter $ fresh ["subst", "fml", "res"] (call "check_subst" [V "subst", V "fml", V "res"]))
+  -- -- purify "commute.mk"         (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
+  -- -- purify "listo.mk"           (appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
+  -- --                                                                       call "listo" [V "b"] &&&
+  -- --                                                                       call "listo" [V "c"] &&&
+  -- --                                                                       call "appendo" [V "a", V "b", V "c"] &&&
+  -- --                                                                       call "appendo" [V "b", V "a", V "c"]))
+
+    where
+      purify filename goal = do
+        let (tree, logicGoal, names) = GC.topLevel goal
+        let f = residualizeGlobalTree tree
+        let folder = "residualized"
+        createDirectoryIfMissing True folder
+        let result = purification (f $ vident <$> logicGoal, vident <$> reverse names)
+        writeFile (printf "%s/%s" folder filename) (printf "Before:\n%s\n\nAfter:\n%s" (show goal) (show result))
 
 
 printGlobalStuff = do
-  printTree "globalDouble.dot"     $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
-  let f = residualizeGlobalTree $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
-  print $ f (V "x" === V "x")
-  -- printTree "globalCommute.dot"    $ GC.topLevel (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
-  -- printTree "globalAppNil.dot"     $ GC.topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
-  -- printTree "globalRevAcco.dot"    $ GC.topLevel (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
-  -- printTree "globalListo.dot"      $ GC.topLevel ((appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
-  --                                                                                           call "listo" [V "b"] &&&
-  --                                                                                           call "listo" [V "c"] &&&
-  --                                                                                           call "appendo" [V "a", V "b", V "c"] &&&
-  --                                                                                           call "appendo" [V "b", V "a", V "c"])))
-  -- printTree "globalInBotho.dot"    $ GC.topLevel (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", (C "a" [] % nil), V "l" ]))
-  -- printTree "globalMaxLengtho.dot" $ GC.topLevel (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
-  -- printTree "globalMaxo.dot"       $ GC.topLevel (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
-  -- printTree "globalSmallBridge.dot" $ GC.topLevel (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]]))
-  --
-  -- printTree "globalBigBridge.dot" $ GC.topLevel (game2Big $ fresh ["a", "b"] (call "result" [V "b"] &&& call "getAnswer" [V "a", C "some" [V "b"]]))
-  -- printTree "globalCheck5.dot"    $ GC.topLevel (check5 $ fresh ["x"] (call "check5" [V "x"]))
-  -- printTree "globalCheckList5.dot"    $ GC.topLevel (checkList5 $ fresh ["x"] (call "checkList5" [V "x"]))
-  -- printTree "globalCheckListOther5.dot"    $ GC.topLevel (checkList5' $ fresh ["x"] (call "checkList5" [V "x"]))
-  -- -- printTree "logicInterpreter.dot" $ GC.topLevel (logic_interpreter $ fresh ["subst", "fml", "res"] (call "check_subst" [V "subst", V "fml", V "res"]))
+  test "globalDouble"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
+  test "globalCommute" (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
+  test "globalAppNil"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
+  test "globalRevAcco" (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
+  test "globalListo"   (appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
+                                                                 call "listo" [V "b"] &&&
+                                                                 call "listo" [V "c"] &&&
+                                                                 call "appendo" [V "a", V "b", V "c"] &&&
+                                                                 call "appendo" [V "b", V "a", V "c"]))
+  test "globalInBotho"    (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ]))
+  test "globalMaxLengtho" (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
+  test "globalMaxo"       (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
+  test "globalSmallBridge"(game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]]))
+
+  test "globalBigBridge"       (game2Big $ fresh ["a", "b"] (call "result" [V "b"] &&& call "getAnswer" [V "a", C "some" [V "b"]]))
+  test "globalCheck5"          (check5 $ fresh ["x"] (call "check5" [V "x"]))
+  test "globalCheckList5"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"]))
+  test "globalCheckListOther5" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"]))
+  -- printTree "logicInterpreter.dot" $ GC.topLevel (logic_interpreter $ fresh ["subst", "fml", "res"] (call "check_subst" [V "subst", V "fml", V "res"]))
   -- printTree "check5.dot"    $ topLevel (check5 $ fresh ["x"] (call "check5" [V "x"]))
+  test "global_copycopy"    (copycopy $ fresh ["l", "l1", "l2"] (call "copycopy" [V "l", V "l1", V "l2"]))
+  test "globalSimpleDouble" (appendo $ fresh ["x", "y", "z", "t", "r"] (call "appendo" [V "x", V "y", V "t"] &&& call "appendo" [V "t", V "z", V "r"]))
+
+  test "globalSudoku"  Sudoku4x4.queryInvalid
+  test "globalAllDiff" Sudoku4x4.queryAllDiff
+    where
+      test fileName goal =
+        printTree (printf "%s.dot" fileName) $ fst3 $ GC.topLevel goal
 
 
 testEmbedding = do
@@ -432,8 +504,8 @@ testTakingOutLets = do
     doublet = Let (def defName args0 uni0) (Let (def fedName args1 disj) conj)
 
 testPopingOutFreshes = do
-  assert "popping freshes up 0" (callF x' y') ((\(x, _, _) -> x) $ E.preEval' E.env0 (fresh ["x", "y"] goal))
-  assert "popping freshes up 1" (fLet (callF x' y')) ((\(x, _, y) -> x) $ E.preEval' E.env0 (fresh ["x", "y"] $ fLet goal))
+  assert "popping freshes up 0" (callF x' y') (fst3 $ E.preEval' E.env0 (fresh ["x", "y"] goal))
+  assert "popping freshes up 1" (fLet (callF x' y')) (fst3 $ E.preEval' E.env0 (fresh ["x", "y"] $ fLet goal))
   assert "popping freshes up 2" (body', reverse [0..4]) ((\(x, _, y) -> (x, y)) $ E.preEval' E.env0 (fresh ["m", "n"] body))
   where
     x = V "x"
@@ -669,7 +741,7 @@ testSplit = do -- TODO more tests
     v154 = V 154
 
 testAbstract = do
-  assert "abstract" [goal] (fst $ GC.abstract (Descend goal Set.empty) goal [11..])
+  assert "abstract" [goal] (map fst $ fst $ GC.abstract (Descend goal Set.empty) goal [11..])
   where
     goal = [maxo1 v3 zero v1]
     maxo1 x y z = Invoke "maxo1" [x, y, z]
@@ -775,7 +847,7 @@ testResidualize = do
   print (residualizeSldTree [call "appendo" [V 0, V 1, V 3], call "appendo" [V 3, V 2, V 4]] (topLevel (appendo goal)) [])
   where goal = fresh ["x", "y", "z", "t", "r"] (call "appendo" [V "x", V "y", V "t"] &&& call "appendo" [V "t", V "z", V "r"])
 
-testUnifyInvokationsStuff = do
+testUnifyInvocationsStuff = do
   test [] [] $ Just []
   test [f []] [f []] $ Just []
   test [f [x]] [f [c [y,z]]] $ Just [(0, c [y,z])]
@@ -791,7 +863,7 @@ testUnifyInvokationsStuff = do
        [f [c [c [z]], z], g [d [z], c [d [c [z]]]]]
        Nothing
   where
-    test gs hs expected = assert "unifyInvokationLists" expected (unifyInvokationLists gs hs $ Just E.s0)
+    test gs hs expected = assert "unifyInvocationLists" expected (unifyInvocationLists gs hs $ Just E.s0)
     f = Invoke "f"
     g = Invoke "g"
     x = V 0

@@ -6,6 +6,11 @@ import Bool
 import Debug.Trace
 
 
+topLevelBigBridge g =
+  Let (def "tlBigBridge" ["a", "b"] (
+    call "result" [V "b"] &&& call "getAnswer" [V "a", C "some" [V "b"]]
+  )) $ game2Big g
+
 -- fresh ["a", "b"]  (call "result" [V "b"] &&& call "getAnswer" [V "a", C "some" [V "b"]])
 
 game2Big last_goal =

@@ -14,8 +14,7 @@ import Text.Printf
 
 
 toX :: Term S -> Term X
-toX (V x)    = V ('x' : show x)
-toX (C c ts) = C c $ map toX ts
+toX = (vident <$>)
 
 residualizeSubst :: E.Sigma -> E.Sigma -> G X
 residualizeSubst g s = conj $ map (\ (s', ts) -> toX (V s') :=: toX (E.substitute g ts)) $ reverse s
@@ -60,11 +59,11 @@ success = "success"
 failure :: String
 failure = "failure"
 
-vident = ('x' :) . show 
+vident = ('x' :) . show
 
 residualize :: (TreeContext, Tree, [Id]) -> (G X, [String])
 residualize (tc, t, args) =
-  (E.postEval' (map vident args) $ residualizeGen [] tc (simpl t) [], map vident args)
+  (E.postEval' (vident <$> args) $ residualizeGen [] tc (simpl t) [], vident <$> args)
   where
     residualizeGen _ _ Fail         _ = Invoke failure []
     residualizeGen g _ (Success s ) ubst =
@@ -82,6 +81,6 @@ residualize (tc, t, args) =
     scope (sr, args, _) id g =
       if Set.member id sr
       then let as = reverse $ args Map.! id in
-           let fargs = map vident as in
+           let fargs = vident <$> as in
            Let (def (fident id) fargs g) (Invoke (fident id) $ map V fargs)
       else g

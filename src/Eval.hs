@@ -40,7 +40,7 @@ unify st@(Just subst) u v =
 ---- Interpreting syntactic variables
 infix 9 <@>
 (<@>) :: Iota -> Tx -> Ts
-(_, i) <@> (V x)    = i x
+i <@> (V x) = app i x
 i <@> (C c ts) = C c $ map (i<@>) ts
 
 showInt :: Iota -> String

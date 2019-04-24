@@ -30,9 +30,9 @@ instance OCanren v => OCanren (Term v) where
   ocanren (C "S" [x]) = printf "succ (%s)" (ocanren x)
   ocanren (C "true" []) = printf "!!true"
   ocanren (C "false" []) = printf "!!false"
-  ocanren (C (f:o) ts) = printf "(%s)" $ (toLower f : o) ++ case ts of
-                                                              [] -> " ()"
-                                                              _  -> ' ' :   unwords (map ocanren ts)
+  ocanren (C (f:o) ts) = printf "(%s)" $ (toLower f : o) ++ ' ' : case ts of
+                                                                    [] -> "()"
+                                                                    _  -> unwords (map ocanren ts)
 
 instance OCanren v => OCanren (G v) where
 --ocanren (t1 :=:  t2)  = printf "(print_string \"%s === %s\\n\"; %s === %s)" (ocanren t1) (ocanren t2) (ocanren t1) (ocanren t2)
@@ -60,6 +60,8 @@ ocanrenize' topLevelName (g, args, defs) = printf "let %s %s = %s %s" topLevelNa
   printDefs (d:ds) = (printFstDef d) ++ " " ++ (printLastDefs ds)
 
 toOCanren = toOCanren' ocanrenize
+
+topLevel = toOCanren' ocanrenize'
 
 toOCanren' printer filename topLevelName environment prog =
   do

@@ -2,7 +2,34 @@ module Sudoku4x4 where
 
 import Syntax
 
-sudoku4x4 = 
+query = fst sudoku4x4 $ fresh ["sudoku", "q"] (call "check_sudoku" [V "sudoku", V "q"])
+queryValid   = fst sudoku4x4 $ fresh ["q"] (call "check_sudoku" [validField, V "q"])
+queryInvalid = fst sudoku4x4 $ fresh ["q"] (call "check_sudoku" [invalidField, V "q"])
+queryAllDiff = fst sudoku4x4 $ fresh ["q"] (call "all_different" [n1, n1, n1, n1, false])
+
+n1 = C "n1" []
+n2 = C "n2" []
+n3 = C "n3" []
+n4 = C "n4" []
+
+false = C "false" []
+true = C "true" []
+
+-- (V "sudoku" === C "s4x4" [V "a11", V "a12", V "a13", V "a14", V "a21", V "a22", V "a23", V "a24", V "a31", V "a32", V "a33", V "a34", V "a41", V "a42", V "a43", V "a44"]) &&&
+
+invalidField = C "s4x4" [ n1, n2, n3, n4
+                        , n1, n2, n3, n4
+                        , n1, n2, n3, n4
+                        , n1, n2, n3, n4
+                        ]
+
+validField = C "s4x4" [ n2, n3, n1, n4
+                      , n4, n1, n3, n2
+                      , n3, n4, n2, n1
+                      , n1, n2, n4, n3
+                      ]
+
+sudoku4x4 =
  (\last_goal ->
   Let (def "not_eq" ["a", "b", "q97"] (
     ((V "a" === C "n1" []) &&&

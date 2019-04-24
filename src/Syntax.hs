@@ -40,6 +40,14 @@ data G a =
   | Invoke Name [Term a]
   | Let Def (G a) deriving (Eq, Ord)
 
+instance Functor G where
+  fmap f (t :=: u)          = (f <$> t) :=:  (f <$> u)
+  fmap f (g :/\: h)         = (f <$> g) :/\: (f <$> h)
+  fmap f (g :\/: h)         = (f <$> g) :\/: (f <$> h)
+  fmap f (Fresh name g)     = Fresh name (f <$> g)
+  fmap f (Invoke name args) = Invoke name $ map (f <$>) args
+  fmap f (Let def g)        = Let def (f <$> g)
+
 freshVars :: [Name] -> G t -> ([Name], G t)
 freshVars names (Fresh name goal) = freshVars (name : names) goal
 freshVars names goal = (names, goal)
@@ -102,7 +110,7 @@ instance Show a => Show (Term a) where
     case name of
       "Nil" -> "[]"
       "Cons" -> let [h,t] = ts
-                in printf "%s : %s" (show h) (show t)
+                in printf "(%s : %s)" (show h) (show t)
       x | (x == "s" || x == "S") && length ts == 1 -> printf "S(%s)" (show $ head ts)
       x | (x == "o" || x == "O") && null ts -> "O"
       _ -> case ts of

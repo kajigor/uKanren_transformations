@@ -95,9 +95,11 @@ params = nonClusteredParams {
     fe (f,t,l) = [(Label . StrLabel) l]
 
 removeQuots :: Text -> Text
-removeQuots t =
-  replace (pack ">\"") (pack ">") $
-  replace (pack "\"<") (pack "<") t
+removeQuots =
+  replace (pack ">\"") (pack ">") .
+  replace (pack "\"<") (pack "<")
+
+simplyPrintTree tree = unpack $ removeQuots $ renderDot $ toDot $ graphToDot params $ treeToGraph tree
 
 printTree :: DotPrinter a => FilePath -> a -> IO ()
 printTree filename tree =
