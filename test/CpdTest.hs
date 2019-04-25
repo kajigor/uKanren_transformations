@@ -104,61 +104,69 @@ printStuff = do
       printTree (printf "%s.dot" filename) $ topLevel goal
 
 doOcanrenize = do
-  ocanren "desert"          Desert.query  $ Just Desert.env
-  ocanren "desertSecond"    Desert.query' $ Just Desert.env
-  ocanren "maxLengtho"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"])) Nothing
-  ocanren "maxo"            (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"])) Nothing
-  ocanren "revAcco"         (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])) Nothing
-  ocanren "double"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" $ map V ["x", "y", "z", "r"])) Nothing
-  ocanren "appNil"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"])) Nothing
-  ocanren "inBotho"         (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ])) Nothing
-  ocanren "smallBridge"     (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]])) Nothing
-  ocanren "bigBridge"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"])) Nothing
-  ocanren "check5"          (check5 $ fresh ["x"] (call "check5" [V "x"])) Nothing
-  ocanren "checkList5"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"])) Nothing
-  ocanren "checkListOther5" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"])) Nothing
+  ocanren "appNil"          (doubleAppendo $ fresh ["y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"])) Nothing
+
+  -- ocanren "desert"          Desert.query  $ Just Desert.env
+  -- ocanren "desertSecond"    Desert.query' $ Just Desert.env
+  -- ocanren "maxLengtho"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"])) Nothing
+  -- ocanren "maxo"            (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"])) Nothing
+  -- ocanren "revAcco"         (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])) Nothing
+  -- ocanren "double"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" $ map V ["x", "y", "z", "r"])) Nothing
+  --
+  -- ocanren "inBotho"         (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ])) Nothing
+  -- ocanren "smallBridge"     (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]])) Nothing
+  -- ocanren "bigBridge"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"])) Nothing
+  -- ocanren "check5"          (check5 $ fresh ["x"] (call "check5" [V "x"])) Nothing
+  -- ocanren "checkList5"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"])) Nothing
+  -- ocanren "checkListOther5" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"])) Nothing
     where
       ocanren filename goal env = do
         let (tree, logicGoal, names) = GC.topLevel goal
-        let f = residualizeGlobalTree tree
-        let pur = purification (f $ vident <$> logicGoal, vident <$> reverse names)
+        -- let f = residualizeGlobalTree tree
+        -- let pur = purification (f $ vident <$> logicGoal, vident <$> reverse names)
+        let f = residualizationTopLevel tree
+        let pur = purification (f, vident <$> reverse names)
         OC.topLevel (printf "%s.ml" filename) "topLevel" env pur
 
 doResidualization = do
-  purify "maxLengtho.mk"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
-  purify "maxo.mk"            (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
-
-  purify "revAcco.mk"         (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
-  purify "double.mk"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" $ map V ["x", "y", "z", "r"]))
-  purify "appNil.mk"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
-  purify "inBotho.mk"         (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ]))
-  purify "smallBridge.mk"     (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]]))
-  purify "bigBridge.mk"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"]))
-  purify "check5.mk"          (check5 $ fresh ["x"] (call "check5" [V "x"]))
-  purify "checkList5.mk"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"]))
-  purify "checkListOther5.mk" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"]))
-  purify "desert.mk"          (Desert.query)
-  purify "desertSecond.mk"    (Desert.query')
+  purify "appNil.mk"          (doubleAppendo $ fresh ["y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
   --
-  -- -- purify "sudoku.mk"          (Sudoku4x4.query)
-  -- -- purify "sudokuValid.mk"     (Sudoku4x4.queryValid)
-  -- -- purify "sudokuInvalid.mk"   (Sudoku4x4.queryInvalid)
+  -- purify "maxLengtho.mk"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
+  -- purify "maxo.mk"            (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
   --
-  -- -- purify "logicInterpreter.mk" (logic_interpreter $ fresh ["subst", "fml", "res"] (call "check_subst" [V "subst", V "fml", V "res"]))
-  -- -- purify "commute.mk"         (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
-  -- -- purify "listo.mk"           (appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
-  -- --                                                                       call "listo" [V "b"] &&&
-  -- --                                                                       call "listo" [V "c"] &&&
-  -- --                                                                       call "appendo" [V "a", V "b", V "c"] &&&
-  -- --                                                                       call "appendo" [V "b", V "a", V "c"]))
+  -- purify "revAcco.mk"         (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
+  -- purify "double.mk"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" $ map V ["x", "y", "z", "r"]))
+  -- purify "appNil.mk"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
+  -- purify "inBotho.mk"         (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ]))
+  -- purify "smallBridge.mk"     (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]]))
+  -- purify "bigBridge.mk"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"]))
+  -- purify "check5.mk"          (check5 $ fresh ["x"] (call "check5" [V "x"]))
+  -- purify "checkList5.mk"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"]))
+  -- purify "checkListOther5.mk" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"]))
+  -- purify "desert.mk"          (Desert.query)
+  -- purify "desertSecond.mk"    (Desert.query')
+  -- --
+  -- -- -- purify "sudoku.mk"          (Sudoku4x4.query)
+  -- -- -- purify "sudokuValid.mk"     (Sudoku4x4.queryValid)
+  -- -- -- purify "sudokuInvalid.mk"   (Sudoku4x4.queryInvalid)
+  -- --
+  -- -- -- purify "logicInterpreter.mk" (logic_interpreter $ fresh ["subst", "fml", "res"] (call "check_subst" [V "subst", V "fml", V "res"]))
+  -- -- -- purify "commute.mk"         (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
+  -- -- -- purify "listo.mk"           (appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
+  -- -- --                                                                       call "listo" [V "b"] &&&
+  -- -- --                                                                       call "listo" [V "c"] &&&
+  -- -- --                                                                       call "appendo" [V "a", V "b", V "c"] &&&
+  -- -- --                                                                       call "appendo" [V "b", V "a", V "c"]))
 
     where
       purify filename goal = do
         let (tree, logicGoal, names) = GC.topLevel goal
-        let f = residualizeGlobalTree tree
         let folder = "residualized"
         createDirectoryIfMissing True folder
-        let result = purification (f $ vident <$> logicGoal, vident <$> reverse names)
+        -- let f = residualizeGlobalTree tree
+        -- let result = purification (f $ vident <$> logicGoal, vident <$> reverse names)
+        let result = residualizationTopLevel tree
+        -- writeFile (printf "%s/%s" folder filename) (printf "Before:\n%s\n\nResidualized:\n%s\n\nNames:%s\n\nAfter:\n%s" (show goal) (show $ f (V "0" === V "0")) (show names) (show result))
         writeFile (printf "%s/%s" folder filename) (printf "Before:\n%s\n\nAfter:\n%s" (show goal) (show result))
 
 

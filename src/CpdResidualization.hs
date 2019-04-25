@@ -26,6 +26,13 @@ type Map = Map.Map
 
 type Definitions = [([G S], Name, [S])]
 
+residualizationTopLevel :: GlobalTree -> G X
+residualizationTopLevel test =
+  let goal = residualizeGlobalTree test in
+  case goal undefined of
+    Let (name, args, _) _ -> goal $ Invoke name $ V <$> args
+    _ -> error "Residualiation failed"
+
 residualizeGlobalTree :: GlobalTree -> (G X -> G X)
 residualizeGlobalTree tree =
   let nodes = getNodes tree in
@@ -46,27 +53,11 @@ unifyInvocationLists (Invoke name args : gs) (Invoke name' args' : gs') state | 
   where
     unifyArgs [] [] state = state
     unifyArgs (x:xs) (y:ys) state = do
-      let state' = unify__ state x y
+      let state' = unify state x y
       unifyArgs xs ys state'
     unifyArgs _ _ _ = Nothing
-
-    -- just unification without occurs check. TODO get rid of the code duplication
-    unify__ Nothing _ _ = Nothing
-    unify__ st@(Just subst) u v =
-      unify' (walk u subst) (walk v subst)  where
-        unify' (V u') (V v') | u' == v' = Just subst
-        unify' (V u') t = Just $ (u', v) : subst
-        unify' t (V v') = Just $ (v', u) : subst
-        unify' (C a as) (C b bs) | a == b && length as == length bs =
-          foldl (\ st' (u', v') -> unify__ st' u' v') st $ zip as bs
-        unify' _ _ = Nothing
-        walk x@(V v') s =
-          case lookup v' s of
-            Nothing -> x
-            Just t  -> walk t s
-        walk u' _ = u'
-
-
+    -- just unification without occurs check.
+    unify = unifyNoOccursCheck
 unifyInvocationLists _ _ _ = Nothing
 
 generateInvocation :: [G S] -> Definitions -> G X
@@ -89,7 +80,8 @@ generateInvocation goals defs =
       let representable =
             filter isJust $
             map (divideInvocations defs) $
-            concatMap (generateSplits goals) $ reverse [1 .. length goals] in
+            concatMap (generateSplits goals) $
+            reverse [1 .. length goals] in
       case representable of
         (x : _) -> x
         _ -> Nothing
@@ -98,8 +90,6 @@ generateInvocation goals defs =
       case oneInvocation cur defs of
         Just x -> (x :) <$> conjInvocation rest defs
         Nothing -> Nothing
-
-
 
 
 renameGoals :: [G S] -> Definitions -> (Definitions, Name, [S])
