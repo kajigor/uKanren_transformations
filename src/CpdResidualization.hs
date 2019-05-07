@@ -38,8 +38,7 @@ residualizeGlobalTree tree =
   let nodes = getNodes tree in
   let definitions = foldl (\defs gs -> fst3 (renameGoals gs defs) ) [] $ map fst nodes  in
   -- trace (printf "Definitions:\n%s\n" (intercalate "\n" $ map show definitions)) $
-  let lets = map (Let . \(gs, sld) -> -- trace (printf "\n\n\n%s\n\n\n" $ simplyPrintTree sld) $
-                                      residualizeSldTree gs sld definitions) nodes in
+  let lets = map Let $ mapMaybe (\(gs, sld) -> residualizeSldTree gs sld definitions) nodes in
   foldl1 (.) lets
   where
     getNodes (Leaf _ _ _) = []
@@ -47,21 +46,30 @@ residualizeGlobalTree tree =
 
 unifyInvocationLists :: [G S] -> [G S] -> Maybe Eval.Sigma -> Maybe Eval.Sigma
 unifyInvocationLists [] [] state = state
-unifyInvocationLists (Invoke name args : gs) (Invoke name' args' : gs') state | name == name' && length args == length args' = do
-  let state' = unifyArgs args args' state
+unifyInvocationLists xs@(Invoke name args : gs) ys@(Invoke name' args' : gs') state | name == name' && length args == length args' = do
+  let state' = trace (printf "unifying\n%s\n%s\n" (show xs) (show ys)) $  unifyArgs args args' state
   unifyInvocationLists gs gs' state'
   where
     unifyArgs [] [] state = state
     unifyArgs (x:xs) (y:ys) state = do
-      let state' = unify state x y
+      let state' = trace (printf "Maybe no occurs check is not a good idea\n%s\n%s\n%s\n" (show x) (show y) (show state))  $
+                   unify state x y
       unifyArgs xs ys state'
     unifyArgs _ _ _ = Nothing
     -- just unification without occurs check.
-    unify = unifyNoOccursCheck
+    -- unify = unifyNoOccursCheck
+    unify (Just state) (V x) y | (x, y) `elem` state = Just state
+    unify (Just state) (V x) y | Just (_, z) <- find ((== x) . fst) state = if y /= z then Nothing else Just state
+    unify (Just state) (V x) y = Just $ (x, y) : state
+    unify (Just state) (C n _) (C m _) | n /= m = Nothing
+    unify (Just state) (C n xargs) (C m yargs) | n == m = unifyArgs xargs yargs (Just state)
+    unify _ (C _ _) (V _) = Nothing
+    unify Nothing _ _ = Nothing
 unifyInvocationLists _ _ _ = Nothing
 
 generateInvocation :: [G S] -> Definitions -> G X
 generateInvocation goals defs =
+  trace (printf "\nGenerateInvocation\nGoal: %s\nDefs: %s\n" (show goals) (intercalate "\n" $ map show $ map fst3 defs)) $
   fromMaybe
     (error "Residualization failed: invocation of the undefined relation.")
     (conj <$> conjInvocation goals defs)
@@ -76,7 +84,7 @@ generateInvocation goals defs =
         _ -> Nothing
     conjInvocation [] _ = Just []
     conjInvocation goals defs =
-      -- trace (printf "invocation for\n%s\n" $ show goals) $
+      trace (printf "invocation for\n%s\n" $ show goals) $
       let representable =
             filter isJust $
             map (divideInvocations defs) $
@@ -106,7 +114,9 @@ renameGoals gs definitions =
 
 humanReadableName :: [String] -> String
 humanReadableName =
-  changeFirstLetter toLower . concatMap (changeFirstLetter toUpper)
+  map (\x -> if x == '\'' then '_' else x) .
+  changeFirstLetter toLower .
+  concatMap (changeFirstLetter toUpper)
   where
     changeFirstLetter f s = f (head s) : tail s
 
@@ -129,23 +139,24 @@ isGroundTerm :: Term a -> Bool
 isGroundTerm (V _) = False
 isGroundTerm (C _ args) = all isGroundTerm args
 
-residualizeSldTree :: [G S] -> CPD.SldTree -> Definitions -> Def
-residualizeSldTree rootGoals tree definitions =
-  let (_, defName, rootVars) = fromMaybe (error "Residualization failed: no definition found") $
-                               find ((== rootGoals) . fst3) definitions in
-  let resultants = CPD.resultants tree in
+residualizeSldTree :: [G S] -> CPD.SldTree -> Definitions -> Maybe Def
+residualizeSldTree rootGoals tree definitions = do
+  let (_, defName, rootVars) = fromMaybe (error (printf "Residualization failed: no definition found for\n%s\nDefs:\n%s\n" (show rootGoals) (show definitions))) $
+                               find ((== rootGoals) . fst3) definitions
+  let resultants = CPD.resultants tree
   let goals = foldl (\gs (subst, goals, _) ->
                        let g = go subst goals definitions
                        in  g : gs
                     )
                     []
-                    resultants in
-  let defArgs = map Res.vident rootVars in
-  let body = Eval.postEval' defArgs $ foldl1 (|||) (reverse goals) in
+                    resultants
+  let defArgs = map Res.vident rootVars
 
-  let result = def defName defArgs body
-  in --trace (printf "\nThis is the result of your hard work\n%s\n" (show result)) $
-     result
+  let body = Eval.postEval' defArgs $ foldl1 (|||) (reverse goals)
+
+  if null goals
+  then fail (printf "No resultants in the sld tree for %s" (show rootGoals))
+  else return $ def defName defArgs body
   where
     go [] [] defs    = error "Residualization failed: a substitution and goals cannot be empty simpultaneously"
     go [] gs defs    = residualizeGoals gs defs

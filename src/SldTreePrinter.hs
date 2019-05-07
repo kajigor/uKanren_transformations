@@ -13,8 +13,8 @@ instance DotPrinter SldTree where
   labelNode t               = addLeaf     t
 
 instance Dot SldTree where
-  dot (Leaf gs s _) = printf "Leaf <BR/> %s <BR/> %s" (dot (map getCurr gs)) (E.showSigma s)
+  dot (Leaf gs s _) = printf "Leaf <BR/> %s <BR/> %s" (dot (map getCurr gs)) (E.dotSigma s)
   dot Fail = "_|_"
-  dot (Success s) = printf "S <BR/> %s" (E.showSigma s)
+  dot (Success s) = printf "S <BR/> %s" (E.dotSigma s)
   dot (Or _ _ ) = printf "O" -- <BR/> " ++ dot curr
-  dot (Conj _ gs s)  = printf "C <BR/> %s <BR/> %s" (dot $ map getCurr gs) (E.showSigma s) -- %s <BR/> %s" (show id') (dot curr)
+  dot (Conj _ gs s)  = printf "C <BR/> %s <BR/> %s" (dot $ map getCurr gs) (E.dotSigma s) -- %s <BR/> %s" (show id') (dot curr)

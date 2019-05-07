@@ -124,13 +124,20 @@ embedGoals gs hs = coupleConj gs hs || diveConj gs hs where
 
 refine :: ([G S], Generalizer, Generalizer, [S]) ->  ([G S], Generalizer, Generalizer, [S])
 refine msg@(g, s1, s2, d) =
+  -- trace (printf "g: %s\ns1: %s\ns2: %s\n" (show g) (show s1) (show s2)) $
   let similar1 = filter ((>1) . length) $ groupBy group s1 [] in
   let similar2 = filter ((>1) . length) $ groupBy group s2 [] in
-  let toSwap = concatMap (\((x,_):xs) -> map (\(y, _) -> (y, V x)) xs) similar1 in
+  let sim1 = map (map fst) similar1 in
+  let sim2 = map (map fst) similar2 in
+  let toSwap = concatMap (\(x:xs) -> map (\y -> (y, V x)) xs) (sim1 `intersect` sim2) in
   let newGoal = E.substituteConjs toSwap g in
-  let s1' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar1)) s1 in
-  let s2' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar2)) s2 in
-  --trace (printf "\nSimilar1: %s\nSimilar2: %s\nToSwap: %s\nNewGoal: %s\nS1': %s\nS2': %s\n" (show similar1) (show similar2) (show toSwap) (show newGoal) (show s1') (show s2'))
+  -- let s1' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar1)) s1 in
+  -- let s2' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar2)) s2 in
+
+  let s2' = filter (\(x,_) -> notElem x (map fst toSwap)) s2 in
+  let s1' = filter (\(x,_) -> notElem x (map fst toSwap)) s1 in
+  -- trace (printf "\nOld msg: %s\nSimilar1: %s\nSimilar2: %s\nToSwap: %s\nNewGoal: %s\nS1': %s\nS2': %s\n" (show g) (show similar1) (show similar2) (show toSwap) (show newGoal) (show s1') (show s2'))
+  -- trace (printf "\ns1'': %s\ns2'': %s\n" (show s1'') (show s2'')) $
   (newGoal, s1', s2', d)
   where
     groupBy _ [] acc = acc
@@ -178,7 +185,12 @@ generalizeGoals :: [S] -> [G S] -> [G S] -> ([G S], Generalizer, Generalizer, [S
 generalizeGoals s as bs =
   let res@(msg_, s1_, s2_, _) = refine $ generalize s ([], []) as bs in
   -- trace ("Generalizing\nFirst:  " ++ show as ++ "\nSecond: " ++ show bs ++ "\nmsg: " ++ show msg_ ++ "\ns1:  " ++ show s1_ ++ "\ns2:  " ++ show s2_) $
+  assert (map (substitute s2_) msg_ == bs &&
+          map (substitute s1_) msg_ == as
+         ) $
   res
+
+  -- res
 
 
 substitute :: E.Sigma -> G S -> G S

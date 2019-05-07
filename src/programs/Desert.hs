@@ -14,6 +14,7 @@ ofInt = peanify
 
 query = fst tree $ fresh ["q"] (call "checkAnswer" [V "q", ofInt 8, ofInt 5, some $ ofInt 22])
 query' = fst tree $ fresh ["a", "b"] (call "checkAnswer" [V "a", ofInt 6, ofInt 4, some $ V "b"])
+query'' = fst tree $ fresh ["a", "b"] (call "checkAnswer" [V "a", ofInt 5, ofInt 4, some $ V "b"])
 
 env = snd tree
 

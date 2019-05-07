@@ -20,6 +20,7 @@ unifyG :: (S -> Ts -> Maybe Sigma -> Maybe Sigma)
           -> Maybe Sigma -> Ts -> Ts -> Maybe Sigma
 unifyG _ Nothing _ _ = Nothing
 unifyG f st@(Just subst) u v =
+  -- trace (printf "Unifying\n%s\nwith\n%s\nin\n%s" (show u) (show v) (show st)) $
   unify' (walk u subst) (walk v subst)  where
     unify' (V u') (V v') | u' == v' = Just subst
     unify' (V u') t = f u' t $ Just $ (u', v) : subst
@@ -62,8 +63,10 @@ app (_, i) = i
 
 ---- Applying substitution
 substitute :: Sigma -> Ts -> Ts
-substitute s t@(V x)  =
-  case lookup x s of Nothing -> t ; Just tx -> substitute s tx
+substitute s t@(V x) =
+  case lookup x s of
+    Just tx | tx /= t -> substitute s tx
+    _ -> t
 substitute s (C m ts) = C m $ map (substitute s) ts
 
 substituteGoal :: Sigma -> G S -> G S
@@ -80,6 +83,9 @@ o sigma theta =
   case map fst sigma `intersect` map fst theta of
     [] -> map (\ (s, ts) -> (s, substitute sigma ts)) theta ++ sigma
     _  -> error "Non-disjoint domains in substitution composition"
+
+dotSigma :: Sigma -> String
+dotSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (dot $ V x) (dot y)) s))
 
 showSigma :: Sigma -> String
 showSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (show $ V x) (show y)) s))

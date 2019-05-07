@@ -13,6 +13,8 @@ import Debug.Trace
 import qualified Data.Set as Set
 import qualified Tree as T
 import Miscellaneous
+import DotPrinter
+import SldTreePrinter
 
 type Descend = CPD.Descend
 
@@ -39,6 +41,7 @@ part = CPD.mcs
 
 abstract :: Descend [G S] -> [G S] -> E.Delta -> ([([G S], T.Generalizer)], E.Delta)
 abstract descend goals d =
+  -- trace (printf "\nAbstracting \n%s\nDescend\n%s\n" (show goals) (show descend)) $
   let qCurly = part goals in
   go (map (\x -> (x, [])) qCurly) d
    where
@@ -48,15 +51,22 @@ abstract descend goals d =
         Nothing ->
           let (goals, delta) = go gs d in
           ((m, gen) : goals, delta)
-        Just b -> let (goals, delta) = generalize m b d
-                  in go (gs ++ goals) delta
+        Just b -> let (goals, delta) = generalize m b d in
+                  let goals' = if length goals == 1 && CPD.isVariant (fst $ head goals) m
+                               then []
+                               else goals
+                  in
+                  go (gs ++ goals') delta
 
 whistle :: Descend [G S] -> [G S] -> Maybe [G S]
 whistle descend m =
-  find (\b -> CPD.embed b m && not (CPD.isVariant b m)) (sequence descend)
+  let res = find (\b -> CPD.embed b m && not (CPD.isVariant b m)) (sequence descend) in
+  trace (printf "Whistling\n%s\n%s" (show m) (show res)) $
+  res
 
 generalize :: [G S] -> [G S] -> E.Delta -> ([([G S], T.Generalizer)], E.Delta)
 generalize m b d =
+  trace "GENERALIZE" $
   let ((m1, m2), delta) = CPD.split d b m in
   let (generalized, _, gen, delta') = D.generalizeGoals d m1 b in
   (map (project gen) $ CPD.mcs generalized ++ CPD.mcs m2, delta')
@@ -82,11 +92,12 @@ topLevel goal =
   let nodes = [[logicGoal]] in
   (go nodes (CPD.Descend [logicGoal] Set.empty) gamma' E.s0 [] [], logicGoal, names) where
     go nodes d@(CPD.Descend goal ancs) gamma subst defs generalizer =
-      -- if any (\g -> any (\g -> case g of Invoke "add" [_, C "S" [C "S" [C "S" [C "S" [C "S" [_]]]]], _] -> True ; _ -> False) g) $ Set.toList ancs
+      -- if head (trd3 gamma) <= 21
       -- then
-        -- trace "\n\nglobal level\n\n" $
+        trace (printf "GlobalLevel:\n%s\n" $ show goal) $
         let subst = E.s0 in
         let sldTree = CPD.sldResolution goal gamma subst in
+        trace (printf "\n\nSLDDDD\n%s\n\n%s\n\n\n" (show goal) $ simplyPrintTree sldTree) $
         let (substs, bodies) = partition (null . snd3) $ CPD.resultants sldTree in
         let abstracted = map (abstractChild ancs) bodies in
         let (toUnfold, toNotUnfold, newNodes) =
@@ -107,6 +118,7 @@ topLevel goal =
         Node d generalizer sldTree (map (\(subst, g, gen) -> Leaf (CPD.Descend g Set.empty) [] subst) (substLeaves ++ leaves) ++ ch)
       -- else
       --   Prune d subst
+
       -- let ch = map (\((subst, g, env), ns) ->
       --                        go (ns ++ leafGoals ++ nodes) (CPD.Descend g (goal:ancs)) env subst) (zip qs (map (map snd3) $ inits qs)) in -- add qs where appropriate
       --       Node d (map (\(subst, g, _) -> Leaf (CPD.Descend g []) subst) chToNotUnfold ++ ch)

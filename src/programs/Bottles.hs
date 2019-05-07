@@ -2,6 +2,24 @@ module Bottles where
 
 import Syntax
 
+true = C "true" []
+
+six = ofInt 6
+  where
+    ofInt 0 = C "zero" []
+    ofInt n = C "succ" [ofInt $ n - 1]
+
+query = fst bottles $ fresh ["a", "b", "c"] (call "checkAnswer" [V "a", V "b", V "c", true])
+
+query' =
+  definition $ fresh ["q", "res"] (call "query" [V "q", V "res"])
+  where
+    definition = Let (def "query" ["q", "res"] (
+                      call "capacities1" [V "1"] &&& call "checkAnswer" [V "res", V "q", six, true]))
+                 . fst bottles
+
+env = snd bottles
+
 bottles =
  (\last_goal ->
   Let (def "add" ["a", "b", "q113"] (

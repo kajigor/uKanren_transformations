@@ -48,7 +48,7 @@ isSelectable emb goal ancs =
   where
     fineToUnfold (Invoke f _) = f `notElem` basics
     fineToUnfold _ = False
-    basics = [] -- ["leo", "gto"]
+    basics = [] -- ["eqNat", "eqPair"] -- ["leo", "gto"]
 
 substituteDescend s =
   map $ \(Descend g ancs) -> Descend (E.substituteGoal s g) ancs
@@ -59,61 +59,75 @@ sldResolution goal gamma subst =
 
 sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> Set [G S] -> Bool -> SldTree
 sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
+  -- let false = C "false" [] in
+  -- let isFalseCheck x =
+  --       case x of
+  --         Invoke "all_check_uni" args -> last args == false
+  --         Invoke "check_uni" args -> last args == false
+  --         _ -> False in
+  -- let gs' = filter isFalseCheck $ map getCurr gs in
   -- trace (printf "\nResolution step:\ngs: \n%s" $ intercalate "\n" (map show gs)) $
   if variantCheck (map getCurr gs) seen
   then Leaf gs s env
   else
-    maybe (Leaf gs s env)
-          (\(ls, Descend g ancs, rs) ->
-              -- trace (printf "\nSelected: %s\nAncs: %s" (show g) (show $ Set.toList ancs)) $
-              let (g', env') = unfold g env in
-              go g' env' ls rs g ancs isFirstTime
-          )
-          (selectNext gs)
-  where
-    unfold g@(Invoke f as) env@(p, i, d)  =
-      let (n, fs, body) = p f in
-      if length fs == length as
-      then
-        let i' = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
-        let (g', env', _) = E.preEval' (p, i', d) body in
-        (g', env')
-      else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
-    unfold g env = (g, env)
+    -- if temp > 100
+      -- then Leaf gs s env
+      -- else
+        maybe (Leaf gs s env)
+              (\(ls, Descend g ancs, rs) ->
+                  -- trace (printf "\nSelected: %s\nAncs: %s" (show g) (show $ Set.toList ancs)) $
+                  let (g', env') = unfold g env in
+                  go g' env' ls rs g ancs isFirstTime
+              )
+              (selectNext gs)
+      where
+        unfold g@(Invoke f as) env@(p, i, d)  =
+          let (n, fs, body) = p f in
+          if length fs == length as
+          then
+            let i' = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
+            let (g', env', _) = E.preEval' (p, i', d) body in
+            (g', env')
+          else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
+        unfold g env = (g, env)
 
-    selectNext gs =
-      let (ls, rs) = selecter gs in
-      if null rs then Nothing else Just (ls, head rs, tail rs)
+        selectNext gs =
+          let (ls, rs) = selecter gs in
+          if null rs then Nothing else Just (ls, head rs, tail rs)
 
-    go g' env' ls rs g ancs isFirstTime =
-      -- trace (printf "\nGo: %s" (show g')) $
-      let normalized = normalize g' in
-      let unified = mapMaybe (unifyStuff s) normalized in
-      let addDescends xs s =
-            substituteDescend s (ls ++ map (\x -> Descend x (Set.insert g ancs)) xs ++ rs) in
-      -- trace (printf "\nUnified (%s): %s\n" (show $ length unified) (show unified)) $
-      case unified of
-        [] ->
-          Fail
-        ns | length ns == 1 || isFirstTime -> -- unfold only if it's deterministic or haven't been unfolded before
-          -- trace "In Or" $
-          Or (map step ns) s
-          where
-            step (xs, s') =
-              if null xs && null rs
-              then Success s'
-              else let newDescends = addDescends xs s' in
-                   -- trace (printf "New descends: %s" (show newDescends)) $
-                   Conj (sldResolutionStep newDescends env' s' (Set.insert (map getCurr gs) seen) (length ns /= 1)) newDescends s'
-        ns | not $ null rs ->
-          maybe (Leaf gs s env)
-                (\(ls', Descend nextAtom nextAtomsAncs, rs')  ->
-                        let (g'', env'') = unfold nextAtom env in
-                        go g'' env'' (ls ++ (Descend (getCurr $ head rs) ancs : ls')) rs' g nextAtomsAncs False
-                )
-                (selectNext rs)
-        ns ->
-          Leaf gs s env
+        go g' env' ls rs g ancs isFirstTime =
+          -- trace (printf "\nGo:\ng': %s\nls: %s\nrs: %s\n" (show g') (show ls) (show rs)) $
+          let normalized = normalize g' in
+          -- trace (printf "normalized: %s" $ show normalized) $
+          let unified = mapMaybe (unifyStuff s) normalized in
+          -- trace (printf "unified: %s" $ intercalate "\n" $ map show unified) $
+          let addDescends xs s =
+                substituteDescend s (ls ++ map (\x -> Descend x (Set.insert g ancs)) xs ++ rs) in
+          case unified of
+            [] ->
+              -- trace "fail" $
+              Fail
+            ns | length ns == 1 || isFirstTime -> -- unfold only if it's deterministic or hasn't been unfolded before
+              trace (printf "rs:%s\nns:\n%s\nisFirstTime:\n%s" (intercalate " \n" $ map (show . getCurr) rs) (intercalate " \n" $ map (show . fst) ns) (show isFirstTime)) $
+              Or (map step ns) s
+              where
+                step (xs, s') =
+                  if null xs && null rs
+                  then Success s'
+                  else let newDescends = addDescends xs s' in
+                       -- trace (printf "\n\nConj\nNew descends: %s" (show newDescends)) $
+                       Conj (sldResolutionStep newDescends env' s' (Set.insert (map getCurr gs) seen) (isFirstTime && length ns == 1)) newDescends s'
+            ns | not $ null rs ->
+              trace (printf "\nnot null\nns: %s\nls: %s\nrs: %s\ng: %s" (show ns) (show ls) (show rs) (show g)) $
+              maybe (Leaf gs s env)
+                    (\(ls', Descend nextAtom nextAtomsAncs, rs')  ->
+                            let (g'', env'') = unfold nextAtom env in
+                            -- trace (printf "\nls' %s\nls: %s" (show ls') (show (ls ++ (Descend g ancs : ls')))) $
+                            go g'' env'' (ls ++ (Descend g ancs : ls')) rs' nextAtom nextAtomsAncs False
+                    )
+                    (selectNext rs)
+            ns ->
+              Leaf gs s env
 
 
 normalize :: G S -> [[G S]] -- disjunction of conjunctions of calls and unifications
@@ -174,7 +188,7 @@ vars (Invoke _ args) =
 vars _ = []
 
 msgExists gs hs | length gs == length hs =
-  all (\x -> case x of (Invoke f _, Invoke g _) | f == g -> True; _ -> False) $ zip gs hs
+  all (\x -> case x of (Invoke f _, Invoke g _) -> f == g; _ -> False) $ zip gs hs
 msgExists _ _ = False
 
 -- ordered subconjunctions of the proper length
@@ -183,18 +197,25 @@ subconjs gs n = filter (\x -> n == length x) $ subsequences gs
 
 -- works for ordered subconjunctions
 complementSubconjs :: (Instance a (Term a), Eq a, Ord a, Show a) => [G a] -> [G a] -> [G a]
-complementSubconjs [] xs = xs
-complementSubconjs (x:xs) (y:ys) | x == y = complementSubconjs xs ys
-complementSubconjs (x:xs) (y:ys) | isRenaming x y = complementSubconjs xs ys
-complementSubconjs (x:xs) (y:ys) | isInst x y = complementSubconjs xs ys
-complementSubconjs xs (y:ys) = y : complementSubconjs xs ys
-complementSubconjs xs ys = error (printf "complementing %s by %s" (show xs) (show ys))
+complementSubconjs xs ys =
+  -- trace (printf "\nComplementing\n%s\nby\n%s\n" (show xs) (show ys)) $
+  go xs ys
+   where
+    go [] xs = xs
+    go (x:xs) (y:ys) | x == y         = go xs ys
+    go (x:xs) (y:ys) | isRenaming x y = go xs ys
+    go (x:xs) (y:ys) | isInst x y     = go xs ys
+    -- go (x:xs) (y:ys) | isInst y x     = go xs ys
+    go xs (y:ys)                  = y : go xs ys
+    go xs ys = error (printf "complementing %s by %s" (show xs) (show ys))
 
 -- TODO : implemented literally according to the definition, may be inefficient. Look at the graph approach again.
 -- elem q is minimally general of Q iff there doesn't exist another elem q' \in Q which is a strict instance (q' = q \Theta)
 -- isStrictInst q t iff q = t \Theta
 minimallyGeneral :: (Show a, Ord a) => [[G a]] -> [G a]
-minimallyGeneral xs = go xs xs
+minimallyGeneral xs =
+  -- trace (printf "minimallyGeneral %s" $ show xs) $
+  go xs xs
   where
     go [x] _ = x
     go (x:xs) ys | any (\g -> isStrictInst x g) ys = go xs ys
@@ -204,28 +225,27 @@ minimallyGeneral xs = go xs xs
 bmc :: E.Delta -> [G S] -> [[G S]] -> ([[G S]], E.Delta)
 bmc d q [] = ([], d)
 bmc d q (q':qCurly) | msgExists q q' =
-  let (generalized, _, _, delta) = D.generalizeGoals d q q' in
+  -- trace "bmc" $
+  let (generalized, _, gen, delta) = D.generalizeGoals d q q' in
+  trace (printf "Generalizing\nq:   %s\nq':  %s\nRes: %s\nGen: %s\ndelta: %s\n" (show q) (show q') (show generalized) (show gen) (show $ head d)) $
   let (gss, delta') = bmc delta q qCurly in
   (generalized : gss, delta')
-bmc d q (q':qCurly) = bmc d q qCurly
+bmc d q (q':qCurly) = trace "why msg does not exist?!" $ bmc d q qCurly
 -- bmc d q qCurly = [(\(x,_,_,_) -> x) $ D.generalizeGoals d q q' | q' <- qCurly, msgExists q q']
 
 split :: E.Delta -> [G S] -> [G S] -> (([G S], [G S]), E.Delta)
 split d q q' = -- q <= q'
+  -- trace (printf "splitting\nq:  %s\nq': %s\n" (show q) (show q')) $
   let n = length q in
   -- let qCurly = filterTrace (\q'' -> q `embed` q'') $ subconjs q' n in
+  -- trace (intercalate "\n" $ map show $ map (\q'' -> (q, q'', zipWith embed q q'')) $ subconjs q' n) $
   let qCurly = filter (\q'' -> and $ zipWith embed q q'') $ subconjs q' n in
+  -- trace (printf "\nQcurly: %s" (show qCurly)) $
   let (bestMC, delta) = bmc d q qCurly in
+  -- trace (printf "\nBMC: %s" $ show bestMC ) $
   let b = minimallyGeneral bestMC in
+  -- trace (printf "\nQcurly: %s\nBestMC: %s\nB:  %s\nQ': %s\nQ:  %s\n" (show qCurly) (show bestMC) (show b) (show q') (show q)) $
   ((b, if length q' > n then complementSubconjs b q' else []), delta)
-
-
--- split :: E.Delta -> [G S] -> [G S] -> ([G S], [G S])
--- split d q q' = -- q <= q'
---   let n = length q in
---   let qCurly = filter (\q'' -> q `embed` q'') $ subconjs q' n in
---   let b = minimallyGeneral $ bmc d q qCurly in
---   (b, complementSubconjs b q')
 
 class AlwaysEmbeddable a => Homeo a where
   couple :: a -> a -> Bool
@@ -311,7 +331,7 @@ class AlwaysEmbeddable a where
   isAlwaysEmbeddable :: a -> Bool
 
 instance AlwaysEmbeddable (G a) where
-  isAlwaysEmbeddable (Invoke f _) = f `elem` [] -- ["leo", "gto"]
+  isAlwaysEmbeddable (Invoke f _) = f `elem` [] --[] -- ["leo", "gto"]
   isAlwaysEmbeddable _ = False
 
 instance AlwaysEmbeddable [G a] where
@@ -326,4 +346,7 @@ class (Homeo b, Instance a b, Eq b, Show a) => Embed a b | b -> a where
   embed g h = isAlwaysEmbeddable g || g == h || homeo g h && not (isStrictInst h g)
 
 instance (Ord a, Eq a, Show a) => Embed a (G a)
-instance (Ord a, Eq a, Show a) => Embed a [G a]
+instance (Ord a, Eq a, Show a) => Embed a [G a] where
+  embed gs hs =
+    let subs = subconjs hs (length gs) in
+    any (and . zipWith embed gs) subs

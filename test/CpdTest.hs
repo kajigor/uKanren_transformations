@@ -24,34 +24,37 @@ import Prelude hiding (succ)
 import qualified Data.Set as Set
 import CpdResidualization
 import System.Directory
+import qualified Bottles
 import qualified Desert
 import qualified Sudoku4x4
 import qualified OCanrenize as OC
 import Miscellaneous
+import Unify
+import Path
 
 tests = do
-  -- testEmbedding
-  -- testSelect
-  -- testTakingOutLets
-  -- testPopingOutFreshes
-  -- testNormalization
-  -- testUnifyStuff
-  -- testLocalControl
-  -- testMCS
-  -- testMsgExists
-  -- testSubconjs
-  -- testMinimallyGeneral
-  -- testComplementSubconjs
-  -- testSplit
-  -- testIsGroundTerm
-  -- testGenerateFreshName
-  -- testRenameGoals
-  -- testUnifyInvocationsStuff
-  -- testResidualize
+  testEmbedding
+  testSelect
+  testTakingOutLets
+  testPopingOutFreshes
+  testNormalization
+  testUnifyStuff
+  testLocalControl
+  testMCS
+  testMsgExists
+  testSubconjs
+  testMinimallyGeneral
+  testComplementSubconjs
+  testSplit
+  testIsGroundTerm
+  testGenerateFreshName
+  testRenameGoals
+  testUnifyInvocationsStuff
+
   -- printStuff
-  --
-  -- testAbstract
-  printGlobalStuff
+  testAbstract
+
+  -- printGlobalStuff
 
   -- littleTest
 
@@ -84,41 +87,66 @@ manyAssertOne name expected f =
   mapM_ (assert name expected . f)
 
 printStuff = do
-  test "sldDouble" (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
-  -- test "simpleDouble" (appendo $ fresh ["x", "y", "z", "t", "r"] (call "appendo" [V "x", V "y", V "t"] &&& call "appendo" [V "t", V "z", V "r"]))
-  test "sldAppNil"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
-  test "maxLengtho" (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
-  test "maxo"       (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
-  test "commute"    (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
-  test "listo"      (appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
-                                                              call "listo" [V "b"] &&&
-                                                              call "listo" [V "c"] &&&
-                                                              call "appendo" [V "a", V "b", V "c"] &&&
-                                                              call "appendo" [V "b", V "a", V "c"]))
-  test "inBotho"  (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", (C "a" [] % nil), V "l" ]))
-  test "copycopy" (copycopy $ fresh ["l", "l1", "l2"] (call "copycopy" [V "l", V "l1", V "l2"]))
+  -- test "l_unify_same" Unify.querySame
+  -- test "desert"          Desert.query
+  test "path" Path.query1
 
-  test "allDiff.dot" Sudoku4x4.queryAllDiff
+  -- test "l_unify" Unify.query
+  -- test "sldDouble" (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
+  -- -- test "simpleDouble" (appendo $ fresh ["x", "y", "z", "t", "r"] (call "appendo" [V "x", V "y", V "t"] &&& call "appendo" [V "t", V "z", V "r"]))
+  -- test "sldAppNil"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
+  -- test "maxLengtho" (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
+  -- test "maxo"       (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
+  -- test "commute"    (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
+  -- test "listo"      (appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
+  --                                                             call "listo" [V "b"] &&&
+  --                                                             call "listo" [V "c"] &&&
+  --                                                             call "appendo" [V "a", V "b", V "c"] &&&
+  --                                                             call "appendo" [V "b", V "a", V "c"]))
+  -- test "inBotho"  (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", (C "a" [] % nil), V "l" ]))
+  -- test "copycopy" (copycopy $ fresh ["l", "l1", "l2"] (call "copycopy" [V "l", V "l1", V "l2"]))
+  --
+  -- test "allDiff.dot" Sudoku4x4.queryAllDiff
   where
     test filename goal =
       printTree (printf "%s.dot" filename) $ topLevel goal
 
 doOcanrenize = do
-  ocanren "appNil"          (doubleAppendo $ fresh ["y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"])) Nothing
-
-  -- ocanren "desert"          Desert.query  $ Just Desert.env
-  -- ocanren "desertSecond"    Desert.query' $ Just Desert.env
-  -- ocanren "maxLengtho"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"])) Nothing
-  -- ocanren "maxo"            (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"])) Nothing
-  -- ocanren "revAcco"         (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])) Nothing
-  -- ocanren "double"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" $ map V ["x", "y", "z", "r"])) Nothing
+  -- ocanren "pathNat" Path.queryNat $ Just Path.env
+  -- ocanren "pathPair" Path.queryPair $ Just Path.env
+  -- ocanren "pathPair1" Path.queryPair1 $ Just Path.env
   --
-  -- ocanren "inBotho"         (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ])) Nothing
-  -- ocanren "smallBridge"     (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]])) Nothing
-  -- ocanren "bigBridge"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"])) Nothing
-  -- ocanren "check5"          (check5 $ fresh ["x"] (call "check5" [V "x"])) Nothing
-  -- ocanren "checkList5"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"])) Nothing
-  -- ocanren "checkListOther5" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"])) Nothing
+  -- ocanren "pathElem" Path.queryElem $ Just Path.env
+  -- ocanren "pathElem1" Path.queryElem1 $ Just Path.env
+
+  ocanren "path" Path.query1 $ Just Path.env
+
+
+{------------------------------------
+  Working examples
+-------------------------------------}
+  ocanren "appNil"          (doubleAppendo $ fresh ["y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"])) Nothing
+  ocanren "double"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" $ map V ["x", "y", "z", "r"])) Nothing
+  ocanren "revAcco"         (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])) Nothing
+  ocanren "check5"          (check5 $ fresh ["x"] (call "check5" [V "x"])) Nothing
+  ocanren "checkList5"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"])) Nothing
+  ocanren "checkListOther5" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"])) Nothing
+  ocanren "inBotho"         (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ])) Nothing
+  ocanren "maxLengtho"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"])) Nothing
+  ocanren "maxo"            (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"])) Nothing
+{-------------------------------------}
+
+
+  ocanren "unify" Unify.query $ Just Unify.env
+  ocanren "desert"          Desert.query'' $ Just Desert.env
+  ocanren "desertSecond"    Desert.query' $ Just Desert.env
+  -- ocanren "smallBridge"     (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]])) $ Just Bridge.env
+  -- ocanren "bigBridge"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"])) $ Just Bridge.env
+
+  -- ocanren "bottles"         Bottles.query $ Just Bottles.env
+
+  -- ocanren "revAcco" (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])) $ Nothing
+  -- ocanren "bottles1"        Bottles.query' $ Just Bottles.env
     where
       ocanren filename goal env = do
         let (tree, logicGoal, names) = GC.topLevel goal
@@ -129,7 +157,9 @@ doOcanrenize = do
         OC.topLevel (printf "%s.ml" filename) "topLevel" env pur
 
 doResidualization = do
-  purify "appNil.mk"          (doubleAppendo $ fresh ["y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
+  purify "membero" $ membero $ fresh ["a"] (call "membero" [V "a", V "a" % nil])
+  -- purify "bottles.mk"         Bottles.query
+  -- purify "appNil.mk"          (doubleAppendo $ fresh ["y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
   --
   -- purify "maxLengtho.mk"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
   -- purify "maxo.mk"            (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
@@ -163,39 +193,50 @@ doResidualization = do
         let (tree, logicGoal, names) = GC.topLevel goal
         let folder = "residualized"
         createDirectoryIfMissing True folder
-        -- let f = residualizeGlobalTree tree
-        -- let result = purification (f $ vident <$> logicGoal, vident <$> reverse names)
         let result = residualizationTopLevel tree
-        -- writeFile (printf "%s/%s" folder filename) (printf "Before:\n%s\n\nResidualized:\n%s\n\nNames:%s\n\nAfter:\n%s" (show goal) (show $ f (V "0" === V "0")) (show names) (show result))
         writeFile (printf "%s/%s" folder filename) (printf "Before:\n%s\n\nAfter:\n%s" (show goal) (show result))
 
 
 printGlobalStuff = do
-  test "globalDouble"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
-  test "globalCommute" (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
-  test "globalAppNil"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
-  test "globalRevAcco" (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
-  test "globalListo"   (appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
-                                                                 call "listo" [V "b"] &&&
-                                                                 call "listo" [V "c"] &&&
-                                                                 call "appendo" [V "a", V "b", V "c"] &&&
-                                                                 call "appendo" [V "b", V "a", V "c"]))
-  test "globalInBotho"    (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ]))
-  test "globalMaxLengtho" (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
-  test "globalMaxo"       (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
-  test "globalSmallBridge"(game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]]))
+  test "global_path" Path.query1
+  -- test "unify" Unify.query
+  -- test "globalPath" Path.query1
 
-  test "globalBigBridge"       (game2Big $ fresh ["a", "b"] (call "result" [V "b"] &&& call "getAnswer" [V "a", C "some" [V "b"]]))
-  test "globalCheck5"          (check5 $ fresh ["x"] (call "check5" [V "x"]))
-  test "globalCheckList5"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"]))
-  test "globalCheckListOther5" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"]))
-  -- printTree "logicInterpreter.dot" $ GC.topLevel (logic_interpreter $ fresh ["subst", "fml", "res"] (call "check_subst" [V "subst", V "fml", V "res"]))
-  -- printTree "check5.dot"    $ topLevel (check5 $ fresh ["x"] (call "check5" [V "x"]))
-  test "global_copycopy"    (copycopy $ fresh ["l", "l1", "l2"] (call "copycopy" [V "l", V "l1", V "l2"]))
-  test "globalSimpleDouble" (appendo $ fresh ["x", "y", "z", "t", "r"] (call "appendo" [V "x", V "y", V "t"] &&& call "appendo" [V "t", V "z", V "r"]))
+  -- test "globalPath" Path.queryElem1
 
-  test "globalSudoku"  Sudoku4x4.queryInvalid
-  test "globalAllDiff" Sudoku4x4.queryAllDiff
+
+  -- test "globalDesert"          Desert.query''
+
+  -- test "unify_same" Unify.querySame
+  -- test "unify" Unify.query
+  -- test "getTerm" Unify.queryGet
+
+  -- test "globalBottles" Bottles.query
+  -- test "globalDouble"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
+  -- test "globalCommute" (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
+  -- test "globalAppNil"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
+  -- test "globalRevAcco" (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
+  -- test "globalListo"   (appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
+  --                                                                call "listo" [V "b"] &&&
+  --                                                                call "listo" [V "c"] &&&
+  --                                                                call "appendo" [V "a", V "b", V "c"] &&&
+  --                                                                call "appendo" [V "b", V "a", V "c"]))
+  -- test "globalInBotho"    (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ]))
+  -- test "globalMaxLengtho" (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
+  -- test "globalMaxo"       (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
+  -- test "globalSmallBridge"(game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]]))
+  --
+  -- test "globalBigBridge"       (game2Big $ fresh ["a", "b"] (call "result" [V "b"] &&& call "getAnswer" [V "a", C "some" [V "b"]]))
+  -- test "globalCheck5"          (check5 $ fresh ["x"] (call "check5" [V "x"]))
+  -- test "globalCheckList5"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"]))
+  -- test "globalCheckListOther5" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"]))
+  -- -- printTree "logicInterpreter.dot" $ GC.topLevel (logic_interpreter $ fresh ["subst", "fml", "res"] (call "check_subst" [V "subst", V "fml", V "res"]))
+  -- -- printTree "check5.dot"    $ topLevel (check5 $ fresh ["x"] (call "check5" [V "x"]))
+  -- test "global_copycopy"    (copycopy $ fresh ["l", "l1", "l2"] (call "copycopy" [V "l", V "l1", V "l2"]))
+  -- test "globalSimpleDouble" (appendo $ fresh ["x", "y", "z", "t", "r"] (call "appendo" [V "x", V "y", V "t"] &&& call "appendo" [V "t", V "z", V "r"]))
+  --
+  -- -- test "globalSudoku"  Sudoku4x4.queryInvalid
+  -- -- test "globalAllDiff" Sudoku4x4.queryAllDiff
     where
       test fileName goal =
         printTree (printf "%s.dot" fileName) $ fst3 $ GC.topLevel goal
@@ -413,6 +454,20 @@ testEmbedding = do
     v50 = V "50"
     v51 = V "51"
     s x = C "s" [x]
+
+checkEmbed =
+  embed (Invoke "all_Ch" [V 19, V 21, (C ":" [(C "Some" [V 20, V 19]), V 15]), C "true" []])
+        (Invoke "all_Ch" [V 86, V 88, (C ":" [(C "Some" [V 20, V 73]), V 15]), C "true" []])
+
+checkEmbed' =
+  embed (Invoke "all_Ch" [V 19, V 21, (C ":" [(C "Some" [V 20, V 19]), V 15]), C "true" []])
+        (Invoke "all_Ch" [V 79, V 81, (C ":" [(C "Some" [V 20, V 73]), V 15]), C "true" []])
+
+checkEmbed'' =
+  embed [Invoke "all_Ch" [V 19, V 21, (C ":" [(C "Some" [V 20, V 19]), V 15]), C "true" []]]
+        [(Invoke "all_Ch" [V 86, V 88, (C ":" [(C "Some" [V 20, V 73]), V 15]), C "true" []])
+        ,(Invoke "all_Ch" [V 79, V 81, (C ":" [(C "Some" [V 20, V 73]), V 15]), C "true" []])]
+
 
 testSelect = do
   testSelect1
@@ -850,11 +905,6 @@ testRenameGoals = do
     x = 0
     y = 1
 
-testResidualize = do
-  putStrLn ""
-  print (residualizeSldTree [call "appendo" [V 0, V 1, V 3], call "appendo" [V 3, V 2, V 4]] (topLevel (appendo goal)) [])
-  where goal = fresh ["x", "y", "z", "t", "r"] (call "appendo" [V "x", V "y", V "t"] &&& call "appendo" [V "t", V "z", V "r"])
-
 testUnifyInvocationsStuff = do
   test [] [] $ Just []
   test [f []] [f []] $ Just []
@@ -862,14 +912,15 @@ testUnifyInvocationsStuff = do
   test [f [c [x],     y],     g [y,     c [d [x]]]]
        [f [c [c [z]], d [z]], g [d [z], c [d [c [z]]]]] $
        Just [(1, d [z]), (0, c [z])]
+  test [f [x]] [f [c [x,x]]] $ Just [(0, c [x, x])]
 
   test [] [f []] Nothing
   test [f []] [g []] Nothing
   test [f []] [f [x]] Nothing
-  test [f [x]] [f [c [x,x]]] Nothing
-  test [f [c [x],     y], g [y,     c [d [x]]]]
-       [f [c [c [z]], z], g [d [z], c [d [c [z]]]]]
-       Nothing
+  -- test [f [x]] [f [c [x,x]]] Nothing
+  -- test [f [c [x],     y], g [y,     c [d [x]]]]
+  --      [f [c [c [z]], z], g [d [z], c [d [c [z]]]]]
+  --      Nothing
   where
     test gs hs expected = assert "unifyInvocationLists" expected (unifyInvocationLists gs hs $ Just E.s0)
     f = Invoke "f"

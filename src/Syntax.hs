@@ -115,7 +115,7 @@ instance Show a => Show (Term a) where
       x | (x == "o" || x == "O") && null ts -> "O"
       _ -> case ts of
              [] -> name
-             _  -> printf "C %s [%s]" name (unwords $ map show ts)
+             _  -> printf "C %s [%s]" name (intercalate ", " $ map show ts)
 
 instance Show a => Show (G a) where
   show (t1 :=:  t2)               = printf "%s = %s" (show t1) (show t2)
@@ -124,7 +124,7 @@ instance Show a => Show (G a) where
   show (Fresh name g)             =
     let (names, goal) = freshVars [name] g in
     printf "fresh %s (%s)" (unwords $ map show $ reverse names) (show goal)
-  show (Invoke name ts)           = printf "%s %s" name (unwords $ map show ts)
+  show (Invoke name ts)           = printf "%s %s" name (unwords $ map (\x -> if ' ' `elem` x then printf "(%s)" x else x) $ map show ts)
   show (Let (name, args, body) g) = printf "let %s %s = %s in %s" name (unwords args) (show body) (show g)
 
 class Dot a where
