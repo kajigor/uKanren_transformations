@@ -42,13 +42,13 @@ selecter gs = span (\x -> not $ isSelectable embed (getCurr x) (getAncs x)) gs
 
 -- TODO reconsider hardcoded list of basic function names
 isSelectable :: Show a => (G a -> G a -> Bool) -> G a -> Set (G a) -> Bool
-isSelectable _ _ ancs | Set.null ancs = True
+-- isSelectable _ _ ancs | Set.null ancs = True
 isSelectable emb goal ancs =
-  (not $ any (`emb` goal) ancs) && fineToUnfold goal
+  (not (any (`emb` goal) ancs) || Set.null ancs) && fineToUnfold goal
   where
     fineToUnfold (Invoke f _) = f `notElem` basics
     fineToUnfold _ = False
-    basics = [] -- ["eqNat", "eqPair"] -- ["leo", "gto"]
+    basics = [] -- ["leo", "gto"]-- [] -- ["eqNat", "eqPair"] -- ["leo", "gto"]
 
 substituteDescend s =
   map $ \(Descend g ancs) -> Descend (E.substituteGoal s g) ancs
@@ -117,6 +117,7 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
                   else let newDescends = addDescends xs s' in
                        -- trace (printf "\n\nConj\nNew descends: %s" (show newDescends)) $
                        Conj (sldResolutionStep newDescends env' s' (Set.insert (map getCurr gs) seen) (isFirstTime && length ns == 1)) newDescends s'
+                       -- Conj (sldResolutionStep newDescends env' s' (Set.insert (map getCurr gs) seen) False newDescends s'
             ns | not $ null rs ->
               trace (printf "\nnot null\nns: %s\nls: %s\nrs: %s\ng: %s" (show ns) (show ls) (show rs) (show g)) $
               maybe (Leaf gs s env)

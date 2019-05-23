@@ -27,8 +27,9 @@ instance OCanren v => OCanren (Term v) where
   ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "(%s %% %s)" (ocanren h) (ocanren t)
   ocanren (C "%"    [h,t]) = printf "(%s %% %s)" (ocanren h) (ocanren t)
   ocanren (C "O" []) = "zero"
+  ocanren (C "S" [x]) = printf "succ (%s)" (ocanren x)
   ocanren (C "o" []) = "o ()"
-  ocanren (C s [x]) | map toLower s == "s" = printf "succ (%s)" (ocanren x)
+  ocanren (C "s" [x]) = printf "s (%s)" (ocanren x)
   ocanren (C "true" []) = printf "!!true"
   ocanren (C "false" []) = printf "!!false"
   ocanren (C "z" []) = "z ()"
