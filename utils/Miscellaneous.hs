@@ -14,6 +14,9 @@ trd3 (_, _, x) = x
 snd4 :: (a, b, c, d) -> b
 snd4 (_, x, _, _) = x
 
+trd4 :: (a, b, c, d) -> c
+trd4 (_, _, x, _) = x
+
 lst4 :: (a, b, c, d) -> d
 lst4 (_, _, _, x) = x
 

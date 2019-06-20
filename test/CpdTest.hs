@@ -112,6 +112,12 @@ printStuff = do
       printTree (printf "%s.dot" filename) $ topLevel goal
 
 doOcanrenize = do
+  -- ocanren "smallBridge"     (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]])) $ Just Bridge.env
+
+  -- ocanren "desert"          Desert.query' $ Just Desert.env
+
+  -- ocanren "maxLengtho"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"])) Nothing
+
   -- ocanren "pathNat" Path.queryNat $ Just Path.env
   -- ocanren "pathPair" Path.queryPair $ Just Path.env
   -- ocanren "pathPair1" Path.queryPair1 $ Just Path.env
@@ -119,17 +125,25 @@ doOcanrenize = do
   -- ocanren "pathElem" Path.queryElem $ Just Path.env
   -- ocanren "pathElem1" Path.queryElem1 $ Just Path.env
 
-  ocanren "path" Path.query1 $ Just Path.env
+  -- ocanren "path" Path.query1 $ Just Path.env
+  ocanren "unify" Unify.query $ Just Unify.env
+  -- ocanren "bigBridge"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"])) $ Just Bridge.env
 
+  -- ocanren "bottles"         Bottles.query $ Just Bottles.env
+
+{-
 
 {------------------------------------
   Working examples
 -------------------------------------}
   ocanren "appNil"          (doubleAppendo $ fresh ["y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"])) Nothing
+  ocanren "appNilY"         (doubleAppendo $ fresh ["x", "z", "r"] (call "doubleAppendo" [V "x", nil, V "z", V "r"])) Nothing
+  ocanren "appNilZ"         (doubleAppendo $ fresh ["x", "y", "r"] (call "doubleAppendo" [V "x", V "y", nil, V "r"])) Nothing
+  ocanren "appNilR"         (doubleAppendo $ fresh ["x", "y", "z"] (call "doubleAppendo" [V "x", V "y", V "z", nil])) Nothing
   ocanren "double"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" $ map V ["x", "y", "z", "r"])) Nothing
   ocanren "revAcco"         (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])) Nothing
   ocanren "check5"          (check5 $ fresh ["x"] (call "check5" [V "x"])) Nothing
-  ocanren "checkList5"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"])) Nothing
+  ocanren "checkList5"      (checkLocanren "smallBridge"     (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]])) $ Just Bridge.envist5 $ fresh ["x"] (call "checkList5" [V "x"])) Nothing
   ocanren "checkListOther5" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"])) Nothing
   ocanren "inBotho"         (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ])) Nothing
   ocanren "maxLengtho"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"])) Nothing
@@ -147,6 +161,7 @@ doOcanrenize = do
 
   -- ocanren "revAcco" (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])) $ Nothing
   -- ocanren "bottles1"        Bottles.query' $ Just Bottles.env
+  -}
     where
       ocanren filename goal env = do
         let (tree, logicGoal, names) = GC.topLevel goal
@@ -198,7 +213,10 @@ doResidualization = do
 
 
 printGlobalStuff = do
-  test "global_path" Path.query1
+  test "globalSome"  (someAppendo $ fresh ["x", "y", "z"] (call "someAppendo" [V "x", V "y", V "z"]))
+  -- test "maxLengtho"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
+
+  -- test "global_path" Path.query1
   -- test "unify" Unify.query
   -- test "globalPath" Path.query1
 
@@ -811,6 +829,17 @@ testAbstract = do
     v3 = V 3
     v1 = V 1
     zero = C "O" []
+
+sa1 = Invoke "a" [V 1, C "c" [V 4, C "c" [V 5, C "n" []]] ,
+                       C "c" [V 4, C "c" [V 6, C "n" []]]]
+
+dsa1 = [Invoke "a" [V 5, V 1, V 6], sa1]
+
+sa2 = Invoke "a" [V 1, C "c" [V 4, C "c" [V 7, C "c" [V 8, C "n" []]]] ,
+                       C "c" [V 4, C "c" [V 7, C "c" [V 9, C "n" []]]]]
+
+dsa2 = [Invoke "a" [V 8, V 1, V 9 ], sa2] 
+
 
 littleTest = do
   manyAssert "embed conj1" False embed [ ( [getAnswer' [v4,   st [false, true, false, true, false], some [v8]],  add [v10,v8, s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o)))))))))))))))))]]

@@ -8,6 +8,19 @@ import Prelude hiding (succ)
 palindromo :: G a -> G a
 palindromo g = let x = V "x" in Let (def "palindromo" ["x"] (call "reverso" [x, x])) $ reverso g
 
+someAppendo :: G a -> G a
+someAppendo g =
+  let x = V "x" in
+  let y = V "y" in
+  let z = V "z" in
+  Let (def "someAppendo" ["x", "y", "z"]
+        (
+          fresh ["t"] ( call "appendo" [x, y, z] &&& call "appendo" [y, x, z] )
+        )
+      ) $ appendo g
+
+
+
 doubleAppendo :: G a -> G a
 doubleAppendo g =
   let x = V "x" in

@@ -4,7 +4,7 @@ import qualified CPD
 import Syntax
 import Prelude hiding (sequence)
 import Data.Maybe (isJust)
-import Data.List (find, partition, inits)
+import Data.List (find, partition, inits, intercalate)
 import qualified Eval as E
 import qualified Driving as D
 import Purification
@@ -41,7 +41,7 @@ part = CPD.mcs
 
 abstract :: Descend [G S] -> [G S] -> E.Delta -> ([([G S], T.Generalizer)], E.Delta)
 abstract descend goals d =
-  -- trace (printf "\nAbstracting \n%s\nDescend\n%s\n" (show goals) (show descend)) $
+  trace (printf "\nAbstracting \n%s\nDescend\n%s\n" (show goals) (show descend)) $
   let qCurly = part goals in
   go (map (\x -> (x, [])) qCurly) d
    where
@@ -97,12 +97,14 @@ topLevel goal =
         trace (printf "GlobalLevel:\n%s\n" $ show goal) $
         let subst = E.s0 in
         let sldTree = CPD.sldResolution goal gamma subst in
-        trace (printf "\n\nSLDDDD\n%s\n\n%s\n\n\n" (show goal) $ simplyPrintTree sldTree) $
+        -- trace (printf "\n\nSLDDDD\n%s\n\n%s\n\n\n" (show goal) $ simplyPrintTree sldTree) $
         let (substs, bodies) = partition (null . snd3) $ CPD.resultants sldTree in
         let abstracted = map (abstractChild ancs) bodies in
+        trace (printf "\nResultants:\n%s\nAbstracted:\n%s\n" (intercalate "\n" $ map (show . snd3) bodies) (intercalate "\n" $ map (concatMap (show . trd4)) abstracted) ) $
         let (toUnfold, toNotUnfold, newNodes) =
                 foldl (\ (yes, no, seen) gs ->
                             let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (CPD.isVariant g) seen) gs in
+                            -- trace (printf "\n\nVARIANTS\n%s\n" (show $ map snd4 variants)) $
                             (yes ++ brandNew, no ++ variants, map snd4 brandNew ++ seen)
                       )
                       ([], [], nodes)
