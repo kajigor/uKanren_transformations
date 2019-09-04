@@ -6,6 +6,7 @@ module Syntax where
 
 import Data.List
 import Text.Printf
+import Data.Char
 
 import Debug.Trace
 
@@ -105,17 +106,25 @@ subst_in_goal v t   (Invoke n ts)       = Invoke n $ map (subst_in_term v t) ts
 subst_in_goal v t   (Let (n, a, g1) g2) = Let (n, a, if elem v a then g1 else subst_in_goal v t g1) $ subst_in_goal v t g2
 
 instance Show a => Show (Term a) where
-  show (V v) = printf "v.%s" (show v)
+  show (V v) = showVar v
+  show (C name []) | isNil name = "[]"
+  show (C name [h, t]) | isCons name = printf "(%s : %s)" (show h) (show t)
+  show c | isSucc c || isZero c = pretifyNum 0 c show showVar
   show (C name ts) =
-    case name of
-      "Nil" -> "[]"
-      "Cons" -> let [h,t] = ts
-                in printf "(%s : %s)" (show h) (show t)
-      x | (x == "s" || x == "S") && length ts == 1 -> printf "S(%s)" (show $ head ts)
-      x | (x == "o" || x == "O") && null ts -> "O"
-      _ -> case ts of
-             [] -> name
-             _  -> printf "C %s [%s]" name (intercalate ", " $ map show ts)
+            case ts of
+              [] -> name
+              _  -> printf "C %s [%s]" name (intercalate ", " $ map show ts)
+
+  -- show (C name ts) =
+  --   case name of
+  --     "Nil" -> "[]"
+  --     "Cons" -> let [h,t] = ts
+  --               in printf "(%s : %s)" (show h) (show t)
+  --     x | (x == "s" || x == "S") && length ts == 1 -> printf "S(%s)" (show $ head ts)
+  --     x | (x == "o" || x == "O") && null ts -> "O"
+  --     _ -> case ts of
+  --            [] -> name
+  --            _  -> printf "C %s [%s]" name (intercalate ", " $ map show ts)
 
 instance Show a => Show (G a) where
   show (t1 :=:  t2)               = printf "%s = %s" (show t1) (show t2)
@@ -143,17 +152,36 @@ instance Dot a => Dot [a] where
   dot x = intercalate ", " (map dot x)
 
 instance Dot a => Dot (Term a) where
-  dot (V v) = printf "v<SUB>%s</SUB>" (dot v)
+  dot (V v) = dotVar v
+  dot (C name []) | isNil name = "[]"
+  dot (C name [h, t]) | isCons name = printf "%s : %s" (dot h) (dot t)
+  dot c | isSucc c || isZero c = pretifyNum 0 c dot dotVar
   dot (C name ts) =
-    case name of
-      "Nil" -> "[]"
-      "Cons" -> let [h,t] = ts
-                in printf "%s : %s" (dot h) (dot t)
-      x | (x == "s" || x == "S") && length ts == 1 -> printf "S(%s)" (dot $ head ts)
-      x | (x == "o" || x == "O") && null ts -> "O"
-      _ -> case ts of
-             [] -> name
-             _  -> printf "C %s [%s]" name (unwords $ map dot ts)
+          case ts of
+            [] -> name
+            _  -> printf "C %s [%s]" name (unwords $ map dot ts)
+
+isNil s = map toLower s == "nil" || s == "[]"
+isCons s = map toLower s == "cons" || s == "%"
+isZero (C o []) = map toLower o == "o"
+isZero _ = False
+isSucc (C s [n]) = map toLower s == "s"
+isSucc _ = False
+
+dotVar :: Dot a => a -> String
+dotVar = printf "v<SUB>%s</SUB>" . dot
+
+showVar :: Show a => a -> String
+showVar = printf "v.%s" . show
+
+predec :: Term a -> Term a
+predec c@(C _ [a]) | isSucc c = a
+predec c = error $ printf "Failed to get predecessor"
+
+pretifyNum :: Int -> Term a -> (Int->String) -> (a -> String) -> String
+pretifyNum acc (V v) intPrint varPrint = printf "(%s + %s)" (intPrint acc) (varPrint v)
+pretifyNum acc c intPrint varPrint | isSucc c = pretifyNum (1 + acc) (predec c ) intPrint varPrint
+pretifyNum acc c intPrint _ | isZero c = intPrint acc
 
 instance Dot a => Dot (G a) where
   dot (t1 :=:  t2)               = printf "%s = %s" (dot t1) (dot t2)

@@ -39,7 +39,7 @@ test_eveno = runTest "eveno" $ eveno $ fresh ["x"] (call "eveno" [V "x"])
 test_doubleo = runTest "doubleo" $ doubleo $ fresh ["x", "y"] (call "doubleo" [V "x", V "y"])
 test_empty_appendo = runTest "emptyAppendo" $ emptyAppendo $ fresh ["x", "y"] (call "emptyAppendo" [V "x", V "y"])
 test_singletonReverso = runTest "singletonReverso" $ singletonReverso $ fresh ["x", "y"] (call "singletonReverso" [V "x", V "y"])
-test_fgh = runTest "fgh" $ fgh $ fresh ["x"] (call "f" [V "x"] &&& call "g" [V "x"] &&& call "h" [V "x"])
+-- test_fgh = runTest "fgh" $ fgh $ fresh ["x"] (call "f" [V "x"] &&& call "g" [V "x"] &&& call "h" [V "x"])
 test_additionIsOne = runTest "addIsOne" $ add $ fresh ["x", "y"] (call "add" [C "s" [C "s" [C "s" [C "s" [V "x"]]]], V "y", C "s" [C "o" []]])
 
 test_dumbConstructors = runTest "dumbConstructors" $ dumbConstructors $ (call "dumbConstructors" [C "o" []])

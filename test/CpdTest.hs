@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module CpdTest (tests) where
 
 import Bool
@@ -31,15 +33,25 @@ import qualified OCanrenize as OC
 import Miscellaneous
 import Unify
 import Path
+import ConjRetriever
+import Sample1
+
+import System.CPUTime
+import System.TimeIt
+import System.IO
+
+--trace :: String -> a -> a
+--trace _ x = x
 
 tests = do
   testEmbedding
+  testGround
   testSelect
   testTakingOutLets
   testPopingOutFreshes
   testNormalization
   testUnifyStuff
-  testLocalControl
+  -- testLocalControl
   testMCS
   testMsgExists
   testSubconjs
@@ -49,7 +61,7 @@ tests = do
   testIsGroundTerm
   testGenerateFreshName
   testRenameGoals
-  testUnifyInvocationsStuff
+  -- testUnifyInvocationsStuff
 
   -- printStuff
   testAbstract
@@ -87,9 +99,10 @@ manyAssertOne name expected f =
   mapM_ (assert name expected . f)
 
 printStuff = do
+  test "fAndS" Sample1.query
   -- test "l_unify_same" Unify.querySame
   -- test "desert"          Desert.query
-  test "path" Path.query1
+  -- test "path" Path.query1
 
   -- test "l_unify" Unify.query
   -- test "sldDouble" (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
@@ -126,10 +139,11 @@ doOcanrenize = do
   -- ocanren "pathElem1" Path.queryElem1 $ Just Path.env
 
   -- ocanren "path" Path.query1 $ Just Path.env
-  ocanren "unify" Unify.query $ Just Unify.env
+  -- ocanren "unify" Unify.query $ Just Unify.env
   -- ocanren "bigBridge"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"])) $ Just Bridge.env
 
   -- ocanren "bottles"         Bottles.query $ Just Bottles.env
+  ocanren "fAndS" Sample1.query $ Nothing
 
 {-
 
@@ -168,7 +182,8 @@ doOcanrenize = do
         -- let f = residualizeGlobalTree tree
         -- let pur = purification (f $ vident <$> logicGoal, vident <$> reverse names)
         let f = residualizationTopLevel tree
-        let pur = purification (f, vident <$> reverse names)
+        let pur = trace (printf "Residualized: %s\n" (show f)) $
+                  purification (f, vident <$> reverse names)
         OC.topLevel (printf "%s.ml" filename) "topLevel" env pur
 
 doResidualization = do
@@ -213,7 +228,13 @@ doResidualization = do
 
 
 printGlobalStuff = do
-  test "globalSome"  (someAppendo $ fresh ["x", "y", "z"] (call "someAppendo" [V "x", V "y", V "z"]))
+  test "globalfAndS" Sample1.query
+
+  -- test "globalBottles" Bottles.query
+
+  -- test "bigBridge"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"]))
+
+  -- test "globalSome"  (someAppendo $ fresh ["x", "y", "z"] (call "someAppendo" [V "x", V "y", V "z"]))
   -- test "maxLengtho"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
 
   -- test "global_path" Path.query1
@@ -223,13 +244,12 @@ printGlobalStuff = do
   -- test "globalPath" Path.queryElem1
 
 
-  -- test "globalDesert"          Desert.query''
+  -- test "globalDesert"          Desert.query
 
   -- test "unify_same" Unify.querySame
   -- test "unify" Unify.query
   -- test "getTerm" Unify.queryGet
 
-  -- test "globalBottles" Bottles.query
   -- test "globalDouble"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
   -- test "globalCommute" (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
   -- test "globalAppNil"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
@@ -256,8 +276,16 @@ printGlobalStuff = do
   -- -- test "globalSudoku"  Sudoku4x4.queryInvalid
   -- -- test "globalAllDiff" Sudoku4x4.queryAllDiff
     where
-      test fileName goal =
-        printTree (printf "%s.dot" fileName) $ fst3 $ GC.topLevel goal
+      showConj conj =
+        intercalate "\n\n" $ map (\gss -> intercalate "\n" $ map show gss ) conj
+      -- showConj set =
+      --   let lst = Set.toList set in
+      --   intercalate "\n\n" $ map show lst
+
+      test fileName goal = do
+        let tree =  GC.topLevel goal
+        writeFile (printf "%s.log" fileName) $ showConj $ globalTreeRetrieve $ fst3 tree
+        printTree (printf "%s.dot" fileName) $ fst3 tree
 
 
 testEmbedding = do
@@ -410,6 +438,7 @@ testEmbedding = do
                                           , (f [c [], m [x, x]], f [n [c []], m [x, y]])
                                           , (maxo1 v15 (s (s v20)) v1, maxo1 v50 (s (s v51)) v1)
                                           ]
+
     testEmbedConj = do
       manyAssert "embed conj" False embed [ ([f [n [x, v], x, y]], [f [v, x, y]])
                                           , ([f [x, x]], [f [x, y]])
@@ -485,6 +514,67 @@ checkEmbed'' =
   embed [Invoke "all_Ch" [V 19, V 21, (C ":" [(C "Some" [V 20, V 19]), V 15]), C "true" []]]
         [(Invoke "all_Ch" [V 86, V 88, (C ":" [(C "Some" [V 20, V 73]), V 15]), C "true" []])
         ,(Invoke "all_Ch" [V 79, V 81, (C ":" [(C "Some" [V 20, V 73]), V 15]), C "true" []])]
+
+checkEmbed4 =
+  embed [add [V 509, inc 31 (V 459), inc 17 zero]]
+        [add [V 517, inc 24 (V 1044), V 516]]
+    where
+      zero = C "o" []
+      add args = Invoke "add" args
+      inc 0 x = x
+      inc n x = C "s" [inc (n-1) x]
+
+checkEmbed5 =
+  homeo (inc 31 (V 459) :: Term Int)
+        (inc 24 (V 1044))
+    where
+      inc 0 x = x
+      inc n x = C "s" [inc (n-1) x]
+
+ch n m =
+  homeo (inc n (V 459) :: Term Int)
+        (inc m (V 1044))
+    where
+      inc 0 x = x
+      inc n x = C "s" [inc (n-1) x]
+
+
+-- statistics :: Int -> Int -> IO (Int, Int, (Double, Bool))
+statistics x y = do
+  let fileName = "stat.csv"
+  fileExists <- doesFileExist fileName
+  when fileExists (removeFile fileName)
+  mapM (go fileName) [ (n, m) | n <- [0..x], m <- [0..y]]
+  putStrLn "done"
+    where
+        go file (n, m) = do
+          start <- getCPUTime
+          let !r = homeo (inc n (V 0)) (inc m (V 1))
+          end <- getCPUTime
+          let t = (fromIntegral (end - start)) / (10^12)
+          appendFile file (printf "%s, %s, %s, %s\n" (show n) (show m) (show t) (show r))
+        inc 0 x = x
+        inc n x = C "s" [inc (n-1) x]
+
+checkEmbed''' =
+  embed [getAnswer [V 455, st [false, false, true, false, true], some (V 459)], add [V 509, inc 31 (V 459), inc 17 zero]]
+        [getAnswer [V 1039, st [false, false, true, false, true], some (V 1043)], add [V 1045, V 1043, V 1044], add [V 517, inc 24 (V 1044), V 516], add [V 1100, inc 62 (V 516), inc 17 zero]]
+    where
+      zero = C "o" []
+      false = C "false" []
+      true = C "true" []
+      some x = C "some" [x]
+      st x = C "state" x
+      add args = Invoke "add" args
+      getAnswer args = Invoke "getAnswer'" args
+      inc 0 x = x
+      inc n x = C "s" [inc (n-1) x]
+--
+-- in before checking
+-- [getAnswer' v.455 (C st [false, false, true, false, true]) (C some [v.459]),add v.509 ((31 + v.459)) 17]
+-- and
+-- [getAnswer' v.1039 (C st [false, false, true, false, true]) (C some [v.1043]),add v.1045 v.1043 v.1044,add v.517 ((24 + v.1044)) v.516,add v.1100 ((62 + v.516)) 17]
+
 
 
 testSelect = do
@@ -757,16 +847,16 @@ testComplementSubconjs = do
     p = h (m x) x
 
 testMinimallyGeneral = do
-  assert "minimally general 0" [f x x] (minimallyGeneral [[f x y], [f x x]])
-  assert "minimally general 1" [f x x] (minimallyGeneral [[f x x], [f x y]])
-  assert "minimally general 2" [g x x y]  (minimallyGeneral [[g x x y], [g x y y], [g x y x], [g x y z]])
-  assert "minimally general 3" [g x y y]  (minimallyGeneral [[g x y z], [g x y y], [g x y x], [g x x y]])
-  assert "minimally general 4" [f x y, g x y z] (minimallyGeneral [[f x y, g x y z], [f x z], [f x x], [f x x, g x y z]]) -- y and x are linked and the selected one is the first
-  assert "minimally general 5" [f x x] (minimallyGeneral [[f x z], [f x x], [f x x, g y y z], [f x y, g z t u]])
-  assert "minimally general 6" [f x z, g x y z] (minimallyGeneral [[f x z, g x y z], [f x x, g y y z], [f x y, g z t u]])
-  assert "minimally general 7" [f x x, g y y z] (minimallyGeneral [[f x x, g y y z], [f x y, g z t u], [f x z, g x y z]])
-  assert "minimally general 8" [p u y, q y z] (minimallyGeneral [[p u y, q y z], [p x u, q y z]])
-  assert "minimally general 9" [p u y, q y z] (minimallyGeneral [[p x u, q y z], [p u y, q y z]])
+  assert "minimally general 0" [f x x]          (minimallyGeneral' [[f x y], [f x x]])
+  assert "minimally general 1" [f x x]          (minimallyGeneral' [[f x x], [f x y]])
+  assert "minimally general 2" [g x x y]        (minimallyGeneral' [[g x x y], [g x y y], [g x y x], [g x y z]])
+  assert "minimally general 3" [g x y y]        (minimallyGeneral' [[g x y z], [g x y y], [g x y x], [g x x y]])
+  assert "minimally general 4" [f x y, g x y z] (minimallyGeneral' [[f x y, g x y z], [f x z], [f x x], [f x x, g x y z]]) -- y and x are linked and the selected one is the first
+  assert "minimally general 5" [f x x]          (minimallyGeneral' [[f x z], [f x x], [f x x, g y y z], [f x y, g z t u]])
+  assert "minimally general 6" [f x z, g x y z] (minimallyGeneral' [[f x z, g x y z], [f x x, g y y z], [f x y, g z t u]])
+  assert "minimally general 7" [f x x, g y y z] (minimallyGeneral' [[f x x, g y y z], [f x y, g z t u], [f x z, g x y z]])
+  assert "minimally general 8" [p u y, q y z]   (minimallyGeneral' [[p u y, q y z], [p x u, q y z]])
+  assert "minimally general 9" [p u y, q y z]   (minimallyGeneral' [[p x u, q y z], [p u y, q y z]])
   where
     f x y = Invoke "f" [x, y]
     g x y z = Invoke "g" [x, y, z]
@@ -778,17 +868,19 @@ testMinimallyGeneral = do
     t = V "t"
     u = V "u"
 
+    minimallyGeneral' = fst . minimallyGeneral . map (\x -> (x, []))
+
 testSplit = do -- TODO more tests
-  assertCustom "split 0" checkVariant ([f x x], [g x]) (fst $ split [2..] [f x x] [f x x, g x] )
-  assertCustom "split 1" checkVariant ([f x x], [g x]) (fst $ split [2..] [f x x] [g x, f x x] )
-  assertCustom "split 2" checkVariant ([f x z], [g x]) (fst $ split [2..] [f x y] [g x, f x x] )
+  assertCustom "split 0" checkVariant ([f x x], [g x]) (fst3 $ split [2..] [f x x] [f x x, g x] )
+  assertCustom "split 1" checkVariant ([f x x], [g x]) (fst3 $ split [2..] [f x x] [g x, f x x] )
+  assertCustom "split 2" checkVariant ([f x z], [g x]) (fst3 $ split [2..] [f x y] [g x, f x x] )
   assertCustom "split 3" checkVariant ([maxo1 (v150 % v153) (s v152) v1, lengtho v153 v154], [leo v121 v122])
-                                      (fst $
+                                      (fst3 $
                                        split [150..]
                                              [maxo1 (v51 % v52) (s v33) v1, lengtho v52 v53]
                                              [leo v121 v122, maxo1 (v126 % v127) (s (s (s (s (s v122))))) v1, lengtho v127 v128])
   assertCustom "split 4" checkVariant ([maxo1 v50 (s (s v51)) v1], [])
-                                      (fst $
+                                      (fst3 $
                                        split [50..] [maxo1 v15 (s (s v20)) v1] [maxo1 v50 (s (s v51)) v1])
   where
     checkVariant (x, x') (y, y') = isVariant x y && isVariant x' y'
@@ -838,9 +930,32 @@ dsa1 = [Invoke "a" [V 5, V 1, V 6], sa1]
 sa2 = Invoke "a" [V 1, C "c" [V 4, C "c" [V 7, C "c" [V 8, C "n" []]]] ,
                        C "c" [V 4, C "c" [V 7, C "c" [V 9, C "n" []]]]]
 
-dsa2 = [Invoke "a" [V 8, V 1, V 9 ], sa2] 
+dsa2 = [Invoke "a" [V 8, V 1, V 9 ], sa2]
 
 
+littleInstTest = do
+  assert "little instance check" True (isInst
+                                              ( ca (pair v73 zero) v45 (pair v73 zero) v2 true )
+                                              ( ca (pair v28 zero) v4  (pair v28 v43 ) v2 true )
+                                              )
+  assert "little instance check" True (isInst
+                                              ( ca (pair v28 zero) v4  (pair v28 v43 ) v2 true )
+                                              ( ca (pair v73 zero) v45 (pair v73 zero) v2 true )
+                                              )
+    where
+      ca x y z m n = Invoke "checkAnswer'" [x, y, z, m, n]
+      pair x y = C "pair" [x, y]
+      true = C "true" []
+      zero = C "zero" []
+      v2 = V 2
+      v4 = V 4
+      v28 = V 28
+      v43 = V 43
+      v45 = V 45
+      v73 = V 73
+                                        -- [checkAnswer' (C pair [v.73, 0]) v.45 (C pair [v.73, 0]) v.2 true]
+                                        --
+                                        -- [checkAnswer' (C pair [v.28, 0]) v.4 (C pair [v.28, v.43]) v.2 true]
 littleTest = do
   manyAssert "embed conj1" False embed [ ( [getAnswer' [v4,   st [false, true, false, true, false], some [v8]],  add [v10,v8, s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o)))))))))))))))))]]
                                          , [getAnswer' [v140, st [false, true, false, true, false], some [v144]],add [v10,v77,s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o)))))))))))))))))]]
@@ -960,3 +1075,39 @@ testUnifyInvocationsStuff = do
     c = C "c"
     d = C "d"
     e = C "e"
+
+testGround = do
+  test ([] :: [G X]) True
+  test x False
+  test nil True
+  test (cons x nil) False
+  test (cons two nil) True
+  test (eq true true true) True
+  test (gt zero five false) True
+  test [eq true true true] True
+  test [checkPerson (st true true true true true) x true] False
+  test (maxim zero five x) False
+  test [ga x (st true true true true true) (some x), times b x, times d x, maxim x x x, add x x x, add x x five] False
+    where
+      test x expected = assert "Ground" expected (isGround x)
+      x = V "x"
+      y = V "y"
+      b = C "b" []
+      d = C "d" []
+      true = C "true" []
+      false = C "false" []
+      nil = C "Nil" []
+      cons h t = C "Cons" [h, t]
+      some x = C "Some" [x]
+      z = C "O" []
+      s x = C "S" [x]
+      two = s $ s z
+      five = s . s . s . s . s $ z
+      st x y z m n = C "st" [x, y, z, m, n]
+      eq x y r = Invoke "eq" [x, y, r]
+      gt x y r = Invoke "gt" [x, y, r]
+      checkPerson x y r = Invoke "checkPerson" [x, y, r]
+      maxim x y r = Invoke "max" [x, y, r]
+      ga x y r = Invoke "getAnswer'" [x, y, r]
+      times x y = Invoke "times" [x, y]
+      add x y r = Invoke "add" [x, y, r]

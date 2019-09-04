@@ -37,7 +37,7 @@ residualizeGlobalTree :: GlobalTree -> (G X -> G X)
 residualizeGlobalTree tree =
   let nodes = getNodes tree in
   let definitions = foldl (\defs gs -> fst3 (renameGoals gs defs) ) [] $ map fst nodes  in
-  -- trace (printf "Definitions:\n%s\n" (intercalate "\n" $ map show definitions)) $
+  trace (printf "Definitions:\n%s\n" (intercalate "\n" $ map show definitions)) $
   let lets = map Let $ mapMaybe (\(gs, sld) -> residualizeSldTree gs sld definitions) nodes in
   foldl1 (.) lets
   where
@@ -47,12 +47,13 @@ residualizeGlobalTree tree =
 unifyInvocationLists :: [G S] -> [G S] -> Maybe Eval.Sigma -> Maybe Eval.Sigma
 unifyInvocationLists [] [] state = state
 unifyInvocationLists xs@(Invoke name args : gs) ys@(Invoke name' args' : gs') state | name == name' && length args == length args' = do
-  let state' = trace (printf "unifying\n%s\n%s\n" (show xs) (show ys)) $  unifyArgs args args' state
+  let state' = --trace (printf "unifying\n%s\n%s\n" (show xs) (show ys)) $
+               unifyArgs args args' state
   unifyInvocationLists gs gs' state'
   where
     unifyArgs [] [] state = state
     unifyArgs (x:xs) (y:ys) state = do
-      let state' = trace (printf "Maybe no occurs check is not a good idea\n%s\n%s\n%s\n" (show x) (show y) (show state))  $
+      let state' = -- trace (printf "Maybe no occurs check is not a good idea\n%s\n%s\n%s\n" (show x) (show y) (show state))  $
                    unify state x y
       unifyArgs xs ys state'
     unifyArgs _ _ _ = Nothing
@@ -70,6 +71,7 @@ unifyInvocationLists _ _ _ = Nothing
 generateInvocation :: [G S] -> Definitions -> G X
 generateInvocation goals defs =
   trace (printf "\nGenerateInvocation\nGoal: %s\nDefs: %s\n" (show goals) (intercalate "\n" $ map show $ map fst3 defs)) $
+  trace (printf "\nInstance Check: %s\n" (show $ CPD.instanceCheck goals (map fst3 defs))) $
   fromMaybe
     (error "Residualization failed: invocation of the undefined relation.")
     (conj <$> conjInvocation goals defs)
@@ -84,7 +86,7 @@ generateInvocation goals defs =
         _ -> Nothing
     conjInvocation [] _ = Just []
     conjInvocation goals defs =
-      trace (printf "invocation for\n%s\n" $ show goals) $
+      -- trace (printf "invocation for\n%s\n" $ show goals) $
       let representable =
             filter isJust $
             map (divideInvocations defs) $
@@ -144,7 +146,8 @@ residualizeSldTree rootGoals tree definitions = do
   let (_, defName, rootVars) = fromMaybe (error (printf "Residualization failed: no definition found for\n%s\nDefs:\n%s\n" (show rootGoals) (show definitions))) $
                                find ((== rootGoals) . fst3) definitions
   let resultants = CPD.resultants tree
-  let goals = foldl (\gs (subst, goals, _) ->
+  let goals = trace (printf "RootGoal: %s\nResultants: \n%s\n" (show rootGoals) (intercalate "\n" $ map (\(x,y,_) -> show (x,y)) resultants)) $
+              foldl (\gs (subst, goals, _) ->
                        let g = go subst goals definitions
                        in  g : gs
                     )
@@ -154,7 +157,7 @@ residualizeSldTree rootGoals tree definitions = do
 
   let body = Eval.postEval' defArgs $ foldl1 (|||) (reverse goals)
 
-  if null goals
+  if (trace (printf "Body: %s\n" (show body))) (null goals)
   then fail (printf "No resultants in the sld tree for %s" (show rootGoals))
   else return $ def defName defArgs body
   where

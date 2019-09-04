@@ -1,4 +1,4 @@
-module Main (
+module TestMain (
     main
 ) where
 

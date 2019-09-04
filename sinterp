@@ -1,2 +1,0 @@
-ghci -isrc -isrc/programs -itest -iutils test/CpdTest.hs
-

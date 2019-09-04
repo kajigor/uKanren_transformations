@@ -2,6 +2,7 @@ module EmbedTest where
 
 import Syntax
 import Driving
+import Miscellaneous
 
 checkStep = Invoke "cS"
 step = Invoke "s"
@@ -22,4 +23,4 @@ g3 = [checkPerson([C "St" [C "T" [], C "T" [], C "T" []],V 36,C "T" []]) , moveP
 
 test = embedGoals g1 g2
 
-test' = map (map trd') (split (map (\ x -> (undefined, undefined, x)) g3) g1)
+test' = map (map trd3) (split (map (\ x -> (undefined, undefined, x)) g3) g1)

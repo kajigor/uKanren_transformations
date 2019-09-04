@@ -15,6 +15,8 @@ import qualified Tree as T
 import Miscellaneous
 import DotPrinter
 import SldTreePrinter
+import Control.Exception.Base
+import Data.Tuple
 
 type Descend = CPD.Descend
 
@@ -41,17 +43,24 @@ part = CPD.mcs
 
 abstract :: Descend [G S] -> [G S] -> E.Delta -> ([([G S], T.Generalizer)], E.Delta)
 abstract descend goals d =
-  trace (printf "\nAbstracting \n%s\nDescend\n%s\n" (show goals) (show descend)) $
+  -- trace (printf "\nAbstracting \n%s\nDescend\n%s\n" (show goals) (show descend)) $
   let qCurly = part goals in
   go (map (\x -> (x, [])) qCurly) d
    where
     go [] d@(x:_) = ([], d)
     go ((m, gen):gs) d =
-      case whistle descend m of
+      case let x = whistle descend m in -- trace "whistle"
+                                        x of
         Nothing ->
+          -- trace "in nothing" $
           let (goals, delta) = go gs d in
+          -- trace "go ended" $
           ((m, gen) : goals, delta)
-        Just b -> let (goals, delta) = generalize m b d in
+        Just b ->
+                  -- trace "in Just" $
+
+                  let (goals, delta) = generalize m b d in
+                  -- trace "generalize done" $
                   let goals' = if length goals == 1 && CPD.isVariant (fst $ head goals) m
                                then []
                                else goals
@@ -60,16 +69,27 @@ abstract descend goals d =
 
 whistle :: Descend [G S] -> [G S] -> Maybe [G S]
 whistle descend m =
-  let res = find (\b -> CPD.embed b m && not (CPD.isVariant b m)) (sequence descend) in
-  trace (printf "Whistling\n%s\n%s" (show m) (show res)) $
+  -- trace "in whistle" $
+  let res = find (\b ->
+                        -- trace ("in before checking\n" ++ show b ++ "\nand\n" ++ show m) $
+                        -- let emb = CPD.embed b m in
+                        -- trace ("emb " ++ show emb) $
+                        -- let nva = not (CPD.isVariant b m) in
+                        -- trace ("nva " ++ show nva) $
+                        -- emb && nva
+                        CPD.embed b m && (not (CPD.isVariant b m))
+                  ) (sequence descend) in
+  -- trace ("whistle done") $
+  -- trace (printf "Whistling\n%s\n%s" (show m) (show res)) $
   res
 
 generalize :: [G S] -> [G S] -> E.Delta -> ([([G S], T.Generalizer)], E.Delta)
 generalize m b d =
-  trace "GENERALIZE" $
-  let ((m1, m2), delta) = CPD.split d b m in
-  let (generalized, _, gen, delta') = D.generalizeGoals d m1 b in
-  (map (project gen) $ CPD.mcs generalized ++ CPD.mcs m2, delta')
+  -- trace "GENERALIZE" $
+  let ((m1, m2), genOrig, delta) = CPD.split d b m in
+  let genTrue = genOrig in
+  --let (generalized, _, gen, delta') = D.generalizeGoals d m1 b in
+  (map (project genTrue) (CPD.mcs m1) ++ map (project []) (CPD.mcs m2), delta)
     where
       project gen goals = (goals, {- filter (\(x, _) -> (V x) `elem` concatMap CPD.vars goals) -} gen)
 
@@ -77,6 +97,7 @@ abstractChild :: Set [G S] -> (E.Sigma, [G S], Maybe E.Gamma) -> [(E.Sigma, [G S
 abstractChild _ (_, _, Nothing) = []
 abstractChild ancs (subst, g, Just env@(x, y, d)) =
   let (abstracted, delta) = abstract (CPD.Descend g ancs) g d in
+  -- trace "abstraction ended" $
   map (\(g, gen) -> (subst, g, gen, (x, y, delta))) abstracted
 
 conjToList :: G a -> [G a]
@@ -84,42 +105,101 @@ conjToList (g :/\: h) = conjToList g ++ conjToList h
 conjToList x@(Invoke _ _) = [x]
 conjToList _ = error "This conjunction is not a list of calls"
 
+
 topLevel :: G X -> (GlobalTree, G S, [S])
 topLevel goal =
   let (goal', defs) = takeOutLets goal in
   let gamma = E.updateDefsInGamma E.env0 defs in
   let (logicGoal, gamma', names) = E.preEval' gamma goal' in
   let nodes = [[logicGoal]] in
-  (go nodes (CPD.Descend [logicGoal] Set.empty) gamma' E.s0 [] [], logicGoal, names) where
+  (fst $ go nodes (CPD.Descend [logicGoal] Set.empty) gamma' E.s0 [] [], logicGoal, names) where
     go nodes d@(CPD.Descend goal ancs) gamma subst defs generalizer =
-      -- if head (trd3 gamma) <= 21
-      -- then
-        trace (printf "GlobalLevel:\n%s\n" $ show goal) $
+      -- if head (trd3 gamma) > 100
+      -- then (Prune d subst, nodes)
+      -- else
         let subst = E.s0 in
-        let sldTree = CPD.sldResolution goal gamma subst in
-        -- trace (printf "\n\nSLDDDD\n%s\n\n%s\n\n\n" (show goal) $ simplyPrintTree sldTree) $
+        let sldTree = CPD.sldResolution goal gamma subst (Set.delete goal $ Set.fromList nodes)in
         let (substs, bodies) = partition (null . snd3) $ CPD.resultants sldTree in
         let abstracted = map (abstractChild ancs) bodies in
-        trace (printf "\nResultants:\n%s\nAbstracted:\n%s\n" (intercalate "\n" $ map (show . snd3) bodies) (intercalate "\n" $ map (concatMap (show . trd4)) abstracted) ) $
         let (toUnfold, toNotUnfold, newNodes) =
                 foldl (\ (yes, no, seen) gs ->
                             let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (CPD.isVariant g) seen) gs in
-                            -- trace (printf "\n\nVARIANTS\n%s\n" (show $ map snd4 variants)) $
                             (yes ++ brandNew, no ++ variants, map snd4 brandNew ++ seen)
                       )
                       ([], [], nodes)
                       abstracted
             in
-        -- let leafGoals = map snd3 toUnfold in
         let (def, newDefs) = undefined in
-        let ch = map (\(subst, g, gen, env) -> go newNodes (CPD.Descend g (Set.insert goal ancs)) env subst newDefs gen) toUnfold in
+        let (ch, everythingSeenSoFar) =
+                (swap . (reverse <$>) . swap) $
+                foldl (\(trees, seen) (subst, g, gen, env)  ->
+                          let (t, s) = go seen (CPD.Descend g (Set.insert goal ancs)) env subst newDefs gen in
+                          -- trace (printf "\nprocessing\n%s\nseen\n%s\n" (show g) (intercalate "\n" $ map show seen)) $
+                          (t:trees, s)
+                      )
+                      ([], newNodes)
+                      toUnfold in
         let forgetEnv = map (\(x, y, _) -> (x, y, [])) in
         let forgetStuff = map (\(x, y, gen, _) -> (x,y, gen)) in
         let substLeaves = forgetEnv substs in
         let leaves = forgetStuff toNotUnfold in
-        Node d generalizer sldTree (map (\(subst, g, gen) -> Leaf (CPD.Descend g Set.empty) [] subst) (substLeaves ++ leaves) ++ ch)
-      -- else
-      --   Prune d subst
+        (Node d generalizer sldTree (map (\(subst, g, gen) -> Leaf (CPD.Descend g Set.empty) [] subst) (substLeaves ++ leaves) ++ ch), everythingSeenSoFar)
+
+
+
+
+
+
+
+
+
+
+-- topLevel :: G X -> (GlobalTree, G S, [S])
+-- topLevel goal =
+--   let (goal', defs) = takeOutLets goal in
+--   let gamma = E.updateDefsInGamma E.env0 defs in
+--   let (logicGoal, gamma', names) = E.preEval' gamma goal' in
+--   let nodes = [[logicGoal]] in
+--   (fst $ go nodes (CPD.Descend [logicGoal] Set.empty) gamma' E.s0 [] [], logicGoal, names) where
+--     go nodes d@(CPD.Descend goal ancs) gamma subst defs generalizer =
+--       if head (trd3 gamma) <= 400
+--       then
+--         trace (printf "GlobalLevel:\n%s\n" $ show goal) $
+--         let subst = E.s0 in
+--         let sldTree = CPD.sldResolution goal gamma subst (Set.delete goal $ Set.fromList nodes)in
+--         -- trace (printf "\n\nSLDDDD\n%s\n\n%s\n\n\n" (show goal) $ simplyPrintTree sldTree) $
+--         let (substs, bodies) = partition (null . snd3) $ CPD.resultants sldTree in
+--         let abstracted = map (abstractChild ancs) bodies in
+--         trace (printf "\nResultants:\n%s\nAbstracted:\n%s\n" (intercalate "\n" $ map (show . snd3) bodies) (intercalate "\n" $ map (concatMap (show . trd4)) abstracted) ) $
+--         let (toUnfold, toNotUnfold, newNodes) =
+--                 foldl (\ (yes, no, seen) gs ->
+--                             -- let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (CPD.isVariant g) seen) gs in
+--                             let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (CPD.isInst g) seen) gs in
+--                             trace (printf "\n\nVARIANTS\n%s\n%s\n" (show $ map snd4 gs) (show $ map snd4 variants)) $
+--                             (yes ++ brandNew, no ++ variants, map snd4 brandNew ++ seen)
+--                       )
+--                       ([], [], nodes)
+--                       abstracted
+--             in
+--         -- let leafGoals = map snd3 toUnfold in
+--         let (def, newDefs) = undefined in
+--         let (ch, everythingSeenSoFar) =
+--                 foldl (\(trees, seen) (subst, g, gen, env)  ->
+--                           trace (printf "\n\nGlobalLevel:\n%s\n\n" $ show g) $
+--                           trace (printf "\n\nSeen:\n%s\n\n" $ show seen) $
+--                           --assert (g `notElem` seen) $
+--                           let (t, s) = go seen (CPD.Descend g (Set.insert goal ancs)) env subst newDefs gen in
+--                           (t:trees, s)
+--                       )
+--                       ([], newNodes)
+--                       toUnfold in
+--         let forgetEnv = map (\(x, y, _) -> (x, y, [])) in
+--         let forgetStuff = map (\(x, y, gen, _) -> (x,y, gen)) in
+--         let substLeaves = forgetEnv substs in
+--         let leaves = forgetStuff toNotUnfold in
+--         (Node d generalizer sldTree (map (\(subst, g, gen) -> Leaf (CPD.Descend g Set.empty) [] subst) (substLeaves ++ leaves) ++ ch), everythingSeenSoFar)
+--       else
+--         (Prune d subst, nodes)
 
       -- let ch = map (\((subst, g, env), ns) ->
       --                        go (ns ++ leafGoals ++ nodes) (CPD.Descend g (goal:ancs)) env subst) (zip qs (map (map snd3) $ inits qs)) in -- add qs where appropriate
