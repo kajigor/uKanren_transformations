@@ -75,7 +75,7 @@ toOCanren' printer filename topLevelName environment prog =
                                      printEnvironment filename environment
                                      system $ "cat " ++ tmp_name ++ " >> " ++ filename
                                      --system $ "camlp5o pr_o.cmo " ++ tmp_name ++ " >> " ++ filename
-                                     system $ "ocamlformat " ++ filename ++ " -m 160 -i"
+                                     system $ "ocamlformat --enable-outside-detected-project " ++ filename ++ " -m 160 -i"
                                      return ()
                                 )
   where

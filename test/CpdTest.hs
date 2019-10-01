@@ -44,6 +44,10 @@ import System.IO
 --trace _ x = x
 
 tests = do
+  print "HERE"
+  printGlobalStuff
+  -- doOcanrenize 
+  {-
   testEmbedding
   testGround
   testSelect
@@ -69,6 +73,7 @@ tests = do
   -- printGlobalStuff
 
   -- littleTest
+  -}
 
 reportError :: Show a => String -> a -> a -> IO ()
 reportError name expected actual =
@@ -143,7 +148,9 @@ doOcanrenize = do
   -- ocanren "bigBridge"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"])) $ Just Bridge.env
 
   -- ocanren "bottles"         Bottles.query $ Just Bottles.env
-  ocanren "fAndS" Sample1.query $ Nothing
+
+  ocanren "revacco" (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])) Nothing
+--  ocanren "fAndS" Sample1.query $ Nothing
 
 {-
 
@@ -228,7 +235,8 @@ doResidualization = do
 
 
 printGlobalStuff = do
-  test "globalfAndS" Sample1.query
+  -- test "revacco" (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])) 
+  -- test "globalfAndS" Sample1.query
 
   -- test "globalBottles" Bottles.query
 
@@ -250,7 +258,22 @@ printGlobalStuff = do
   -- test "unify" Unify.query
   -- test "getTerm" Unify.queryGet
 
-  -- test "globalDouble"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"]))
+  
+  
+  
+  
+  
+  
+  test "globalDouble"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "x", V "r"]))
+  --test "globalReverso"  (reverso $ fresh ["x", "y"] (call "reverso" [V "x", V "y"]))
+  
+  
+  
+  
+  
+  
+  
+  
   -- test "globalCommute" (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
   -- test "globalAppNil"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
   -- test "globalRevAcco" (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
