@@ -622,16 +622,16 @@ testSelect = do
         app  x y z = Invoke "app"  [x, y, z]
         app00 = app xs ys t
         app01 = app t zs r
-        app00D = Descend app00 Set.empty
-        app01D = Descend app01 Set.empty
+        app00D = Descend app00 []
+        app01D = Descend app01 []
         app10 = app xs' ys t'
         app11 = app (cons h t') zs r
-        app10D = Descend app10 $ Set.singleton app00
-        app11D = Descend app11 Set.empty
+        app10D = Descend app10 [app00]
+        app11D = Descend app11 []
         app20 = app10
         app21 = app t' zs r'
-        app20D = Descend app20 $ Set.singleton app00
-        app21D = Descend app21 $ Set.singleton app11
+        app20D = Descend app20 [app00]
+        app21D = Descend app21 [app11]
     testSelect2 = do
       assert "select 0" (Just max0D) (select [max0D, len0D])
       assert "select 1" (Just len1D) (select [max1D, len1D])
@@ -651,16 +651,16 @@ testSelect = do
         len  x y   = Invoke "len"  [x, y]
         max0 = max' x n m
         len0 = len x l
-        max0D = Descend max0 Set.empty
-        len0D = Descend len0 Set.empty
+        max0D = Descend max0 []
+        len0D = Descend len0 []
         max1 = max' t n m
         len1 = len (cons h t) l
-        max1D = Descend max1 $ Set.singleton max0
-        len1D = Descend len1 Set.empty
+        max1D = Descend max1 [max0]
+        len1D = Descend len1 []
         max2 = max' t n m
         len2 = len t k
-        max2D = Descend max2 $ Set.singleton max0
-        len2D = Descend len2 $ Set.singleton len1
+        max2D = Descend max2 [max0]
+        len2D = Descend len2 [len1]
 
 testTakingOutLets = do
   assert "taking out lets 0" (uni0, [], []) (justTakeOutLets (uni0, []))
@@ -937,7 +937,7 @@ testSplit = do -- TODO more tests
     v154 = V 154
 
 testAbstract = do
-  assert "abstract" [goal] (map fst $ fst $ GC.abstract (Descend goal Set.empty) goal [11..])
+  assert "abstract" [goal] (map fst $ fst $ GC.abstract (Descend goal []  ) goal [11..])
   where
     goal = [maxo1 v3 zero v1]
     maxo1 x y z = Invoke "maxo1" [x, y, z]

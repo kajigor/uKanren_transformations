@@ -20,16 +20,15 @@ import qualified Data.Map.Strict as Map
 import Debug.Trace
 import Data.List
 import qualified Driving as D
-import qualified Data.Set as Set
 import qualified Tree as T
 
 -- trace :: String -> a -> a
 -- trace _ x = x
 
-data Descend a = Descend { getCurr :: a, getAncs :: Set a } deriving (Eq)
+data Descend a = Descend { getCurr :: a, getAncs :: [a] } deriving (Eq)
 
 instance (Show a) => Show (Descend a) where
-  show (Descend curr ancs) = printf "%s <- %s" (show curr) (show $ Set.toList ancs)
+  show (Descend curr ancs) = printf "%s <- %s" (show curr) (show ancs)
 
 type DescendGoal = Descend (G S)
 
@@ -46,10 +45,10 @@ selecter :: [DescendGoal] -> ([DescendGoal], [DescendGoal])
 selecter gs = span (\x -> not $ isSelectable embed (getCurr x) (getAncs x)) gs
 
 -- TODO reconsider hardcoded list of basic function names
-isSelectable :: Show a => (G a -> G a -> Bool) -> G a -> Set (G a) -> Bool
+isSelectable :: Show a => (G a -> G a -> Bool) -> G a -> [G a] -> Bool
 -- isSelectable _ _ ancs | Set.null ancs = True
 isSelectable emb goal ancs =
-  (not (any (`emb` goal) ancs) || Set.null ancs) && fineToUnfold goal
+  (not (any (`emb` goal) ancs) || null ancs) && fineToUnfold goal
   where
     fineToUnfold (Invoke f _) = f `notElem` basics
     fineToUnfold _ = False
@@ -58,13 +57,13 @@ isSelectable emb goal ancs =
 substituteDescend s =
   map $ \(Descend g ancs) -> Descend (E.substituteGoal s g) ancs
 
-sldResolution :: [G S] -> E.Gamma -> E.Sigma -> Set [G S] -> SldTree
+sldResolution :: [G S] -> E.Gamma -> E.Sigma -> [[G S]] -> SldTree
 sldResolution goal gamma subst seen  =
   -- sldResolutionStep (map (\x -> Descend x Set.empty) goal) gamma subst Set.empty True
   -- trace "\n\nSLDRESOLUTION \n\n" $
-  sldResolutionStep (map (\x -> Descend x Set.empty) goal) gamma subst seen True
+  sldResolutionStep (map (\x -> Descend x []) goal) gamma subst seen True
 
-sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> Set [G S] -> Bool -> SldTree
+sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> [[G S]] -> Bool -> SldTree
 sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
   -- let false = C "false" [] in
   -- let isFalseCheck x =
@@ -78,7 +77,7 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
 
   let curs = map getCurr gs in
   -- trace (printf "Unfolding:\n%s\nisGround: %s\n" (show curs) (show $ isGround curs)) $
-  let prettySeen = intercalate "\n" $ map show $ Set.toList seen  in
+  let prettySeen = intercalate "\n" $ map show seen  in
   -- if variantCheck curs seen
   if instanceCheck curs seen
   then
@@ -91,7 +90,7 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
         -- trace (printf "\nIt's NOT an instance!\n%s\nSeen\n%s\n\n" (show curs) prettySeen) $
         maybe (Leaf gs s env)
               (\(ls, Descend g ancs, rs) ->
-                  trace (printf "\nSelected: %s\nAncs: %s" (show g) (show $ Set.toList ancs)) $
+                  trace (printf "\nSelected: %s\nAncs: %s" (show g) (show ancs)) $
                   let (g', env') = unfold g env in
                   go g' env' ls rs g ancs isFirstTime
               )
@@ -119,7 +118,7 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
           trace (printf "unified: %s" $ intercalate "\n" $ map show unified) $
           let addDescends xs s =
                 trace (printf "\nAdding descends\nxs: %s\ns:  %s\n" (show xs) (show s)) $ 
-                substituteDescend s (ls ++ map (\x -> Descend x (Set.insert g ancs)) xs ++ rs) in
+                substituteDescend s (ls ++ map (\x -> Descend x (g : ancs)) xs ++ rs) in
           case unified of
             [] ->
               trace "fail" $
@@ -134,7 +133,7 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
                   then Success s'
                   else let newDescends = addDescends xs s' in
                        trace (printf "\n\nConj\nNew descends: %s" (show newDescends)) $
-                       Conj (sldResolutionStep newDescends env' s' (Set.insert (map getCurr gs) seen) (isFirstTime && length ns == 1)) newDescends s'
+                       Conj (sldResolutionStep newDescends env' s' (map getCurr gs : seen) (isFirstTime && length ns == 1)) newDescends s'
                        -- Conj (sldResolutionStep newDescends env' s' (Set.insert (map getCurr gs) seen) False newDescends s'
             ns | not $ null rs ->
               trace (printf "\nnot null\nns: %s\nls: %s\nrs: %s\ng: %s" (show ns) (show ls) (show rs) (show g)) $
@@ -185,7 +184,7 @@ topLevel goal =
   let (goal', _, defs) = justTakeOutLets (goal, []) in
   let gamma = E.updateDefsInGamma E.env0 defs in
   let (logicGoal, gamma', names) = E.preEval' gamma goal' in
-  sldResolutionStep [Descend logicGoal Set.empty] gamma' E.s0 Set.empty True
+  sldResolutionStep [Descend logicGoal []] gamma' E.s0 [] True
 
 mcs :: (Eq a, Show a) => [G a] -> [[G a]]
 mcs []     = []
