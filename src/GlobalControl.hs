@@ -88,8 +88,7 @@ whistle descend m =
   let res = find (\b ->
                         trace ("in before checking\n" ++ show b ++ "\nand\n" ++ show m) $
                         CPD.embed b m && (not (CPD.isVariant b m))
-                  ) (reverse $  sequence descend) in
-                  --) (sequence descend) in
+                  ) (sequence descend) in
   -- trace ("whistle done") $
   -- trace (printf "Whistling\n%s\n%s" (show m) (show res)) $
   res
@@ -122,8 +121,8 @@ topLevel goal =
   let gamma = E.updateDefsInGamma E.env0 defs in
   let (logicGoal, gamma', names) = E.preEval' gamma goal' in
   let nodes = [[logicGoal]] in
-  (fst $ go nodes (CPD.Descend [logicGoal] []) gamma' E.s0 [] [], logicGoal, names) where
-    go nodes d@(CPD.Descend goal ancs) gamma subst defs generalizer =
+  (fst $ go nodes (CPD.Descend [logicGoal] []) gamma' E.s0 [], logicGoal, names) where
+    go nodes d@(CPD.Descend goal ancs) gamma subst generalizer =
       -- if head (trd3 gamma) > 100
       -- then (Prune d subst, nodes)
       -- else
@@ -133,9 +132,10 @@ topLevel goal =
         let (substs, bodies) = partition (null . snd3) $ CPD.resultants sldTree in
         trace ("\nBodies\n" ++ (concatMap (\x -> case x of Nothing -> "Nothing" ; Just _ -> "Just") $ map trd3 bodies)) $ 
         -- trace (printf "\nMaybe gamma\n%s" (show $ map (\(_,_,x) -> x) bodies)) $ 
-        let ancs' = if length goal > 1 
-                    then (goal : ancs)
-                    else ancs in 
+        -- let ancs' = if length goal > 1 
+        --             then (goal : ancs)
+        --             else ancs in 
+        let ancs' = goal : ancs in 
         let abstracted = map (abstractChild ancs') bodies in
         trace (printf "\nAbstracted\n%s" (show $ map  (map snd4) abstracted)) $ 
         let (toUnfold, toNotUnfold, newNodes) =
@@ -145,17 +145,18 @@ topLevel goal =
                       )
                       ([], [], nodes)
                       abstracted
-            in
-        let (def, newDefs) = undefined in
+        in
+        trace (printf "Here are the new nodes:\n%s\n" (show newNodes)) $
         let (ch, everythingSeenSoFar) =
                 (swap . (reverse <$>) . swap) $
                 foldl (\(trees, seen) (subst, g, gen, env)  ->
-                          let (t, s) = go seen (CPD.Descend g (goal : ancs)) env subst newDefs gen in
+                          let (t, s) = go seen (CPD.Descend g (goal : ancs)) env subst gen in
                           trace (printf "\nprocessing\n%s\nseen\n%s\n" (show g) (intercalate "\n" $ map show seen)) $
                           (t:trees, s)
                       )
                       ([], newNodes)
                       toUnfold in
+        trace (printf "Everything we've seen so far:\n%s\n" (show everythingSeenSoFar)) $                        
         let forgetEnv = map (\(x, y, _) -> (x, y, [])) in
         let forgetStuff = map (\(x, y, gen, _) -> (x,y, gen)) in
         let substLeaves = forgetEnv substs in

@@ -42,7 +42,10 @@ residualizeGlobalTree tree =
   foldl1 (.) lets
   where
     getNodes (Leaf _ _ _) = []
-    getNodes (Node d _ sld ch) = (CPD.getCurr d, sld) : (concatMap getNodes ch)
+    getNodes (Node _ _ (CPD.Leaf _ _ _) _) = [] -- This happens because of the instance check
+    getNodes (Node d _ sld ch) = 
+      trace (printf "\n\nTree for goal\n%s\n\n%s\n\n" (show $ CPD.getCurr d) (simplyPrintTree sld)) $ 
+      (CPD.getCurr d, sld) : (concatMap getNodes ch)
 
 unifyInvocationLists :: [G S] -> [G S] -> Maybe Eval.Sigma -> Maybe Eval.Sigma
 unifyInvocationLists [] [] state = state
@@ -145,7 +148,11 @@ residualizeSldTree :: [G S] -> CPD.SldTree -> Definitions -> Maybe Def
 residualizeSldTree rootGoals tree definitions = do
   let (_, defName, rootVars) = fromMaybe (error (printf "Residualization failed: no definition found for\n%s\nDefs:\n%s\n" (show rootGoals) (show definitions))) $
                                find ((== rootGoals) . fst3) definitions
-  let resultants = CPD.resultants tree
+                                 
+  let resultants = 
+        trace ("\n\n\nHERE COMES THE TREE " ++  simplyPrintTree tree ++ "\n\n\n ") $ 
+        CPD.resultants tree
+  
   let goals = trace (printf "RootGoal: %s\nResultants: \n%s\n" (show rootGoals) (intercalate "\n" $ map (\(x,y,_) -> show (x,y)) resultants)) $
               foldl (\gs (subst, goals, _) ->
                        let g = go subst goals definitions

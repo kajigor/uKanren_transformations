@@ -81,7 +81,7 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
   -- if variantCheck curs seen
   if instanceCheck curs seen
   then
-    -- trace (printf "\nIt  IS an instance!\n%s\nSeen\n%s\n\nIt's a variant: %s\n" (show curs) prettySeen (show $ variantCheck curs seen)) $
+    trace (printf "\nIt  IS an instance!\n%s\nSeen\n%s\n\nIt's a variant: %s\n" (show curs) prettySeen (show $ variantCheck curs seen)) $
     Leaf gs s env
   else
     -- if temp > 90

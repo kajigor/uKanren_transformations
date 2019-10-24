@@ -68,16 +68,17 @@ topLevel = toOCanren' ocanrenize'
 
 toOCanren' printer filename topLevelName environment prog =
   do
-    withSystemTempFile filename (\ tmp_name tmp ->
-                                   do
-                                     hPutStrLn tmp (printer topLevelName prog)
-                                     hClose tmp
-                                     printEnvironment filename environment
-                                     system $ "cat " ++ tmp_name ++ " >> " ++ filename
-                                     --system $ "camlp5o pr_o.cmo " ++ tmp_name ++ " >> " ++ filename
-                                     system $ "ocamlformat --enable-outside-detected-project " ++ filename ++ " -m 160 -i"
-                                     return ()
-                                )
+    let fn = filter (/= '/') filename 
+    withSystemTempFile fn (\ tmp_name tmp ->
+                              do
+                                hPutStrLn tmp (printer topLevelName prog)
+                                hClose tmp
+                                printEnvironment filename environment
+                                system $ "cat " ++ tmp_name ++ " >> " ++ filename
+                                --system $ "camlp5o pr_o.cmo " ++ tmp_name ++ " >> " ++ filename
+                                system $ "ocamlformat --enable-outside-detected-project " ++ filename ++ " -m 160 -i"
+                                return ()
+                          )
   where
     printEnvironment filename (Just env) =
       do
@@ -88,8 +89,7 @@ toOCanren' printer filename topLevelName environment prog =
       do
         file <- openFile filename WriteMode
         hPutStrLn file "open GT"
-        hPutStrLn file "open MiniKanren"
-        hPutStrLn file "open Std"
-        hPutStrLn file "open Nat"
+        hPutStrLn file "open OCanren"
+        hPutStrLn file "open OCanren.Std"
         hPutStrLn file ""
         hClose file

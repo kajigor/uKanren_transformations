@@ -78,4 +78,4 @@ pathTree =
 
   ,
 
-  "open MiniKanren\nopen MiniKanrenStd\ntype 'a0 gnat =\n  | Z \n  | S of 'a0 \nlet rec fmap fa0 = function | Z -> Z | S a0 -> S (fa0 a0)\nmodule For_gnat =\n  (Fmap)(struct\n           let rec fmap fa0 = function | Z -> Z | S a0 -> S (fa0 a0)\n           type 'a0 t = 'a0 gnat\n         end)\nlet rec z () = inj (For_gnat.distrib Z)\nand s x__0 = inj (For_gnat.distrib (S x__0))")
+  "open GT\nopen OCanren\nopen OCanren.Std\ntype 'a0 gnat =\n  | Z \n  | S of 'a0 \nlet rec fmap fa0 = function | Z -> Z | S a0 -> S (fa0 a0)\nmodule For_gnat =\n  (Fmap)(struct\n           let rec fmap fa0 = function | Z -> Z | S a0 -> S (fa0 a0)\n           type 'a0 t = 'a0 gnat\n         end)\nlet rec z () = inj (For_gnat.distrib Z)\nand s x__0 = inj (For_gnat.distrib (S x__0))")
