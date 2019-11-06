@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 42b489018ca93febe75f717f5af9f13e0fb6b980c3fafc9bc0d393843a5710ce
+-- hash: d4e6b6bafda8c288306575ac9b03ea2f659b681305b81e68022ee0915444feb9
 
 name:           uKanren-transformation
 version:        0.1.0.0
@@ -52,6 +52,7 @@ library
       Num
       Path
       Programs
+      Prop
       Sample1
       Something
       Sort

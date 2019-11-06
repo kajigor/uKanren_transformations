@@ -154,6 +154,7 @@ instance Dot a => Dot [a] where
 instance Dot a => Dot (Term a) where
   dot (V v) = dotVar v
   dot (C name []) | isNil name = "[]"
+  dot (C name [h, C t []]) | isCons name && isNil t = printf "[%s]" (dot h)
   dot (C name [h, t]) | isCons name = printf "%s : %s" (dot h) (dot t)
   dot c | isSucc c || isZero c = pretifyNum 0 c dot dotVar
   dot (C name ts) =

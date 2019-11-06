@@ -174,6 +174,21 @@ maxo g =
     t = V "t"
     z = V "z"
 
+appLengtho :: G a -> G a 
+appLengtho g = 
+  Let (
+    def "appLengtho" [] (
+      fresh ["xs", "ys", "zs", "m", "n", "s"] 
+        (
+          call "appendo" [xs, ys, zs] &&& 
+          call "lengtho" [xs, m] &&& 
+          call "lengtho" [ys, n] &&& 
+          call "lengtho" [zs, s] &&& 
+          call "addo" [m, n, s]
+        ) 
+    )
+  ) $ addo $ lengtho $ appendo g  
+    where [xs, ys, zs, m, n, s] = map V ["xs", "ys", "zs", "m", "n", "s"]
 
 appendo :: G a -> G a
 appendo g =
@@ -223,6 +238,15 @@ reverso g =
            )
     ) $ appendo g
 
+doubleReverso :: G a -> G a 
+doubleReverso g = 
+  let xs = V "xs" in 
+  let sx = V "sx" in 
+  Let 
+    (def "doubleReverso" ["xs"]
+      (fresh ["sx"] (call "reverso" [xs, sx] &&& call "reverso" [sx, xs]))
+    ) $ reverso g 
+
 revAcco :: G a -> G a
 revAcco g =
   let xs = V "xs"
@@ -241,3 +265,23 @@ revAcco g =
          )
        )
     ) g
+
+
+assoco g = 
+  Let (def "assoco" ["x", "xs", "v"] (
+    fresh ["a", "b", "tl"] (
+      xs === (C "pair" [a, b]) % tl &&& 
+      (a === x &&& b === v ||| 
+       call "assoco" [x, tl, v] -- &&& a =/= x
+      )
+  ))) g
+    where [x, xs, v, a, b, tl] = map V ["x", "xs", "v", "a", "b", "tl"]
+
+  -- let rec assoco x xs v =
+  --   Fresh.three (fun a b tl ->
+  --     (xs === (LPair.pair a b) % tl) &&&
+  --     conde [
+  --       (a === x) &&& (b === v);
+  --       (a =/= x) &&& (assoco x tl v)
+  --     ]
+  --   )

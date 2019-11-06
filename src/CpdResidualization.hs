@@ -37,14 +37,16 @@ residualizeGlobalTree :: GlobalTree -> (G X -> G X)
 residualizeGlobalTree tree =
   let nodes = getNodes tree in
   let definitions = foldl (\defs gs -> fst3 (renameGoals gs defs) ) [] $ map fst nodes  in
-  trace (printf "Definitions:\n%s\n" (intercalate "\n" $ map show definitions)) $
+  -- trace (printf "Definitions:\n%s\n" (intercalate "\n" $ map show definitions)) $
   let lets = map Let $ mapMaybe (\(gs, sld) -> residualizeSldTree gs sld definitions) nodes in
-  foldl1 (.) lets
+  if null lets 
+  then error "No non-failing relations"
+  else foldl1 (.) lets
   where
     getNodes (Leaf _ _ _) = []
     getNodes (Node _ _ (CPD.Leaf _ _ _) _) = [] -- This happens because of the instance check
     getNodes (Node d _ sld ch) = 
-      trace (printf "\n\nTree for goal\n%s\n\n%s\n\n" (show $ CPD.getCurr d) (simplyPrintTree sld)) $ 
+      -- trace (printf "\n\nTree for goal\n%s\n\n%s\n\n" (show $ CPD.getCurr d) (simplyPrintTree sld)) $ 
       (CPD.getCurr d, sld) : (concatMap getNodes ch)
 
 unifyInvocationLists :: [G S] -> [G S] -> Maybe Eval.Sigma -> Maybe Eval.Sigma
@@ -73,8 +75,8 @@ unifyInvocationLists _ _ _ = Nothing
 
 generateInvocation :: [G S] -> Definitions -> G X
 generateInvocation goals defs =
-  trace (printf "\nGenerateInvocation\nGoal: %s\nDefs: %s\n" (show goals) (intercalate "\n" $ map show $ map fst3 defs)) $
-  trace (printf "\nInstance Check: %s\n" (show $ CPD.instanceCheck goals (map fst3 defs))) $
+  -- trace (printf "\nGenerateInvocation\nGoal: %s\nDefs: %s\n" (show goals) (intercalate "\n" $ map show $ map fst3 defs)) $
+  -- trace (printf "\nInstance Check: %s\n" (show $ CPD.instanceCheck goals (map fst3 defs))) $
   fromMaybe
     (error "Residualization failed: invocation of the undefined relation.")
     (conj <$> conjInvocation goals defs)
@@ -82,7 +84,9 @@ generateInvocation goals defs =
     generate args subst = map (\a -> Res.toX $ fromMaybe (V a) (lookup a subst)) args
     findDef goals defs =
       find (isJust . lst4) $
-      map (\(g, n, args) -> (g, n, args, unifyInvocationLists g goals $ Just Eval.s0)) defs
+      map (\(g, n, args) -> (g, n, args, 
+                                -- trace (printf "\nUnifying:\ngoals: %s\nG:     %s\n" (show goals) (show g))
+                                unifyInvocationLists g goals $ Just Eval.s0)) defs
     oneInvocation goals defs =
       case findDef goals defs of
         Just (goal, name, args, Just subst) -> Just $ Invoke name $ generate args subst
@@ -107,6 +111,7 @@ generateInvocation goals defs =
 
 renameGoals :: [G S] -> Definitions -> (Definitions, Name, [S])
 renameGoals gs definitions =
+  -- trace (printf "\nIn rename goals:\ngs: %s\nDefinitions: %s\n" (show gs) (show definitions)) $
   let ns = map (\x -> case x of
                         Invoke name args -> (name, args)
                         _ -> error $ printf "Only invocations can be renamed, and you tried to rename %s" (show x)
@@ -150,10 +155,11 @@ residualizeSldTree rootGoals tree definitions = do
                                find ((== rootGoals) . fst3) definitions
                                  
   let resultants = 
-        trace ("\n\n\nHERE COMES THE TREE " ++  simplyPrintTree tree ++ "\n\n\n ") $ 
+        -- trace ("\n\n\nHERE COMES THE TREE " ++  simplyPrintTree tree ++ "\n\n\n ") $ 
         CPD.resultants tree
   
-  let goals = trace (printf "RootGoal: %s\nResultants: \n%s\n" (show rootGoals) (intercalate "\n" $ map (\(x,y,_) -> show (x,y)) resultants)) $
+  let goals = 
+              -- trace (printf "RootGoal: %s\nResultants: \n%s\n" (show rootGoals) (intercalate "\n" $ map (\(x,y,_) -> show (x,y)) resultants)) $
               foldl (\gs (subst, goals, _) ->
                        let g = go subst goals definitions
                        in  g : gs
@@ -162,9 +168,10 @@ residualizeSldTree rootGoals tree definitions = do
                     resultants
   let defArgs = map Res.vident rootVars
 
-  let body = Eval.postEval' defArgs $ foldl1 (|||) (reverse goals)
+  let body = Eval.postEval' defArgs $ 
+                foldl1 (|||) (reverse goals)
 
-  if (trace (printf "Body: %s\n" (show body))) (null goals)
+  if {-(trace (printf "Body: %s\n" (show body)))-} (null goals)
   then fail (printf "No resultants in the sld tree for %s" (show rootGoals))
   else return $ def defName defArgs body
   where

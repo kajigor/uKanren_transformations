@@ -36,6 +36,7 @@ import Unify
 import Path
 import ConjRetriever
 import Sample1
+import Prop
 
 import System.CPUTime
 import System.TimeIt
@@ -132,7 +133,24 @@ printStuff = do
       printTree (printf "%s.dot" filename) $ topLevel goal
 
 doOcanrenize = do 
-  ocanren "sort" (sorto $ fresh ["x", "y"] (call "sorto" [V "x", V "y"])) Nothing 
+  -- ocanren "prop" Prop.query Nothing 
+  -- ocanren "prop2" Prop.query2  Nothing 
+  -- ocanren "prop3" Prop.query3  Nothing 
+  ocanren "prop4" Prop.query4  Nothing 
+
+  -- ocanren "doubleRev" (doubleReverso $ fresh ["xs"] (call "doubleReverso" [V "xs"])) Nothing 
+
+
+  -- ocanren "appLengtho"  (appLengtho $ (call "appLengtho" [])) Nothing
+
+
+  -- ocanren "sort" (sorto $ fresh ["x", "y"] (call "sorto" [V "x", V "y"])) Nothing 
+  -- ocanren "palindromo" (palindromo $ fresh ["xs"] (call "palindromo" [V "xs"])) Nothing 
+
+  -- ocanren "memApp" (memApp $ fresh ["h", "xs", "ys", "zs"] (call "memApp" [V "h", V "xs", V "ys", V "zs"])) Nothing
+
+  -- ocanren "memAppY" (memAppY $ fresh ["h", "xs", "ys", "zs"] (call "memAppY" [V "h", V "xs", V "ys", V "zs"])) Nothing
+
 
   -- ocanren "smallBridge"     (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]])) $ Just Bridge.env
 
@@ -195,7 +213,7 @@ doOcanrenize = do
         -- let f = residualizeGlobalTree tree
         -- let pur = purification (f $ vident <$> logicGoal, vident <$> reverse names)
         let f = 
-              trace (printf "\n\n\nHERE COMES THE GLOBAL TREE\n%s\n\n\n" $ simplyPrintTree tree) $ 
+              -- trace (printf "\n\n\nHERE COMES THE GLOBAL TREE\n%s\n\n\n" $ simplyPrintTree tree) $ 
               residualizationTopLevel tree
         let pur = trace (printf "Residualized: %s\n" (show f)) $
                   purification (f, vident <$> reverse names)

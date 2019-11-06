@@ -147,3 +147,24 @@ checkList5' :: G a -> G a
 checkList5' g =
   Let (def "checkList5" ["x"] (call "genLists" [x] &&& call "has5" [x])) $ genLists $ has5 g
     where x = V "x"
+
+
+memApp :: G a -> G a 
+memApp g = 
+  Let (def "memApp" ["h", "xs", "ys", "rs"]
+    (call "membero" [h, xs] &&& call "appendo" [xs, ys, zs])
+  ) $ membero $ appendo g 
+    where h = V "h"
+          xs = V "xs"
+          ys = V "ys"
+          zs = V "zs"
+
+memAppY :: G a -> G a 
+memAppY g = 
+  Let (def "memAppY" ["h", "xs", "ys", "rs"]
+    (call "membero" [h, ys] &&& call "appendo" [xs, ys, zs])
+  ) $ membero $ appendo g 
+    where h = V "h"
+          xs = V "xs"
+          ys = V "ys"
+          zs = V "zs"

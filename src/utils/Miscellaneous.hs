@@ -24,3 +24,7 @@ generateSplits :: Eq a => [a] -> Int -> [([a], [a])]
 generateSplits xs n =
   let sub = filter (\x -> n == length x) $ subsequences xs in
   [ (x, xs \\ x) | x <- sub ]
+
+show' :: Show a => [a] -> String 
+show' xs = 
+  intercalate "\n" $ map show xs 
