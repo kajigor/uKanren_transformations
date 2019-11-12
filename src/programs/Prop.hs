@@ -16,30 +16,35 @@ query4 = evalo $ fresh ["x", "y", "st"] (call "evalo" [V "st",  C "conj" [V "x",
 
 
 evalo g = 
-  Let (def "evalo" ["st", "fm", "u"] (
-    fresh ["x", "y", "z", "v", "w"] (
-      ( 
-        fm === C "conj" [x, y] &&& 
-        call "evalo" [st, x, v] &&& 
-        call "evalo" [st, y, w] &&& 
-        call "ando" [v, w, u]
-      ) ||| 
-      ( 
-        fm === C "disj" [x, y] &&& 
-        call "evalo" [st, x, v] &&& 
-        call "evalo" [st, y, w] &&& 
-        call "oro" [v, w, u]
-      ) ||| 
+  Let
+    ( def "evalo" ["st", "fm", "u"] 
       (
-        fm === C "neg" [x] &&& 
-        call "evalo" [st, x, v] &&& 
-        call "noto" [v, u] 
-      ) ||| 
-      (
-        fm === C "var" [x] &&& 
-        call "assoco" [z, st, u]
+        fresh ["x", "y", "z", "v", "w"] 
+        (
+          ( 
+            fm === C "conj" [x, y] &&& 
+            call "evalo" [st, x, v] &&& 
+            call "evalo" [st, y, w] &&& 
+            call "ando" [v, w, u]
+          ) ||| 
+          ( 
+            fm === C "disj" [x, y] &&& 
+            call "evalo" [st, x, v] &&& 
+            call "evalo" [st, y, w] &&& 
+            call "oro" [v, w, u]
+          ) ||| 
+          (
+            fm === C "neg" [x] &&& 
+            call "evalo" [st, x, v] &&& 
+            call "noto" [v, u] 
+          ) ||| 
+          (
+            fm === C "var" [x] &&& 
+            call "assoco" [z, st, u]
+          )
+        )
       )
-  ))) $ ando $ oro $ noto $ assoco $ g
+    ) $ ando $ oro $ noto $ assoco $ g
     where 
       [st, fm, u, x, y, z, v, w] = map V ["st", "fm", "u", "x", "y", "z", "v", "w"]
 

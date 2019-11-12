@@ -10,12 +10,8 @@ trueo = C "true"  []
 
 nando :: G a -> G a
 nando g =
-  let a = V "a" in
-  let b = V "b" in
-  let c = V "c" in
   Let
-    (
-      def "nando" ["a", "b", "c"]
+    ( def "nando" ["a", "b", "c"]
         (
           ( a === falso &&& b === falso &&& c === trueo ) |||
           ( a === falso &&& b === trueo &&& c === trueo ) |||
@@ -23,23 +19,22 @@ nando g =
           ( a === trueo &&& b === trueo &&& c === falso )
         )
     ) g
+    where [a, b, c] = map V ["a", "b", "c"]
 
 noto :: G a -> G a
 noto g =
-  let a = V "a" in
-  let na = V "na" in
-  Let ( def "noto" ["a", "na"] ( call "nando" [a, a, na] ) ) (nando g)
+  Let 
+    ( def "noto" ["a", "na"] 
+      ( 
+        call "nando" [a, a, na] 
+      ) 
+    ) $ nando g
+    where [a, na] = map V ["a", "na"]
 
 oro :: G a -> G a
 oro g =
-  let a = V "a" in
-  let b = V "b" in
-  let c = V "c" in
-  let aa = V "aa" in
-  let bb = V "bb" in
   Let
-    (
-      def "oro" ["a", "b", "c"]
+    ( def "oro" ["a", "b", "c"]
         (
           fresh ["aa", "bb"]
             (
@@ -48,25 +43,24 @@ oro g =
               call "nando" [aa, bb, c]
             )
         )
-    ) (nando g)
+    ) $ nando g
+    where [a, b, c, aa, bb] = map V ["a", "b", "c", "aa", "bb"]
 
 ando :: G a -> G a
 ando g =
-  let a = V "a" in
-  let b = V "b" in
-  let c = V "c" in
-  let ab = V "ab" in
-  Let (
-    def "ando" ["a", "b", "c"] (
-      fresh ["ab"] (
-        call "nando" [a, b, ab] &&&
-        call "nando" [ab, ab, c]
+  Let 
+    ( def "ando" ["a", "b", "c"] 
+      (
+        fresh ["ab"] 
+        (
+          call "nando" [a, b, ab] &&&
+          call "nando" [ab, ab, c]
+        )
       )
-    )
-  ) (nando g)
+    ) $ nando g
+    where [a, b, c, ab] = map V ["a", "b", "c", "ab"]
 
 bool :: Term t -> String
 bool (C "false" []) = "false"
 bool (C "true"  []) = "true"
 bool _ = "?!"
-
