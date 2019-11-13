@@ -37,6 +37,7 @@ import Path
 import ConjRetriever
 import Sample1
 import Prop
+import TestFramework
 
 import System.CPUTime
 import System.TimeIt
@@ -78,34 +79,6 @@ tests = do
   -- littleTest
   -}
 
-reportError :: Show a => String -> a -> a -> IO ()
-reportError name expected actual =
-  putStrLn $ printf "%s failed\nExpected: %s\nActual:   %s" name (show expected) (show actual)
-
-assertCustom :: Show a => String -> (a -> a -> Bool) -> a -> a -> IO ()
-assertCustom name check expected actual =
-  unless (check expected actual) $ reportError name expected actual
-
-anyAssertCustom :: Show a => String -> (a -> a -> Bool) -> [a] -> a -> IO ()
-anyAssertCustom name check expected actual =
-  mapM_ (\e -> assertCustom name check e actual) expected
-
-manyAssertCustom :: Show a => String -> (a -> a -> Bool) -> [a] -> [a] -> IO ()
-manyAssertCustom name check expected actual =
-  unless (all (\a -> isJust $ find (check a) expected) actual) $ putStrLn (printf "%s failed\nExpected: %s\nActual:   %s" name (show expected) (show actual))
-
-assert :: (Show a, Eq a) => String -> a -> a -> IO ()
-assert name =
-  assertCustom name (==)
-
-manyAssert :: (Show a, Eq a) => String -> a -> (b -> с -> a) -> [(b, с)] -> IO ()
-manyAssert name expected f =
-  mapM_ (\(x, y) -> assert name expected (f x y))
-
-manyAssertOne :: (Show a, Eq a) => String -> a -> (b -> a) -> [b] -> IO ()
-manyAssertOne name expected f =
-  mapM_ (assert name expected . f)
-
 printStuff = do
   test "fAndS" Sample1.query
   -- test "l_unify_same" Unify.querySame
@@ -133,10 +106,15 @@ printStuff = do
       printTree (printf "%s.dot" filename) $ topLevel goal
 
 doOcanrenize = do 
+  -- ocanren "fun" (fun $ fresh ["n", "x", "r"] (call "fun" $ map V ["n", "x", "r"])) Nothing 
+
+  ocanren "oddo" (oddo $ (call "oddo" [zero])) Nothing 
+
+
   -- ocanren "prop" Prop.query Nothing 
   -- ocanren "prop2" Prop.query2  Nothing 
   -- ocanren "prop3" Prop.query3  Nothing 
-  ocanren "prop4" Prop.query4  Nothing 
+  -- ocanren "prop4" Prop.query4  Nothing 
 
   -- ocanren "doubleRev" (doubleReverso $ fresh ["xs"] (call "doubleReverso" [V "xs"])) Nothing 
 

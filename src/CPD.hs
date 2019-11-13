@@ -64,6 +64,17 @@ sldResolution goal gamma subst seen  =
   -- trace "\n\nSLDRESOLUTION \n\n" $
   sldResolutionStep (map (\x -> Descend x []) goal) gamma subst seen True
 
+oneStepUnfold :: G S -> E.Gamma -> (G S, E.Gamma)
+oneStepUnfold g@(Invoke f as) env@(p, i, d) =
+  let (n, fs, body) = p f in
+  if length fs == length as
+  then
+    let i' = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
+    let (g', env', _) = E.preEval' (p, i', d) body in
+    (g', env')
+  else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
+oneStepUnfold g env = (g, env)
+
 sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> [[G S]] -> Bool -> SldTree
 sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
   -- let false = C "false" [] in
@@ -92,20 +103,12 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
         maybe (Leaf gs s env)
               (\(ls, Descend g ancs, rs) ->
                   -- trace (printf "\nSelected: %s\nAncs: %s" (show g) (show ancs)) $
-                  let (g', env') = unfold g env in
+                  let (g', env') = oneStepUnfold g env in
                   go g' env' ls rs g ancs isFirstTime
               )
               (selectNext gs)
       where
-        unfold g@(Invoke f as) env@(p, i, d)  =
-          let (n, fs, body) = p f in
-          if length fs == length as
-          then
-            let i' = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
-            let (g', env', _) = E.preEval' (p, i', d) body in
-            (g', env')
-          else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
-        unfold g env = (g, env)
+
 
         selectNext gs =
           let (ls, rs) = selecter gs in
@@ -140,7 +143,7 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
               -- trace (printf "\nnot null\nns: %s\nls: %s\nrs: %s\ng: %s" (show ns) (show ls) (show rs) (show g)) $
               maybe (Leaf gs s env)
                     (\(ls', Descend nextAtom nextAtomsAncs, rs')  ->
-                            let (g'', env'') = unfold nextAtom env in
+                            let (g'', env'') = oneStepUnfold nextAtom env in
                             -- trace (printf "\nls' %s\nls: %s" (show ls') (show (ls ++ (Descend g ancs : ls')))) $
                             go g'' env'' (ls ++ (Descend g ancs : ls')) rs' nextAtom nextAtomsAncs False
                     )

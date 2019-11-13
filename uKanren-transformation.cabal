@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d4e6b6bafda8c288306575ac9b03ea2f659b681305b81e68022ee0915444feb9
+-- hash: 7bfddb1a7d69ddbee2a17eb091159113b7e454a81af88678cce5f1689061dd37
 
 name:           uKanren-transformation
 version:        0.1.0.0
@@ -33,6 +33,7 @@ library
       Eval
       GlobalControl
       GlobalTreePrinter
+      InductiveCheck
       Lib
       OCanrenize
       Purification
@@ -91,11 +92,13 @@ executable uKanren-transformation-exe
       CpdTest
       DrivingTest
       EmbedTest
+      InductiveCheckTest
       OCanrenizeTest
       PrintingTest
       ResidualizeTest
       SomeTest
       Test
+      TestFramework
       TestMain
       Paths_uKanren_transformation
   hs-source-dirs:
@@ -125,11 +128,13 @@ test-suite uKanren-transformation-test
       CpdTest
       DrivingTest
       EmbedTest
+      InductiveCheckTest
       OCanrenizeTest
       PrintingTest
       ResidualizeTest
       SomeTest
       Test
+      TestFramework
       TestMain
       Paths_uKanren_transformation
   hs-source-dirs:
