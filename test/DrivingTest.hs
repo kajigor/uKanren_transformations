@@ -3,6 +3,7 @@ module DrivingTest where
 import Driving
 import List
 import Syntax
+import Miscellaneous
 
 tc = drive (appendo
               (fresh ["q", "r", "s", "t", "p"]
@@ -15,6 +16,6 @@ tc'  = drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
 tc'' = drive (revAcco $ fresh ["q", "s"] (call "revacco" [V "q", nil, V "s"]))
 
 
-tree   = snd' tc
-tree'  = snd' tc'
-tree'' = snd' tc''
+tree   = snd3 tc
+tree'  = snd3 tc'
+tree'' = snd3 tc''

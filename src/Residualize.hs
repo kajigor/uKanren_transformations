@@ -5,6 +5,7 @@ import Tree
 import Driving
 import qualified Eval as E
 import Data.List
+import Data.Maybe
 import qualified Data.Set        as Set
 import qualified Data.Map.Strict as Map
 import Debug.Trace
@@ -13,10 +14,9 @@ import Text.Printf
 
 
 toX :: Term S -> Term X
-toX (V x)    = V ('x' : show x)
-toX (C c ts) = C c $ map toX ts
+toX = (vident <$>)
 
-residualizeSubst :: E.Sigma -> [(S, Ts)] -> G X
+residualizeSubst :: E.Sigma -> E.Sigma -> G X
 residualizeSubst g s = conj $ map (\ (s', ts) -> toX (V s') :=: toX (E.substitute g ts)) $ reverse s
 
 substCon :: E.Sigma -> [(S, Ts)] -> [(S, Ts)] -> G X -> G X
@@ -59,9 +59,11 @@ success = "success"
 failure :: String
 failure = "failure"
 
+vident = ('x' :) . show
+
 residualize :: (TreeContext, Tree, [Id]) -> (G X, [String])
 residualize (tc, t, args) =
-  (E.postEval' (map vident args) $ residualizeGen [] tc (simpl t) [], map vident args)
+  (E.postEval' (vident <$> args) $ residualizeGen [] tc (simpl t) [], vident <$> args)
   where
     residualizeGen _ _ Fail         _ = Invoke failure []
     residualizeGen g _ (Success s ) ubst =
@@ -76,12 +78,9 @@ residualize (tc, t, args) =
     residualizeGen g tc (Call   id s    _ s' ) ubst = substCon g s' ubst $ scope tc id $ residualizeGen g tc s s'
     residualizeGen _ _ _ _ = error "Oops, something is wrong in residualizeGen"
     fident id' = 'f' : show id'
-    vident id' = 'x' : show id'
     scope (sr, args, _) id g =
       if Set.member id sr
       then let as = reverse $ args Map.! id in
-           let fargs = map vident as in
+           let fargs = vident <$> as in
            Let (def (fident id) fargs g) (Invoke (fident id) $ map V fargs)
       else g
-
-

@@ -16,28 +16,36 @@ type Delta = [S]
 type P     = Name -> Def
 type Gamma = (P, Iota, Delta)
 
--- Unification
-unify :: Maybe Sigma -> Ts -> Ts -> Maybe Sigma
-unify Nothing _ _ = Nothing
-unify st@(Just subst) u v =
+unifyG :: (S -> Ts -> Maybe Sigma -> Maybe Sigma)
+          -> Maybe Sigma -> Ts -> Ts -> Maybe Sigma
+unifyG _ Nothing _ _ = Nothing
+unifyG f st@(Just subst) u v =
+  -- trace (printf "Unifying\n%s\nwith\n%s\nin\n%s" (show u) (show v) (show st)) $
   unify' (walk u subst) (walk v subst)  where
     unify' (V u') (V v') | u' == v' = Just subst
-    unify' (V u') t = occursCheck u' t $ Just $ (u', v) : subst
-    unify' t (V v') = occursCheck v' t $ Just $ (v', u) : subst
+    unify' (V u') t = f u' t $ Just $ (u', v) : subst
+    unify' t (V v') = f v' t $ Just $ (v', u) : subst
     unify' (C a as) (C b bs) | a == b && length as == length bs =
-      foldl (\ st' (u', v') -> unify st' u' v') st $ zip as bs
+      foldl (\ st' (u', v') -> unifyG f st' u' v') st $ zip as bs
     unify' _ _ = Nothing
     walk x@(V v') s =
       case lookup v' s of
         Nothing -> x
         Just t  -> walk t s
     walk u' _ = u'
-    occursCheck u' t s = if elem u' $ fv t then error "Occurs check!" else s
+
+-- Unification
+unify :: Maybe Sigma -> Ts -> Ts -> Maybe Sigma
+unify = unifyG occursCheck where
+  occursCheck u' t s = if elem u' $ fv t then Nothing else s
+
+unifyNoOccursCheck :: Maybe Sigma -> Ts -> Ts -> Maybe Sigma
+unifyNoOccursCheck = unifyG (\_ _ -> id)
 
 ---- Interpreting syntactic variables
 infix 9 <@>
 (<@>) :: Iota -> Tx -> Ts
-(_, i) <@> (V x)    = i x
+i <@> (V x) = app i x
 i <@> (C c ts) = C c $ map (i<@>) ts
 
 showInt :: Iota -> String
@@ -55,8 +63,10 @@ app (_, i) = i
 
 ---- Applying substitution
 substitute :: Sigma -> Ts -> Ts
-substitute s t@(V x)  =
-  case lookup x s of Nothing -> t ; Just tx -> substitute s tx
+substitute s t@(V x) =
+  case lookup x s of
+    Just tx | tx /= t -> substitute s tx
+    _ -> t
 substitute s (C m ts) = C m $ map (substitute s) ts
 
 substituteGoal :: Sigma -> G S -> G S
@@ -64,7 +74,7 @@ substituteGoal s (Invoke name as) = Invoke name (map (substitute s) as)
 substituteGoal _ g = error $ printf "We have only planned to substitute into calls, and you are trying to substitute into:\n%s" (show g)
 
 substituteConjs :: Sigma -> [G S] -> [G S]
-substituteConjs s = trace "Substituting..." $ map $ substituteGoal s
+substituteConjs s = map $ substituteGoal s
 
 
 ---- Composing substitutions
@@ -74,8 +84,14 @@ o sigma theta =
     [] -> map (\ (s, ts) -> (s, substitute sigma ts)) theta ++ sigma
     _  -> error "Non-disjoint domains in substitution composition"
 
+dotSigma :: Sigma -> String
+dotSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (dot $ V x) (dot y)) s))
+
 showSigma :: Sigma -> String
 showSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (show $ V x) (show y)) s))
+
+showSigma' :: Sigma -> String
+showSigma' s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s -> %s" (show $ V x) (show y)) s))
 
 -- Pre-evaluation
 preEval' :: Gamma -> G X -> (G S, Gamma, [S])
@@ -88,8 +104,8 @@ preEval' = preEval []
   preEval vars g           (g1 :\/: g2)   = let (g1', g' , vars')  = preEval vars  g  g1 in
                                             let (g2', g'', vars'') = preEval vars' g' g2 in
                                             (g1' :\/: g2', g'', vars'')
-  preEval vars   (p, i, d) (Fresh x g')   = preEval (y : vars) (p, extend i x (V y), d') g'
-   where y : d' = d
+  preEval vars   (p, i, y : d') (Fresh x g') =
+    preEval (y : vars) (p, extend i x (V y), d') g'
   preEval vars g@(_, i, _) (Invoke f fs)  = (Invoke f (map (i <@>) fs), g, vars)
   preEval vars e           (Let    def' g) = let (g', e', vars') = preEval vars e g in
                                              (Let def' g', e', vars')
@@ -125,6 +141,9 @@ env0 = (\ i -> error $ printf "Empty environment on %s" (show i), emptyIota, [0 
 
 update :: Gamma -> Def -> Gamma
 update (p, i, d) def'@(name, _, _) = (\ name' -> if name == name' then def' else p name', i, d)
+
+updateDefsInGamma :: Gamma -> [Def] -> Gamma
+updateDefsInGamma = foldl update
 
 s0 :: Sigma
 s0 = []

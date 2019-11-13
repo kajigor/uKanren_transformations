@@ -17,17 +17,16 @@ succ x = C "S" [x]
 
 notZero :: G a -> G a
 notZero g =
-  let x = V "x" in
-  let y = V "y" in
-  Let (def "notZero" ["x"] (fresh ["y"] (x === succ y))) g
+  Let 
+    ( def "notZero" ["x"] 
+      (
+        fresh ["y"] (x === succ y)
+      )
+    ) g
+    where [x, y] = map V ["x", "y"]
 
 addo :: G a -> G a
 addo g =
-  let x  = V "x" in
-  let y  = V "y" in
-  let z  = V "z" in
-  let x' = V "x'" in
-  let z' = V "z'" in
   Let
     ( def "addo" ["x", "y", "z"]
         (
@@ -36,34 +35,24 @@ addo g =
             (x === succ x' &&& z === succ z' &&& call "addo" [x', y, z'])
         )
     ) g
+    where [x, y, z, x', z'] = map V ["x", "y", "z", "x'", "z'"]
 
 mulo :: G a -> G a
 mulo g =
-  let x  = V "x" in
-  let y  = V "y" in
-  let z  = V "z" in
-  let x' = V "x'" in
---  let y' = V "y'" in
-  let z' = V "z'" in
   Let
     ( def "mulo" ["x", "y", "z"]
       (
         (x === zero &&& z === zero) |||
-          fresh ["x'", "y'", "z'"]
+          fresh ["x'", "z'"]
             (x === succ x' &&&
              call "addo" [y, z', z] &&&
              call "mulo" [x', y, z'])
       )
     ) $ addo g
+    where [x, y, z, x', z'] = map V ["x", "y", "z", "x'", "z'"]
 
 leo :: G a -> G a
 leo g =
-  let x  = V "x"  in
-  let y  = V "y"  in
-  let b  = V "b"  in
-  let x' = V "x'" in
-  let y' = V "y'" in
-  let zz = V "zz" in
   Let
     ( def "leo" ["x", "y", "b"]
       (
@@ -72,22 +61,19 @@ leo g =
          fresh ["x'", "y'"] (x === succ x' &&& y === succ y' &&& call "leo" [x', y', b])
       )
     ) g
+    where [x, y, b, x', y', zz] = map V ["x", "y", "b", "x'", "y'", "zz"]
 
 gto :: G a -> G a
 gto g =
-  let x  = V "x"  in
-  let y  = V "y"  in
-  let b  = V "b"  in
-  let x' = V "x'" in
-  let y' = V "y'" in
-  let zz = V "zz" in
-  Let (
-    def "gto" ["x", "y", "b"] (
-      fresh ["zz"] (x === succ zz &&& y === zero &&& b === trueo) |||
-      (x === zero &&& b === falso) |||
-      fresh ["x'", "y'"] (x === succ x' &&& y === succ y' &&& call "gto" [x', y', b])
-    )
-  ) g
+  Let 
+    ( def "gto" ["x", "y", "b"] 
+      (
+        fresh ["zz"] (x === succ zz &&& y === zero &&& b === trueo) |||
+        (x === zero &&& b === falso) |||
+        fresh ["x'", "y'"] (x === succ x' &&& y === succ y' &&& call "gto" [x', y', b])
+      )
+    ) g
+    where [x, y, b, x', y', zz] = map V ["x", "y", "b", "x'", "y'", "zz"]
 
 geo :: G a -> G a
 geo g = Let (def "geo" ["x", "y", "z"] $ call "leo" [V "y", V "x", V "z"]) (leo g)

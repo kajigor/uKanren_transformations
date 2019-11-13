@@ -1,2 +1,0 @@
-cabal build
-./dist/build/uKanren-transformations/uKanren-transformations

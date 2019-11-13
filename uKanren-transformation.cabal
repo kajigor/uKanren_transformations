@@ -1,0 +1,157 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 7bfddb1a7d69ddbee2a17eb091159113b7e454a81af88678cce5f1689061dd37
+
+name:           uKanren-transformation
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/kajigor/uKanren-transformation#readme>
+homepage:       https://github.com/kajigor/uKanren-transformation#readme
+bug-reports:    https://github.com/kajigor/uKanren-transformation/issues
+author:         Ekaterina Verbitskaia
+maintainer:     kajigor@gmail.com
+copyright:      2019 Ekaterina Verbitskaia
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/kajigor/uKanren-transformation
+
+library
+  exposed-modules:
+      CPD
+      CpdResidualization
+      Driving
+      Eval
+      GlobalControl
+      GlobalTreePrinter
+      InductiveCheck
+      Lib
+      OCanrenize
+      Purification
+      Residualize
+      SldTreePrinter
+      Stream
+      Syntax
+      Tree
+      TreePrinter
+      Bool
+      Bottles
+      Bridge
+      Desert
+      IsTest
+      List
+      LogicInterpreter
+      Num
+      Path
+      Programs
+      Prop
+      Sample1
+      Something
+      Sort
+      Stlc
+      Sudoku4x4
+      Term
+      TreeGen
+      Unify
+      ConjRetriever
+      DotPrinter
+      Miscellaneous
+  other-modules:
+      Paths_uKanren_transformation
+  hs-source-dirs:
+      src/
+      src/programs/
+      src/utils
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , directory
+    , extra
+    , fgl
+    , graphviz
+    , mtl
+    , process
+    , temporary
+    , text
+    , timeit
+  default-language: Haskell2010
+
+executable uKanren-transformation-exe
+  main-is: Main.hs
+  other-modules:
+      BridgeTest
+      CpdTest
+      DrivingTest
+      EmbedTest
+      InductiveCheckTest
+      OCanrenizeTest
+      PrintingTest
+      ResidualizeTest
+      SomeTest
+      Test
+      TestFramework
+      TestMain
+      Paths_uKanren_transformation
+  hs-source-dirs:
+      app
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , directory
+    , extra
+    , fgl
+    , graphviz
+    , mtl
+    , process
+    , temporary
+    , text
+    , timeit
+    , uKanren-transformation
+  default-language: Haskell2010
+
+test-suite uKanren-transformation-test
+  type: exitcode-stdio-1.0
+  main-is: CpdTests.hs
+  other-modules:
+      BridgeTest
+      CpdTest
+      DrivingTest
+      EmbedTest
+      InductiveCheckTest
+      OCanrenizeTest
+      PrintingTest
+      ResidualizeTest
+      SomeTest
+      Test
+      TestFramework
+      TestMain
+      Paths_uKanren_transformation
+  hs-source-dirs:
+      test/
+      test/test/
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , directory
+    , extra
+    , fgl
+    , graphviz
+    , mtl
+    , process
+    , temporary
+    , text
+    , timeit
+    , uKanren-transformation
+  default-language: Haskell2010

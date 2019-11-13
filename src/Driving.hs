@@ -16,6 +16,7 @@ import           Stream
 import           Syntax
 import           Tree
 import           Text.Printf
+import           Miscellaneous
 
 type TreeContext = (Set.Set Id, Map.Map Id [S], [Id])
 
@@ -123,13 +124,20 @@ embedGoals gs hs = coupleConj gs hs || diveConj gs hs where
 
 refine :: ([G S], Generalizer, Generalizer, [S]) ->  ([G S], Generalizer, Generalizer, [S])
 refine msg@(g, s1, s2, d) =
+  -- trace (printf "g: %s\ns1: %s\ns2: %s\n" (show g) (show s1) (show s2)) $
   let similar1 = filter ((>1) . length) $ groupBy group s1 [] in
   let similar2 = filter ((>1) . length) $ groupBy group s2 [] in
-  let toSwap = concatMap (\((x,_):xs) -> map (\(y, _) -> (y, V x)) xs) similar1 in
+  let sim1 = map (map fst) similar1 in
+  let sim2 = map (map fst) similar2 in
+  let toSwap = concatMap (\(x:xs) -> map (\y -> (y, V x)) xs) (sim1 `intersect` sim2) in
   let newGoal = E.substituteConjs toSwap g in
-  let s1' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar1)) s1 in
-  let s2' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar2)) s2 in
-  trace (printf "\nSimilar1: %s\nSimilar2: %s\nToSwap: %s\nNewGoal: %s\nS1': %s\nS2': %s\n" (show similar1) (show similar2) (show toSwap) (show newGoal) (show s1') (show s2'))
+  -- let s1' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar1)) s1 in
+  -- let s2' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar2)) s2 in
+
+  let s2' = filter (\(x,_) -> notElem x (map fst toSwap)) s2 in
+  let s1' = filter (\(x,_) -> notElem x (map fst toSwap)) s1 in
+  -- trace (printf "\nOld msg: %s\nSimilar1: %s\nSimilar2: %s\nToSwap: %s\nNewGoal: %s\nS1': %s\nS2': %s\n" (show g) (show similar1) (show similar2) (show toSwap) (show newGoal) (show s1') (show s2'))
+  -- trace (printf "\ns1'': %s\ns2'': %s\n" (show s1'') (show s2'')) $
   (newGoal, s1', s2', d)
   where
     groupBy _ [] acc = acc
@@ -146,7 +154,7 @@ generalize d gg gs hs =
         ([], gg, d)
         (zip gs hs)
 
-generalizeCall d gg (Invoke f as, Invoke g bs) =
+generalizeCall d gg (Invoke f as, Invoke g bs) | f == g =
   let ((C _ cs, s1, s2), d') = generalizeTerm d gg (C "()" as, C "()" bs) in
   ((Invoke f cs, s1, s2), d')
 
@@ -177,7 +185,12 @@ generalizeGoals :: [S] -> [G S] -> [G S] -> ([G S], Generalizer, Generalizer, [S
 generalizeGoals s as bs =
   let res@(msg_, s1_, s2_, _) = refine $ generalize s ([], []) as bs in
   -- trace ("Generalizing\nFirst:  " ++ show as ++ "\nSecond: " ++ show bs ++ "\nmsg: " ++ show msg_ ++ "\ns1:  " ++ show s1_ ++ "\ns2:  " ++ show s2_) $
+  assert (map (substitute s2_) msg_ == bs &&
+          map (substitute s1_) msg_ == as
+         ) $
   res
+
+  -- res
 
 
 substitute :: E.Sigma -> G S -> G S
@@ -190,16 +203,6 @@ weakCouple :: (G S, G S) -> Bool
 weakCouple (Invoke f _, Invoke g _) | f == g = True
 weakCouple _                        = False
 
-fst' :: (a, b, c) -> a
-fst' (x, _, _) = x
-
-snd' :: (a, b, c) -> b
-snd' (_, x, _) = x
-
-trd' :: (a, b, c) -> c
-trd' (_, _, x) = x
-
-
 split :: [Zeta] -> [G S] -> [[Zeta]]
 split gs1 gs2 = filter (not . null) $ split' gs1 gs2 where
   split' gs1 gs2 = -- map (:[]) gs1
@@ -211,7 +214,7 @@ split gs1 gs2 = filter (not . null) $ split' gs1 gs2 where
                let (hd : tl) = split' rest gs2' in
                (coupled ++ hd) : dived : tl
     where getCoupledPref gs1' gs2' =
-            let ind = fromMaybe (length gs2') $ elemIndex False $ zipWith (curry weakCouple) (map trd' gs1') gs2' in
+            let ind = fromMaybe (length gs2') $ elemIndex False $ zipWith (curry weakCouple) (map trd3 gs1') gs2' in
             let (coupled, rest) = splitAt ind gs1' in
             (coupled, rest, drop ind gs2')
           getDivedPref gs g = span (\(_,_,x) -> not $ weakCouple (g, x)) gs
@@ -225,7 +228,7 @@ invoke :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] ->
 invoke tc@(sr, args, ids) cs d s gen conjs =
   -- HERE WE HAVE TO SUBSTITUTE INTO THE CURRENT GOAL
  let qqq = map (\(a, b, g) -> (a, b, substitute s g)) conjs in
- let qqq_conjs = map trd' qqq in
+ let qqq_conjs = map trd3 qqq in
   {-
  if length conjs > 3 -- head ids > 100
  then
@@ -235,7 +238,7 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
  else-}
   -- let qqq = map (\(a, b, g) -> (a, b, substitute s g)) conjs in
   -- let qqq_conjs = map trd' qqq in
-  let p = snd' $ head conjs in
+  let p = snd3 $ head conjs in
   let g = conj qqq_conjs in
   let id:ids' = ids in
   case find (\ (_, conjs') -> isJust $ renameGoals conjs' qqq_conjs) cs of
@@ -253,7 +256,7 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
           then
                let (msg_, s1, s2, d') = generalizeGoals d qqq_conjs conjs' in -- ADD GENERALIZER
                let msg = conj msg_ in
-               let (tc', node, d'') = eval (sr, args, ids') ((id, qqq_conjs):cs) d' s s1 [] (fst' $ head conjs, p, msg) [] in
+               let (tc', node, d'') = eval (sr, args, ids') ((id, qqq_conjs):cs) d' s s1 [] (fst3 $ head conjs, p, msg) [] in
                (tc', Gen id s1 node msg s, d'')
           else if length conjs' < length qqq
                then let context  = (id, qqq_conjs):cs in
@@ -274,7 +277,7 @@ eval tc cs d s gen prev (i, p, Let def g) conjs =
   let (p', d') = update (p, d) def in
   eval tc cs d' s gen prev (i, p', g) conjs
 eval tc cs d s gen prev g@(i, p, t1 :=: t2) conjs =
-  case takeS 1 $ E.eval (p, i, d) s (trd' g) of
+  case takeS 1 $ E.eval (p, i, d) s (trd3 g) of
     []       -> (tc, Fail, d)
     [(s, _)] -> case conjs of
                   []       -> case prev of
@@ -284,7 +287,7 @@ eval tc cs d s gen prev g@(i, p, t1 :=: t2) conjs =
 eval tc cs d s gen prev g@(i, p, g1 :\/: g2) conjs =
   let (tc',  node' , d' ) = eval tc  cs d  s gen prev (i, p, g1) conjs in
   let (tc'', node'', d'') = eval tc' cs d' s gen prev (i, p, g2) conjs in
-  (tc'', Or node' node'' (conj $ map trd' $ (reverse prev) ++ g:conjs) s, d'')
+  (tc'', Or node' node'' (conj $ map trd3 $ (reverse prev) ++ g:conjs) s, d'')
 eval tc cs d s gen prev (i, p, g1 :/\: g2) conjs = eval tc cs d s gen prev (i, p, g1) ((i, p, g2):conjs)
 --eval tc cs d s gen prev (i,p,Zzz g) conjs = eval tc cs d s gen prev (i,p,g) conjs
 eval tc cs d s gen prev g@(_, _, Invoke _ _) (g':conjs') = eval tc cs d s gen (g:prev) g' conjs'
@@ -304,7 +307,7 @@ unfold (sr, args, ids) cs e s gen conjs =
   let id:ids'      = ids    in
   let h:t          = reverse conjs' in
   let (tc', node, d')  = eval (sr, args, ids') ((id, cs_conjs):cs) e' s gen [] h t in
-  (tc', Call id node ( conj $ {- (Invoke (show s) [] ) : -} map trd' conjs) s, d')
+  (tc', Call id node ( conj $ {- (Invoke (show s) [] ) : -} map trd3 conjs) s, d')
 
 drive :: G X -> (TreeContext, Tree, [Id])
 drive goal =

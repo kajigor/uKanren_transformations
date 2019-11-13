@@ -18,6 +18,8 @@ import           Stlc
 import           Programs
 import           Text.Printf
 import           ConjRetriever
+import Miscellaneous
+import DotPrinter
 
 upTo d x =
   trace (printf "\nDepth: %s" $ show d) $
@@ -49,13 +51,13 @@ showConjStack gss = unlines $ map (\gs -> '\n' : '\n' : (unlines $ map (\g -> '\
 
 runTest name goal =
   do
-    let tree = snd' $ drive $ goal
+    let tree = snd3 $ drive $ goal
     printTree (printf "%s.dot" name) tree
 
 runTestSimplified name goal =
   do
     putStr $ printf "Running %s\n" name
-    let tree = simpl $ snd' $ drive $ goal
+    let tree = simpl $ snd3 $ drive $ goal
     writeFile (printf "%s.log" name) $ showConjStack $ retrieve tree
     printTree (printf "%s.dot" name) tree
     putStr $ printf "Finished %s\n" name
@@ -78,9 +80,9 @@ tc'  = drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
 tc'' = drive (revAcco $ fresh ["q", "s"] (call "revacco" [V "q", nil, V "s"]))
 
 
-tree   = snd' tc
-tree'  = snd' tc'
-tree'' = snd' tc''
+tree   = snd3 tc
+tree'  = snd3 tc'
+tree'' = snd3 tc''
 
 main =
   do
