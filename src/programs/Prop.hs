@@ -3,23 +3,125 @@ module Prop where
 import Syntax
 import Bool 
 import List 
+import Num
+import Prelude hiding (succ)
 
-fm = C "conj" [C "var" [C "x" []], C "neg" [C "var" [C "x" []]]] -- always fails
+fm  = C "conj" [C "var" [C "x" []], C "neg" [C "var" [C "x" []]]] -- always fails
 fm1 = C "conj" [C "var" [C "x" []], C "neg" [C "var" [C "y" []]]]
 
 
-query = evalo $ fresh ["st"] (call "evalo" [V "st", fm, trueo])
+query  = evalo $ fresh ["st"] (call "evalo" [V "st", fm, trueo])
 query1 = evalo $ fresh ["st"] (call "evalo" [V "st", fm, falso])
 query2 = evalo $ fresh ["st"] (call "evalo" [V "st", fm1, trueo])
 query3 = evalo $ fresh ["fm", "st"] (call "evalo" [V "st", V "fm", trueo])
 query4 = evalo $ fresh ["x", "y", "st"] (call "evalo" [V "st",  C "conj" [V "x", C "neg" [V "y"]], trueo])
 
+query' = evalo' $ fresh ["st", "fm"] (call "evalo" [V "st", V "fm", trueo])
+
+query'' = evalo'' $ fresh ["st", "fm"] (call "evalo" [V "st", V "fm", trueo])
+
+fm2 = C "disj" [C "var" [zero], C "var" [succ zero]]
+
+query1'' = evalo'' $ fresh ["st"] (call "evalo" [V "st", fm2, trueo])
+
+evalo' g = 
+  Let 
+    ( def "evalo" ["st", "fm", "u"] 
+      (
+        fresh ["x", "y"]
+        (   
+          (
+            fm === C "var" [x] &&& 
+            call "elemo" [x, st, u]
+          ) |||        
+          ( 
+            fm === C "conj" [x, y] &&& 
+            ( 
+              ( u === trueo &&& 
+                call "evalo" [st, x, trueo] &&& 
+                call "evalo" [st, y, trueo]
+              ) |||
+              (
+                u === falso &&& 
+                ( 
+                  call "evalo" [st, x, falso] |||
+                  call "evalo" [st, y, falso]
+                )
+              ) 
+            )
+          ) ||| 
+          ( 
+            fm === C "disj" [x, y] &&& 
+            (
+              ( u === trueo &&& 
+                ( 
+                  call "evalo" [st, x, trueo] ||| 
+                  call "evalo" [st, y, trueo]
+                )
+              ) |||
+              (
+                u === falso &&&  
+                call "evalo" [st, x, falso] &&&
+                call "evalo" [st, y, falso]
+              )
+            )
+          )
+        )
+      )
+    ) $ elemo g 
+    where [st, fm, u, x, y] = map V ["st", "fm", "u", "x", "y"]
+  
+elemo g = 
+  Let 
+    ( def "elemo" ["n", "s", "v"] 
+      (
+        fresh ["h", "t", "n'"]
+        (
+          n === zero &&& s === h % t &&& v === h ||| 
+          n === succ n' &&& s === h % t &&& call "elemo" [n', t, v]
+        )
+      )
+    ) g 
+    where [n, s, v, h, t, n'] = map V ["n", "s", "v", "h", "t", "n'"]   
+
+evalo'' g = 
+  Let
+    ( def "evalo" ["st", "fm", "u"] 
+      (
+        fresh ["x", "y", "v", "w"] 
+        (
+          ( 
+            fm === C "conj" [x, y] &&& 
+            call "evalo" [st, x, v] &&& 
+            call "evalo" [st, y, w] &&& 
+            call "ando" [v, w, u]
+          ) ||| 
+          ( 
+            fm === C "disj" [x, y] &&& 
+            call "evalo" [st, x, v] &&& 
+            call "evalo" [st, y, w] &&& 
+            call "oro" [v, w, u]
+          ) ||| 
+          -- (
+          --   fm === C "neg" [x] &&& 
+          --   call "evalo" [st, x, v] &&& 
+          --   call "noto" [v, u] 
+          -- ) ||| 
+          (
+            fm === C "var" [x] &&& 
+            call "elemo" [x, st, u]
+          )
+        )
+      )
+    ) $ ando $ oro $ noto $ elemo g
+    where 
+      [st, fm, u, x, y, v, w] = map V ["st", "fm", "u", "x", "y", "v", "w"]
 
 evalo g = 
   Let
     ( def "evalo" ["st", "fm", "u"] 
       (
-        fresh ["x", "y", "z", "v", "w"] 
+        fresh ["x", "y", "v", "w"] 
         (
           ( 
             fm === C "conj" [x, y] &&& 
@@ -40,13 +142,13 @@ evalo g =
           ) ||| 
           (
             fm === C "var" [x] &&& 
-            call "assoco" [z, st, u]
+            call "assoco" [x, st, u]
           )
         )
       )
     ) $ ando $ oro $ noto $ assoco $ g
     where 
-      [st, fm, u, x, y, z, v, w] = map V ["st", "fm", "u", "x", "y", "z", "v", "w"]
+      [st, fm, u, x, y, v, w] = map V ["st", "fm", "u", "x", "y", "v", "w"]
 
 
 -- let rec evalo st fm u = ocanren (
