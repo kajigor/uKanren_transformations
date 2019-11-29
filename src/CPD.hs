@@ -1,4 +1,3 @@
-
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -7,7 +6,7 @@
 
 module CPD where
 
-import Prelude hiding (lookup)
+import Prelude hiding (lookup, showList)
 import Syntax
 import qualified Eval as E
 import Text.Printf
@@ -28,13 +27,13 @@ import qualified Tree as T
 data Descend a = Descend { getCurr :: a, getAncs :: [a] } deriving (Eq)
 
 instance (Show a) => Show (Descend a) where
-  show (Descend curr ancs) = printf "%s <-\n%s" (show curr) (show ancs)
+  show (Descend curr ancs) = printf "%s <-\n%s" (show curr) (showList ancs)
 
 type DescendGoal = Descend (G S)
 
 data SldTree = Fail
              | Success E.Sigma
-             | Or [SldTree] E.Sigma
+             | Or [SldTree] (Maybe (G S)) E.Sigma
              | Conj SldTree [DescendGoal] E.Sigma
              | Leaf [DescendGoal] E.Sigma E.Gamma
 
@@ -42,7 +41,12 @@ select :: [DescendGoal] -> Maybe DescendGoal
 select = find (\x -> isSelectable embed (getCurr x) (getAncs x))
 
 selecter :: [DescendGoal] -> ([DescendGoal], [DescendGoal])
-selecter gs = span (\x -> not $ isSelectable embed (getCurr x) (getAncs x)) gs
+selecter gs =  
+  span (\x -> 
+    let res = isSelectable embed (getCurr x) (getAncs x) in 
+    trace (printf "Selecter\ncurr:\n%s\nancs:%s\nrslt:%s\n" (show $ getCurr x) (showList (getAncs x)) (show res)) $ 
+    not $ isSelectable (\x y -> embed x y || isInst x y) (getCurr x) (getAncs x)) gs
+    -- not $ isSelectable embed (getCurr x) (getAncs x)) gs
 
 -- TODO reconsider hardcoded list of basic function names
 isSelectable :: Show a => (G a -> G a -> Bool) -> G a -> [G a] -> Bool
@@ -75,34 +79,23 @@ oneStepUnfold g@(Invoke f as) env@(p, i, d) =
   else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
 oneStepUnfold g env = (g, env)
 
+showList :: Show a => [a] -> String 
+showList = unlines . map show
+
 sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> [[G S]] -> Bool -> SldTree
 sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
-  -- let false = C "false" [] in
-  -- let isFalseCheck x =
-  --       case x of
-  --         Invoke "all_check_uni" args -> last args == false
-  --         Invoke "check_uni" args -> last args == false
-  --         _ -> False in
-  -- let gs' = filter isFalseCheck $ map getCurr gs in
-  -- trace (printf "\nResolution step:\ngs: \n%s" $ intercalate "\n" (map show gs)) $
-  -- trace (printf "\n\nSLD RESOLUTION \ngs: %s\ns:  %s\n\n" (show $ map getCurr gs) (show s) ) $
-
   let curs = map getCurr gs in
-  -- trace (printf "Unfolding:\n%s\nisGround: %s\n" (show curs) (show $ isGround curs)) $
-  let prettySeen = intercalate "\n" $ map show seen  in
+  let prettySeen = showList seen  in
   -- if variantCheck curs seen
   if instanceCheck curs seen
   then
-    -- trace (printf "\nIt IS an instance!\n%s\nSeen\n%s\n\nIt's a variant: %s\n" (show curs) prettySeen (show $ variantCheck curs seen)) $
     Leaf gs s env
   else
-    -- if temp > 90
+    -- if temp > 13
     --   then Leaf gs s env
     --   else
-        -- trace (printf "\nIt's NOT an instance!\n%s\nSeen\n%s\n\n" (show curs) prettySeen) $
         maybe (Leaf gs s env)
               (\(ls, Descend g ancs, rs) ->
-                  -- trace (printf "\nSelected: %s\nAncs: %s" (show g) (show ancs)) $
                   let (g', env') = oneStepUnfold g env in
                   go g' env' ls rs g ancs isFirstTime
               )
@@ -115,36 +108,39 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
           if null rs then Nothing else Just (ls, head rs, tail rs)
 
         go g' env' ls rs g ancs isFirstTime =
-          -- trace (printf "\nGo:\ng': %s\nls: %s\nrs: %s\n" (show g') (show ls) (show rs)) $
+          trace (printf "\nGo:\ng': %s\ng:\n%s\nls:\n%s\nrs:\n%s\n" (show g') (show g) (showList ls) (showList rs)) $
           let normalized = normalize g' in
-          -- trace (printf "normalized: %s" $ show normalized) $
+          trace (printf "normalized:\n%s" $ showList normalized) $
           let unified = mapMaybe (unifyStuff s) normalized in
-          -- trace (printf "unified: %s" $ intercalate "\n" $ map show unified) $
+          trace (printf "unified:\n%s" $ showList unified) $
           let addDescends xs s =
-                -- trace (printf "\nAdding descends\nxs: %s\ns:  %s\n" (show xs) (show s)) $ 
-                substituteDescend s (ls ++ map (\x -> Descend x (g : ancs)) xs ++ rs) in
+                -- substituteDescend s (ls ++ map (\x -> Descend x (g : ancs)) xs ++ rs) in
+                substituteDescend s ( map addDescendId ls ++ 
+                                      map (\x -> Descend x (g : ancs)) xs ++ 
+                                      map addDescendId rs
+                                    ) 
+                  where
+                    addDescend goal (Descend cur ancs) = Descend goal (cur : ancs) 
+                    addDescendId d@(Descend cur _) = addDescend cur d 
+          in
           case unified of
             [] ->
-              -- trace "fail" $
               Fail
-            ns | length ns == 1 || isFirstTime -> -- unfold only if it's deterministic or hasn't been unfolded before
-              -- trace (printf "rs:%s\nns:\n%s\nisFirstTime:\n%s" (intercalate " \n" $ map (show . getCurr) rs) (intercalate " \n" $ map (show . fst) ns) (show isFirstTime)) $
-              Or (map step ns) s
+            -- ns | length ns == 1 || isFirstTime -> -- unfold only if it's deterministic or hasn't been unfolded before
+            ns -> 
+              Or (map step ns) (Just g) s
               where
                 step (xs, s') =
-                  -- trace (printf "\nStepping into\nxs: %s\nx': %s\n" (show xs) (show s')) $
                   if null xs && null rs
                   then Success s'
                   else let newDescends = addDescends xs s' in
-                      --  trace (printf "\n\nConj\nNew descends: %s" (show newDescends)) $
+                       trace (printf "\n\nConj\nNew descends: %s" (show newDescends)) $
                        Conj (sldResolutionStep newDescends env' s' (map getCurr gs : seen) (isFirstTime && length ns == 1)) newDescends s'
                        -- Conj (sldResolutionStep newDescends env' s' (Set.insert (map getCurr gs) seen) False newDescends s'
             ns | not $ null rs ->
-              -- trace (printf "\nnot null\nns: %s\nls: %s\nrs: %s\ng: %s" (show ns) (show ls) (show rs) (show g)) $
               maybe (Leaf gs s env)
                     (\(ls', Descend nextAtom nextAtomsAncs, rs')  ->
                             let (g'', env'') = oneStepUnfold nextAtom env in
-                            -- trace (printf "\nls' %s\nls: %s" (show ls') (show (ls ++ (Descend g ancs : ls')))) $
                             go g'' env'' (ls ++ (Descend g ancs : ls')) rs' nextAtom nextAtomsAncs False
                     )
                     (selectNext rs)
@@ -157,7 +153,7 @@ normalize (f :\/: g) = normalize f ++ normalize g
 normalize (f :/\: g) = (++) <$> normalize f <*> normalize g
 normalize g@(Invoke _ _) = [[g]]
 normalize g@(_ :=: _) = [[g]]
-normalize _ = error "Unexpected goal type in normalization"
+normalize g = error ("Unexpected goal type in normalization\n" ++ show g)
 
 unifyStuff :: E.Sigma -> [G S] -> Maybe ([G S], E.Sigma)
 unifyStuff state gs = go gs state [] where
@@ -171,14 +167,14 @@ bodies :: SldTree -> [[G S]]
 bodies = leaves
 
 leaves :: SldTree -> [[G S]]
-leaves (Or disjs _)   = concatMap leaves disjs
+leaves (Or disjs _ _)   = concatMap leaves disjs
 leaves (Conj ch  _ _) = leaves ch
 leaves (Leaf ds _ _)  = [map getCurr ds]
 leaves _ = []
 
 resultants :: SldTree -> [(E.Sigma, [G S], Maybe E.Gamma)]
 resultants (Success s)     = [(s, [], Nothing)]
-resultants (Or disjs _)    = concatMap resultants disjs
+resultants (Or disjs _ _)  = concatMap resultants disjs
 resultants (Conj ch _ _)   = resultants ch
 resultants (Leaf ds s env) = [(s, map getCurr ds, Just env)]
 resultants Fail            = []

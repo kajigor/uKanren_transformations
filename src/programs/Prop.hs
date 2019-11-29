@@ -22,7 +22,22 @@ query'' = evalo'' $ fresh ["st", "fm"] (call "evalo" [V "st", V "fm", trueo])
 
 fm2 = C "disj" [C "var" [zero], C "var" [succ zero]]
 
-query1'' = evalo'' $ fresh ["st"] (call "evalo" [V "st", fm2, trueo])
+query1'' = evalo'' $ fresh ["fm", "st"] (call "evalo" [V "st", V "fm", trueo])
+query1''' = evalo''' $ fresh ["fm", "st"] (call "evalo" [V "st", V "fm", trueo])
+query2''' = evalo''' $ fresh ["fm", "st", "res"] (call "evalo" [V "st", V "fm", V "res"])
+
+plainQuery = plainEvalo $ fresh ["fm", "st"] (call "evalo" [V "st", V "fm", trueo])
+plainQuery' = plainEvalo $ fresh ["fm", "st", "res"] (call "evalo" [V "st", V "fm", V "res"])
+
+plainQueryConj = evaloConj $ fresh ["st", "fm1", "fm2"] (call "evaloConj" $ map V ["st", "fm1", "fm2"])
+
+evaloConj g = 
+  Let 
+    ( def "evaloConj" ["st", "fm1", "fm2"] 
+      ( 
+        call "evalo" [V "st", V "fm1", trueo] &&& call "evalo" [V "st", V "fm2", trueo]
+      )
+    ) $ plainEvalo g
 
 evalo' g = 
   Let 
@@ -117,6 +132,87 @@ evalo'' g =
     where 
       [st, fm, u, x, y, v, w] = map V ["st", "fm", "u", "x", "y", "v", "w"]
 
+evalo''' g = 
+  Let
+    ( def "evalo" ["st", "fm", "u"] 
+      (
+        fresh ["x", "y", "v", "w"] 
+        (
+          ( 
+            fm === C "conj" [x, y] &&& 
+            call "ando" [v, w, u] &&&
+            call "evalo" [st, x, v] &&& 
+            call "evalo" [st, y, w]  
+          ) ||| 
+          ( 
+            fm === C "disj" [x, y] &&& 
+            call "oro" [v, w, u] &&&
+            call "evalo" [st, x, v] &&& 
+            call "evalo" [st, y, w]  
+          ) ||| 
+          -- (
+          --   fm === C "neg" [x] &&& 
+          --   call "evalo" [st, x, v] &&& 
+          --   call "noto" [v, u] 
+          -- ) ||| 
+          (
+            fm === C "var" [x] &&& 
+            call "elemo" [x, st, u]
+          )
+        )
+      )
+    ) $ ando $ oro $ noto $ elemo g
+    where 
+      [st, fm, u, x, y, v, w] = map V ["st", "fm", "u", "x", "y", "v", "w"]
+      
+plainEvalo g = 
+  Let
+    ( def "evalo" ["st", "fm", "u"] 
+      (
+        fresh ["x", "y", "v", "w"] 
+        (
+          ( 
+            fm === C "conj" [x, y] &&& 
+            call "ando" [v, w, u] &&&
+            call "evalo" [st, x, v] &&& 
+            call "evalo" [st, y, w]  
+          ) ||| 
+          ( 
+            fm === C "disj" [x, y] &&& 
+            call "oro" [v, w, u] &&&
+            call "evalo" [st, x, v] &&& 
+            call "evalo" [st, y, w]  
+          ) ||| 
+          (
+            fm === C "var" [x] &&& 
+            call "elemo" [x, st, u]
+          )
+        )
+      )
+    ) $ ando $ oro $ elemo g
+    where 
+      [st, fm, u, x, y, v, w] = map V ["st", "fm", "u", "x", "y", "v", "w"]
+      ando g = 
+        Let 
+          ( def "ando" ["x", "y", "v"] 
+            (
+              x === trueo &&& y === trueo &&& v === trueo ||| 
+              x === falso &&& y === trueo &&& v === falso ||| 
+              x === trueo &&& y === falso &&& v === falso ||| 
+              x === falso &&& y === falso &&& v === falso 
+            )
+          ) g
+      oro g = 
+        Let 
+          ( def "oro" ["x", "y", "v"] 
+            (
+              x === trueo &&& y === trueo &&& v === trueo ||| 
+              x === falso &&& y === trueo &&& v === trueo ||| 
+              x === trueo &&& y === falso &&& v === trueo ||| 
+              x === falso &&& y === falso &&& v === falso 
+            )
+          ) g 
+
 evalo g = 
   Let
     ( def "evalo" ["st", "fm", "u"] 
@@ -135,11 +231,11 @@ evalo g =
             call "evalo" [st, y, w] &&& 
             call "oro" [v, w, u]
           ) ||| 
-          (
-            fm === C "neg" [x] &&& 
-            call "evalo" [st, x, v] &&& 
-            call "noto" [v, u] 
-          ) ||| 
+          -- (
+          --   fm === C "neg" [x] &&& 
+          --   call "evalo" [st, x, v] &&& 
+          --   call "noto" [v, u] 
+          -- ) ||| 
           (
             fm === C "var" [x] &&& 
             call "assoco" [x, st, u]

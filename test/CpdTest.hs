@@ -80,7 +80,12 @@ tests = do
   -}
 
 printStuff = do
-  test "fAndS" Sample1.query
+  -- test "plainEvalo" Prop.plainQuery
+  test "propInst" Prop.query'' 
+
+  -- test "plainEvaloConj" Prop.plainQueryConj
+
+  -- test "fAndS" Sample1.query
   -- test "l_unify_same" Unify.querySame
   -- test "desert"          Desert.query
   -- test "path" Path.query1
@@ -102,19 +107,27 @@ printStuff = do
   --
   -- test "allDiff.dot" Sudoku4x4.queryAllDiff
   where
-    test filename goal =
-      printTree (printf "%s.dot" filename) $ topLevel goal
+    test filename goal = do
+      let path = "test/out/" ++ filename 
+      createDirectoryIfMissing True path
+      printTree (printf "%s/local.dot" path) $ topLevel goal
 
 doOcanrenize = do 
   -- ocanren "fun" (fun $ fresh ["n", "x", "r"] (call "fun" $ map V ["n", "x", "r"])) Nothing 
 
-  ocanren "oddo" (oddo $ (call "oddo" [zero])) Nothing 
+  -- ocanren "oddo" (oddo $ (call "oddo" [zero])) Nothing 
 
+  -- ocanren "propInst" Prop.query'' Nothing
 
   -- ocanren "prop" Prop.query Nothing 
   -- ocanren "prop2" Prop.query2  Nothing 
   -- ocanren "prop3" Prop.query3  Nothing 
   -- ocanren "prop4" Prop.query4  Nothing 
+  -- ocanren "propSimple" Prop.query' Nothing
+
+  -- ocanren "propCompl2" Prop.query1'' Nothing
+  ocanren "propCompl4" Prop.query2''' Nothing
+  -- ocanren "plainEvalo" Prop.plainQuery Nothing
 
   -- ocanren "doubleRev" (doubleReverso $ fresh ["xs"] (call "doubleReverso" [V "xs"])) Nothing 
 

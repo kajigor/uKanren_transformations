@@ -44,7 +44,7 @@ part = CPD.mcs
 
 abstract :: Descend [G S] -> [G S] -> E.Delta -> ([([G S], T.Generalizer)], E.Delta)
 abstract descend goals d =
-  trace (printf "\nAbstracting \n%s\nDescend\n%s\n" (show goals) (show descend)) $
+  -- trace (printf "\nAbstracting \n%s\nDescend\n%s\n" (show goals) (show descend)) $
   let qCurly = part goals in
   -- trace (printf "\nqCurly length: %s\n" (show  qCurly)) $ 
   let result = go (map (\x -> (x, [])) qCurly) d in 
@@ -118,16 +118,16 @@ topLevel goal =
   let nodes = [[logicGoal]] in
   (fst $ go nodes (CPD.Descend [logicGoal] []) gamma' E.s0 [], logicGoal, names) where
     go nodes d@(CPD.Descend goal ancs) gamma subst generalizer =
-      -- if head (trd3 gamma) > 100
+      -- if head (trd3 gamma) > 10
       -- then (Prune d subst, nodes)
       -- else
         let subst = E.s0 in
         -- let newNodes = (delete goal nodes) in 
         let newNodes = filter (not . CPD.isVariant goal) nodes in 
-        trace (printf "\nRunning sldResolution for a goal:\n%s\nSeen:\n%s\n" (show goal) (intercalate "\n" $ map show newNodes )) $ 
+        -- trace (printf "\nRunning sldResolution for a goal:\n%s\nSeen:\n%s\n" (show goal) (intercalate "\n" $ map show newNodes )) $ 
 
         let sldTree = CPD.sldResolution goal gamma subst newNodes in
-        trace ("\n\n\nHERE COMES THE TREE " ++  simplyPrintTree sldTree ++ "\n\n\n ") $ 
+        trace ("\n\n\nHERE COMES THE TREE\n" ++  simplyPrintTree sldTree ++ "\n\n\n ") $ 
         let (substs, bodies) = partition (null . snd3) $ CPD.resultants sldTree in
 
         if null bodies 
@@ -141,8 +141,8 @@ topLevel goal =
           --             else ancs in 
           let ancs' = goal : ancs in 
           let abstracted = map (abstractChild ancs') bodies in
-          trace (printf "\nbodies:\n%s\n" (show' $ map snd3 bodies)) $ 
-          trace (printf "\nAbstracted\n%s" (show' $ map  (map snd4) abstracted)) $ 
+          -- trace (printf "\nbodies:\n%s\n" (show' $ map snd3 bodies)) $ 
+          -- trace (printf "\nAbstracted\n%s" (show' $ map  (map snd4) abstracted)) $ 
           let (toUnfold, toNotUnfold, newNodes) =
                   foldl (\ (yes, no, seen) gs ->
                               let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (CPD.isVariant g) seen) gs in
