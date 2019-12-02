@@ -323,18 +323,25 @@ success = call "success" []
 
 {-------------------------------------------}
 takeOutLets :: G X -> (G X, [Def])
-takeOutLets (g1 :/\: g2)        = let (g1', lets1) = takeOutLets g1 in
-                                  let (g2', lets2) = takeOutLets g2 in
-                                  (g1' &&& g2', lets1 ++ lets2)
-takeOutLets (g1 :\/: g2)        = let (g1', lets1) = takeOutLets g1 in
-                                  let (g2', lets2) = takeOutLets g2 in
-                                  (g1' ||| g2', lets1 ++ lets2)
-takeOutLets (Fresh n g)         = let (g', lets) = takeOutLets g in
-                                  (Fresh n g', lets)
-takeOutLets (Let (n, a, g1) g2) = let (g1', lets1) = takeOutLets g1 in
-                                  let (g2', lets2) = takeOutLets g2 in
-                                  (g2', (n, a, g1') : lets1 ++ lets2)
-takeOutLets g                   = (g, [])
+takeOutLets g = (\(x, y, _) -> (x, y)) $ go [] g 
+  where 
+    go seen (g1 :/\: g2)        = let (g1', lets1, seen')  = go seen  g1 in
+                                  let (g2', lets2, seen'') = go seen' g2 in
+                                  (g1' &&& g2', lets1 ++ lets2, seen'')
+    go seen (g1 :\/: g2)        = let (g1', lets1, seen')  = go seen  g1 in
+                                  let (g2', lets2, seen'') = go seen' g2 in
+                                  (g1' ||| g2', lets1 ++ lets2, seen'')
+    go seen (Fresh n g)         = let (g', lets, seen') = go seen g in
+                                  (Fresh n g', lets, seen')
+    go seen (Let (n, a, g1) g2) | n `notElem` seen 
+                                = let newSeen = n : seen in 
+                                  let (g1', lets1, seen')  = go newSeen g1 in
+                                  let (g2', lets2, seen'') = go seen' g2 in
+                                  (g2', (n, a, g1') : lets1 ++ lets2, seen'')
+    go seen (Let (n, a, g1) g2) = let (g1', lets1, seen')  = go seen g1 in
+                                  let (g2', lets2, seen'') = go seen' g2 in
+                                  (g2', (n, a, g1') : lets1 ++ lets2, seen'')
+    go seen g                   = (g, [], seen)
 
 {-------------------------------------------}
 renameLetArgs :: [Id] -> G X -> (G X, [Id])

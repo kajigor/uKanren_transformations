@@ -167,7 +167,7 @@ bodies :: SldTree -> [[G S]]
 bodies = leaves
 
 leaves :: SldTree -> [[G S]]
-leaves (Or disjs _ _)   = concatMap leaves disjs
+leaves (Or disjs _ _) = concatMap leaves disjs
 leaves (Conj ch  _ _) = leaves ch
 leaves (Leaf ds _ _)  = [map getCurr ds]
 leaves _ = []
@@ -243,7 +243,6 @@ minimallyGeneral xs =
 bmc :: E.Delta -> [G S] -> [[G S]] -> ([([G S], T.Generalizer)], E.Delta)
 bmc d q [] = ([], d)
 bmc d q (q':qCurly) | msgExists q q' =
-  -- trace "bmc" $
   let (generalized, _, gen, delta) = D.generalizeGoals d q q' in
   -- trace (printf "Generalizing\nq:   %s\nq':  %s\nRes: %s\nGen: %s\ndelta: %s\n" (show q) (show q') (show generalized) (show gen) (show $ head d)) $
   let (gss, delta') = bmc delta q qCurly in

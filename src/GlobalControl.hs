@@ -28,6 +28,10 @@ data GlobalTree = Leaf  (Descend [G S]) T.Generalizer E.Sigma
 sequence :: Descend a -> [a]
 sequence = CPD.getAncs
 
+getNodes (Leaf _ _ _) = []
+getNodes (Node _ _ (CPD.Leaf _ _ _) _) = [] -- This happens because of the instance check
+getNodes (Node d _ sld ch) = (CPD.getCurr d, sld) : (concatMap getNodes ch)
+
 {- branch :: GlobalTree -> Set [G S]
 branch (Leaf d _ _) = sequence d
 branch (Node d _ _ _) = sequence d

@@ -42,12 +42,6 @@ residualizeGlobalTree tree =
   if null lets 
   then error "No non-failing relations"
   else foldl1 (.) lets
-  where
-    getNodes (Leaf _ _ _) = []
-    getNodes (Node _ _ (CPD.Leaf _ _ _) _) = [] -- This happens because of the instance check
-    getNodes (Node d _ sld ch) = 
-      -- trace (printf "\n\nTree for goal\n%s\n\n%s\n\n" (show $ CPD.getCurr d) (simplyPrintTree sld)) $ 
-      (CPD.getCurr d, sld) : (concatMap getNodes ch)
 
 unifyInvocationLists :: [G S] -> [G S] -> Maybe Eval.Sigma -> Maybe Eval.Sigma
 unifyInvocationLists [] [] state = state

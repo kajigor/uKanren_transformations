@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 
-module CpdTest (tests) where
+module CpdTest (main, tests) where
 
 import Sort
 import Bool
@@ -8,6 +8,7 @@ import Bridge
 import CPD
 import Control.Monad
 import Data.Maybe
+import Data.Foldable (for_)
 import Data.List
 import DotPrinter
 import qualified Eval as E
@@ -42,10 +43,14 @@ import TestFramework
 import System.CPUTime
 import System.TimeIt
 import System.IO
+import System.Process (system)
 
 
 --trace :: String -> a -> a
 --trace _ x = x
+
+main = doOcanrenize
+-- main = printStuff
 
 tests = do
   print "HERE"
@@ -80,8 +85,8 @@ tests = do
   -}
 
 printStuff = do
-  -- test "plainEvalo" Prop.plainQuery
-  test "propInst" Prop.query'' 
+  test "plainEvalo" Prop.plainQuery
+  -- test "propInst" Prop.query'' 
 
   -- test "plainEvaloConj" Prop.plainQueryConj
 
@@ -126,8 +131,8 @@ doOcanrenize = do
   -- ocanren "propSimple" Prop.query' Nothing
 
   -- ocanren "propCompl2" Prop.query1'' Nothing
-  ocanren "propCompl4" Prop.query2''' Nothing
-  -- ocanren "plainEvalo" Prop.plainQuery Nothing
+  -- ocanren "propCompl4" Prop.query2''' Nothing
+  ocanren "plainEvaloDescends" Prop.plainQuery Nothing
 
   -- ocanren "doubleRev" (doubleReverso $ fresh ["xs"] (call "doubleReverso" [V "xs"])) Nothing 
 
@@ -200,19 +205,26 @@ doOcanrenize = do
     where
       ocanren filename goal env = do
         let (tree, logicGoal, names) = GC.topLevel goal
-        
         -- let f = residualizeGlobalTree tree
         -- let pur = purification (f $ vident <$> logicGoal, vident <$> reverse names)
-        let f = 
-              -- trace (printf "\n\n\nHERE COMES THE GLOBAL TREE\n%s\n\n\n" $ simplyPrintTree tree) $ 
-              residualizationTopLevel tree
-        let pur = trace (printf "Residualized: %s\n" (show f)) $
-                  purification (f, vident <$> reverse names)
-        let path = "test/out/" ++ filename 
+        let f = residualizationTopLevel tree
+        let pur = purification (f, vident <$> reverse names)
+        let path = printf "test/out/%s" filename 
+        let pathLocal = printf "%s/local" path
         createDirectoryIfMissing True path
         printTree (printf "%s/global.dot" path) tree
+        writeFile (printf "%s/%s.pur" path filename) (show pur)
+        createDirectoryIfMissing True pathLocal
+        let nodes = GC.getNodes tree 
+        for_ 
+          nodes 
+          (\(goal, tree) -> 
+            printTree (printf "%s/%s.dot" pathLocal (show goal)) tree 
+          ) 
         let ocamlCodeFileName = printf "%s/%s.ml" path filename
         OC.topLevel ocamlCodeFileName "topLevel" env pur
+        system (printf "dot -O -Tpdf %s/*.dot" path)
+        system (printf "dot -O -Tpdf %s/*.dot" pathLocal)
 
 doResidualization = do
   purify "membero" $ membero $ fresh ["a"] (call "membero" [V "a", V "a" % nil])
