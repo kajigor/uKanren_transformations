@@ -148,12 +148,10 @@ residualizeSldTree rootGoals tree definitions = do
   let (_, defName, rootVars) = fromMaybe (error (printf "Residualization failed: no definition found for\n%s\nDefs:\n%s\n" (show rootGoals) (show definitions))) $
                                find ((== rootGoals) . fst3) definitions
                                  
-  let resultants = 
-        -- trace ("\n\n\nHERE COMES THE TREE " ++  simplyPrintTree tree ++ "\n\n\n ") $ 
-        CPD.resultants tree
+  let resultants = CPD.resultants tree
   
   let goals = 
-              -- trace (printf "RootGoal: %s\nResultants: \n%s\n" (show rootGoals) (intercalate "\n" $ map (\(x,y,_) -> show (x,y)) resultants)) $
+              trace (printf "RootGoal: %s\nResultants: \n%s\n" (show rootGoals) (intercalate "\n" $ map (\(x,y,_) -> show (x,y)) resultants)) $
               foldl (\gs (subst, goals, _) ->
                        let g = go subst goals definitions
                        in  g : gs
@@ -169,7 +167,8 @@ residualizeSldTree rootGoals tree definitions = do
   then fail (printf "No resultants in the sld tree for %s" (show rootGoals))
   else return $ def defName defArgs body
   where
-    go [] [] defs    = error "Residualization failed: a substitution and goals cannot be empty simpultaneously"
+    -- go [] [] defs    = error "Residualization failed: a substitution and goals cannot be empty simpultaneously"
+    go [] [] defs    = Invoke "success" []
     go [] gs defs    = residualizeGoals gs defs
     go subst [] defs = residualizeSubst subst
     go subst gs defs =

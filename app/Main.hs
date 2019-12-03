@@ -1,6 +1,6 @@
 module Main where
 
-import qualified CpdTest as CpdT  
+import qualified CpdTest   
 
 main :: IO ()
-main = CpdT.tests
+main = CpdTest.main

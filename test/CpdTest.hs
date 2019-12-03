@@ -132,9 +132,9 @@ doOcanrenize = do
 
   -- ocanren "propCompl2" Prop.query1'' Nothing
   -- ocanren "propCompl4" Prop.query2''' Nothing
-  ocanren "plainEvaloDescends" Prop.plainQuery Nothing
+  -- ocanren "plainEvaloDescends" Prop.plainQuery Nothing
 
-  -- ocanren "doubleRev" (doubleReverso $ fresh ["xs"] (call "doubleReverso" [V "xs"])) Nothing 
+  ocanren "doubleRev" (doubleReverso $ fresh ["xs"] (call "doubleReverso" [V "xs"])) Nothing 
 
 
   -- ocanren "appLengtho"  (appLengtho $ (call "appLengtho" [])) Nothing
@@ -205,15 +205,14 @@ doOcanrenize = do
     where
       ocanren filename goal env = do
         let (tree, logicGoal, names) = GC.topLevel goal
-        -- let f = residualizeGlobalTree tree
-        -- let pur = purification (f $ vident <$> logicGoal, vident <$> reverse names)
-        let f = residualizationTopLevel tree
-        let pur = purification (f, vident <$> reverse names)
         let path = printf "test/out/%s" filename 
+        exists <- doesDirectoryExist path
+        if exists 
+        then removeDirectoryRecursive path 
+        else return () 
         let pathLocal = printf "%s/local" path
         createDirectoryIfMissing True path
         printTree (printf "%s/global.dot" path) tree
-        writeFile (printf "%s/%s.pur" path filename) (show pur)
         createDirectoryIfMissing True pathLocal
         let nodes = GC.getNodes tree 
         for_ 
@@ -221,10 +220,16 @@ doOcanrenize = do
           (\(goal, tree) -> 
             printTree (printf "%s/%s.dot" pathLocal (show goal)) tree 
           ) 
-        let ocamlCodeFileName = printf "%s/%s.ml" path filename
-        OC.topLevel ocamlCodeFileName "topLevel" env pur
         system (printf "dot -O -Tpdf %s/*.dot" path)
         system (printf "dot -O -Tpdf %s/*.dot" pathLocal)
+        -- let f = residualizeGlobalTree tree
+        -- let pur = purification (f $ vident <$> logicGoal, vident <$> reverse names)
+        let f = residualizationTopLevel tree
+        let pur = purification (f, vident <$> reverse names)
+        writeFile (printf "%s/%s.pur" path filename) (show pur)
+        let ocamlCodeFileName = printf "%s/%s.ml" path filename
+        OC.topLevel ocamlCodeFileName "topLevel" env pur
+        print "doOcanrenize done"
 
 doResidualization = do
   purify "membero" $ membero $ fresh ["a"] (call "membero" [V "a", V "a" % nil])
