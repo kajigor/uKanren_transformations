@@ -1,4 +1,4 @@
-module Test where
+module OldTest where
 
 import Syntax
 import Stream

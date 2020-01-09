@@ -27,3 +27,5 @@ bridge
 test/out/
 
 oc
+
+uKanren-transformation.cabal

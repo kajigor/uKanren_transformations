@@ -18,6 +18,7 @@ import SldTreePrinter
 import Control.Exception.Base
 import Data.Tuple
 import Data.List
+import Embed 
 
 type Descend = CPD.Descend
 
@@ -66,7 +67,7 @@ abstract descend goals d =
 
 whistle :: Descend [G S] -> [G S] -> Maybe [G S]
 whistle descend m =
-  find (\b -> CPD.embed b m && (not (CPD.isVariant b m))) (sequence descend)
+  find (\b -> Embed.embed b m && (not (Embed.isVariant b m))) (sequence descend)
 
 generalize :: [G S] -> [G S] -> E.Delta -> ([([G S], T.Generalizer)], E.Delta)
 generalize m b d =
@@ -104,7 +105,7 @@ topLevel goal =
       -- else
         let subst = E.s0 in
         -- let newNodes = (delete goal nodes) in 
-        let newNodes = filter (not . CPD.isVariant goal) nodes in 
+        let newNodes = filter (not . Embed.isVariant goal) nodes in 
 
         let sldTree = CPD.sldResolution goal gamma subst newNodes in
         let (substs, bodies) = partition (null . snd3) $ CPD.resultants sldTree in
@@ -120,7 +121,7 @@ topLevel goal =
           trace (printf "\nAbstracted\n%s" (show' $ map  (map snd4) abstracted)) $ 
           let (toUnfold, toNotUnfold, newNodes) =
                   foldl (\ (yes, no, seen) gs ->
-                              let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (CPD.isVariant g) seen) gs in
+                              let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (Embed.isVariant g) seen) gs in
                               -- let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (CPD.isInst g) seen) gs in
                               (yes ++ brandNew, no ++ variants, map snd4 brandNew ++ seen)
                         )
@@ -172,7 +173,7 @@ topLevel goal =
 --         trace (printf "\nResultants:\n%s\nAbstracted:\n%s\n" (intercalate "\n" $ map (show . snd3) bodies) (intercalate "\n" $ map (concatMap (show . trd4)) abstracted) ) $
 --         let (toUnfold, toNotUnfold, newNodes) =
 --                 foldl (\ (yes, no, seen) gs ->
---                             -- let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (CPD.isVariant g) seen) gs in
+--                             -- let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (Embed.isVariant g) seen) gs in
 --                             let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (CPD.isInst g) seen) gs in
 --                             trace (printf "\n\nVARIANTS\n%s\n%s\n" (show $ map snd4 gs) (show $ map snd4 variants)) $
 --                             (yes ++ brandNew, no ++ variants, map snd4 brandNew ++ seen)

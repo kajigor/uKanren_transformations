@@ -31,6 +31,8 @@ dependencies:
 - extra
 - directory
 - timeit
+- tasty-discover
+
 
 library:
   source-dirs: 
@@ -38,28 +40,38 @@ library:
   - src/programs/
   - src/utils
 
-executables:
-  uKanren-transformation-exe:
-    main:                Main.hs
-    source-dirs:         
-    - app
-    - test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - uKanren-transformation
+# executables:
+#   uKanren-transformation-exe:
+#     main:                Main.hs
+#     source-dirs:
+#     - app
+#     - test
+#     ghc-options:
+#     - -threaded
+#     - -rtsopts
+#     - -with-rtsopts=-N
+#     dependencies:
+#     - uKanren-transformation
 
 tests:
+  # uKanren-transformation-test:
+  #   main:                CpdTests.hs
+  #   source-dirs:         
+  #   - test/
+  #   - test/ocamlTest/
+  #   ghc-options:
+  #   - -threaded
+  #   - -rtsopts
+  #   - -with-rtsopts=-N
+  #   dependencies:
+  #   - uKanren-transformation
   uKanren-transformation-test:
-    main:                CpdTests.hs
-    source-dirs:         
-    - test/
-    - test/test/
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+    main:                Test.hs
+    source-dirs:         test/auto
     dependencies:
     - uKanren-transformation
+    - hedgehog
+    - HUnit
+    - tasty
+    - tasty-hedgehog
+    - tasty-hunit
