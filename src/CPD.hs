@@ -158,12 +158,15 @@ normalize g@(_ :=: _) = [[g]]
 normalize g = error ("Unexpected goal type in normalization\n" ++ show g)
 
 unifyStuff :: E.Sigma -> [G S] -> Maybe ([G S], E.Sigma)
-unifyStuff state gs = go gs state [] where
-  go [] state conjs = Just (reverse conjs, state)
-  go (g@(Invoke _ _) : gs) state conjs = go gs state (g : conjs)
-  go ((t :=: u) : gs) state conjs = do
-    s <- E.unify  (Just state) t u
-    go gs s conjs
+unifyStuff state gs = 
+    trace (printf "\nIn unifyStuff\nGs\n%s\nState\n%s\n" (show gs) (show state)) $ 
+    go gs state [] 
+  where
+    go [] state conjs = Just (reverse conjs, state)
+    go (g@(Invoke _ _) : gs) state conjs = go gs state (g : conjs)
+    go ((t :=: u) : gs) state conjs = do
+      s <- E.unify  (Just state) t u
+      go gs s conjs
 
 bodies :: SldTree -> [[G S]]
 bodies = leaves

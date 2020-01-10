@@ -81,8 +81,6 @@ class (Eq b, Show b, Show a) => Instance a b | b -> a where
 
   isInst :: b -> b -> Bool
   isInst x y =
-    -- let res = inst x y Map.empty in
-    -- trace (printf "isInst\nx:   %s\ny:   %s\nres: %s\n" (show x) (show y) (show res)) $
     isJust $ inst x y Map.empty
 
   isStrictInst :: b -> b -> Bool
@@ -141,18 +139,6 @@ instance AlwaysEmbeddable (Term a) where
 class (Homeo b, Instance a b, Eq b, Show a) => Embed a b | b -> a where
   embed :: b -> b -> Bool
   embed g h =
-    -- trace (printf "\nbefore embed\n%s\n%s" (show g) (show h)) $
-    -- let first = isAlwaysEmbeddable g in
-    -- trace (printf "first check: %s" (show first)) $
-    -- let second = g == h in
-    -- trace (printf "second check: %s" (show second)) $
-    -- let third = homeo g h in
-    -- trace (printf "third check: %s" (show third)) $
-    -- let fourth = not (isStrictInst h g) in
-    -- trace (printf "fourth check: %s" (show fourth)) $
-    -- let res = first || second || third && fourth in
-    -- trace (printf "result %s" (show res)) $
-    -- res
     isAlwaysEmbeddable g || g == h || homeo g h && not (isStrictInst h g)
 
 instance (Ord a, Eq a, Show a) => Embed a (G a)

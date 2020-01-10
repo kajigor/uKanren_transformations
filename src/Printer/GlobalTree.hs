@@ -1,6 +1,6 @@
-module GlobalTreePrinter where
+module Printer.GlobalTree where
 
-import DotPrinter
+import Printer.Dot
 
 import qualified Eval as E
 import Syntax

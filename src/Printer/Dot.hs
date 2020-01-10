@@ -1,4 +1,4 @@
-module DotPrinter where
+module Printer.Dot where
 
 import Data.Text.Lazy (Text, pack, unpack, replace)
 import Data.Graph.Inductive (Gr, mkGraph)

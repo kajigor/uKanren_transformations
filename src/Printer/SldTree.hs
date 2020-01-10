@@ -1,7 +1,7 @@
 
-module SldTreePrinter where
+module Printer.SldTree where
 
-import DotPrinter
+import Printer.Dot
 import qualified Eval as E
 import Syntax
 import CPD

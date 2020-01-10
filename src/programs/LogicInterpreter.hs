@@ -5,15 +5,15 @@ import CPD
 import Control.Monad
 import Data.Maybe
 import Data.List
-import DotPrinter
+import Printer.Dot
 import qualified Eval as E
 import qualified GlobalControl as GC
-import GlobalTreePrinter
+import Printer.GlobalTree
 import List
 import Num
 import Programs
 import Purification
-import SldTreePrinter
+import Printer.SldTree
 import Syntax
 import Text.Printf
 import Debug.Trace

@@ -194,8 +194,26 @@ unit_variant = do -- TODO more  tests
                              ]
 
 unit_renaming = do -- TODO more tests
-  manyAssert True  isRenaming [ (f [x, y], f [x, x]) ]
-  manyAssert False isRenaming [ (f [x, x], f [x, y]) ]
+  manyAssert True  isRenaming [ (f [x, y], f [x, x])
+                              , (f [x], f [y])
+                              ]
+  manyAssert False isRenaming [ (f [x, x], f [x, y])
+                              , (f [x, x], g [x, x])
+                              ]
+
+unit_ground = do 
+  test isGround x False 
+  test isGround (n [x, y]) False 
+  test isGround (m [n [], n []]) True 
+  test isGround (app nil (cons (n []) nil) (cons (m [n []]) nil)) True 
+  test isGround (app nil (cons x nil) (cons (m [n []]) nil)) False
+  test isGround (app nil (cons (n []) nil) (cons (m [x]) nil)) False 
+
+unit_subconjs = do 
+  test (flip subconjs 0) [1, 2, 3] [[]]
+  test (flip subconjs 1) [1, 2, 3] [[1], [2], [3]]
+  test (flip subconjs 2) [1, 2, 3] [[1, 2], [1, 3], [2, 3]]
+  test (flip subconjs 3) ([] :: [Int]) []
 
 
 x = V "x"

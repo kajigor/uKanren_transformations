@@ -17,8 +17,8 @@ import Eval
 import Data.Char
 import Data.Maybe
 import GlobalControl
-import SldTreePrinter
-import DotPrinter
+import Printer.SldTree
+import Printer.Dot
 import Miscellaneous
 
 type Set = Set.Set

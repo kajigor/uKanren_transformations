@@ -13,13 +13,13 @@ import           Stream
 import           Syntax
 import           Test        hiding (main)
 import           Tree
-import           TreePrinter
+import           Printer.Tree
 import           Stlc
 import           Programs
 import           Text.Printf
 import           ConjRetriever
 import Miscellaneous
-import DotPrinter
+import Printer.Dot
 
 upTo d x =
   trace (printf "\nDepth: %s" $ show d) $

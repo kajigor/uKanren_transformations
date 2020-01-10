@@ -39,6 +39,19 @@ unify :: Maybe Sigma -> Ts -> Ts -> Maybe Sigma
 unify = unifyG occursCheck where
   occursCheck u' t s = if elem u' $ fv t then Nothing else s
 
+unifySubsts :: Sigma -> Sigma -> Maybe Sigma 
+unifySubsts one two = 
+    -- trace ("one: " ++ show one ++ "\ntwo: " ++ show two) $  
+    let maximumVar = max (findUpper one) (findUpper two) in 
+    let one' = manifactureTerm maximumVar one in 
+    let two' = manifactureTerm maximumVar two in 
+    unify (Just s0) one' two' 
+  where
+    findUpper [] = 0 
+    findUpper lst = maximum $ map fst lst  
+    supplement upper lst = lst --  [(x, y) | x <- [0..upper], let y = maybe (V x) id (lookup x lst)]
+    manifactureTerm upper subst = C "ManifacturedTerm" $ map snd $ supplement upper subst
+
 unifyNoOccursCheck :: Maybe Sigma -> Ts -> Ts -> Maybe Sigma
 unifyNoOccursCheck = unifyG (\_ _ -> id)
 

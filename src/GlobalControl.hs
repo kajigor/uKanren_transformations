@@ -13,8 +13,8 @@ import Debug.Trace
 import qualified Data.Set as Set
 import qualified Tree as T
 import Miscellaneous
-import DotPrinter
-import SldTreePrinter
+import Printer.Dot
+import Printer.SldTree
 import Control.Exception.Base
 import Data.Tuple
 import Data.List

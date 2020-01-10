@@ -10,17 +10,17 @@ import Control.Monad
 import Data.Maybe
 import Data.Foldable (for_)
 import Data.List
-import DotPrinter
+import Printer.Dot
 import qualified Eval as E
 import qualified GlobalControl as GC
-import GlobalTreePrinter
+import Printer.GlobalTree
 import List
 import LogicInterpreter
 import Num
 import Programs
 import Purification
 import Residualize
-import SldTreePrinter
+import Printer.SldTree
 import Syntax
 import Text.Printf
 import Debug.Trace

@@ -1,6 +1,6 @@
-module TreePrinter where
+module Printer.TreePrinter where
 
-import DotPrinter
+import Printer.Dot
 import qualified Eval as E
 import Syntax
 import Tree
