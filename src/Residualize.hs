@@ -5,12 +5,8 @@ import Tree
 import Driving
 import qualified Eval as E
 import Data.List
-import Data.Maybe
 import qualified Data.Set        as Set
 import qualified Data.Map.Strict as Map
-import Debug.Trace
-import List hiding (c)
-import Text.Printf
 
 
 toX :: Term S -> Term X

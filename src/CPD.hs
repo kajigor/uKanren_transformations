@@ -10,17 +10,13 @@ import Prelude hiding (lookup, showList)
 import Syntax
 import qualified Eval as E
 import Text.Printf
-import Control.Monad
 import Data.Maybe
-import Data.List (find, nub, intersect, partition, subsequences)
-import Data.Char
+import Data.List (find, nub, intersect)
 import Purification
-import qualified Data.Map.Strict as Map
 import Debug.Trace
-import Data.List
 import qualified Driving as D
 import qualified Tree as T
-import Miscellaneous
+import Util.Miscellaneous
 import Embed 
 
 -- trace :: String -> a -> a

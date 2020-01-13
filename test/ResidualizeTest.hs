@@ -4,7 +4,7 @@ import Residualize
 import Syntax
 import Debug.Trace
 import Text.Printf
-import List
+import Program.List
 import Driving
 import DrivingTest
 

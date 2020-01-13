@@ -1,9 +1,9 @@
-module Prop where 
+module Program.Prop where 
 
 import Syntax
-import Bool 
-import List 
-import Num
+import Program.Bool 
+import Program.List 
+import Program.Num
 import Prelude hiding (succ)
 
 fm  = C "conj" [C "var" [C "x" []], C "neg" [C "var" [C "x" []]]] -- always fails

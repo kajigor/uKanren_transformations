@@ -6,7 +6,7 @@ import qualified CPD
 import Purification  
 import Debug.Trace 
 import Embed
-import Miscellaneous (fst3, trd3)
+import Util.Miscellaneous (fst3)
 import Data.Maybe (mapMaybe)
 import Text.Printf (printf)
 import Driving (generalizeGoals)

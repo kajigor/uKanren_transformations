@@ -1,4 +1,4 @@
-module IsTest where
+module Program.IsTest where
 
 import Syntax
 

@@ -5,10 +5,10 @@ import Stream
 import Eval
 import Driving
 import Tree
-import List
-import Num
-import Bool
-import Sort
+import Program.List
+import Program.Num
+import Program.Bool
+import Program.Sort
 import Prelude hiding (succ)
 
 reify :: Eq a => [(a, Term a)] -> Term a -> Term a

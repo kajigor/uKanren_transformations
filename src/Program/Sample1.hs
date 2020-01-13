@@ -1,4 +1,4 @@
-module Sample1 where
+module Program.Sample1 where
 
 import Syntax
 

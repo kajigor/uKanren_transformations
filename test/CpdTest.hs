@@ -2,9 +2,9 @@
 
 module CpdTest (main, tests) where
 
-import Sort
-import Bool
-import Bridge
+import Program.Sort
+import Program.Bool
+import Program.Bridge
 import CPD
 import Control.Monad
 import Data.Maybe
@@ -14,10 +14,10 @@ import Printer.Dot
 import qualified Eval as E
 import qualified GlobalControl as GC
 import Printer.GlobalTree
-import List
+import Program.List
 import LogicInterpreter
-import Num
-import Programs
+import Program.Num
+import Program.Programs
 import Purification
 import Residualize
 import Printer.SldTree
@@ -28,11 +28,11 @@ import Prelude hiding (succ)
 import qualified Data.Set as Set
 import CpdResidualization
 import System.Directory
-import qualified Bottles
-import qualified Desert
-import qualified Sudoku4x4
+import qualified Program.Bottles
+import qualified Program.Desert
+import qualified Program.Sudoku4x4
 import qualified OCanrenize as OC
-import Miscellaneous
+import Util.Miscellaneous
 import Unify
 import Path
 import ConjRetriever

@@ -1,10 +1,10 @@
-module Sort where
+module Program.Sort where
 
 import Prelude hiding (succ, min, max)
 import Syntax
-import Bool
-import Num
-import List hiding (a, b)
+import Program.Bool
+import Program.Num
+import Program.List hiding (a, b)
 
 minmaxo :: G a -> G a
 minmaxo g =

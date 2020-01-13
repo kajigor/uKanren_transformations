@@ -4,14 +4,12 @@ import Test.HUnit (Assertion, (@?=))
 
 import qualified PartialDeduction as PD
 import Syntax 
-import CPD
-import Miscellaneous
-import Programs
-import List 
+import Program.Programs
+import Program.List 
 import Text.Printf
 import System.Directory
 import Printer.Dot
-import Printer.PDTree
+import Printer.PDTree ()
 import System.Process (system)
 
 test :: (Eq b, Show b) => (a -> b) -> a -> b -> Assertion

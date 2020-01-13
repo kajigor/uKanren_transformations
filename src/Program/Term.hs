@@ -5,9 +5,8 @@
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
 
-module Term where
+module Program.Term where
 
-import Data.Maybe
 import Data.List
 import Text.Printf
 

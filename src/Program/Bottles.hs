@@ -1,4 +1,4 @@
-module Bottles where
+module Program.Bottles where
 
 import Syntax
 

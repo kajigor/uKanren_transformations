@@ -33,12 +33,12 @@ dependencies:
 - timeit
 - tasty-discover
 
+ghc-options:
+  - -fwarn-unused-imports
 
 library:
   source-dirs: 
   - src/
-  - src/programs/
-  - src/utils
 
 # executables:
 #   uKanren-transformation-exe:

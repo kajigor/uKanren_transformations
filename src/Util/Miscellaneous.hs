@@ -1,4 +1,4 @@
-module Miscellaneous where
+module Util.Miscellaneous where
 
 import Data.List
 

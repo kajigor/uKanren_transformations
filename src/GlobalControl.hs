@@ -3,21 +3,14 @@ module GlobalControl where
 import qualified CPD
 import Syntax
 import Prelude hiding (sequence)
-import Data.Maybe (isJust)
-import Data.List (find, partition, inits, intercalate)
+import Data.List (find, partition)
 import qualified Eval as E
-import qualified Driving as D
 import Purification
 import Text.Printf
 import Debug.Trace
-import qualified Data.Set as Set
 import qualified Tree as T
-import Miscellaneous
-import Printer.Dot
-import Printer.SldTree
-import Control.Exception.Base
+import Util.Miscellaneous
 import Data.Tuple
-import Data.List
 import Embed 
 
 type Descend = CPD.Descend

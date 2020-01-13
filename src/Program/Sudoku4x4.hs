@@ -1,4 +1,4 @@
-module Sudoku4x4 where
+module Program.Sudoku4x4 where
 
 import Syntax
 

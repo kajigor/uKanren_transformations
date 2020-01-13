@@ -2,7 +2,6 @@ module Printer.GlobalTree where
 
 import Printer.Dot
 
-import qualified Eval as E
 import Syntax
 import CPD hiding (Leaf)
 import GlobalControl

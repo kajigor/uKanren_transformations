@@ -1,8 +1,8 @@
-module List where
+module Program.List where
 
 import Syntax
-import Num
-import Bool
+import Program.Num
+import Program.Bool
 import Prelude hiding (succ)
 import Text.Printf
 

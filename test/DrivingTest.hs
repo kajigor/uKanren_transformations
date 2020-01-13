@@ -1,9 +1,9 @@
 module DrivingTest where
 
 import Driving
-import List
+import Program.List
 import Syntax
-import Miscellaneous
+import Util.Miscellaneous
 
 tc = drive (appendo
               (fresh ["q", "r", "s", "t", "p"]

@@ -1,8 +1,8 @@
-module Num where
+module Program.Num where
 
 import Prelude hiding (succ)
 import Syntax
-import Bool
+import Program.Bool
 import Text.Printf
 
 peanify :: Integer -> Term a

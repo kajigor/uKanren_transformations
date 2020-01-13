@@ -3,12 +3,10 @@
 module InductiveCheck where 
 
 import Syntax 
-import Debug.Trace
 import CPD 
 import Purification
 import Eval 
 import Data.Maybe
-import Data.List
 
 newtype IndWrap a = IndWrap { unwrap :: a }
  

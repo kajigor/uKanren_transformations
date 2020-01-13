@@ -1,4 +1,4 @@
-module Desert where
+module Program.Desert where
 
 import Syntax
 

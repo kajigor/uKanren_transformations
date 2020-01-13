@@ -1,4 +1,4 @@
-module Something where
+module Program.Something where
 
 import Syntax
 

@@ -1,10 +1,7 @@
-module Bridge where
+module Program.Bridge where
 
 import Prelude hiding (succ)
 import Syntax
-import Bool
-import Debug.Trace
-
 
 query = topLevelBigBridge
 

@@ -1,10 +1,7 @@
 module Printer.TreePrinter where
 
 import Printer.Dot
-import qualified Eval as E
-import Syntax
 import Tree
-import Text.Printf
 
 instance DotPrinter Tree where
   labelNode t@(Call _ ch _ _)  = addChild    t ch

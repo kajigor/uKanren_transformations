@@ -6,7 +6,6 @@ import Control.Monad
 import Data.List
 import Syntax
 import Stream
-import Debug.Trace
 import Text.Printf
 
 -- States

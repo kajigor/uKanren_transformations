@@ -1,4 +1,4 @@
-module TreeGen where
+module Program.TreeGen where
 
 import Syntax
 

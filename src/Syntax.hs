@@ -8,8 +8,6 @@ import Data.List
 import Text.Printf
 import Data.Char
 
-import Debug.Trace
-
 type X    = String -- Syntactic variables
 type S    = Int    -- Semantic variables
 type Name = String -- Names of variables/definitions

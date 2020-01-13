@@ -1,7 +1,7 @@
-module Programs where
+module Program.Programs where
 
-import List
-import Num
+import Program.List
+import Program.Num
 import Syntax
 import Prelude hiding (succ)
 

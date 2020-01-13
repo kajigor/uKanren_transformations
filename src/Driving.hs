@@ -3,20 +3,16 @@
 module Driving where
 
 import           Control.Exception.Base
-import           Control.Monad          (mplus)
 import           Data.Foldable
 import           Data.List hiding (group, groupBy)
 import qualified Data.Map.Strict        as Map
 import           Data.Maybe
 import qualified Data.Set               as Set
-import           Debug.Trace
 import qualified Eval                   as E
-import           List hiding (a, b, d)
 import           Stream
 import           Syntax
 import           Tree
-import           Text.Printf
-import           Miscellaneous
+import           Util.Miscellaneous
 
 type TreeContext = (Set.Set Id, Map.Map Id [S], [Id])
 

@@ -1,4 +1,4 @@
-module Stlc where
+module Program.Stlc where
 
 import Prelude hiding (abs)
 import Syntax

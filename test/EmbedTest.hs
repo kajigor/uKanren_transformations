@@ -2,7 +2,7 @@ module EmbedTest where
 
 import Syntax
 import Driving
-import Miscellaneous
+import Util.Miscellaneous
 
 checkStep = Invoke "cS"
 step = Invoke "s"

@@ -7,8 +7,8 @@ import InductiveCheck
 import Text.Printf
 import TestFramework
 
-import List 
-import Num
+import Program.List 
+import Program.Num
 
 termOrderTest = do 
   putStrLn "termOrderTest\n"

@@ -2,15 +2,9 @@ module Purification where
 
 import Syntax
 import Tree
-import Driving
 import Data.List
-import Data.Maybe
 import qualified Data.Set        as Set
 import qualified Data.Map.Strict as Map
-import Debug.Trace
-import List hiding (c)
-import Text.Printf
-import Miscellaneous
 
 type Set = Set.Set
 type Map = Map.Map

@@ -1,4 +1,4 @@
-module Path where
+module Program.Path where
 
 import Syntax
 

@@ -4,7 +4,6 @@
 
 module CpdResidualization where
 
-import Control.Monad.State
 import Syntax
 import Text.Printf
 import Data.List
@@ -17,9 +16,7 @@ import Eval
 import Data.Char
 import Data.Maybe
 import GlobalControl
-import Printer.SldTree
-import Printer.Dot
-import Miscellaneous
+import Util.Miscellaneous
 
 type Set = Set.Set
 type Map = Map.Map

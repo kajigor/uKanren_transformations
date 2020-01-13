@@ -6,13 +6,7 @@ import System.Process
 import System.IO
 import System.IO.Temp
 import Data.Char
-import Data.List (intercalate)
-import Num
-import Sort
 import Syntax
-import Driving
-import Residualize
-import Stlc
 import Text.Printf
 
 class OCanren a where

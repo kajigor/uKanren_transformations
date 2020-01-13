@@ -21,7 +21,6 @@ import Data.GraphViz.Attributes.Complete (
     BgColor,
     Shape,
     Label,
-    ViewPort,
     RankDir,
     Style,
     FillColor
@@ -34,7 +33,6 @@ import Data.GraphViz.Attributes.Complete (
   toWColor,
   )
 
-import qualified Eval as E
 import Syntax
 import Text.Printf
 import qualified Data.Set as Set

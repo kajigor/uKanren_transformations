@@ -1,4 +1,4 @@
-module ConjRetriever where
+module Util.ConjRetriever where
 
 import Syntax
 import Tree

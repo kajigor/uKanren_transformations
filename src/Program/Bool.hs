@@ -1,4 +1,4 @@
-module Bool where
+module Program.Bool where
 
 import Syntax
 

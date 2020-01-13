@@ -1,22 +1,6 @@
-module LogicInterpreter where
+module Program.LogicInterpreter where
 
-import Bool
-import CPD
-import Control.Monad
-import Data.Maybe
-import Data.List
-import Printer.Dot
-import qualified Eval as E
-import qualified GlobalControl as GC
-import Printer.GlobalTree
-import List
-import Num
-import Programs
-import Purification
-import Printer.SldTree
 import Syntax
-import Text.Printf
-import Debug.Trace
 import Prelude hiding (succ)
 
 {-

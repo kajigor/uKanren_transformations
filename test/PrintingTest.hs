@@ -18,7 +18,7 @@ import           Stlc
 import           Programs
 import           Text.Printf
 import           ConjRetriever
-import Miscellaneous
+import Util.Miscellaneous
 import Printer.Dot
 
 upTo d x =
