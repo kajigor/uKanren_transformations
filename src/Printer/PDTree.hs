@@ -15,7 +15,7 @@ instance DotPrinter PDTree where
   labelNode t               = addLeaf     t
 
 instance Dot PDTree where
-  dot (Leaf gs) = printf "Leaf <BR/> %s" (dot gs) 
+  dot (Leaf gs s) = printf "Leaf <BR/> %s <BR/> %s" (dot gs) (E.dotSigma s)
   dot Fail = "_|_"
   dot (Success s) = printf "S <BR/> %s" (E.dotSigma s)
   dot (Or _ g _) = printf "O <BR/> %s" (dot $ getCurr g)

@@ -1,4 +1,4 @@
-module Printer.TreePrinter where
+module Printer.Tree where
 
 import Printer.Dot
 import Tree

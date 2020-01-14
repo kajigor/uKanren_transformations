@@ -40,31 +40,7 @@ library:
   source-dirs: 
   - src/
 
-# executables:
-#   uKanren-transformation-exe:
-#     main:                Main.hs
-#     source-dirs:
-#     - app
-#     - test
-#     ghc-options:
-#     - -threaded
-#     - -rtsopts
-#     - -with-rtsopts=-N
-#     dependencies:
-#     - uKanren-transformation
-
 tests:
-  # uKanren-transformation-test:
-  #   main:                CpdTests.hs
-  #   source-dirs:         
-  #   - test/
-  #   - test/ocamlTest/
-  #   ghc-options:
-  #   - -threaded
-  #   - -rtsopts
-  #   - -with-rtsopts=-N
-  #   dependencies:
-  #   - uKanren-transformation
   uKanren-transformation-test:
     main:                Test.hs
     source-dirs:         test/auto
