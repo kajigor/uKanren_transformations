@@ -22,16 +22,18 @@ unifyG f st@(Just subst) u v =
   -- trace (printf "Unifying\n%s\nwith\n%s\nin\n%s" (show u) (show v) (show st)) $
   unify' (walk u subst) (walk v subst)  where
     unify' (V u') (V v') | u' == v' = Just subst
+    unify' (V u') (V v') = Just $ (min u' v', V $ max u' v') : subst 
     unify' (V u') t = f u' t $ Just $ (u', v) : subst
     unify' t (V v') = f v' t $ Just $ (v', u) : subst
     unify' (C a as) (C b bs) | a == b && length as == length bs =
       foldl (\ st' (u', v') -> unifyG f st' u' v') st $ zip as bs
     unify' _ _ = Nothing
-    walk x@(V v') s =
-      case lookup v' s of
-        Nothing -> x
-        Just t  -> walk t s
-    walk u' _ = u'
+    
+walk x@(V v') s =
+  case lookup v' s of
+    Nothing -> x
+    Just t  -> walk t s
+walk u' _ = u'
 
 -- Unification
 unify :: Maybe Sigma -> Ts -> Ts -> Maybe Sigma
