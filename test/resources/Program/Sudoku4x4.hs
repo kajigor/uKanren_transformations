@@ -31,7 +31,7 @@ validField = C "s4x4" [ n2, n3, n1, n4
 
 sudoku4x4 =
  (\last_goal ->
-  Let (def "not_eq" ["a", "b", "q97"] (
+  Let (Def "not_eq" ["a", "b", "q97"] (
     ((V "a" === C "n1" []) &&&
     (((V "b" === C "n1" []) &&&
     (V "q97" === C "false" [])) |||
@@ -69,7 +69,7 @@ sudoku4x4 =
     ((V "b" === C "n4" []) &&&
     (V "q97" === C "false" []))))
   )) (
-  Let (def "all_different" ["a", "b", "c", "d", "q69"] (
+  Let (Def "all_different" ["a", "b", "c", "d", "q69"] (
     fresh ["q67", "q68"] (
       (call "not_eq" [V "a", V "b", V "q67"]) &&&
       (fresh ["q73", "q74"] (
@@ -102,7 +102,7 @@ sudoku4x4 =
       ((V "q67" === C "true" []) &&&
       (V "q69" === V "q68"))))
   )) (
-  Let (def "check_sudoku" ["sudoku", "q0"] (
+  Let (Def "check_sudoku" ["sudoku", "q0"] (
     fresh ["a11", "a12", "a13", "a14", "a21", "a22", "a23", "a24", "a31", "a32", "a33", "a34", "a41", "a42", "a43", "a44"] (
       (V "sudoku" === C "s4x4" [V "a11", V "a12", V "a13", V "a14", V "a21", V "a22", V "a23", V "a24", V "a31", V "a32", V "a33", V "a34", V "a41", V "a42", V "a43", V "a44"]) &&&
       (fresh ["q1", "q2"] (

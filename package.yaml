@@ -43,7 +43,9 @@ library:
 tests:
   uKanren-transformation-test:
     main:                Test.hs
-    source-dirs:         test/auto
+    source-dirs:         
+    - test/auto
+    - test/resources
     dependencies:
     - uKanren-transformation
     - hedgehog

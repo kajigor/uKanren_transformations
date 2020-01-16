@@ -11,7 +11,7 @@ trueo = C "true"  []
 nando :: G a -> G a
 nando g =
   Let
-    ( def "nando" ["a", "b", "c"]
+    ( Def "nando" ["a", "b", "c"]
         (
           ( a === falso &&& b === falso &&& c === trueo ) |||
           ( a === falso &&& b === trueo &&& c === trueo ) |||
@@ -24,7 +24,7 @@ nando g =
 noto :: G a -> G a
 noto g =
   Let 
-    ( def "noto" ["a", "na"] 
+    ( Def "noto" ["a", "na"] 
       ( 
         call "nando" [a, a, na] 
       ) 
@@ -34,7 +34,7 @@ noto g =
 oro :: G a -> G a
 oro g =
   Let
-    ( def "oro" ["a", "b", "c"]
+    ( Def "oro" ["a", "b", "c"]
         (
           fresh ["aa", "bb"]
             (
@@ -49,7 +49,7 @@ oro g =
 ando :: G a -> G a
 ando g =
   Let 
-    ( def "ando" ["a", "b", "c"] 
+    ( Def "ando" ["a", "b", "c"] 
       (
         fresh ["ab"] 
         (

@@ -59,7 +59,7 @@ vident = ('x' :) . show
 
 residualize :: (TreeContext, Tree, [Id]) -> (G X, [String])
 residualize (tc, t, args) =
-  (E.postEval' (vident <$> args) $ residualizeGen [] tc (simpl t) [], vident <$> args)
+  (E.postEval (vident <$> args) $ residualizeGen [] tc (simpl t) [], vident <$> args)
   where
     residualizeGen _ _ Fail         _ = Invoke failure []
     residualizeGen g _ (Success s ) ubst =
@@ -78,5 +78,5 @@ residualize (tc, t, args) =
       if Set.member id sr
       then let as = reverse $ args Map.! id in
            let fargs = vident <$> as in
-           Let (def (fident id) fargs g) (Invoke (fident id) $ map V fargs)
+           Let (Def (fident id) fargs g) (Invoke (fident id) $ map V fargs)
       else g

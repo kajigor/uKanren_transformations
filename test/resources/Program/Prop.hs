@@ -33,7 +33,7 @@ plainQueryConj = evaloConj $ fresh ["st", "fm1", "fm2"] (call "evaloConj" $ map 
 
 evaloConj g = 
   Let 
-    ( def "evaloConj" ["st", "fm1", "fm2"] 
+    ( Def "evaloConj" ["st", "fm1", "fm2"] 
       ( 
         call "evalo" [V "st", V "fm1", trueo] &&& call "evalo" [V "st", V "fm2", trueo]
       )
@@ -41,7 +41,7 @@ evaloConj g =
 
 evalo' g = 
   Let 
-    ( def "evalo" ["st", "fm", "u"] 
+    ( Def "evalo" ["st", "fm", "u"] 
       (
         fresh ["x", "y"]
         (   
@@ -88,7 +88,7 @@ evalo' g =
   
 elemo g = 
   Let 
-    ( def "elemo" ["n", "s", "v"] 
+    ( Def "elemo" ["n", "s", "v"] 
       (
         fresh ["h", "t", "n'"]
         (
@@ -101,7 +101,7 @@ elemo g =
 
 evalo'' g = 
   Let
-    ( def "evalo" ["st", "fm", "u"] 
+    ( Def "evalo" ["st", "fm", "u"] 
       (
         fresh ["x", "y", "v", "w"] 
         (
@@ -134,7 +134,7 @@ evalo'' g =
 
 evalo''' g = 
   Let
-    ( def "evalo" ["st", "fm", "u"] 
+    ( Def "evalo" ["st", "fm", "u"] 
       (
         fresh ["x", "y", "v", "w"] 
         (
@@ -167,7 +167,7 @@ evalo''' g =
       
 plainEvalo g = 
   Let
-    ( def "evalo" ["st", "fm", "u"] 
+    ( Def "evalo" ["st", "fm", "u"] 
       (
         fresh ["x", "y", "v", "w"] 
         (
@@ -194,7 +194,7 @@ plainEvalo g =
       [st, fm, u, x, y, v, w] = map V ["st", "fm", "u", "x", "y", "v", "w"]
       ando g = 
         Let 
-          ( def "ando" ["x", "y", "v"] 
+          ( Def "ando" ["x", "y", "v"] 
             (
               x === trueo &&& y === trueo &&& v === trueo ||| 
               x === falso &&& y === trueo &&& v === falso ||| 
@@ -204,7 +204,7 @@ plainEvalo g =
           ) g
       oro g = 
         Let 
-          ( def "oro" ["x", "y", "v"] 
+          ( Def "oro" ["x", "y", "v"] 
             (
               x === trueo &&& y === trueo &&& v === trueo ||| 
               x === falso &&& y === trueo &&& v === trueo ||| 
@@ -215,7 +215,7 @@ plainEvalo g =
 
 evalo g = 
   Let
-    ( def "evalo" ["st", "fm", "u"] 
+    ( Def "evalo" ["st", "fm", "u"] 
       (
         fresh ["x", "y", "v", "w"] 
         (

@@ -2,7 +2,7 @@ module PartialDeduction where
 
 import Syntax 
 import qualified Eval as E 
-import qualified CPD
+import qualified CPD.LocalControl as LC
 import Purification  
 import Embed
 import Util.Miscellaneous (fst3, show')
@@ -15,7 +15,7 @@ import Debug.Trace (trace)
 
 data PDTree = Fail
             | Success E.Sigma
-            | Or [PDTree] (CPD.Descend (G S)) E.Sigma 
+            | Or [PDTree] (LC.Descend (G S)) E.Sigma 
             | Conj [PDTree] [G S] E.Sigma 
             | Gen PDTree (G S)
             | Leaf (G S) E.Sigma
@@ -25,12 +25,12 @@ topLevel :: G X -> (PDTree, G S, [S])
 topLevel goal = 
     let (goal', defs) = takeOutLets goal in
     let gamma = E.updateDefsInGamma E.env0 defs in
-    let (logicGoal, gamma', names) = E.preEval' gamma goal' in
+    let (logicGoal, gamma', names) = E.preEval gamma goal' in
     let nodes = [] in 
-    let descend = CPD.Descend logicGoal [] in 
+    let descend = LC.Descend logicGoal [] in 
     go descend gamma' nodes E.s0 
   where 
-    go d@(CPD.Descend goal ancs) env@(x, y, z) seen state = 
+    go d@(LC.Descend goal ancs) env@(x, y, z) seen state = 
       let treeResult = 
             if any (isRenaming goal) seen 
             then
@@ -40,12 +40,12 @@ topLevel goal =
                 Just g -> 
                   let ([newGoal], gen1, gen2, names) = generalizeGoals z [g] [goal] in 
                   let env' = (x, y, names) in
-                  let (ch, _, _) = go (CPD.Descend newGoal ancs) env' seen state in 
+                  let (ch, _, _) = go (LC.Descend newGoal ancs) env' seen state in 
                   Gen ch newGoal
                 Nothing -> 
-                  let (unfolded, gamma) = CPD.oneStepUnfold goal env in 
-                  let normalized = CPD.normalize unfolded in 
-                  let unified = mapMaybe (CPD.unifyStuff state) normalized in
+                  let (unfolded, gamma) = LC.oneStepUnfold goal env in 
+                  let normalized = LC.normalize unfolded in 
+                  let unified = mapMaybe (LC.unifyStuff state) normalized in
                   Or (map (\(g, s') -> 
                         if null g 
                         then 
@@ -53,7 +53,7 @@ topLevel goal =
                           then Fail 
                           else Success s'
                         else 
-                          Conj (map (\h -> fst3 $ go (CPD.Descend h (goal : ancs)) gamma (goal : seen) s') g) g s') unified) 
+                          Conj (map (\h -> fst3 $ go (LC.Descend h (goal : ancs)) gamma (goal : seen) s') g) g s') unified) 
                     d
                     state 
       in (treeResult, V 1 === V 2, [4, 5, 6, 7])
@@ -62,12 +62,12 @@ nonConjunctive :: G X -> (PDTree, G S, [S])
 nonConjunctive goal = 
     let (goal', defs) = takeOutLets goal in
     let gamma = E.updateDefsInGamma E.env0 defs in
-    let (logicGoal, gamma', names) = E.preEval' gamma goal' in
+    let (logicGoal, gamma', names) = E.preEval gamma goal' in
     let nodes = [] in 
-    let descend = CPD.Descend logicGoal [] in 
+    let descend = LC.Descend logicGoal [] in 
     go descend gamma' nodes E.s0 
   where 
-    go d@(CPD.Descend goal ancs) env@(x, y, z) seen state = 
+    go d@(LC.Descend goal ancs) env@(x, y, z) seen state = 
       let treeResult = 
             if any (isRenaming goal) seen 
             then
@@ -77,12 +77,12 @@ nonConjunctive goal =
                 Just g -> 
                   let ([newGoal], gen1, gen2, names) = generalizeGoals z [g] [goal] in 
                   let env' = (x, y, names) in
-                  let (ch, _, _) = go (CPD.Descend newGoal ancs) env' seen state in 
+                  let (ch, _, _) = go (LC.Descend newGoal ancs) env' seen state in 
                   Gen ch newGoal
                 Nothing -> 
-                  let (unfolded, gamma) = CPD.oneStepUnfold goal env in 
-                  let normalized = CPD.normalize unfolded in 
-                  let unified = mapMaybe (CPD.unifyStuff state) normalized in
+                  let (unfolded, gamma) = LC.oneStepUnfold goal env in 
+                  let normalized = LC.normalize unfolded in 
+                  let unified = mapMaybe (LC.unifyStuff state) normalized in
                   
                   trace (printf "\nIn go\ngoal: %s\nstate: %s\n" (show goal) (show state)) $
                   let helpful = findConflicting $ map snd unified in 
@@ -95,7 +95,7 @@ nonConjunctive goal =
                           then Fail 
                           else Success s'
                         else 
-                          let ch = map (\h -> fst3 $ go (CPD.Descend h (goal : ancs)) gamma (goal : seen) s') g in 
+                          let ch = map (\h -> fst3 $ go (LC.Descend h (goal : ancs)) gamma (goal : seen) s') g in 
                           let substs = map collectSubsts ch in 
                           trace (printf "\nCollected substs\n%s\n" (show' substs)) $ 
                           Conj ch g s') unified) 

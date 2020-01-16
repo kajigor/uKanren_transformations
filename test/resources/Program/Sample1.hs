@@ -8,7 +8,7 @@ x = V "x"
 
 fAndS :: G a -> G a
 fAndS g =
-  Let (def "fAndS" ["x"]
+  Let (Def "fAndS" ["x"]
         (call "f" [x] &&& call "s" [x])
       ) $ f $ s g
 
@@ -16,12 +16,12 @@ fAndS g =
 
 f :: G a -> G a
 f g =
-  Let (def "f" ["x"]
+  Let (Def "f" ["x"]
           (x === C "5" [] ||| call "f" [x])
       ) g
 
 s :: G a -> G a
 s g =
-  Let (def "s" ["x"]
+  Let (Def "s" ["x"]
           (x === C "6" [] ||| call "s" [x])
       ) g

@@ -3,7 +3,7 @@ module Program.Something where
 import Syntax
 
 tree last_goal =
-  Let (def "add" ["a", "b", "q14"] (
+  Let (Def "add" ["a", "b", "q14"] (
     ((V "a" === C "o" []) &&&
     (V "b" === V "q14")) |||
     (fresh ["x"] (
@@ -12,7 +12,7 @@ tree last_goal =
           (V "q14" === C "s" [V "q16"]) &&&
           (call "add" [V "x", V "b", V "q16"])))))
   )) (
-  Let (def "value" ["e", "q10"] (
+  Let (Def "value" ["e", "q10"] (
     ((V "e" === C "q2" []) &&&
     (V "q10" === C "some" [C "s" [C "s" [C "o" []]]])) |||
     ((V "e" === C "q5" []) &&&
@@ -20,7 +20,7 @@ tree last_goal =
     ((V "e" === C "err" []) &&&
     (V "q10" === C "none" []))
   )) (
-  Let (def "sum" ["l", "q0"] (
+  Let (Def "sum" ["l", "q0"] (
     ((V "l" === C "nil" []) &&&
     (V "q0" === C "some" [C "o" []])) |||
     (fresh ["x", "xs"] (

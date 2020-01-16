@@ -90,11 +90,11 @@ purification_old (goal, args) =
 
   {-------------------------------------------}
   purifyInternalLets :: G X -> G X
-  purifyInternalLets (g1 :\/: g2)        = purifyInternalLets g1 ||| purifyInternalLets g2
-  purifyInternalLets (g1 :/\: g2)        = purifyInternalLets g1 &&& purifyInternalLets g2
-  purifyInternalLets (Fresh n g)         = Fresh n $ purifyInternalLets g
-  purifyInternalLets (Let (n, a, g1) g2) = Let (n, a, totalPurification g1 a) $ purifyInternalLets g2
-  purifyInternalLets g                   = g
+  purifyInternalLets (g1 :\/: g2)          = purifyInternalLets g1 ||| purifyInternalLets g2
+  purifyInternalLets (g1 :/\: g2)          = purifyInternalLets g1 &&& purifyInternalLets g2
+  purifyInternalLets (Fresh n g)           = Fresh n $ purifyInternalLets g
+  purifyInternalLets (Let (Def n a g1) g2) = Let (Def n a (totalPurification g1 a)) $ purifyInternalLets g2
+  purifyInternalLets g                     = g
 
   {-------------------------------------------}
   totalPurification :: G X -> [X] -> G X
@@ -123,22 +123,22 @@ purificationWithErasure x = (g''', args', defs''') where
 
   (goalWithoutLets, args, defs) = justTakeOutLets x
 
-  mainFuncs      = defToRules ("main", args, goalWithoutLets)
-  internalFuncs  = map defToRules defs
-  initialErasure = Map.fromList $ map (\(n,a,_) -> (n, [1..length a])) defs
-  erasure        = removeRedundantArgs (mainFuncs ++ concat internalFuncs) initialErasure
+  mainFuncs        = defToRules (Def "main" args goalWithoutLets)
+  internalFuncs    = map defToRules defs
+  initialErasure   = Map.fromList $ map (\(Def n a _) -> (n, [1..length a])) defs
+  erasure          = removeRedundantArgs (mainFuncs ++ concat internalFuncs) initialErasure
 
-  mainFuncs'     = map (applyErasureToRule erasure) mainFuncs
-  internalFuncs' = map (map (applyErasureToRule erasure)) internalFuncs
+  mainFuncs'       = map (applyErasureToRule erasure) mainFuncs
+  internalFuncs'   = map (map (applyErasureToRule erasure)) internalFuncs
 
-  defs'          = map rulesToDef internalFuncs'
-  (_,args',g')   = rulesToDef mainFuncs'
+  defs'            = map rulesToDef internalFuncs'
+  (Def _ args' g') = rulesToDef mainFuncs'
 
-  defs''         = map (\(n, a, g) -> (n, a, removeSuccess $ removeLinks (Set.fromList a) g)) defs'
-  g''            = removeSuccess $ removeLinks (Set.fromList args') g'
+  defs''           = map (\(Def n a g) -> (Def n a (removeSuccess $ removeLinks (Set.fromList a) g))) defs'
+  g''              = removeSuccess $ removeLinks (Set.fromList args') g'
 
-  defs'''        = map (\(n, a, g) -> (n, a, renameFreshVars $ closeByFresh a g)) defs''
-  g'''           = renameFreshVars $ closeByFresh args' g''
+  defs'''          = map (\(Def n a g) -> (Def n a (renameFreshVars $ closeByFresh a g))) defs''
+  g'''             = renameFreshVars $ closeByFresh args' g''
 
   {-------------------------------------------}
   ruleToOcanren :: [X] -> Rule -> G X
@@ -152,7 +152,7 @@ purificationWithErasure x = (g''', args', defs''') where
   rulesToDef rules@(((n,a),_):_) =
     let v = map (toV "z") [1..length a] in
     let g = foldl1 (|||) $ map (ruleToOcanren v) rules in
-    (n, v, g)
+    Def n v g
 
   {-------------------------------------------}
   removeSuccess :: G X -> G X
@@ -166,13 +166,13 @@ conservativePurificationWithErasure x = (goalAfterPurification, args, defsAfterP
 
   (goalWithoutLets, args, defs) = justTakeOutLets x
 
-  mainFuncs      = defToRules ("main", args, goalWithoutLets)
+  mainFuncs      = defToRules (Def "main" args goalWithoutLets)
   internalFuncs  = map defToRules defs
-  initialErasure = Map.fromList $ map (\(n,a,_) -> (n, [1..length a])) defs
+  initialErasure = Map.fromList $ map (\(Def n a _) -> (n, [1..length a])) defs
   erasure        = removeRedundantArgs (mainFuncs ++ concat internalFuncs) initialErasure
 
   goalAfterPurification  = snd $ purify "main" args goalWithoutLets
-  defsAfterPurification  = {- filter (not . null . snd3) $ -} map (\(n, a, g) -> let (a', g') = purify n a g in (n, a', g')) defs
+  defsAfterPurification  = {- filter (not . null . snd3) $ -} map (\(Def n a g) -> let (a', g') = purify n a g in (Def n a' g')) defs
 
   purify :: Name -> [X] -> G X -> ([X], G X)
   purify n a = let a' = applyErasure erasure n a in
@@ -285,7 +285,7 @@ removeElems rs es = remove 1 rs es where
 
 {-------------------------------------------}
 defToRules :: Def -> Rules
-defToRules (n, a, g) = map (\(s, f) -> (applyInFunc s (n, ta), map (applyInFunc s) f)) $ gToRules g where
+defToRules (Def n a g) = map (\(s, f) -> (applyInFunc s (n, ta), map (applyInFunc s) f)) $ gToRules g where
   ta = map V a
 
   gToRules :: G X -> [(Subst, Funcs)]
@@ -327,14 +327,15 @@ takeOutLets g = (\(x, y, _) -> (x, y)) $ go [] g
                                   (g1' ||| g2', lets1 ++ lets2, seen'')
     go seen (Fresh n g)         = let (g', lets, seen') = go seen g in
                                   (Fresh n g', lets, seen')
-    go seen (Let (n, a, g1) g2) | n `notElem` seen 
+    go seen (Let (Def n a g1) g2) | n `notElem` seen 
                                 = let newSeen = n : seen in 
                                   let (g1', lets1, seen')  = go newSeen g1 in
                                   let (g2', lets2, seen'') = go seen' g2 in
-                                  (g2', (n, a, g1') : lets1 ++ lets2, seen'')
-    go seen (Let (n, a, g1) g2) = let (g1', lets1, seen')  = go seen g1 in
+                                  (g2', (Def n a g1') : lets1 ++ lets2, seen'')
+    go seen (Let (Def n a g1) g2) 
+                                = let (g1', lets1, seen')  = go seen g1 in
                                   let (g2', lets2, seen'') = go seen' g2 in
-                                  (g2', (n, a, g1') : lets1 ++ lets2, seen'')
+                                  (g2', (Def n a g1') : lets1 ++ lets2, seen'')
     go seen g                   = (g, [], seen)
 
 {-------------------------------------------}
@@ -347,12 +348,13 @@ renameLetArgs fvs (g1 :\/: g2)        = let (g1', fvs')   = renameLetArgs fvs  g
                                         (g1' ||| g2', fvs'')
 renameLetArgs fvs (Fresh n g)         = let (g', fvs')    = renameLetArgs fvs g in
                                         (Fresh n g', fvs')
-renameLetArgs fvs (Let (n, a, g1) g2) = let (na, fvs')    = splitAt (length a) fvs in
+renameLetArgs fvs (Let (Def n a g1) g2)
+                                      = let (na, fvs')    = splitAt (length a) fvs in
                                         let na'           = map (toV "y") na in
                                         let ng1           = foldr (\(o, n) -> subst_in_goal o $ V n) g1 $ zip a na' in
                                         let (ng1', fvs'') = renameLetArgs fvs' ng1 in
                                         let (g2', fvs''') = renameLetArgs fvs'' g2 in
-                                        (Let (n, na', ng1') g2', fvs''')
+                                        (Let (Def n na' ng1') g2', fvs''')
 renameLetArgs fvs x                   = (x, fvs)
 
 
@@ -366,7 +368,8 @@ escapeFreeVars fvs (g1 :\/: g2)        = let (g1', fvs')   = escapeFreeVars fvs 
                                          (g1' ||| g2', fvs'')
 escapeFreeVars fvs (Fresh n g)         = let (g', fvs')    = escapeFreeVars fvs g in
                                          (Fresh n g', fvs')
-escapeFreeVars fvs (Let (n, a, g1) g2) = let (g1', fvs')   = escapeFreeVars fvs  g1 in
+escapeFreeVars fvs (Let (Def n a g1) g2) 
+                                       = let (g1', fvs')   = escapeFreeVars fvs  g1 in
                                          let (g2', fvs'')  = escapeFreeVars fvs' g2 in
                                          let freeVars      = fvg g1' \\ a in
                                          let (nvs, fvs''') = splitAt (length freeVars) fvs'' in
@@ -374,7 +377,7 @@ escapeFreeVars fvs (Let (n, a, g1) g2) = let (g1', fvs')   = escapeFreeVars fvs 
                                          let g1''          = addArgsInCall n (map V nvs') g1' in
                                          let g1'''         = foldr (\(o,n) -> subst_in_goal o $ V n) g1'' $ zip freeVars nvs' in
                                          let g2''          = addArgsInCall n (map V freeVars) g2' in
-                                         (Let (n, nvs' ++ a, g1''') g2'', fvs''')
+                                         (Let (Def n (nvs' ++ a) g1''') g2'', fvs''')
 escapeFreeVars fvs x                   = (x, fvs)
 
 {-------------------------------------------}
@@ -382,7 +385,8 @@ addArgsInCall :: Name -> [Term X] -> G X -> G X
 addArgsInCall n na   (g1 :/\: g2)         = addArgsInCall n na g1 &&& addArgsInCall n na g2
 addArgsInCall n na   (g1 :\/: g2)         = addArgsInCall n na g1 ||| addArgsInCall n na g2
 addArgsInCall n na   (Fresh v g)          = Fresh v $ addArgsInCall n na g
-addArgsInCall n na   (Let (n', a, g1) g2) = Let (n', a, addArgsInCall n na g1) $ addArgsInCall n na g2
+addArgsInCall n na   (Let (Def n' a g1) g2) 
+                                          = Let (Def n' a (addArgsInCall n na g1)) $ addArgsInCall n na g2
 addArgsInCall n na g@(Invoke n' a)        = if n == n' then Invoke n (na ++ a) else g
 addArgsInCall _ _  g                      = g
 
@@ -472,7 +476,7 @@ trace_pur (g1, _) result@(g2, _, defs) =
       calc (g1 :/\: g2)          = calc g1 <+> calc g2
       calc (g1 :\/: g2)          = calc g1 <+> calc g2
       calc (Fresh _ g)           = (1, 0, 0, 0, 0, 0) <+> calc g
-      calc (Let (_, a, g1) g2)   = (0, 0, length a, 0, 0, 0) <+> calc g1 <+> calc g2
+      calc (Let (Def _ a g1) g2) = (0, 0, length a, 0, 0, 0) <+> calc g1 <+> calc g2
       calc (t1 :=: t2)           = (0, 1, 0, constrs t1 + constrs t2, vars t1 + vars t2, 0)
       calc (Invoke "success" []) = (0, 0, 0, 0, 0, 0)
       calc (Invoke _ a)          = (0, 0, 0, sum $ map constrs a, sum $ map vars a, 1)

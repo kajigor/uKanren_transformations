@@ -4,8 +4,8 @@ import Syntax
 
 treeGen =
  (\last_goal ->
-  Let (def "eq_tree" ["t1", "t2", "q53"] (
-    Let (def "eq_nat" ["n1", "n2", "q11"] (
+  Let (Def "eq_tree" ["t1", "t2", "q53"] (
+    Let (Def "eq_nat" ["n1", "n2", "q11"] (
       fresh ["q12"] (
         (V "q12" === C "pair" [V "n1", V "n2"]) &&&
         (((V "q12" === C "pair" [C "o" [], C "o" []]) &&&
@@ -20,7 +20,7 @@ treeGen =
            (V "q12" === C "pair" [C "s" [V "x"], C "s" [V "y"]]) &&&
            (call "eq_nat" [V "x", V "y", V "q11"])))))
     )) (
-    Let (def "eq_option" ["a", "b", "q19"] (
+    Let (Def "eq_option" ["a", "b", "q19"] (
       fresh ["q20"] (
         (V "q20" === C "pair" [V "a", V "b"]) &&&
         ((fresh ["x", "y"] (
@@ -35,7 +35,7 @@ treeGen =
         ((V "q20" === C "pair" [C "none" [], C "none" []]) &&&
         (V "q19" === C "true" []))))
     )) (
-    Let (def "eq_lists" ["l1", "l2", "q27"] (
+    Let (Def "eq_lists" ["l1", "l2", "q27"] (
       fresh ["q28"] (
         (V "q28" === C "pair" [V "l1", V "l2"]) &&&
         ((fresh ["x", "xs", "y", "ys"] (
@@ -68,8 +68,8 @@ treeGen =
             ((V "q45" === C "true" []) &&&
             (V "q53" === V "q46")))))))))))
   )) (
-  Let (def "tree_generator" ["n", "q10"] (
-    Let (def "repeat" ["e", "n", "q0"] (
+  Let (Def "tree_generator" ["n", "q10"] (
+    Let (Def "repeat" ["e", "n", "q0"] (
       ((V "n" === C "o" []) &&&
       (V "q0" === C "nil" [])) |||
       (fresh ["x"] (
@@ -97,8 +97,8 @@ treeGen =
 
 badAppendo =
   (\last_goal ->
-   Let (def "badAppendo" ["x", "y", "q12"] (
-     Let (def "r" ["q5"] (
+   Let (Def "badAppendo" ["x", "y", "q12"] (
+     Let (Def "r" ["q5"] (
        V "q5" === C "%" [C "pair" [C "true" [], C "true" []], C "%" [C "pair" [C "false" [], C "true" []], C "nil" []]]
      )) (
      fresh ["q7"] (
@@ -113,8 +113,8 @@ badAppendo =
                 (V "q12" === C "%" [V "w", V "q10"]) &&&
                 (call "badAppendo" [V "ws", V "y", V "q10"]))))))))))
    )) (
-   Let (def "append" ["x", "y", "q4"] (
-     Let (def "f" ["x", "q0"] (
+   Let (Def "append" ["x", "y", "q4"] (
+     Let (Def "f" ["x", "q0"] (
        ((V "x" === C "nil" []) &&&
        (V "y" === V "q0")) |||
        (fresh ["r", "rs"] (

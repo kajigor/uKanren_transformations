@@ -14,7 +14,7 @@ query = fst bottles $ fresh ["a", "b", "c"] (call "checkAnswer" [V "a", V "b", V
 query' =
   definition $ fresh ["q", "res"] (call "query" [V "q", V "res"])
   where
-    definition = Let (def "query" ["q", "res"] (
+    definition = Let (Def "query" ["q", "res"] (
                       call "capacities1" [V "1"] &&& call "checkAnswer" [V "res", V "q", six, true]))
                  . fst bottles
 
@@ -22,14 +22,14 @@ env = snd bottles
 
 bottles =
  (\last_goal ->
-  Let (def "add" ["a", "b", "q113"] (
+  Let (Def "add" ["a", "b", "q113"] (
     ((V "a" === C "o" []) &&&
     (V "b" === V "q113")) |||
     (fresh ["x"] (
        (V "a" === C "s" [V "x"]) &&&
        (call "add" [V "x", C "s" [V "b"], V "q113"])))
   )) (
-  Let (def "greater" ["a", "b", "q109"] (
+  Let (Def "greater" ["a", "b", "q109"] (
     ((V "a" === C "o" []) &&&
     (V "q109" === C "false" [])) |||
     (fresh ["x"] (
@@ -40,7 +40,7 @@ bottles =
           (V "b" === C "s" [V "y"]) &&&
           (call "greater" [V "x", V "y", V "q109"]))))))
   )) (
-  Let (def "sub" ["a", "b", "q105"] (
+  Let (Def "sub" ["a", "b", "q105"] (
     ((V "b" === C "o" []) &&&
     (V "a" === V "q105")) |||
     (fresh ["y"] (
@@ -51,35 +51,35 @@ bottles =
           (V "a" === C "s" [V "x"]) &&&
           (call "sub" [V "x", V "y", V "q105"]))))))
   )) (
-  Let (def "anotherBottle" ["b", "q102"] (
+  Let (Def "anotherBottle" ["b", "q102"] (
     ((V "b" === C "fst" []) &&&
     (V "q102" === C "snd" [])) |||
     ((V "b" === C "snd" []) &&&
     (V "q102" === C "fst" []))
   )) (
-  Let (def "createState" ["bottle", "lvl1", "lvl2", "q99"] (
+  Let (Def "createState" ["bottle", "lvl1", "lvl2", "q99"] (
     ((V "bottle" === C "fst" []) &&&
     (V "q99" === C "pair" [V "lvl1", V "lvl2"])) |||
     ((V "bottle" === C "snd" []) &&&
     (V "q99" === C "pair" [V "lvl2", V "lvl1"]))
   )) (
-  Let (def "fst'" ["x", "q96"] (
+  Let (Def "fst'" ["x", "q96"] (
     fresh ["a", "q97"] (
       (V "x" === C "pair" [V "a", V "q97"]) &&&
       (V "a" === V "q96"))
   )) (
-  Let (def "snd'" ["x", "q93"] (
+  Let (Def "snd'" ["x", "q93"] (
     fresh ["q94", "a"] (
       (V "x" === C "pair" [V "q94", V "a"]) &&&
       (V "a" === V "q93"))
   )) (
-  Let (def "get_capacity" ["capacities", "bottle", "q92"] (
+  Let (Def "get_capacity" ["capacities", "bottle", "q92"] (
     ((V "bottle" === C "fst" []) &&&
     (call "fst'" [V "capacities", V "q92"])) |||
     ((V "bottle" === C "snd" []) &&&
     (call "snd'" [V "capacities", V "q92"]))
   )) (
-  Let (def "|=|" ["a", "b", "q85"] (
+  Let (Def "|=|" ["a", "b", "q85"] (
     ((V "a" === C "o" []) &&&
     (((V "b" === C "o" []) &&&
     (V "q85" === C "true" [])) |||
@@ -94,7 +94,7 @@ bottles =
           (V "b" === C "s" [V "y"]) &&&
           (call "|=|" [V "x", V "y", V "q85"]))))))
   )) (
-  Let (def "checkStep" ["state0", "step0", "capacities", "q48"] (
+  Let (Def "checkStep" ["state0", "step0", "capacities", "q48"] (
     fresh ["f", "s"] (
       (V "state0" === C "pair" [V "f", V "s"]) &&&
       (fresh ["t", "b"] (
@@ -141,7 +141,7 @@ bottles =
             ((V "q62" === C "false" []) &&&
             (V "q48" === C "true" []))))))))))
   )) (
-  Let (def "doStep" ["state0", "step0", "capacities", "q15"] (
+  Let (Def "doStep" ["state0", "step0", "capacities", "q15"] (
     fresh ["f", "s"] (
       (V "state0" === C "pair" [V "f", V "s"]) &&&
       (fresh ["t", "b"] (
@@ -186,7 +186,7 @@ bottles =
                (call "add" [V "f", V "s", V "q41"]) &&&
                (call "createState" [V "b", C "o" [], V "q41", V "q15"]))))))))))))
   )) (
-  Let (def "isFinishState" ["state0", "reqLvl", "q8"] (
+  Let (Def "isFinishState" ["state0", "reqLvl", "q8"] (
     fresh ["f", "s"] (
       (V "state0" === C "pair" [V "f", V "s"]) &&&
       (fresh ["q9", "q10"] (
@@ -197,8 +197,8 @@ bottles =
          ((V "q9" === C "false" []) &&&
          (V "q8" === V "q10"))))))
   )) (
-  Let (def "checkAnswer" ["answer", "capacities", "reqLvl", "q7"] (
-    Let (def "checkAnswer'" ["state0", "answer", "capacities", "reqLvl", "q1"] (
+  Let (Def "checkAnswer" ["answer", "capacities", "reqLvl", "q7"] (
+    Let (Def "checkAnswer'" ["state0", "answer", "capacities", "reqLvl", "q1"] (
       ((V "answer" === C "nil" []) &&&
       (call "isFinishState" [V "state0", V "reqLvl", V "q1"])) |||
       (fresh ["x", "xs"] (
@@ -214,7 +214,7 @@ bottles =
     )) (
     call "checkAnswer'" [C "pair" [C "o" [], C "o" []], V "answer", V "capacities", V "reqLvl", V "q7"])
   )) (
-  Let (def "capacities1" ["q0"] (
+  Let (Def "capacities1" ["q0"] (
     V "q0" === C "pair" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]], C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]
   )) (
   last_goal))))))))))))))

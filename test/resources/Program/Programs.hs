@@ -8,7 +8,7 @@ import Prelude hiding (succ)
 palindromo :: G a -> G a
 palindromo g = 
   Let 
-    ( def "palindromo" ["x"]
+    ( Def "palindromo" ["x"]
       (
         call "reverso" [x, x]
       )
@@ -18,7 +18,7 @@ palindromo g =
 someAppendo :: G a -> G a
 someAppendo g =
   Let 
-    ( def "someAppendo" ["x", "y", "z"]
+    ( Def "someAppendo" ["x", "y", "z"]
       (
         fresh ["t"] ( call "appendo" [x, y, z] &&& call "appendo" [y, x, z] )
       )
@@ -30,7 +30,7 @@ someAppendo g =
 doubleAppendo :: G a -> G a
 doubleAppendo g =
   Let 
-    ( def "doubleAppendo" ["x", "y", "z", "r"]
+    ( Def "doubleAppendo" ["x", "y", "z", "r"]
       (
         fresh ["t"] ( call "appendo" [x, y, t] &&& call "appendo" [t, z, r] )
       )
@@ -40,7 +40,7 @@ doubleAppendo g =
 -- eveno :: G a -> G a
 -- eveno g =
 --   Let 
---     ( def "eveno" ["x"] 
+--     ( Def "eveno" ["x"] 
 --       ( 
 --         fresh ["z"] (call "addo" [z, z, x])
 --       )
@@ -50,7 +50,7 @@ doubleAppendo g =
 doubleo :: G a -> G a
 doubleo g =
   Let 
-    ( def "doubleo" ["x", "xx"] 
+    ( Def "doubleo" ["x", "xx"] 
       (
         call "appendo" [x, x, xx]
       )
@@ -60,7 +60,7 @@ doubleo g =
 emptyAppendo :: G a -> G a
 emptyAppendo g =
   Let 
-    ( def "emptyAppendo" ["x", "y"] 
+    ( Def "emptyAppendo" ["x", "y"] 
       (
         call "appendo" [nil, x, y]
       )
@@ -73,7 +73,7 @@ toList (c:cs) = peanify c % toList cs
 appendo123 :: G a -> G a
 appendo123 g =
   Let 
-    ( def "appendo123" ["x", "y"] 
+    ( Def "appendo123" ["x", "y"] 
       (
         call "appendo" [toList [1..3], x, y]
       )
@@ -83,7 +83,7 @@ appendo123 g =
 appendoXyz :: G a -> G a
 appendoXyz g =
   Let 
-    ( def "appendoXyz" ["x", "y", "z", "t", "r"] 
+    ( Def "appendoXyz" ["x", "y", "z", "t", "r"] 
       (
         call "appendo" [x % (y % (z % nil)), t, r]
       )
@@ -94,7 +94,7 @@ appendoXyz g =
 singletonReverso :: G a -> G a
 singletonReverso g =
   Let 
-    ( def "singletonReverso" ["x", "y"] 
+    ( Def "singletonReverso" ["x", "y"] 
       (
         fresh ["l"] (call "lengtho" [x, peanify 1] &&& call "reverso" [x, y])
       )
@@ -106,7 +106,7 @@ externalVar =
   fresh ["x", "y"{-, "z"-}] (
     x === toList [2..4] &&&
     Let 
-      ( def "appendo" ["a", "b"] 
+      ( Def "appendo" ["a", "b"] 
         (
           a === nil &&& b === x |||
           fresh ["c", "cs", "d", "ds"] (a === c % cs &&& b === c % ds &&& call "appendo" [cs, ds])
@@ -116,12 +116,12 @@ externalVar =
     where [x, y, {-z, -} a, b, c, cs, ds] = map V ["x", "y", {-"z", -} "a", "b", "c", "cs", "ds"]
 
 is5 :: G a -> G a
-is5 g = Let ( def "is5" ["x"] (V "x" === peanify 5)) g
+is5 g = Let ( Def "is5" ["x"] (V "x" === peanify 5)) g
 
 isNum :: G a -> G a
 isNum g =
   Let 
-    ( def "isNum" ["x"] 
+    ( Def "isNum" ["x"] 
       (
         (x === zero) ||| (fresh ["y"] (x === succ y))
       )
@@ -131,7 +131,7 @@ isNum g =
 check5 :: G a -> G a
 check5 g =
   Let 
-    ( def "check5" ["x"] 
+    ( Def "check5" ["x"] 
       (
         call "isNum" [x] &&& call "is5" [x]
       )
@@ -141,7 +141,7 @@ check5 g =
 
 genLists :: G a -> G a
 genLists g =
-  Let ( def "genLists" ["x"]
+  Let ( Def "genLists" ["x"]
         (
           (fresh ["y"] (x === y % nil &&& call "isNum" [y])) |||
           (fresh ["h", "t"] (x === h % t &&& call "isNum" [h] &&& call "genLists" [t]))
@@ -151,7 +151,7 @@ genLists g =
 
 has5 :: G a -> G a
 has5 g =
-  Let ( def "has5" ["x"]
+  Let ( Def "has5" ["x"]
         ( fresh ["h", "t"]
             ((x === h % t &&& call "is5" [h]) |||
              (x === h % t &&& call "has5" [t])
@@ -163,7 +163,7 @@ has5 g =
 checkList5 :: G a -> G a
 checkList5 g =
   Let 
-    ( def "checkList5" ["x"] 
+    ( Def "checkList5" ["x"] 
       (
         call "has5" [x] &&& call "genLists" [x]
       )
@@ -173,7 +173,7 @@ checkList5 g =
 checkList5' :: G a -> G a
 checkList5' g =
   Let 
-    ( def "checkList5" ["x"] 
+    ( Def "checkList5" ["x"] 
       (
         call "genLists" [x] &&& call "has5" [x]
       )
@@ -184,7 +184,7 @@ checkList5' g =
 memApp :: G a -> G a 
 memApp g = 
   Let 
-    ( def "memApp" ["h", "xs", "ys", "rs"]
+    ( Def "memApp" ["h", "xs", "ys", "rs"]
       (call "membero" [h, xs] &&& call "appendo" [xs, ys, zs])
     ) $ membero $ appendo g 
     where [h, xs, ys, zs] = map V ["h", "xs", "ys", "zs"]
@@ -192,7 +192,7 @@ memApp g =
 memAppY :: G a -> G a 
 memAppY g = 
   Let 
-    ( def "memAppY" ["h", "xs", "ys", "rs"]
+    ( Def "memAppY" ["h", "xs", "ys", "rs"]
       (call "membero" [h, ys] &&& call "appendo" [xs, ys, zs])
     ) $ membero $ appendo g 
     where [h, xs, ys, zs] = map V ["h", "xs", "ys", "zs"]
@@ -200,7 +200,7 @@ memAppY g =
 fun :: G a -> G a 
 fun goal =
   Let 
-    ( def "fun" ["n", "x", "r"] 
+    ( Def "fun" ["n", "x", "r"] 
       (
         (call "eveno" [n] &&& call "f" [n, x, r]) ||| 
         (call "oddo"  [n] &&& call "g" [n, x, r])
@@ -211,7 +211,7 @@ fun goal =
 f :: G a -> G a
 f goal = 
   Let 
-    ( def "f" ["n", "x", "r"]
+    ( Def "f" ["n", "x", "r"]
       (
         (call "eveno" [n] &&& call "fun" [n, x, r]) ||| 
         (call "oddo"  [n] &&& call "g"   [n, x, r])
@@ -222,7 +222,7 @@ f goal =
 g :: G a -> G a
 g goal = 
   Let 
-    ( def "g" ["n", "x", "r"]
+    ( Def "g" ["n", "x", "r"]
       (
         (call "eveno" [n] &&& call "f"   [n, x, r]) ||| 
         (call "oddo"  [n] &&& call "fun" [n, x, r])
@@ -234,7 +234,7 @@ g goal =
 eveno :: G a -> G a 
 eveno g = 
   Let 
-    ( def "eveno" ["n"]
+    ( Def "eveno" ["n"]
       (
         (n === zero) ||| 
         (fresh ["k"] (n === succ k &&& call "oddo" [k]))
@@ -245,7 +245,7 @@ eveno g =
 oddo :: G a -> G a
 oddo g = 
   Let 
-    ( def "oddo" ["n"]
+    ( Def "oddo" ["n"]
       (
         (n === succ zero) ||| 
         (fresh ["k"] (n === succ k &&& call "eveno" [k]))

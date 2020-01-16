@@ -4,7 +4,7 @@ import Syntax
 
 tree1 =
  (\last_goal ->
-  Let (def "greater" ["a0", "b0", "q146"] (
+  Let (Def "greater" ["a0", "b0", "q146"] (
     ((V "a0" === C "o" []) &&&
     (V "q146" === C "false" [])) |||
     (fresh ["x"] (
@@ -15,7 +15,7 @@ tree1 =
           (V "b0" === C "s" [V "y"]) &&&
           (call "greater" [V "x", V "y", V "q146"]))))))
   )) (
-  Let (def "grForPerson" ["x", "y", "q129"] (
+  Let (Def "grForPerson" ["x", "y", "q129"] (
     ((V "x" === C "a" []) &&&
     (((V "y" === C "a" []) &&&
     (V "q129" === C "false" [])) |||
@@ -46,7 +46,7 @@ tree1 =
     ((V "x" === C "d" []) &&&
     (V "q129" === C "false" []))
   )) (
-  Let (def "max" ["a0", "b0", "q125"] (
+  Let (Def "max" ["a0", "b0", "q125"] (
     fresh ["q126"] (
       (call "greater" [V "a0", V "b0", V "q126"]) &&&
       (((V "q126" === C "true" []) &&&
@@ -54,14 +54,14 @@ tree1 =
       ((V "q126" === C "false" []) &&&
       (V "b0" === V "q125"))))
   )) (
-  Let (def "add" ["a0", "b0", "q123"] (
+  Let (Def "add" ["a0", "b0", "q123"] (
     ((V "a0" === C "o" []) &&&
     (V "b0" === V "q123")) |||
     (fresh ["x"] (
        (V "a0" === C "s" [V "x"]) &&&
        (call "add" [V "x", C "s" [V "b0"], V "q123"])))
   )) (
-  Let (def "eqForBool" ["a", "b", "q109"] (
+  Let (Def "eqForBool" ["a", "b", "q109"] (
     fresh ["q107", "q108"] (
       (((V "a" === C "false" []) &&&
       (V "q107" === C "false" [])) |||
@@ -81,7 +81,7 @@ tree1 =
       ((V "q107" === C "false" []) &&&
       (V "q109" === V "q108"))))
   )) (
-  Let (def "eqForState" ["x", "y", "q81"] (
+  Let (Def "eqForState" ["x", "y", "q81"] (
     fresh ["l1", "a1", "b1", "c1", "d1"] (
       (V "x" === C "st" [V "l1", V "a1", V "b1", V "c1", V "d1"]) &&&
       (fresh ["l2", "a2", "b2", "c2", "d2"] (
@@ -112,7 +112,7 @@ tree1 =
             ((V "q83" === C "true" []) &&&
             (V "q81" === V "q84"))))))))
   )) (
-  Let (def "checkPerson" ["state", "person", "q79"] (
+  Let (Def "checkPerson" ["state", "person", "q79"] (
     fresh ["l", "a0", "b0", "c0", "d0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
       (((V "person" === C "a" []) &&&
@@ -124,7 +124,7 @@ tree1 =
       ((V "person" === C "d" []) &&&
       (call "eqForBool" [V "d0", V "l", V "q79"]))))
   )) (
-  Let (def "checkStep" ["state", "step", "q66"] (
+  Let (Def "checkStep" ["state", "step", "q66"] (
     (fresh ["p"] (
        (V "step" === C "one" [V "p"]) &&&
        (call "checkPerson" [V "state", V "p", V "q66"]))) |||
@@ -144,7 +144,7 @@ tree1 =
           ((V "q67" === C "true" []) &&&
           (V "q66" === V "q68")))))))
   )) (
-  Let (def "moveLight" ["state", "q61"] (
+  Let (Def "moveLight" ["state", "q61"] (
     fresh ["l", "a0", "b0", "c0", "d0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
       (fresh ["q62"] (
@@ -154,7 +154,7 @@ tree1 =
          ((V "l" === C "false" []) &&&
          (V "q62" === C "true" []))))))
   )) (
-  Let (def "movePerson" ["state", "person", "q43"] (
+  Let (Def "movePerson" ["state", "person", "q43"] (
     fresh ["l", "a0", "b0", "c0", "d0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
       (((V "person" === C "a" []) &&&
@@ -186,7 +186,7 @@ tree1 =
          ((V "d0" === C "false" []) &&&
          (V "q57" === C "true" []))))))))
   )) (
-  Let (def "step" ["state", "step", "q36"] (
+  Let (Def "step" ["state", "step", "q36"] (
     (fresh ["p"] (
        (V "step" === C "one" [V "p"]) &&&
        (fresh ["q37"] (
@@ -200,7 +200,7 @@ tree1 =
              (call "movePerson" [V "q41", V "q", V "q39"]))) &&&
           (call "moveLight" [V "q39", V "q36"])))))
   )) (
-  Let (def "times" ["p", "q31"] (
+  Let (Def "times" ["p", "q31"] (
     ((V "p" === C "a" []) &&&
     (V "q31" === C "s" [C "o" []])) |||
     ((V "p" === C "b" []) &&&
@@ -210,7 +210,7 @@ tree1 =
     ((V "p" === C "d" []) &&&
     (V "q31" === C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]))
   )) (
-  Let (def "getTime" ["state", "q27"] (
+  Let (Def "getTime" ["state", "q27"] (
     (fresh ["p"] (
        (V "state" === C "one" [V "p"]) &&&
        (call "times" [V "p", V "q27"]))) |||
@@ -221,14 +221,14 @@ tree1 =
           (call "times" [V "q", V "q29"]) &&&
           (call "max" [V "q28", V "q29", V "q27"])))))
   )) (
-  Let (def "getAnswer" ["answer", "q26"] (
-    Let (def "start" ["q1"] (
+  Let (Def "getAnswer" ["answer", "q26"] (
+    Let (Def "start" ["q1"] (
       V "q1" === C "st" [C "true" [], C "true" [], C "true" [], C "true" [], C "true" []]
     )) (
-    Let (def "finish" ["q2"] (
+    Let (Def "finish" ["q2"] (
       V "q2" === C "st" [C "false" [], C "false" [], C "false" [], C "false" [], C "false" []]
     )) (
-    Let (def "getAnswer" ["answer", "state", "q3"] (
+    Let (Def "getAnswer" ["answer", "state", "q3"] (
       (fresh ["x", "xs"] (
          (V "answer" === C "%" [V "x", V "xs"]) &&&
          (fresh ["q5"] (
@@ -263,7 +263,7 @@ tree1 =
       (call "start" [V "q22"]) &&&
       (call "getAnswer" [V "answer", V "q22", V "q26"])))))
   )) (
-  Let (def "result" ["q0"] (
+  Let (Def "result" ["q0"] (
     V "q0" === C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]]]]]]]]
   )) (
   last_goal)))))))))))))))

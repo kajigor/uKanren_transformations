@@ -40,7 +40,7 @@ list x = show x
 listo :: G a -> G a
 listo g =
   Let 
-    ( def "listo" ["x"] 
+    ( Def "listo" ["x"] 
       (
         ( x === nil ) ||| 
         (
@@ -56,7 +56,7 @@ listo g =
 
 membero :: G a -> G a
 membero g =
-  Let ( def "membero" ["x", "list"]
+  Let ( Def "membero" ["x", "list"]
         (
           fresh ["h", "t"] ( ( list === h % t ) &&&
                              ( ( x === h ) |||
@@ -70,7 +70,7 @@ membero g =
 inBotho :: G a -> G a
 inBotho g =
   Let 
-    ( def "inBotho" ["x", "ys", "zs"] 
+    ( Def "inBotho" ["x", "ys", "zs"] 
       ( 
         call "membero" [x, ys] &&& 
         call "membero" [x, zs]
@@ -81,7 +81,7 @@ inBotho g =
 nilo :: G a -> G a
 nilo g =
   Let 
-    ( def "nilo" ["l"] 
+    ( Def "nilo" ["l"] 
       ( 
         l === nil
       )
@@ -91,7 +91,7 @@ nilo g =
 singletono :: G a -> G a
 singletono g =
   Let 
-    ( def "singletono" ["l", "x"] 
+    ( Def "singletono" ["l", "x"] 
       ( 
         l === x % nil
       )
@@ -101,7 +101,7 @@ singletono g =
 maxLengtho :: G a -> G a
 maxLengtho g =
   Let 
-    ( def "maxLengtho" ["x", "m", "l"] 
+    ( Def "maxLengtho" ["x", "m", "l"] 
       (
         call "maxo" [x, m] &&& 
         call "lengtho" [x, l]
@@ -111,7 +111,7 @@ maxLengtho g =
 
 copy :: G a -> G a
 copy g =
-  Let ( def "copy" ["l", "c"]
+  Let ( Def "copy" ["l", "c"]
         (
           (l === nil &&& c === nil) |||
           (
@@ -128,7 +128,7 @@ copy g =
 
 copy2 :: G a -> G a
 copy2 g =
-  Let ( def "copy2" ["l", "c"]
+  Let ( Def "copy2" ["l", "c"]
         (
           (l === nil &&& c === nil) |||
           (
@@ -151,7 +151,7 @@ copy2 g =
 
 copycopy :: G a -> G a
 copycopy g =
-  Let ( def "copycopy" ["l", "l1", "l2"]
+  Let ( Def "copycopy" ["l", "l1", "l2"]
         (
           call "copy" [l, l1] &&& 
           call "copy2" [l, l2]
@@ -161,7 +161,7 @@ copycopy g =
 
 lengtho :: G a -> G a
 lengtho g =
-  Let ( def "lengtho" ["x", "l"]
+  Let ( Def "lengtho" ["x", "l"]
         (
           (x === nil &&& l === zero) |||
           fresh ["h", "t", "z"]
@@ -176,10 +176,10 @@ lengtho g =
 
 maxo :: G a -> G a
 maxo g =
-  Let ( def "maxo" ["x", "m"] (call "maxo1" [x, zero, m])) $ maxo1 g
+  Let ( Def "maxo" ["x", "m"] (call "maxo1" [x, zero, m])) $ maxo1 g
   where
     maxo1 g =
-      Let ( def "maxo1" ["x", "n", "m" ]
+      Let ( Def "maxo1" ["x", "n", "m" ]
             (
               (x === nil &&& m === n) |||
               fresh ["h", "t", "z"] 
@@ -201,7 +201,7 @@ maxo g =
 appLengtho :: G a -> G a 
 appLengtho g = 
   Let 
-    ( def "appLengtho" [] 
+    ( Def "appLengtho" [] 
       (
         fresh ["xs", "ys", "zs", "m", "n", "s"] 
           (
@@ -218,7 +218,7 @@ appLengtho g =
 appendo :: G a -> G a
 appendo g =
   Let
-    ( def "appendo" ["x", "y", "xy"]
+    ( Def "appendo" ["x", "y", "xy"]
       (
         (x === nil &&& xy === y) |||
         fresh ["h", "t", "ty"]
@@ -234,7 +234,7 @@ appendo g =
 appendo' :: G a -> G a
 appendo' g =
   Let
-    ( def "appendo'" ["x", "y", "xy"]
+    ( Def "appendo'" ["x", "y", "xy"]
       (
         (x === nil ||| xy === y) |||
         fresh ["h", "t", "ty"]
@@ -250,7 +250,7 @@ appendo' g =
 reverso :: G a -> G a
 reverso g =
   Let
-    ( def "reverso" ["x", "y"]
+    ( Def "reverso" ["x", "y"]
       (
         (x === nil &&& y === nil) |||
         fresh ["h", "t", "rt"]
@@ -266,7 +266,7 @@ reverso g =
 doubleReverso :: G a -> G a 
 doubleReverso g = 
   Let 
-    ( def "doubleReverso" ["xs"]
+    ( Def "doubleReverso" ["xs"]
       (
         fresh ["sx"] 
         (
@@ -279,7 +279,7 @@ doubleReverso g =
 revAcco :: G a -> G a
 revAcco g =
   Let
-    ( def "revacco" ["xs", "acc", "sx"]
+    ( Def "revacco" ["xs", "acc", "sx"]
       (
         xs === nil &&& sx === acc |||
         (
@@ -294,7 +294,7 @@ revAcco g =
 
 assoco g = 
   Let 
-    ( def "assoco" ["x", "xs", "v"] 
+    ( Def "assoco" ["x", "xs", "v"] 
       (
         fresh ["a", "b", "tl"]
           (

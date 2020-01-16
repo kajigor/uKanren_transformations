@@ -4,7 +4,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module CPD where
+module CPD.LocalControl where
 
 import Prelude hiding (lookup, showList)
 import Syntax
@@ -57,8 +57,9 @@ isSelectable emb goal ancs =
     fineToUnfold _ = False
     basics = [] -- ["leo", "gto"]-- [] -- ["eqNat", "eqPair"] -- ["leo", "gto"]
 
-substituteDescend s =
-  map $ \(Descend g ancs) -> Descend (E.substituteGoal s g) ancs
+instance E.Subst [Descend (G S)] where 
+  substitute s =
+    map $ \(Descend g ancs) -> Descend (E.substitute s g) ancs
 
 sldResolution :: [G S] -> E.Gamma -> E.Sigma -> [[G S]] -> SldTree
 sldResolution goal gamma subst seen  =
@@ -68,11 +69,11 @@ sldResolution goal gamma subst seen  =
 
 oneStepUnfold :: G S -> E.Gamma -> (G S, E.Gamma)
 oneStepUnfold g@(Invoke f as) env@(p, i, d) =
-  let (n, fs, body) = p f in
+  let (Def n fs body) = p f in
   if length fs == length as
   then
     let i' = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
-    let (g', env', _) = E.preEval' (p, i', d) body in
+    let (g', env', _) = E.preEval (p, i', d) body in
     (g', env')
   else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
 oneStepUnfold g env = (g, env)
@@ -112,11 +113,11 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
           let unified = mapMaybe (unifyStuff s) normalized in
           -- trace (printf "unified:\n%s" $ showList unified) $
           let addDescends xs s =
-                -- substituteDescend s (ls ++ map (\x -> Descend x (g : ancs)) xs ++ rs) in
-                substituteDescend s ( map addDescendId ls ++ 
-                                      map (\x -> Descend x (g : ancs)) xs ++ 
-                                      map addDescendId rs
-                                    ) 
+                -- E.substitute s (ls ++ map (\x -> Descend x (g : ancs)) xs ++ rs) in
+                E.substitute s  ( map addDescendId ls ++ 
+                                  map (\x -> Descend x (g : ancs)) xs ++ 
+                                  map addDescendId rs
+                                ) 
                   where
                     addDescend goal (Descend cur ancs) = Descend goal (cur : ancs) 
                     addDescendId d@(Descend cur _) = addDescend cur d 
@@ -184,7 +185,7 @@ topLevel :: G X -> SldTree
 topLevel goal =
   let (goal', _, defs) = justTakeOutLets (goal, []) in
   let gamma = E.updateDefsInGamma E.env0 defs in
-  let (logicGoal, gamma', names) = E.preEval' gamma goal' in
+  let (logicGoal, gamma', names) = E.preEval gamma goal' in
   sldResolutionStep [Descend logicGoal []] gamma' E.s0 [] True
 
 mcs :: (Eq a, Show a) => [G a] -> [[G a]]

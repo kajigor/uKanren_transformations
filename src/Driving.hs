@@ -126,7 +126,7 @@ refine msg@(g, s1, s2, d) =
   let sim1 = map (map fst) similar1 in
   let sim2 = map (map fst) similar2 in
   let toSwap = concatMap (\(x:xs) -> map (\y -> (y, V x)) xs) (sim1 `intersect` sim2) in
-  let newGoal = E.substituteConjs toSwap g in
+  let newGoal = E.substitute toSwap g in
   -- let s1' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar1)) s1 in
   -- let s2' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar2)) s2 in
 
@@ -294,9 +294,9 @@ unfold tc _ d s _ []            = (tc, Success s, d)
 unfold (sr, args, ids) cs e s gen conjs =
   let cs_conjs     = map (\ (_, _, Invoke f as) -> Invoke f $ map (E.substitute s) as) conjs in
   let (e', conjs') = foldl (\ (d, conj) (i, p, zyz@(Invoke f as)) ->
-                               let (_, fs, g) = p f in
-                               let i'         = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
-                               let (g', (p', i'', d'), _) = E.preEval' (p, i', d) g in
+                               let (Def _ fs g) = p f in
+                               let i'           = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
+                               let (g', (p', i'', d'), _) = E.preEval (p, i', d) g in
                                (d', (i'', p', g'):conj)
                            ) (e, []) conjs
   in
@@ -307,5 +307,5 @@ unfold (sr, args, ids) cs e s gen conjs =
 
 drive :: G X -> (TreeContext, Tree, [Id])
 drive goal =
-  let (goal', (g', i', d'), args) = E.preEval' E.env0 goal in
+  let (goal', (g', i', d'), args) = E.preEval E.env0 goal in
   let (x, y, _) = eval emptyContext [] d' E.s0 [] [] (i', g', goal') [] in (x, y, reverse args)

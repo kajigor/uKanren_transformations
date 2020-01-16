@@ -4,7 +4,7 @@ module Printer.SldTree where
 import Printer.Dot
 import qualified Eval as E
 import Syntax
-import CPD
+import CPD.LocalControl
 import Text.Printf
 
 instance DotPrinter SldTree where

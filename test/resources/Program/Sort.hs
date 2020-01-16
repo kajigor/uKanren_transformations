@@ -9,7 +9,7 @@ import Program.List hiding (a, b)
 minmaxo :: G a -> G a
 minmaxo g =
   Let 
-    ( def "minmaxo" ["a", "b", "min", "max"] 
+    ( Def "minmaxo" ["a", "b", "min", "max"] 
       (
         (min === a &&& max === b &&& call "leo" [a, b, trueo]) |||
         (max === a &&& min === b &&& call "gto" [a, b, trueo])
@@ -20,7 +20,7 @@ minmaxo g =
 smallesto :: G a -> G a
 smallesto g =
   Let 
-    ( def "smallesto" ["l", "s", "l'"] 
+    ( Def "smallesto" ["l", "s", "l'"] 
       (
         l === s % nil &&& l' === nil |||
         fresh ["h", "t", "s'", "t'", "max"] 
@@ -37,7 +37,7 @@ smallesto g =
 sorto :: G a -> G a
 sorto g =
   Let 
-    ( def "sorto" ["x", "y"] 
+    ( Def "sorto" ["x", "y"] 
       (
         x === nil &&& y === nil |||
         fresh ["s", "xs", "xs'"]

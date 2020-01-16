@@ -11,7 +11,7 @@ test_check_subst =
 
 logic_interpreter =
  (\last_goal ->
-  Let (def "eq_nat" ["a", "b", "q110"] (
+  Let (Def "eq_nat" ["a", "b", "q110"] (
     ((V "a" === C "z" []) &&&
     (((V "b" === C "z" []) &&&
     (V "q110" === C "true" [])) |||
@@ -26,7 +26,7 @@ logic_interpreter =
           (V "b" === C "s" [V "y"]) &&&
           (call "eq_nat" [V "x", V "y", V "q110"]))))))
   )) (
-  Let (def "lookup" ["s", "n", "q105"] (
+  Let (Def "lookup" ["s", "n", "q105"] (
     ((V "s" === C "nil" []) &&&
     (V "q105" === C "none" [])) |||
     (fresh ["m", "e", "xs"] (
@@ -38,7 +38,7 @@ logic_interpreter =
           ((V "q108" === C "false" []) &&&
           (call "lookup" [V "xs", V "n", V "q105"])))))))
   )) (
-  Let (def "total_disj" ["a", "b", "q98"] (
+  Let (Def "total_disj" ["a", "b", "q98"] (
     ((V "a" === C "true" []) &&&
     (((V "b" === C "true" []) &&&
     (V "q98" === C "true" [])) |||
@@ -50,7 +50,7 @@ logic_interpreter =
     ((V "b" === C "false" []) &&&
     (V "q98" === C "false" []))))
   )) (
-  Let (def "total_conj" ["a", "b", "q91"] (
+  Let (Def "total_conj" ["a", "b", "q91"] (
     ((V "a" === C "true" []) &&&
     (((V "b" === C "true" []) &&&
     (V "q91" === C "true" [])) |||
@@ -62,7 +62,7 @@ logic_interpreter =
     ((V "b" === C "false" []) &&&
     (V "q91" === C "false" []))))
   )) (
-  Let (def "eval" ["subst", "expr", "q65"] (
+  Let (Def "eval" ["subst", "expr", "q65"] (
     ((V "expr" === C "i" []) &&&
     (V "q65" === C "some" [C "true" []])) |||
     ((V "expr" === C "o" []) &&&
@@ -119,7 +119,7 @@ logic_interpreter =
                       (V "q65" === C "some" [V "q89"]) &&&
                       (call "total_disj" [V "a", V "b", V "q89"])))))))))))))))
   )) (
-  Let (def "append" ["a", "b", "q61"] (
+  Let (Def "append" ["a", "b", "q61"] (
     ((V "a" === C "nil" []) &&&
     (V "b" === V "q61")) |||
     (fresh ["x", "xs"] (
@@ -128,7 +128,7 @@ logic_interpreter =
           (V "q61" === C "%" [V "x", V "q63"]) &&&
           (call "append" [V "xs", V "b", V "q63"])))))
   )) (
-  Let (def "remove" ["v", "l", "q54"] (
+  Let (Def "remove" ["v", "l", "q54"] (
     ((V "l" === C "nil" []) &&&
     (V "q54" === C "nil" [])) |||
     (fresh ["x", "xs"] (
@@ -142,7 +142,7 @@ logic_interpreter =
              ((V "q58" === C "false" []) &&&
              (V "q54" === C "%" [V "x", V "nl"])))))))))
   )) (
-  Let (def "remove_repeats" ["l", "q48"] (
+  Let (Def "remove_repeats" ["l", "q48"] (
     ((V "l" === C "nil" []) &&&
     (V "q48" === C "nil" [])) |||
     (fresh ["x", "xs"] (
@@ -153,7 +153,7 @@ logic_interpreter =
              (call "remove" [V "x", V "xs", V "q52"]) &&&
              (call "remove_repeats" [V "q52", V "q50"])))))))
   )) (
-  Let (def "all_vars" ["e", "q37"] (
+  Let (Def "all_vars" ["e", "q37"] (
     ((V "e" === C "i" []) &&&
     (V "q37" === C "nil" [])) |||
     ((V "e" === C "o" []) &&&
@@ -177,8 +177,8 @@ logic_interpreter =
           (call "all_vars" [V "r", V "q46"]) &&&
           (call "append" [V "q45", V "q46", V "q37"])))))
   )) (
-  Let (def "check_subst" ["subst", "expr", "q36"] (
-    Let (def "check" ["subst", "vars", "q18"] (
+  Let (Def "check_subst" ["subst", "expr", "q36"] (
+    Let (Def "check" ["subst", "vars", "q18"] (
       ((V "vars" === C "nil" []) &&&
       (((V "subst" === C "nil" []) &&&
       (V "q18" === C "true" [])) |||
@@ -205,7 +205,7 @@ logic_interpreter =
          (call "remove_repeats" [V "q34", V "q32"]))) &&&
       (call "check" [V "subst", V "q32", V "q36"])))
   )) (
-  Let (def "eval_and_check" ["subst", "expr", "q11"] (
+  Let (Def "eval_and_check" ["subst", "expr", "q11"] (
     fresh ["q12"] (
       (call "eval" [V "subst", V "expr", V "q12"]) &&&
       (((V "q12" === C "none" []) &&&
@@ -219,7 +219,7 @@ logic_interpreter =
             ((V "q15" === C "false" []) &&&
             (V "q11" === C "none" [])))))))))
   )) (
-  Let (def "check_and_eval" ["subst", "expr", "q4"] (
+  Let (Def "check_and_eval" ["subst", "expr", "q4"] (
     fresh ["q5"] (
       (call "check_subst" [V "subst", V "expr", V "q5"]) &&&
       (((V "q5" === C "true" []) &&&
@@ -233,16 +233,16 @@ logic_interpreter =
       ((V "q5" === C "false" []) &&&
       (V "q4" === C "none" []))))
   )) (
-  Let (def "expr1" ["q3"] (
+  Let (Def "expr1" ["q3"] (
     V "q3" === C "o" []
   )) (
-  Let (def "expr2" ["q2"] (
+  Let (Def "expr2" ["q2"] (
     V "q2" === C "disj" [C "var" [C "z" []], C "i" []]
   )) (
-  Let (def "expr3" ["q1"] (
+  Let (Def "expr3" ["q1"] (
     V "q1" === C "conj_" [C "var" [C "z" []], C "i" []]
   )) (
-  Let (def "expr4" ["q0"] (
+  Let (Def "expr4" ["q0"] (
     V "q0" === C "disj" [C "conj_" [C "var" [C "z" []], C "var" [C "s" [C "z" []]]], C "conj_" [C "var" [C "s" [C "s" [C "z" []]]], C "not_" [C "var" [C "s" [C "s" [C "s" [C "z" []]]]]]]]
   )) (
   last_goal)))))))))))))))))

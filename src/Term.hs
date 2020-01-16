@@ -5,7 +5,7 @@
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE UndecidableInstances   #-}
 
-module Program.Term where
+module Term where
 
 import Data.List
 import Text.Printf

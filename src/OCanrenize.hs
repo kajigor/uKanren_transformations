@@ -37,7 +37,7 @@ instance OCanren v => OCanren (G v) where
   ocanren (Fresh x g )  = let (names, goal) = freshVars [x] g in printf "(fresh ((%s)) (%s))" (printArgs names) (ocanren goal)
 --ocanren (Invoke f ts) = printf "(print_string \"%s\\n\";%s)" (f ++ concat [' ' : ocanren t | t <- ts]) (f ++ concat [' ' : ocanren t | t <- ts])
   ocanren (Invoke f ts) = printf "(%s %s)" f (printArgs $ map ocanren ts)
-  ocanren (Let (n, as, b) g) = printf "let rec %s %s = %s in %s" n (printArgs as) (ocanren b) (ocanren g)
+  ocanren (Let (Def n as b) g) = printf "let rec %s %s = %s in %s" n (printArgs as) (ocanren b) (ocanren g)
 
 -- printArgs [] = "()"
 printArgs args = unwords $ map (\x -> if ' ' `elem` x then printf "(%s)" x else x ) args
@@ -48,9 +48,9 @@ ocanrenize topLevelName (g, args) =
 
 ocanrenize' :: String -> (G X, [String], [Def]) -> String
 ocanrenize' topLevelName (g, args, defs) = printf "let %s %s = %s %s" topLevelName (printArgs args) (printDefs defs) (ocanren g) where
-  printFstDef (n, as, g) = printf "let rec %s %s = %s" n (printArgs as) (ocanren g)
+  printFstDef (Def n as g) = printf "let rec %s %s = %s" n (printArgs as) (ocanren g)
   printLastDefs [] = "in "
-  printLastDefs ((n, as, g) : ds) =
+  printLastDefs ((Def n as g) : ds) =
     printf "and %s %s = %s %s " n (printArgs as) (ocanren g) $ printLastDefs ds
 
   printDefs []     = ""

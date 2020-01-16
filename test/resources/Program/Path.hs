@@ -22,7 +22,7 @@ env = snd pathTree
 
 pathTree =
  (\last_goal ->
-  Let (def "eqNat" ["a", "b", "q24"] (
+  Let (Def "eqNat" ["a", "b", "q24"] (
     fresh ["q25"] (
       (V "q25" === C "pair" [V "a", V "b"]) &&&
       (((V "q25" === C "pair" [C "z" [], C "z" []]) &&&
@@ -37,7 +37,7 @@ pathTree =
          (V "q25" === C "pair" [C "s" [V "x"], C "s" [V "y"]]) &&&
          (call "eqNat" [V "x", V "y", V "q24"])))))
   )) (
-  Let (def "eqPair" ["a", "b", "q15"] (
+  Let (Def "eqPair" ["a", "b", "q15"] (
     fresh ["q16", "a1", "a2", "b1", "b2", "q17", "q18"] (
       (V "q16" === C "pair" [V "a", V "b"]) &&&
       (V "q16" === C "pair" [C "pair" [V "a1", V "a2"], C "pair" [V "b1", V "b2"]]) &&&
@@ -48,7 +48,7 @@ pathTree =
       ((V "q17" === C "true" []) &&&
       (V "q15" === V "q18"))))
   )) (
-  Let (def "elem" ["x", "g", "q10"] (
+  Let (Def "elem" ["x", "g", "q10"] (
     ((V "g" === C "nil" []) &&&
     (V "q10" === C "false" [])) |||
     (fresh ["y", "ys", "q13"] (
@@ -59,7 +59,7 @@ pathTree =
        ((V "q13" === C "false" []) &&&
        (call "elem" [V "x", V "ys", V "q10"])))))
   )) (
-  Let (def "isPath" ["c", "g", "q0"] (
+  Let (Def "isPath" ["c", "g", "q0"] (
     ((V "c" === C "nil" []) &&&
     (V "q0" === C "true" [])) |||
     (fresh ["q2"] (

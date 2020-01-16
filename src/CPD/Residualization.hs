@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE FunctionalDependencies #-}
 
-module CpdResidualization where
+module CPD.Residualization where
 
 import Syntax
 import Text.Printf
@@ -10,12 +10,12 @@ import Data.List
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import qualified Residualize as Res
-import qualified CPD
+import qualified CPD.LocalControl as LC
 import Debug.Trace
 import Eval
 import Data.Char
 import Data.Maybe
-import GlobalControl
+import CPD.GlobalControl
 import Util.Miscellaneous
 
 type Set = Set.Set
@@ -27,7 +27,7 @@ residualizationTopLevel :: GlobalTree -> G X
 residualizationTopLevel test =
   let goal = residualizeGlobalTree test in
   case goal undefined of
-    Let (name, args, _) _ -> goal $ Invoke name $ V <$> args
+    Let (Def name args _) _ -> goal $ Invoke name $ V <$> args
     _ -> error "Residualiation failed"
 
 residualizeGlobalTree :: GlobalTree -> (G X -> G X)
@@ -67,7 +67,7 @@ unifyInvocationLists _ _ _ = Nothing
 generateInvocation :: [G S] -> Definitions -> G X
 generateInvocation goals defs =
   -- trace (printf "\nGenerateInvocation\nGoal: %s\nDefs: %s\n" (show goals) (intercalate "\n" $ map show $ map fst3 defs)) $
-  -- trace (printf "\nInstance Check: %s\n" (show $ CPD.instanceCheck goals (map fst3 defs))) $
+  -- trace (printf "\nInstance Check: %s\n" (show $ LC.instanceCheck goals (map fst3 defs))) $
   fromMaybe
     (error "Residualization failed: invocation of the undefined relation.")
     (conj <$> conjInvocation goals defs)
@@ -140,12 +140,12 @@ isGroundTerm :: Term a -> Bool
 isGroundTerm (V _) = False
 isGroundTerm (C _ args) = all isGroundTerm args
 
-residualizeSldTree :: [G S] -> CPD.SldTree -> Definitions -> Maybe Def
+residualizeSldTree :: [G S] -> LC.SldTree -> Definitions -> Maybe Def
 residualizeSldTree rootGoals tree definitions = do
   let (_, defName, rootVars) = fromMaybe (error (printf "Residualization failed: no definition found for\n%s\nDefs:\n%s\n" (show rootGoals) (show definitions))) $
                                find ((== rootGoals) . fst3) definitions
                                  
-  let resultants = CPD.resultants tree
+  let resultants = LC.resultants tree
   
   let goals = 
               trace (printf "RootGoal: %s\nResultants: \n%s\n" (show rootGoals) (intercalate "\n" $ map (\(x,y,_) -> show (x,y)) resultants)) $
@@ -157,12 +157,12 @@ residualizeSldTree rootGoals tree definitions = do
                     resultants
   let defArgs = map Res.vident rootVars
 
-  let body = Eval.postEval' defArgs $ 
+  let body = Eval.postEval defArgs $ 
                 foldl1 (|||) (reverse goals)
 
   if {-(trace (printf "Body: %s\n" (show body)))-} (null goals)
   then fail (printf "No resultants in the sld tree for %s" (show rootGoals))
-  else return $ def defName defArgs body
+  else return $ Def defName defArgs body
   where
     -- go [] [] defs    = error "Residualization failed: a substitution and goals cannot be empty simpultaneously"
     go [] [] defs    = Invoke "success" []

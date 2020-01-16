@@ -15,7 +15,7 @@ app p q = C "App" [p, q]
 substo :: G a -> G a
 substo g =
   Let 
-    ( def "substo" ["l", "x", "a", "l'"]
+    ( Def "substo" ["l", "x", "a", "l'"]
       (
         fresh ["y"] 
         (
@@ -50,7 +50,7 @@ substo g =
 evalo :: G a -> G a
 evalo g =
   Let 
-    ( def "evalo" ["m", "n"]
+    ( Def "evalo" ["m", "n"]
       (
         fresh ["x"] 
         (

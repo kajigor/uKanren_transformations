@@ -3,7 +3,7 @@
 module InductiveCheck where 
 
 import Syntax 
-import CPD 
+import CPD.LocalControl 
 import Purification
 import Eval 
 import Data.Maybe
@@ -25,7 +25,7 @@ isInductive :: G X -> Bool
 isInductive goal = 
   let (goal', defs) = takeOutLets goal in
   let gamma = updateDefsInGamma env0 defs in
-  let (logicGoal, gamma', names) = preEval' gamma goal' in
+  let (logicGoal, gamma', names) = preEval gamma goal' in
   let (g', _) = oneStepUnfold (logicGoal) gamma' in 
   let normalized = normalize g' in
   let unified = mapMaybe (unifyStuff s0) normalized in

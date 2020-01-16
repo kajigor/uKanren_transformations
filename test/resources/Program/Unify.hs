@@ -18,7 +18,7 @@ unify = unifyTree
 
 unifyTree =
  (\last_goal ->
-  Let (def "eq_nat" ["a", "b", "q36"] (
+  Let (Def "eq_nat" ["a", "b", "q36"] (
     fresh ["q37"] (
       (V "q37" === C "pair" [V "a", V "b"]) &&&
       (((V "q37" === C "pair" [C "z" [], C "z" []]) &&&
@@ -33,7 +33,7 @@ unifyTree =
          (V "q37" === C "pair" [C "s" [V "x"], C "s" [V "y"]]) &&&
          (call "eq_nat" [V "x", V "y", V "q36"])))))
   )) (
-  Let (def "get_term" ["var", "subst", "q32"] (
+  Let (Def "get_term" ["var", "subst", "q32"] (
     ((V "subst" === C "nil" []) &&&
     (V "q32" === C "none" [])) |||
     (fresh ["x", "xs"] (
@@ -44,8 +44,8 @@ unifyTree =
           (V "var" === C "s" [V "n"]) &&&
           (call "get_term" [V "n", V "xs", V "q32"]))))))
   )) (
-  Let (def "check_uni" ["subst", "t1", "t2", "q31"] (
-    Let (def "forall2" ["subst", "l1", "l2", "q0"] (
+  Let (Def "check_uni" ["subst", "t1", "t2", "q31"] (
+    Let (Def "forall2" ["subst", "l1", "l2", "q0"] (
       fresh ["q1"] (
         (V "q1" === C "pair" [V "l1", V "l2"]) &&&
         (((V "q1" === C "pair" [C "nil" [], C "nil" []]) &&&
@@ -109,10 +109,10 @@ unifyTree =
 --
 -- unify =
 --  (\last_goal ->
---   Let (def "eq_nat" ["a", "b", "q29"] (
+--   Let (Def "eq_nat" ["a", "b", "q29"] (
 --     (V "a" === V "b") &&& (V "q29" === C "true" [])
 --   )) (
---   Let (def "get_term" ["var", "subst", "q25"] (
+--   Let (Def "get_term" ["var", "subst", "q25"] (
 --     ((V "subst" === C "nil" []) &&&
 --     (V "q25" === C "none" [])) |||
 --     (fresh ["x", "xs"] (
@@ -123,8 +123,8 @@ unifyTree =
 --           (V "var" === C "s" [V "n"]) &&&
 --           (call "get_term" [V "n", V "xs", V "q25"]))))))
 --   )) (
---   Let (def "check_uni" ["t1", "t2", "subst", "q24"] (
---     Let (def "all_check_uni" ["a1", "a2", "subst", "q0"] (
+--   Let (Def "check_uni" ["t1", "t2", "subst", "q24"] (
+--     Let (Def "all_check_uni" ["a1", "a2", "subst", "q0"] (
 --       fresh ["q1"] (
 --         (V "q1" === C "pair" [V "a1", V "a2"]) &&&
 --         (((V "q1" === C "pair" [C "nil" [], C "nil" []]) &&&

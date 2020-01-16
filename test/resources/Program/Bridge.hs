@@ -8,14 +8,14 @@ query = topLevelBigBridge
 env = "open MiniKanren\nopen MiniKanrenStd\ntype 'a0 gpeano =\n  | O \n  | S of 'a0 \nlet rec fmap fa0 = function | O -> O | S a0 -> S (fa0 a0)\nmodule For_gpeano =\n  (Fmap)(struct\n           let rec fmap fa0 = function | O -> O | S a0 -> S (fa0 a0)\n           type 'a0 t = 'a0 gpeano\n         end)\nlet rec o () = inj (For_gpeano.distrib O)\nand s x__0 = inj (For_gpeano.distrib (S x__0))\ntype person =\n  | A \n  | B \n  | C \n  | D \nlet a () = !! A\nlet b () = !! B\nlet c () = !! C\nlet d () = !! D\ntype 'a0 gstep =\n  | One of 'a0 \n  | Two of 'a0 * 'a0 \nlet rec fmap fa0 =\n  function\n  | One a0 -> One (fa0 a0)\n  | Two (a0_0, a0_1) -> Two ((fa0 a0_0), (fa0 a0_1))\nmodule For_gstep =\n  (Fmap)(struct\n           let rec fmap fa0 =\n             function\n             | One a0 -> One (fa0 a0)\n             | Two (a0_0, a0_1) -> Two ((fa0 a0_0), (fa0 a0_1))\n           type 'a0 t = 'a0 gstep\n         end)\nlet rec one x__0 = inj (For_gstep.distrib (One x__0))\nand two x__0 x__1 = inj (For_gstep.distrib (Two (x__0, x__1)))\ntype 'a0 gstate =\n  | St of 'a0 * 'a0 * 'a0 * 'a0 * 'a0 \nlet rec fmap fa0 =\n  function\n  | St (a0_0, a0_1, a0_2, a0_3, a0_4) ->\n      St ((fa0 a0_0), (fa0 a0_1), (fa0 a0_2), (fa0 a0_3), (fa0 a0_4))\nmodule For_gstate =\n  (Fmap)(struct\n           let rec fmap fa0 =\n             function\n             | St (a0_0, a0_1, a0_2, a0_3, a0_4) ->\n                 St\n                   ((fa0 a0_0), (fa0 a0_1), (fa0 a0_2), (fa0 a0_3),\n                     (fa0 a0_4))\n           type 'a0 t = 'a0 gstate\n         end)\nlet rec st x__0 x__1 x__2 x__3 x__4 =\n  inj (For_gstate.distrib (St (x__0, x__1, x__2, x__3, x__4)))"
 
 topLevelBigBridge g =
-  Let (def "tlBigBridge" ["a", "b"] (
+  Let (Def "tlBigBridge" ["a", "b"] (
     call "result" [V "b"] &&& call "getAnswer" [V "a", C "some" [V "b"]]
   )) $ game2Big g
 
 -- fresh ["a", "b"]  (call "result" [V "b"] &&& call "getAnswer" [V "a", C "some" [V "b"]])
 
 game2Big last_goal =
-  Let (def "greater" ["a0", "b0", "q146"] (
+  Let (Def "greater" ["a0", "b0", "q146"] (
     ((V "a0" === C "o" []) &&&
     (V "q146" === C "false" [])) |||
     (fresh ["x"] (
@@ -26,7 +26,7 @@ game2Big last_goal =
           (V "b0" === C "s" [V "y"]) &&&
           (call "greater" [V "x", V "y", V "q146"]))))))
   )) (
-  Let (def "grForPerson" ["x", "y", "q129"] (
+  Let (Def "grForPerson" ["x", "y", "q129"] (
     ((V "x" === C "a" []) &&&
     (((V "y" === C "a" []) &&&
     (V "q129" === C "false" [])) |||
@@ -57,7 +57,7 @@ game2Big last_goal =
     ((V "x" === C "d" []) &&&
     (V "q129" === C "false" []))
   )) (
-  Let (def "max" ["a0", "b0", "q125"] (
+  Let (Def "max" ["a0", "b0", "q125"] (
     fresh ["q126"] (
       (call "greater" [V "a0", V "b0", V "q126"]) &&&
       (((V "q126" === C "true" []) &&&
@@ -65,14 +65,14 @@ game2Big last_goal =
       ((V "q126" === C "false" []) &&&
       (V "b0" === V "q125"))))
   )) (
-  Let (def "add" ["a0", "b0", "q123"] (
+  Let (Def "add" ["a0", "b0", "q123"] (
     ((V "a0" === C "o" []) &&&
     (V "b0" === V "q123")) |||
     (fresh ["x"] (
        (V "a0" === C "s" [V "x"]) &&&
        (call "add" [V "x", C "s" [V "b0"], V "q123"])))
   )) (
-  Let (def "eqForBool" ["a", "b", "q109"] (
+  Let (Def "eqForBool" ["a", "b", "q109"] (
     fresh ["q107", "q108"] (
       (((V "a" === C "false" []) &&&
       (V "q107" === C "false" [])) |||
@@ -92,7 +92,7 @@ game2Big last_goal =
       ((V "q107" === C "false" []) &&&
       (V "q109" === V "q108"))))
   )) (
-  Let (def "eqForState" ["x", "y", "q81"] (
+  Let (Def "eqForState" ["x", "y", "q81"] (
     fresh ["l1", "a1", "b1", "c1", "d1"] (
       (V "x" === C "st" [V "l1", V "a1", V "b1", V "c1", V "d1"]) &&&
       (fresh ["l2", "a2", "b2", "c2", "d2"] (
@@ -123,7 +123,7 @@ game2Big last_goal =
             ((V "q83" === C "true" []) &&&
             (V "q81" === V "q84"))))))))
   )) (
-  Let (def "checkPerson" ["state", "person", "q79"] (
+  Let (Def "checkPerson" ["state", "person", "q79"] (
     fresh ["l", "a0", "b0", "c0", "d0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
       (((V "person" === C "a" []) &&&
@@ -135,7 +135,7 @@ game2Big last_goal =
       ((V "person" === C "d" []) &&&
       (call "eqForBool" [V "d0", V "l", V "q79"]))))
   )) (
-  Let (def "checkStep" ["state", "step", "q66"] (
+  Let (Def "checkStep" ["state", "step", "q66"] (
     (fresh ["p"] (
        (V "step" === C "one" [V "p"]) &&&
        (call "checkPerson" [V "state", V "p", V "q66"]))) |||
@@ -155,7 +155,7 @@ game2Big last_goal =
           ((V "q67" === C "true" []) &&&
           (V "q66" === V "q68")))))))
   )) (
-  Let (def "moveLight" ["state", "q61"] (
+  Let (Def "moveLight" ["state", "q61"] (
     fresh ["l", "a0", "b0", "c0", "d0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
       (fresh ["q62"] (
@@ -165,7 +165,7 @@ game2Big last_goal =
          ((V "l" === C "false" []) &&&
          (V "q62" === C "true" []))))))
   )) (
-  Let (def "movePerson" ["state", "person", "q43"] (
+  Let (Def "movePerson" ["state", "person", "q43"] (
     fresh ["l", "a0", "b0", "c0", "d0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
       (((V "person" === C "a" []) &&&
@@ -197,7 +197,7 @@ game2Big last_goal =
          ((V "d0" === C "false" []) &&&
          (V "q57" === C "true" []))))))))
   )) (
-  Let (def "step" ["state", "step", "q36"] (
+  Let (Def "step" ["state", "step", "q36"] (
     (fresh ["p"] (
        (V "step" === C "one" [V "p"]) &&&
        (fresh ["q37"] (
@@ -211,7 +211,7 @@ game2Big last_goal =
              (call "movePerson" [V "q41", V "q", V "q39"]))) &&&
           (call "moveLight" [V "q39", V "q36"])))))
   )) (
-  Let (def "times" ["p", "q31"] (
+  Let (Def "times" ["p", "q31"] (
     ((V "p" === C "a" []) &&&
     (V "q31" === C "s" [C "o" []])) |||
     ((V "p" === C "b" []) &&&
@@ -221,7 +221,7 @@ game2Big last_goal =
     ((V "p" === C "d" []) &&&
     (V "q31" === C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]))
   )) (
-  Let (def "getTime" ["state", "q27"] (
+  Let (Def "getTime" ["state", "q27"] (
     (fresh ["p"] (
        (V "state" === C "one" [V "p"]) &&&
        (call "times" [V "p", V "q27"]))) |||
@@ -232,14 +232,14 @@ game2Big last_goal =
           (call "times" [V "q", V "q29"]) &&&
           (call "max" [V "q28", V "q29", V "q27"])))))
   )) (
-  Let (def "getAnswer" ["answer", "q26"] (
-    Let (def "start" ["q1"] (
+  Let (Def "getAnswer" ["answer", "q26"] (
+    Let (Def "start" ["q1"] (
       V "q1" === C "st" [C "true" [], C "true" [], C "true" [], C "true" [], C "true" []]
     )) (
-    Let (def "finish" ["q2"] (
+    Let (Def "finish" ["q2"] (
       V "q2" === C "st" [C "false" [], C "false" [], C "false" [], C "false" [], C "false" []]
     )) (
-    Let (def "getAnswer'" ["answer", "state", "q3"] (
+    Let (Def "getAnswer'" ["answer", "state", "q3"] (
       (fresh ["x", "xs"] (
          (V "answer" === C "%" [V "x", V "xs"]) &&&
          (fresh ["q5"] (
@@ -274,13 +274,13 @@ game2Big last_goal =
       (call "start" [V "q22"]) &&&
       (call "getAnswer'" [V "answer", V "q22", V "q26"])))))
   )) (
-  Let (def "result" ["q0"] (
+  Let (Def "result" ["q0"] (
     V "q0" === C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]]]]]]]]
   )) (
   last_goal)))))))))))))))
 
 game2 last_goal =
-  Let (def "greater" ["a0", "b0", "q113"] (
+  Let (Def "greater" ["a0", "b0", "q113"] (
     ((V "a0" === C "o" []) &&&
     (V "q113" === C "false" [])) |||
     (fresh ["x"] (
@@ -291,7 +291,7 @@ game2 last_goal =
           (V "b0" === C "s" [V "y"]) &&&
           (call "greater" [V "x", V "y", V "q113"]))))))
   )) (
-  Let (def "grForPerson" ["x", "y", "q106"] (
+  Let (Def "grForPerson" ["x", "y", "q106"] (
     ((V "x" === C "a" []) &&&
     (((V "y" === C "a" []) &&&
     (V "q106" === C "false" [])) |||
@@ -303,7 +303,7 @@ game2 last_goal =
     ((V "y" === C "b" []) &&&
     (V "q106" === C "false" []))))
   )) (
-  Let (def "max" ["a0", "b0", "q102"] (
+  Let (Def "max" ["a0", "b0", "q102"] (
     fresh ["q103"] (
       (call "greater" [V "a0", V "b0", V "q103"]) &&&
       (((V "q103" === C "true" []) &&&
@@ -311,14 +311,14 @@ game2 last_goal =
       ((V "q103" === C "false" []) &&&
       (V "b0" === V "q102"))))
   )) (
-  Let (def "add" ["a0", "b0", "q100"] (
+  Let (Def "add" ["a0", "b0", "q100"] (
     ((V "a0" === C "o" []) &&&
     (V "b0" === V "q100")) |||
     (fresh ["x"] (
        (V "a0" === C "s" [V "x"]) &&&
        (call "add" [V "x", C "s" [V "b0"], V "q100"])))
   )) (
-  Let (def "eqForBool" ["a", "b", "q86"] (
+  Let (Def "eqForBool" ["a", "b", "q86"] (
     fresh ["q84", "q85"] (
       (((V "a" === C "false" []) &&&
       (V "q84" === C "false" [])) |||
@@ -338,7 +338,7 @@ game2 last_goal =
       ((V "q84" === C "false" []) &&&
       (V "q86" === V "q85"))))
   )) (
-  Let (def "eqForState" ["x", "y", "q70"] (
+  Let (Def "eqForState" ["x", "y", "q70"] (
     fresh ["l1", "a1", "b1"] (
       (V "x" === C "st" [V "l1", V "a1", V "b1"]) &&&
       (fresh ["l2", "a2", "b2"] (
@@ -357,7 +357,7 @@ game2 last_goal =
             ((V "q72" === C "true" []) &&&
             (V "q70" === V "q73"))))))))
   )) (
-  Let (def "checkPerson" ["state", "person", "q68"] (
+  Let (Def "checkPerson" ["state", "person", "q68"] (
     fresh ["l", "a0", "b0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0"]) &&&
       (((V "person" === C "a" []) &&&
@@ -365,7 +365,7 @@ game2 last_goal =
       ((V "person" === C "b" []) &&&
       (call "eqForBool" [V "b0", V "l", V "q68"]))))
   )) (
-  Let (def "checkStep" ["state", "step", "q55"] (
+  Let (Def "checkStep" ["state", "step", "q55"] (
     (fresh ["p"] (
        (V "step" === C "one" [V "p"]) &&&
        (call "checkPerson" [V "state", V "p", V "q55"]))) |||
@@ -385,7 +385,7 @@ game2 last_goal =
           ((V "q56" === C "true" []) &&&
           (V "q55" === V "q57")))))))
   )) (
-  Let (def "moveLight" ["state", "q50"] (
+  Let (Def "moveLight" ["state", "q50"] (
     fresh ["l", "a0", "b0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0"]) &&&
       (fresh ["q51"] (
@@ -395,7 +395,7 @@ game2 last_goal =
          ((V "l" === C "false" []) &&&
          (V "q51" === C "true" []))))))
   )) (
-  Let (def "movePerson" ["state", "person", "q40"] (
+  Let (Def "movePerson" ["state", "person", "q40"] (
     fresh ["l", "a0", "b0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0"]) &&&
       (((V "person" === C "a" []) &&&
@@ -413,7 +413,7 @@ game2 last_goal =
          ((V "b0" === C "false" []) &&&
          (V "q46" === C "true" []))))))))
   )) (
-  Let (def "step" ["state", "step", "q33"] (
+  Let (Def "step" ["state", "step", "q33"] (
     (fresh ["p"] (
        (V "step" === C "one" [V "p"]) &&&
        (fresh ["q34"] (
@@ -427,13 +427,13 @@ game2 last_goal =
              (call "movePerson" [V "q38", V "q", V "q36"]))) &&&
           (call "moveLight" [V "q36", V "q33"])))))
   )) (
-  Let (def "times" ["p", "q30"] (
+  Let (Def "times" ["p", "q30"] (
     ((V "p" === C "a" []) &&&
     (V "q30" === C "s" [C "o" []])) |||
     ((V "p" === C "b" []) &&&
     (V "q30" === C "s" [C "s" [C "o" []]]))
   )) (
-  Let (def "getTime" ["state", "q26"] (
+  Let (Def "getTime" ["state", "q26"] (
     (fresh ["p"] (
        (V "state" === C "one" [V "p"]) &&&
        (call "times" [V "p", V "q26"]))) |||
@@ -444,14 +444,14 @@ game2 last_goal =
           (call "times" [V "q", V "q28"]) &&&
           (call "max" [V "q27", V "q28", V "q26"])))))
   )) (
-  Let (def "getAnswer'" ["answer", "q25"] (
-    Let (def "start" ["q0"] (
+  Let (Def "getAnswer'" ["answer", "q25"] (
+    Let (Def "start" ["q0"] (
       V "q0" === C "st" [C "true" [], C "true" [], C "true" []]
     )) (
-    Let (def "finish" ["q1"] (
+    Let (Def "finish" ["q1"] (
       V "q1" === C "st" [C "false" [], C "false" [], C "false" []]
     )) (
-    Let (def "getAnswer" ["answer", "state", "q2"] (
+    Let (Def "getAnswer" ["answer", "state", "q2"] (
       (fresh ["x", "xs"] (
          (V "answer" === C "%" [V "x", V "xs"]) &&&
          (fresh ["q4"] (
@@ -491,7 +491,7 @@ game2 last_goal =
 
 pair_bridge =
  (\last_goal ->
-  Let (def "greater" ["a0", "b0", "q113"] (
+  Let (Def "greater" ["a0", "b0", "q113"] (
     ((V "a0" === C "o" []) &&&
     (V "q113" === C "false" [])) |||
     (fresh ["x"] (
@@ -502,7 +502,7 @@ pair_bridge =
           (V "b0" === C "s" [V "y"]) &&&
           (call "greater" [V "x", V "y", V "q113"]))))))
   )) (
-  Let (def "grForPerson" ["x", "y", "q106"] (
+  Let (Def "grForPerson" ["x", "y", "q106"] (
     ((V "x" === C "a" []) &&&
     (((V "y" === C "a" []) &&&
     (V "q106" === C "false" [])) |||
@@ -514,7 +514,7 @@ pair_bridge =
     ((V "y" === C "b" []) &&&
     (V "q106" === C "false" []))))
   )) (
-  Let (def "max" ["a0", "b0", "q102"] (
+  Let (Def "max" ["a0", "b0", "q102"] (
     fresh ["q103"] (
       (call "greater" [V "a0", V "b0", V "q103"]) &&&
       (((V "q103" === C "true" []) &&&
@@ -522,14 +522,14 @@ pair_bridge =
       ((V "q103" === C "false" []) &&&
       (V "b0" === V "q102"))))
   )) (
-  Let (def "add" ["a0", "b0", "q100"] (
+  Let (Def "add" ["a0", "b0", "q100"] (
     ((V "a0" === C "o" []) &&&
     (V "b0" === V "q100")) |||
     (fresh ["x"] (
        (V "a0" === C "s" [V "x"]) &&&
        (call "add" [V "x", C "s" [V "b0"], V "q100"])))
   )) (
-  Let (def "eqForBool" ["a", "b", "q86"] (
+  Let (Def "eqForBool" ["a", "b", "q86"] (
     fresh ["q84", "q85"] (
       (((V "a" === C "false" []) &&&
       (V "q84" === C "false" [])) |||
@@ -549,7 +549,7 @@ pair_bridge =
       ((V "q84" === C "false" []) &&&
       (V "q86" === V "q85"))))
   )) (
-  Let (def "eqForState" ["x", "y", "q70"] (
+  Let (Def "eqForState" ["x", "y", "q70"] (
     fresh ["l1", "a1", "b1"] (
       (V "x" === C "st" [V "l1", V "a1", V "b1"]) &&&
       (fresh ["l2", "a2", "b2"] (
@@ -568,7 +568,7 @@ pair_bridge =
             ((V "q72" === C "true" []) &&&
             (V "q70" === V "q73"))))))))
   )) (
-  Let (def "checkPerson" ["state", "person", "q68"] (
+  Let (Def "checkPerson" ["state", "person", "q68"] (
     fresh ["l", "a0", "b0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0"]) &&&
       (((V "person" === C "a" []) &&&
@@ -576,7 +576,7 @@ pair_bridge =
       ((V "person" === C "b" []) &&&
       (call "eqForBool" [V "b0", V "l", V "q68"]))))
   )) (
-  Let (def "checkStep" ["state", "step", "q55"] (
+  Let (Def "checkStep" ["state", "step", "q55"] (
     (fresh ["p"] (
        (V "step" === C "one" [V "p"]) &&&
        (call "checkPerson" [V "state", V "p", V "q55"]))) |||
@@ -596,7 +596,7 @@ pair_bridge =
           ((V "q56" === C "true" []) &&&
           (V "q55" === V "q57")))))))
   )) (
-  Let (def "moveLight" ["state", "q50"] (
+  Let (Def "moveLight" ["state", "q50"] (
     fresh ["l", "a0", "b0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0"]) &&&
       (fresh ["q51"] (
@@ -606,7 +606,7 @@ pair_bridge =
          ((V "l" === C "false" []) &&&
          (V "q51" === C "true" []))))))
   )) (
-  Let (def "movePerson" ["state", "person", "q40"] (
+  Let (Def "movePerson" ["state", "person", "q40"] (
     fresh ["l", "a0", "b0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0"]) &&&
       (((V "person" === C "a" []) &&&
@@ -624,7 +624,7 @@ pair_bridge =
          ((V "b0" === C "false" []) &&&
          (V "q46" === C "true" []))))))))
   )) (
-  Let (def "step" ["state", "step", "q33"] (
+  Let (Def "step" ["state", "step", "q33"] (
     (fresh ["p"] (
        (V "step" === C "one" [V "p"]) &&&
        (fresh ["q34"] (
@@ -638,13 +638,13 @@ pair_bridge =
              (call "movePerson" [V "q38", V "q", V "q36"]))) &&&
           (call "moveLight" [V "q36", V "q33"])))))
   )) (
-  Let (def "times" ["p", "q30"] (
+  Let (Def "times" ["p", "q30"] (
     ((V "p" === C "a" []) &&&
     (V "q30" === C "s" [C "o" []])) |||
     ((V "p" === C "b" []) &&&
     (V "q30" === C "s" [C "s" [C "o" []]]))
   )) (
-  Let (def "getTime" ["state", "q26"] (
+  Let (Def "getTime" ["state", "q26"] (
     (fresh ["p"] (
        (V "state" === C "one" [V "p"]) &&&
        (call "times" [V "p", V "q26"]))) |||
@@ -655,14 +655,14 @@ pair_bridge =
           (call "times" [V "q", V "q28"]) &&&
           (call "max" [V "q27", V "q28", V "q26"])))))
   )) (
-  Let (def "getAnswer" ["answer", "q25"] (
-    Let (def "start" ["q0"] (
+  Let (Def "getAnswer" ["answer", "q25"] (
+    Let (Def "start" ["q0"] (
       V "q0" === C "st" [C "true" [], C "true" [], C "true" []]
     )) (
-    Let (def "finish" ["q1"] (
+    Let (Def "finish" ["q1"] (
       V "q1" === C "st" [C "false" [], C "false" [], C "false" []]
     )) (
-    Let (def "getAnswer" ["answer", "state", "q2"] (
+    Let (Def "getAnswer" ["answer", "state", "q2"] (
       (fresh ["x", "xs"] (
          (V "answer" === C "%" [V "x", V "xs"]) &&&
          (fresh ["q4"] (
@@ -705,7 +705,7 @@ pair_bridge =
 
 pair_bridge_big =
  (\last_goal ->
-  Let (def "greater" ["a0", "b0", "q146"] (
+  Let (Def "greater" ["a0", "b0", "q146"] (
     ((V "a0" === C "o" []) &&&
     (V "q146" === C "false" [])) |||
     (fresh ["x"] (
@@ -716,7 +716,7 @@ pair_bridge_big =
           (V "b0" === C "s" [V "y"]) &&&
           (call "greater" [V "x", V "y", V "q146"]))))))
   )) (
-  Let (def "grForPerson" ["x", "y", "q129"] (
+  Let (Def "grForPerson" ["x", "y", "q129"] (
     ((V "x" === C "a" []) &&&
     (((V "y" === C "a" []) &&&
     (V "q129" === C "false" [])) |||
@@ -747,7 +747,7 @@ pair_bridge_big =
     ((V "x" === C "d" []) &&&
     (V "q129" === C "false" []))
   )) (
-  Let (def "max" ["a0", "b0", "q125"] (
+  Let (Def "max" ["a0", "b0", "q125"] (
     fresh ["q126"] (
       (call "greater" [V "a0", V "b0", V "q126"]) &&&
       (((V "q126" === C "true" []) &&&
@@ -755,14 +755,14 @@ pair_bridge_big =
       ((V "q126" === C "false" []) &&&
       (V "b0" === V "q125"))))
   )) (
-  Let (def "add" ["a0", "b0", "q123"] (
+  Let (Def "add" ["a0", "b0", "q123"] (
     ((V "a0" === C "o" []) &&&
     (V "b0" === V "q123")) |||
     (fresh ["x"] (
        (V "a0" === C "s" [V "x"]) &&&
        (call "add" [V "x", C "s" [V "b0"], V "q123"])))
   )) (
-  Let (def "eqForBool" ["a", "b", "q109"] (
+  Let (Def "eqForBool" ["a", "b", "q109"] (
     fresh ["q107", "q108"] (
       (((V "a" === C "false" []) &&&
       (V "q107" === C "false" [])) |||
@@ -782,7 +782,7 @@ pair_bridge_big =
       ((V "q107" === C "false" []) &&&
       (V "q109" === V "q108"))))
   )) (
-  Let (def "eqForState" ["x", "y", "q81"] (
+  Let (Def "eqForState" ["x", "y", "q81"] (
     fresh ["l1", "a1", "b1", "c1", "d1"] (
       (V "x" === C "st" [V "l1", V "a1", V "b1", V "c1", V "d1"]) &&&
       (fresh ["l2", "a2", "b2", "c2", "d2"] (
@@ -813,7 +813,7 @@ pair_bridge_big =
             ((V "q83" === C "true" []) &&&
             (V "q81" === V "q84"))))))))
   )) (
-  Let (def "checkPerson" ["state", "person", "q79"] (
+  Let (Def "checkPerson" ["state", "person", "q79"] (
     fresh ["l", "a0", "b0", "c0", "d0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
       (((V "person" === C "a" []) &&&
@@ -825,7 +825,7 @@ pair_bridge_big =
       ((V "person" === C "d" []) &&&
       (call "eqForBool" [V "d0", V "l", V "q79"]))))
   )) (
-  Let (def "checkStep" ["state", "step", "q66"] (
+  Let (Def "checkStep" ["state", "step", "q66"] (
     (fresh ["p"] (
        (V "step" === C "one" [V "p"]) &&&
        (call "checkPerson" [V "state", V "p", V "q66"]))) |||
@@ -845,7 +845,7 @@ pair_bridge_big =
           ((V "q67" === C "true" []) &&&
           (V "q66" === V "q68")))))))
   )) (
-  Let (def "moveLight" ["state", "q61"] (
+  Let (Def "moveLight" ["state", "q61"] (
     fresh ["l", "a0", "b0", "c0", "d0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
       (fresh ["q62"] (
@@ -855,7 +855,7 @@ pair_bridge_big =
          ((V "l" === C "false" []) &&&
          (V "q62" === C "true" []))))))
   )) (
-  Let (def "movePerson" ["state", "person", "q43"] (
+  Let (Def "movePerson" ["state", "person", "q43"] (
     fresh ["l", "a0", "b0", "c0", "d0"] (
       (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
       (((V "person" === C "a" []) &&&
@@ -887,7 +887,7 @@ pair_bridge_big =
          ((V "d0" === C "false" []) &&&
          (V "q57" === C "true" []))))))))
   )) (
-  Let (def "step" ["state", "step", "q36"] (
+  Let (Def "step" ["state", "step", "q36"] (
     (fresh ["p"] (
        (V "step" === C "one" [V "p"]) &&&
        (fresh ["q37"] (
@@ -901,7 +901,7 @@ pair_bridge_big =
              (call "movePerson" [V "q41", V "q", V "q39"]))) &&&
           (call "moveLight" [V "q39", V "q36"])))))
   )) (
-  Let (def "times" ["p", "q31"] (
+  Let (Def "times" ["p", "q31"] (
     ((V "p" === C "a" []) &&&
     (V "q31" === C "s" [C "o" []])) |||
     ((V "p" === C "b" []) &&&
@@ -911,7 +911,7 @@ pair_bridge_big =
     ((V "p" === C "d" []) &&&
     (V "q31" === C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]))
   )) (
-  Let (def "getTime" ["state", "q27"] (
+  Let (Def "getTime" ["state", "q27"] (
     (fresh ["p"] (
        (V "state" === C "one" [V "p"]) &&&
        (call "times" [V "p", V "q27"]))) |||
@@ -922,14 +922,14 @@ pair_bridge_big =
           (call "times" [V "q", V "q29"]) &&&
           (call "max" [V "q28", V "q29", V "q27"])))))
   )) (
-  Let (def "getAnswer" ["answer", "q26"] (
-    Let (def "start" ["q1"] (
+  Let (Def "getAnswer" ["answer", "q26"] (
+    Let (Def "start" ["q1"] (
       V "q1" === C "st" [C "true" [], C "true" [], C "true" [], C "true" [], C "true" []]
     )) (
-    Let (def "finish" ["q2"] (
+    Let (Def "finish" ["q2"] (
       V "q2" === C "st" [C "false" [], C "false" [], C "false" [], C "false" [], C "false" []]
     )) (
-    Let (def "getAnswer" ["answer", "state", "q3"] (
+    Let (Def "getAnswer" ["answer", "state", "q3"] (
       (fresh ["x", "xs"] (
          (V "answer" === C "%" [V "x", V "xs"]) &&&
          (fresh ["q5"] (
@@ -964,7 +964,7 @@ pair_bridge_big =
       (call "start" [V "q22"]) &&&
       (call "getAnswer" [V "answer", V "q22", V "q26"])))))
   )) (
-  Let (def "result" ["q0"] (
+  Let (Def "result" ["q0"] (
     V "q0" === C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]]]]]]]]
   )) (
   last_goal)))))))))))))))

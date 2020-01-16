@@ -18,7 +18,7 @@ succ x = C "S" [x]
 notZero :: G a -> G a
 notZero g =
   Let 
-    ( def "notZero" ["x"] 
+    ( Def "notZero" ["x"] 
       (
         fresh ["y"] (x === succ y)
       )
@@ -28,7 +28,7 @@ notZero g =
 addo :: G a -> G a
 addo g =
   Let
-    ( def "addo" ["x", "y", "z"]
+    ( Def "addo" ["x", "y", "z"]
         (
           x === zero &&& z === y |||
           fresh ["x'", "z'"]
@@ -40,7 +40,7 @@ addo g =
 mulo :: G a -> G a
 mulo g =
   Let
-    ( def "mulo" ["x", "y", "z"]
+    ( Def "mulo" ["x", "y", "z"]
       (
         (x === zero &&& z === zero) |||
           fresh ["x'", "z'"]
@@ -54,7 +54,7 @@ mulo g =
 leo :: G a -> G a
 leo g =
   Let
-    ( def "leo" ["x", "y", "b"]
+    ( Def "leo" ["x", "y", "b"]
       (
         (x === zero &&& b === trueo) |||
          fresh ["zz"] (x === succ zz &&& y === zero &&& b === falso) |||
@@ -66,7 +66,7 @@ leo g =
 gto :: G a -> G a
 gto g =
   Let 
-    ( def "gto" ["x", "y", "b"] 
+    ( Def "gto" ["x", "y", "b"] 
       (
         fresh ["zz"] (x === succ zz &&& y === zero &&& b === trueo) |||
         (x === zero &&& b === falso) |||
@@ -76,10 +76,10 @@ gto g =
     where [x, y, b, x', y', zz] = map V ["x", "y", "b", "x'", "y'", "zz"]
 
 geo :: G a -> G a
-geo g = Let (def "geo" ["x", "y", "z"] $ call "leo" [V "y", V "x", V "z"]) (leo g)
+geo g = Let (Def "geo" ["x", "y", "z"] $ call "leo" [V "y", V "x", V "z"]) (leo g)
 
 lto :: G a -> G a
-lto g = Let (def "lto" ["x", "y", "z"] $ call "gto" [V "y", V "x", V "z"]) (gto g)
+lto g = Let (Def "lto" ["x", "y", "z"] $ call "gto" [V "y", V "x", V "z"]) (gto g)
 
 num :: Show a => Term a -> String
 num (V n) = printf "._%s" (show n)

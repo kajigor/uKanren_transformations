@@ -6,7 +6,7 @@ import qualified Eval as E
 import Syntax
 import PartialDeduction
 import Text.Printf
-import CPD (getCurr)
+import CPD.LocalControl (getCurr)
 
 instance DotPrinter PDTree where
   labelNode t@(Conj ch _ _) = addChildren t ch
