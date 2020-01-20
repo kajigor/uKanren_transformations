@@ -7,6 +7,7 @@ module Syntax where
 import Data.List
 import Text.Printf
 import Data.Char
+-- import qualified Data.Map as Map
 
 type X    = String -- Syntactic variables
 type S    = Int    -- Semantic variables
@@ -27,6 +28,16 @@ data Def = Def Name [Name] (G X)
 
 instance Show Def where
   show (Def name args body) = printf "%s %s = %s" name (unwords args) (show body)
+
+-- type DefMap = Map.Map (Name, Int) Def 
+
+-- insertDef :: Def -> DefMap -> DefMap 
+-- insertDef def@(Def n a _) = Map.insert (n, length a) def 
+
+-- defMapFromList :: [Def] -> DefMap
+-- defMapFromList = foldr insertDef Map.empty 
+
+data Program = Program [Def] (G X)
 
 -- Goals
 data G a =

@@ -22,19 +22,19 @@ manyAssert :: (Eq a, Show a) => a -> (b -> с -> a) -> [(b, с)] -> Assertion
 manyAssert expected f =
   mapM_ (\(x, y) -> test2 f x y expected)
 
-dA = doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
-revAcco' = revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])
-rev = reverso $ fresh ["x", "y"] (call "reverso" [V "x", V "y"])
+dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
+revAcco' = Program revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])
+rev = Program reverso $ fresh ["x", "y"] (call "reverso" [V "x", V "y"])
 
--- unit_partialDeductionTest = do 
---   runTest PD.topLevel "da" dA 
+unit_partialDeductionTest = do 
+  runTest PD.topLevel "da" dA 
+  runTest PD.topLevel "rev" rev 
+  runTest PD.topLevel "revAcco" revAcco'
+
+-- unit_nonConjunctiveTest = do 
+--   runTest PD.nonConjunctive "da" dA 
 --   -- runTest "rev" rev 
 --   -- runTest "revAcco" revAcco'
-
-unit_nonConjunctiveTest = do 
-  runTest PD.nonConjunctive "da" dA 
-  -- runTest "rev" rev 
-  -- runTest "revAcco" revAcco'
 
 
 runTest function filename goal = do

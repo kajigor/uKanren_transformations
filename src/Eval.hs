@@ -124,8 +124,8 @@ preEval = go []
   go vars   (p, i, y : d') (Fresh x g') =
     go (y : vars) (p, extend i x (V y), d') g'
   go vars g@(_, i, _) (Invoke f fs)  = (Invoke f (map (i <@>) fs), g, vars)
-  go vars e           (Let    def' g) = let (g', e', vars') = go vars e g in
-                                             (Let def' g', e', vars')
+  go vars e           (Let    def g) = let (g', e', vars') = go vars e g in
+                                       (Let def g', e', vars')
 
 postEval :: [X] -> G X -> G X
 postEval as goal =
@@ -140,6 +140,11 @@ postEval as goal =
     go vars (g1 :\/: g2) = go vars g1 :\/: go vars g2
     go _ g = g
 
+topLevel :: Program -> Stream (Sigma, Delta)
+topLevel (Program defs goal) = 
+  let gamma = foldl update env0 defs in 
+  let (goal', gamma', _) = preEval gamma goal in
+  eval gamma' s0 goal'
 
 -- Evaluation relation
 eval :: Gamma -> Sigma -> G S -> Stream (Sigma, Delta)
@@ -151,14 +156,14 @@ eval     (p, i, d) s (Invoke f as) =
   let i'         = foldl (\ i'' (f', a) -> extend i'' f' a) i $ zip fs as in
   let (g', env', _) = preEval (p, i', d) g in
   eval env' s g'
-eval env s (Let def' g) = eval (update env def') s g
+eval env s (Let def g) = eval (update env def) s g
 eval _ _ _ = error "Impossible case in eval"
 
 env0 :: Gamma
 env0 = (\ i -> error $ printf "Empty environment on %s" (show i), emptyIota, [0 ..])
 
 update :: Gamma -> Def -> Gamma
-update (p, i, d) def'@(Def name _ _) = (\ name' -> if name == name' then def' else p name', i, d)
+update (p, i, d) def@(Def name _ _) = (\ name' -> if name == name' then def else p name', i, d)
 
 updateDefsInGamma :: Gamma -> [Def] -> Gamma
 updateDefsInGamma = foldl update

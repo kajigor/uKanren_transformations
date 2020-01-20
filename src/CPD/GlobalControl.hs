@@ -85,11 +85,11 @@ conjToList x@(Invoke _ _) = [x]
 conjToList _ = error "This conjunction is not a list of calls"
 
 
-topLevel :: G X -> (GlobalTree, G S, [S])
-topLevel goal =
-  let (goal', defs) = takeOutLets goal in
+topLevel :: Program -> (GlobalTree, G S, [S])
+topLevel (Program defs goal) =
+  -- let (goal', defs) = takeOutLets goal in
   let gamma = E.updateDefsInGamma E.env0 defs in
-  let (logicGoal, gamma', names) = E.preEval gamma goal' in
+  let (logicGoal, gamma', names) = E.preEval gamma goal in
   let nodes = [[logicGoal]] in
   (fst $ go nodes (LC.Descend [logicGoal] []) gamma' E.s0 [], logicGoal, names) where
     go nodes d@(LC.Descend goal ancs) gamma subst generalizer =

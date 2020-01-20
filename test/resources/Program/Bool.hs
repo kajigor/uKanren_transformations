@@ -8,9 +8,8 @@ falso = C "false" []
 trueo :: Term a
 trueo = C "true"  []
 
-nando :: G a -> G a
-nando g =
-  Let
+nandoDef :: Def 
+nandoDef = 
     ( Def "nando" ["a", "b", "c"]
         (
           ( a === falso &&& b === falso &&& c === trueo ) |||
@@ -18,22 +17,28 @@ nando g =
           ( a === trueo &&& b === falso &&& c === trueo ) |||
           ( a === trueo &&& b === trueo &&& c === falso )
         )
-    ) g
-    where [a, b, c] = map V ["a", "b", "c"]
+    )
+  where 
+    [a, b, c] = map V ["a", "b", "c"]
 
-noto :: G a -> G a
-noto g =
-  Let 
+nando :: [Def] 
+nando = [nandoDef]
+
+notoDef :: Def 
+notoDef =
     ( Def "noto" ["a", "na"] 
       ( 
         call "nando" [a, a, na] 
       ) 
-    ) $ nando g
-    where [a, na] = map V ["a", "na"]
+    ) 
+  where 
+    [a, na] = map V ["a", "na"]
 
-oro :: G a -> G a
-oro g =
-  Let
+noto :: [Def]
+noto = notoDef : nando
+
+oroDef :: Def
+oroDef =
     ( Def "oro" ["a", "b", "c"]
         (
           fresh ["aa", "bb"]
@@ -43,12 +48,15 @@ oro g =
               call "nando" [aa, bb, c]
             )
         )
-    ) $ nando g
-    where [a, b, c, aa, bb] = map V ["a", "b", "c", "aa", "bb"]
+    ) 
+  where 
+    [a, b, c, aa, bb] = map V ["a", "b", "c", "aa", "bb"]
 
-ando :: G a -> G a
-ando g =
-  Let 
+oro :: [Def]
+oro = oroDef : nando
+
+andoDef :: Def
+andoDef =
     ( Def "ando" ["a", "b", "c"] 
       (
         fresh ["ab"] 
@@ -57,8 +65,12 @@ ando g =
           call "nando" [ab, ab, c]
         )
       )
-    ) $ nando g
-    where [a, b, c, ab] = map V ["a", "b", "c", "ab"]
+    )
+  where 
+    [a, b, c, ab] = map V ["a", "b", "c", "ab"]
+
+ando :: [Def]
+ando = andoDef : nando 
 
 bool :: Term t -> String
 bool (C "false" []) = "false"

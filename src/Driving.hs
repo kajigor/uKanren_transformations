@@ -217,7 +217,7 @@ split gs1 gs2 = filter (not . null) $ split' gs1 gs2 where
 
 
 update :: (E.P, E.Delta) -> Def -> (E.P, E.Delta)
-update (p, d) def' = let (p', _, d') = E.update (p, E.emptyIota, d) def' in (p', d')
+update (p, d) def = let (p', _, d') = E.update (p, E.emptyIota, d) def in (p', d')
 
 
 invoke :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] -> (TreeContext, Tree, E.Delta)

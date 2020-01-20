@@ -2,26 +2,33 @@ module Program.Sample1 where
 
 import Syntax
 
-query = fAndS $  fresh ["x"] (call "fAndS" [x])
+query = Program fAndS $ fresh ["x"] (call "fAndS" [x])
 
 x = V "x"
 
-fAndS :: G a -> G a
-fAndS g =
-  Let (Def "fAndS" ["x"]
-        (call "f" [x] &&& call "s" [x])
-      ) $ f $ s g
+fAndS :: [Def]
+fAndS = fAndSDef : f ++ s
 
+fAndSDef :: Def
+fAndSDef =
+    (Def "fAndS" ["x"]
+      (call "f" [x] &&& call "s" [x])
+    )
 
+f :: [Def]
+f = [fDef]
 
-f :: G a -> G a
-f g =
-  Let (Def "f" ["x"]
-          (x === C "5" [] ||| call "f" [x])
-      ) g
+fDef :: Def
+fDef =
+    (Def "f" ["x"]
+        (x === C "5" [] ||| call "f" [x])
+    )
 
-s :: G a -> G a
-s g =
-  Let (Def "s" ["x"]
-          (x === C "6" [] ||| call "s" [x])
-      ) g
+s :: [Def]
+s = [sDef]
+
+sDef :: Def
+sDef =
+    (Def "s" ["x"]
+        (x === C "6" [] ||| call "s" [x])
+    )

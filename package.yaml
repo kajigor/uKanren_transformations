@@ -39,6 +39,7 @@ ghc-options:
 library:
   source-dirs: 
   - src/
+  - test/resources
 
 tests:
   uKanren-transformation-test:

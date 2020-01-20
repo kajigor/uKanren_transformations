@@ -12,9 +12,11 @@ abs v b = C "Abs" [v, b]
 app :: Term a -> Term a -> Term a
 app p q = C "App" [p, q]
 
-substo :: G a -> G a
-substo g =
-  Let 
+substo :: [Def]
+substo = [substoDef]
+
+substoDef :: Def
+substoDef =
     ( Def "substo" ["l", "x", "a", "l'"]
       (
         fresh ["y"] 
@@ -43,13 +45,16 @@ substo g =
           )
         )
       )
-    ) g
-    where [l, x, a, l', y, m, n, m', n', v, b, b'] = 
-            map V ["l", "x", "a", "l'", "y", "m", "n", "m'", "n'", "v", "b", "b'"]
+    )
+  where 
+    [l, x, a, l', y, m, n, m', n', v, b, b'] = 
+      map V ["l", "x", "a", "l'", "y", "m", "n", "m'", "n'", "v", "b", "b'"]
 
-evalo :: G a -> G a
-evalo g =
-  Let 
+evalo :: [Def]
+evalo = evaloDef : substo
+
+evaloDef :: Def
+evaloDef =
     ( Def "evalo" ["m", "n"]
       (
         fresh ["x"] 
@@ -86,6 +91,7 @@ evalo g =
           )
         )
       )
-    ) $ substo g
-    where [m, n, x, l, l', f, a, f', a', p, q] = 
+    ) 
+  where 
+    [m, n, x, l, l', f, a, f', a', p, q] = 
             map V ["m", "n", "x", "l", "l'", "f", "a", "f'", "a'", "p", "q"]
