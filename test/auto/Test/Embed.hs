@@ -191,7 +191,10 @@ unit_variant = do -- TODO more  tests
                              ]
   manyAssert False isVariant [ (app v19 (cons v18 (cons v12 nil)) (cons v12 (cons v18 v19)),
                                  app v22 (cons v18 (cons v21 nil)) (cons v18 (cons v21 v22)))
-                             ]
+                             ]  
+  manyAssert True  isVariant [ ([app v12' v1' v13, app v15' v2' v16]
+                             , [app v6 v1' v7, app v9 v2' v10])
+                             ] 
 
 unit_renaming = do -- TODO more tests
   manyAssert True  isRenaming [ (f [x, y], f [x, x])
@@ -200,6 +203,9 @@ unit_renaming = do -- TODO more tests
   manyAssert False isRenaming [ (f [x, x], f [x, y])
                               , (f [x, x], g [x, x])
                               ]
+  manyAssert True  isRenaming [ ([app v12' v1' v13, app v15' v2' v16]
+                              ,  [app v18' v1' v19, app v21' v2' v22])
+                              ] 
 
 unit_ground = do 
   test isGround x False 
@@ -240,3 +246,15 @@ v21 = V 21
 v22 = V 22
 nil = C "Nil" []
 cons h t = C "Cons" [h, t]
+v12' = V 12
+v1' = V 1
+v2' = V 2
+v13 = V 13
+v15' = V 15
+v16 = V 16
+v6 = V 6
+v7 = V 7
+v9 = V 9
+v10 = V 10
+v18' = V 18
+v21' = V 21

@@ -163,6 +163,7 @@ unifyStuff state gs =
     go (g@(Invoke _ _) : gs) state conjs = go gs state (g : conjs)
     go ((t :=: u) : gs) state conjs = do
       s <- E.unify  (Just state) t u
+      -- trace (printf "unifying\n%s\n" (show s)) $ 
       go gs s conjs
 
 bodies :: SldTree -> [[G S]]

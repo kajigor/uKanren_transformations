@@ -13,6 +13,7 @@ import           Stream
 import           Syntax
 import           Tree
 import           Util.Miscellaneous
+import           Text.Printf (printf)
 
 type TreeContext = (Set.Set Id, Map.Map Id [S], [Id])
 
@@ -153,6 +154,7 @@ generalize d gg gs hs =
 generalizeCall d gg (Invoke f as, Invoke g bs) | f == g =
   let ((C _ cs, s1, s2), d') = generalizeTerm d gg (C "()" as, C "()" bs) in
   ((Invoke f cs, s1, s2), d')
+generalizeCall d gg (x, y) = error (printf "attempting to generalize\n%s\n%s\n" (show x) (show y))
 
 
 {-

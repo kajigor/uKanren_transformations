@@ -1,21 +1,21 @@
 {-# LANGUAGE BangPatterns #-}
 
-module CpdTest (main, tests) where
+module Main (main, tests) where
 
 import Program.Sort
 import Program.Bool
 import Program.Bridge
-import CPD
+import CPD.LocalControl
 import Control.Monad
 import Data.Maybe
 import Data.Foldable (for_)
 import Data.List
 import Printer.Dot
 import qualified Eval as E
-import qualified GlobalControl as GC
+import qualified CPD.GlobalControl as GC
 import Printer.GlobalTree
 import Program.List
-import LogicInterpreter
+import Program.LogicInterpreter
 import Program.Num
 import Program.Programs
 import Purification
@@ -26,19 +26,19 @@ import Text.Printf
 import Debug.Trace
 import Prelude hiding (succ)
 import qualified Data.Set as Set
-import CpdResidualization
+import CPD.Residualization
 import System.Directory
 import qualified Program.Bottles
 import qualified Program.Desert
 import qualified Program.Sudoku4x4
 import qualified OCanrenize as OC
 import Util.Miscellaneous
-import Unify
-import Path
-import ConjRetriever
-import Sample1
-import Prop
-import TestFramework
+import Program.Unify
+import Program.Path hiding (elem)
+import Util.ConjRetriever
+import Program.Sample1
+import Program.Prop
+-- import TestFramework
 import Embed
 
 import System.CPUTime
@@ -52,8 +52,40 @@ import System.Process (system)
 
 main :: IO () 
 main = do 
-  tests
+  doOcanrenize
   -- testUnifySubsts 
+
+
+
+
+reportError :: Show a => String -> a -> a -> IO ()
+reportError name expected actual =
+  putStrLn $ printf "%s failed\nExpected: %s\nActual:   %s" name (show expected) (show actual)
+
+assertCustom :: Show a => String -> (a -> a -> Bool) -> a -> a -> IO ()
+assertCustom name check expected actual =
+  unless (check expected actual) $ reportError name expected actual
+
+anyAssertCustom :: Show a => String -> (a -> a -> Bool) -> [a] -> a -> IO ()
+anyAssertCustom name check expected actual =
+  mapM_ (\e -> assertCustom name check e actual) expected
+
+manyAssertCustom :: Show a => String -> (a -> a -> Bool) -> [a] -> [a] -> IO ()
+manyAssertCustom name check expected actual =
+  unless (all (\a -> isJust $ find (check a) expected) actual) $ putStrLn (printf "%s failed\nExpected: %s\nActual:   %s" name (show expected) (show actual))
+
+assert :: (Show a, Eq a) => String -> a -> a -> IO ()
+assert name =
+  assertCustom name (==)
+
+manyAssert :: (Show a, Eq a) => String -> a -> (b -> с -> a) -> [(b, с)] -> IO ()
+manyAssert name expected f =
+  mapM_ (\(x, y) -> assert name expected (f x y))
+
+manyAssertOne :: (Show a, Eq a) => String -> a -> (b -> a) -> [b] -> IO ()
+manyAssertOne name expected f =
+  mapM_ (assert name expected . f)
+
 
 tests = do
   -- printGlobalStuff
@@ -87,7 +119,7 @@ tests = do
   -}
 
 printStuff = do
-  test "plainEvalo" Prop.plainQuery
+  test "plainEvalo" Program.Prop.plainQuery
   -- test "propInst" Prop.query'' 
 
   -- test "plainEvaloConj" Prop.plainQueryConj
@@ -120,6 +152,10 @@ printStuff = do
       printTree (printf "%s/local.dot" path) $ topLevel goal
 
 doOcanrenize = do 
+  -- ocanren "doubleRev" (Program doubleReverso $ fresh ["xs"] (call "doubleReverso" [V "xs"])) Nothing 
+  
+  ocanren "doubleAppendo" (Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])) Nothing 
+
   -- ocanren "fun" (fun $ fresh ["n", "x", "r"] (call "fun" $ map V ["n", "x", "r"])) Nothing 
 
   -- ocanren "oddo" (oddo $ (call "oddo" [zero])) Nothing 
@@ -135,9 +171,6 @@ doOcanrenize = do
   -- ocanren "propCompl2" Prop.query1'' Nothing
   -- ocanren "propCompl4" Prop.query2''' Nothing
   -- ocanren "plainEvaloDescends" Prop.plainQuery Nothing
-
-  ocanren "doubleRev" (doubleReverso $ fresh ["xs"] (call "doubleReverso" [V "xs"])) Nothing 
-
 
   -- ocanren "appLengtho"  (appLengtho $ (call "appLengtho" [])) Nothing
 
@@ -233,45 +266,45 @@ doOcanrenize = do
         OC.topLevel ocamlCodeFileName "topLevel" env pur
         print "doOcanrenize done"
 
-doResidualization = do
-  purify "membero" $ membero $ fresh ["a"] (call "membero" [V "a", V "a" % nil])
-  -- purify "bottles.mk"         Bottles.query
-  -- purify "appNil.mk"          (doubleAppendo $ fresh ["y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
-  --
-  -- purify "maxLengtho.mk"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
-  -- purify "maxo.mk"            (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
-  --
-  -- purify "revAcco.mk"         (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
-  -- purify "double.mk"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" $ map V ["x", "y", "z", "r"]))
-  -- purify "appNil.mk"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
-  -- purify "inBotho.mk"         (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ]))
-  -- purify "smallBridge.mk"     (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]]))
-  -- purify "bigBridge.mk"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"]))
-  -- purify "check5.mk"          (check5 $ fresh ["x"] (call "check5" [V "x"]))
-  -- purify "checkList5.mk"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"]))
-  -- purify "checkListOther5.mk" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"]))
-  -- purify "desert.mk"          (Desert.query)
-  -- purify "desertSecond.mk"    (Desert.query')
-  -- --
-  -- -- -- purify "sudoku.mk"          (Sudoku4x4.query)
-  -- -- -- purify "sudokuValid.mk"     (Sudoku4x4.queryValid)
-  -- -- -- purify "sudokuInvalid.mk"   (Sudoku4x4.queryInvalid)
-  -- --
-  -- -- -- purify "logicInterpreter.mk" (logic_interpreter $ fresh ["subst", "fml", "res"] (call "check_subst" [V "subst", V "fml", V "res"]))
-  -- -- -- purify "commute.mk"         (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
-  -- -- -- purify "listo.mk"           (appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
-  -- -- --                                                                       call "listo" [V "b"] &&&
-  -- -- --                                                                       call "listo" [V "c"] &&&
-  -- -- --                                                                       call "appendo" [V "a", V "b", V "c"] &&&
-  -- -- --                                                                       call "appendo" [V "b", V "a", V "c"]))
+-- doResidualization = do
+--   purify "membero" $ membero $ fresh ["a"] (call "membero" [V "a", V "a" % nil])
+--   -- purify "bottles.mk"         Bottles.query
+--   -- purify "appNil.mk"          (doubleAppendo $ fresh ["y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
+--   --
+--   -- purify "maxLengtho.mk"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
+--   -- purify "maxo.mk"            (maxo $ fresh ["x", "m"] (call "maxo" [V "x", V "m"]))
+--   --
+--   -- purify "revAcco.mk"         (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
+--   -- purify "double.mk"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" $ map V ["x", "y", "z", "r"]))
+--   -- purify "appNil.mk"          (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
+--   -- purify "inBotho.mk"         (inBotho $ fresh ["x", "l"] (call "inBotho" [V "x", C "a" [] % nil, V "l" ]))
+--   -- purify "smallBridge.mk"     (game2 $ fresh ["a", "b"] (call "getAnswer'" [V "a", C "some" [V "b"]]))
+--   -- purify "bigBridge.mk"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"]))
+--   -- purify "check5.mk"          (check5 $ fresh ["x"] (call "check5" [V "x"]))
+--   -- purify "checkList5.mk"      (checkList5 $ fresh ["x"] (call "checkList5" [V "x"]))
+--   -- purify "checkListOther5.mk" (checkList5' $ fresh ["x"] (call "checkList5" [V "x"]))
+--   -- purify "desert.mk"          (Desert.query)
+--   -- purify "desertSecond.mk"    (Desert.query')
+--   -- --
+--   -- -- -- purify "sudoku.mk"          (Sudoku4x4.query)
+--   -- -- -- purify "sudokuValid.mk"     (Sudoku4x4.queryValid)
+--   -- -- -- purify "sudokuInvalid.mk"   (Sudoku4x4.queryInvalid)
+--   -- --
+--   -- -- -- purify "logicInterpreter.mk" (logic_interpreter $ fresh ["subst", "fml", "res"] (call "check_subst" [V "subst", V "fml", V "res"]))
+--   -- -- -- purify "commute.mk"         (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
+--   -- -- -- purify "listo.mk"           (appendo $ listo $ fresh ["a", "b", "c"] (call "listo" [V "a"] &&&
+--   -- -- --                                                                       call "listo" [V "b"] &&&
+--   -- -- --                                                                       call "listo" [V "c"] &&&
+--   -- -- --                                                                       call "appendo" [V "a", V "b", V "c"] &&&
+--   -- -- --                                                                       call "appendo" [V "b", V "a", V "c"]))
 
-    where
-      purify filename goal = do
-        let (tree, logicGoal, names) = GC.topLevel goal
-        let folder = "residualized"
-        createDirectoryIfMissing True folder
-        let result = residualizationTopLevel tree
-        writeFile (printf "%s/%s" folder filename) (printf "Before:\n%s\n\nAfter:\n%s" (show goal) (show result))
+--     where
+--       purify filename goal = do
+--         let (tree, logicGoal, names) = GC.topLevel goal
+--         let folder = "residualized"
+--         createDirectoryIfMissing True folder
+--         let result = residualizationTopLevel tree
+--         writeFile (printf "%s/%s" folder filename) (printf "Before:\n%s\n\nAfter:\n%s" (show goal) (show result))
 
 
 printGlobalStuff = do
@@ -284,7 +317,7 @@ printGlobalStuff = do
 
   -- test "globalSome"  (someAppendo $ fresh ["x", "y", "z"] (call "someAppendo" [V "x", V "y", V "z"]))
 
-  test "maxLengtho"      (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
+  test "maxLengtho"      (Program maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"]))
 
   -- test "global_path" Path.query1
   -- test "unify" Unify.query
@@ -476,45 +509,45 @@ testSelect = do
         max2D = Descend max2 [max0]
         len2D = Descend len2 [len1]
 
-testTakingOutLets = do
-  assert "taking out lets 0" (uni0, [], []) (justTakeOutLets (uni0, []))
-  assert "taking out lets 1" (uni1, [], [(defName, args0', uni0')]) (justTakeOutLets (flatlet, []))
-  assert "taking out lets 2" (conj, [], [(defName, args0'', uni0''), (fedName, args2', disj')]) (justTakeOutLets (doublet, []))
-  where
-    x = V "x"
-    y = V "y"
-    z = V "z"
-    y0 = V "y0"
-    y1 = V "y1"
-    y2 = V "y2"
-    y3 = V "y3"
-    y4 = V "y4"
-    uni0 = x === y
-    uni1 = y === z
-    uni2 = x === z
-    conj = uni0 &&& uni1
-    disj = conj ||| uni2
-    uni0' = y0 === y1
-    uni0'' = y3 === y4
-    uni1' = y1 === y2
-    uni2' = y0 === y2
-    conj' = uni0' &&& uni1'
-    disj' = conj' ||| uni2'
-    defName = "def"
-    fedName = "fed"
-    args0 = []
-    args1 = ["x"]
-    args0'  = ["y0", "y1"]
-    args0'' = ["y3", "y4"]
-    args1' = ["y2"]
-    args2' = ["y1", "y2", "y0"]
-    flatlet = Let (def defName args0 uni0) uni1
-    doublet = Let (def defName args0 uni0) (Let (def fedName args1 disj) conj)
+-- testTakingOutLets = do
+--   assert "taking out lets 0" (uni0, [], []) (justTakeOutLets (uni0, []))
+--   assert "taking out lets 1" (uni1, [], [(defName, args0', uni0')]) (justTakeOutLets (flatlet, []))
+--   assert "taking out lets 2" (conj, [], [(defName, args0'', uni0''), (fedName, args2', disj')]) (justTakeOutLets (doublet, []))
+--   where
+--     x = V "x"
+--     y = V "y"
+--     z = V "z"
+--     y0 = V "y0"
+--     y1 = V "y1"
+--     y2 = V "y2"
+--     y3 = V "y3"
+--     y4 = V "y4"
+--     uni0 = x === y
+--     uni1 = y === z
+--     uni2 = x === z
+--     conj = uni0 &&& uni1
+--     disj = conj ||| uni2
+--     uni0' = y0 === y1
+--     uni0'' = y3 === y4
+--     uni1' = y1 === y2
+--     uni2' = y0 === y2
+--     conj' = uni0' &&& uni1'
+--     disj' = conj' ||| uni2'
+--     defName = "def"
+--     fedName = "fed"
+--     args0 = []
+--     args1 = ["x"]
+--     args0'  = ["y0", "y1"]
+--     args0'' = ["y3", "y4"]
+--     args1' = ["y2"]
+--     args2' = ["y1", "y2", "y0"]
+--     flatlet = Let (Def defName args0 uni0) uni1
+--     doublet = Let (Def defName args0 uni0) (Let (Def fedName args1 disj) conj)
 
 testPopingOutFreshes = do
-  assert "popping freshes up 0" (callF x' y') (fst3 $ E.preEval' E.env0 (fresh ["x", "y"] goal))
-  assert "popping freshes up 1" (fLet (callF x' y')) (fst3 $ E.preEval' E.env0 (fresh ["x", "y"] $ fLet goal))
-  assert "popping freshes up 2" (body', reverse [0..4]) ((\(x, _, y) -> (x, y)) $ E.preEval' E.env0 (fresh ["m", "n"] body))
+  assert "popping freshes up 0" (callF x' y') (fst3 $ E.preEval E.env0 (fresh ["x", "y"] goal))
+  assert "popping freshes up 1" (fLet (callF x' y')) (fst3 $ E.preEval E.env0 (fresh ["x", "y"] $ fLet goal))
+  assert "popping freshes up 2" (body', reverse [0..4]) ((\(x, _, y) -> (x, y)) $ E.preEval E.env0 (fresh ["m", "n"] body))
   where
     x = V "x"
     y = V "y"
@@ -529,7 +562,7 @@ testPopingOutFreshes = do
     gamma = []
     goal = callF x y
     body = fresh ["h"] (m === cS h &&& fresh ["t"] (n === cT t) &&& m === cS n) ||| fresh ["h"] (m === n &&& m === cT h &&& callT h)
-    fLet = Let (def "f" ["m", "n"] body)
+    fLet = Let (Def "f" ["m", "n"] body)
     x' = V 0
     y' = V 1
     body' = (V 0 === cS (V 2) &&& (V 1 === cT (V 3) &&& V 0 === cS (V 1))) ||| (V 0 === V 1 &&& (V 0 === cT (V 4) &&& callT (V 4)))
@@ -580,16 +613,16 @@ testUnifySubsts = do
   assert "unify 2" Nothing (E.unifySubsts [(1, C "d" [])] [(1, C "c" [])])
 
 testLocalControl = do
-  manyAssertCustom "local control" isVariant [[app x y z], [app x y t, app t z r]] (leaves $ topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])))
-  manyAssertCustom "local control" isVariant [[app x y z]] (leaves $ topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"])))
-  assertCustom "local control" (\x y -> length x == length y) [] (leaves $ topLevel (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [C "Stupid" [], V "y", V "z", V "r"])))
+  manyAssertCustom "local control" isVariant [[app x y z], [app x y t, app t z r]] (leaves $ topLevel (Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])))
+  manyAssertCustom "local control" isVariant [[app x y z]] (leaves $ topLevel (Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"])))
+  assertCustom "local control" (\x y -> length x == length y) [] (leaves $ topLevel (Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [C "Stupid" [], V "y", V "z", V "r"])))
   manyAssertCustom "local control" isVariant [ [ maxo1 x zero z, lengtho x y ]
                                              , [ maxo1 (x % y) (succ z) r, lengtho y t ]
                                              , [ leo z u trueo, maxo1 (x % y) (succ (succ u)) r, lengtho y t ]
                                              , [ maxo1 (x % y) (succ (succ r)) t, lengtho y z]
                                              , [ gto z r trueo, maxo1 (x % y) (succ (succ z)) t, lengtho y u ]
                                              ]
-                                             (leaves $ topLevel (maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"])))
+                                             (leaves $ topLevel (Program maxLengtho $ fresh ["x", "l", "m"] (call "maxLengtho" [V "x", V "l", V "m"])))
   where
     app x y z = Invoke "appendo" [x, y, z]
     maxo1 x y z = Invoke "maxo1" [x, y, z]

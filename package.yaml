@@ -32,6 +32,12 @@ dependencies:
 - directory
 - timeit
 - tasty-discover
+- pretty-show
+- hedgehog
+- HUnit
+- tasty
+- tasty-hedgehog
+- tasty-hunit
 
 ghc-options:
   - -fwarn-unused-imports
@@ -40,6 +46,16 @@ library:
   source-dirs: 
   - src/
   - test/resources
+
+executables: 
+  cpd: 
+    main: test/cpd/Main.hs
+    source-dir: 
+    - src/
+    - src/cpd
+    - test/
+    dependencies: uKanren-transformation
+
 
 tests:
   uKanren-transformation-test:
