@@ -1,13 +1,13 @@
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TupleSections     #-}
 
 module Eval where
 
-import Control.Monad
-import Data.List
-import Syntax
-import Stream
-import Text.Printf
+import           Control.Monad
+import           Data.List
+import           Stream
+import           Syntax
+import           Text.Printf
 
 -- States
 type Iota  = ([X], X -> Ts)
@@ -16,20 +16,26 @@ type Delta = [S]
 type P     = Name -> Def
 type Gamma = (P, Iota, Delta)
 
-unifyG :: (S -> Ts -> Maybe Sigma -> Maybe Sigma)
+unifyG :: (S -> Ts -> Sigma -> Bool)
           -> Maybe Sigma -> Ts -> Ts -> Maybe Sigma
 unifyG _ Nothing _ _ = Nothing
 unifyG f st@(Just subst) u v =
-  -- trace (printf "Unifying\n%s\nwith\n%s\nin\n%s" (show u) (show v) (show st)) $
   unify' (walk u subst) (walk v subst)  where
     unify' (V u') (V v') | u' == v' = Just subst
-    unify' (V u') (V v') = Just $ (min u' v', V $ max u' v') : subst 
-    unify' (V u') t = f u' t $ Just $ (u', v) : subst
-    unify' t (V v') = f v' t $ Just $ (v', u) : subst
+    unify' (V u') (V v') = Just $ (min u' v', V $ max u' v') : subst
+    unify' (V u') t = 
+      if f u' t subst 
+      then Nothing 
+      else return $ (u', v) : subst 
+    unify' t (V v') = 
+      if f v' t subst 
+      then Nothing 
+      else return $ (v', u) : subst  
     unify' (C a as) (C b bs) | a == b && length as == length bs =
       foldl (\ st' (u', v') -> unifyG f st' u' v') st $ zip as bs
     unify' _ _ = Nothing
-    
+
+walk :: Ts -> Sigma -> Ts
 walk x@(V v') s =
   case lookup v' s of
     Nothing -> x
@@ -38,24 +44,34 @@ walk u' _ = u'
 
 -- Unification
 unify :: Maybe Sigma -> Ts -> Ts -> Maybe Sigma
-unify = unifyG occursCheck where
-  occursCheck u' t s = if elem u' $ fv t then Nothing else s
-
-unifySubsts :: Sigma -> Sigma -> Maybe Sigma 
-unifySubsts one two = 
-    -- trace ("one: " ++ show one ++ "\ntwo: " ++ show two) $  
-    let maximumVar = max (findUpper one) (findUpper two) in 
-    let one' = manifactureTerm maximumVar one in 
-    let two' = manifactureTerm maximumVar two in 
-    unify (Just s0) one' two' 
+unify =
+    unifyG occursCheck
   where
-    findUpper [] = 0 
-    findUpper lst = maximum $ map fst lst  
+    occursCheck :: S -> Ts -> Sigma -> Bool
+    occursCheck u' t s = 
+      let t' = walk t s in
+      case t' of
+        V v' | v' == u' -> True 
+        V _ -> False 
+        C _ as -> any (\x -> occursCheck u' x s) as
+
+    -- occursCheck u' t s = if elem u' $ fv t then Nothing else s
+
+unifySubsts :: Sigma -> Sigma -> Maybe Sigma
+unifySubsts one two =
+    -- trace ("one: " ++ show one ++ "\ntwo: " ++ show two) $
+    let maximumVar = max (findUpper one) (findUpper two) in
+    let one' = manifactureTerm maximumVar one in
+    let two' = manifactureTerm maximumVar two in
+    unify (Just s0) one' two'
+  where
+    findUpper []  = 0
+    findUpper lst = maximum $ map fst lst
     supplement upper lst = lst --  [(x, y) | x <- [0..upper], let y = maybe (V x) id (lookup x lst)]
     manifactureTerm upper subst = C "ManifacturedTerm" $ map snd $ supplement upper subst
 
 unifyNoOccursCheck :: Maybe Sigma -> Ts -> Ts -> Maybe Sigma
-unifyNoOccursCheck = unifyG (\_ _ -> id)
+unifyNoOccursCheck = unifyG (\_ _ -> const True)
 
 ---- Interpreting syntactic variables
 infix 9 <@>
@@ -77,21 +93,21 @@ app :: Iota -> X -> Ts
 app (_, i) = i
 
 -- Applying substitution
-class Subst a where 
-  substitute :: Sigma -> a -> a  
+class Subst a where
+  substitute :: Sigma -> a -> a
 
-instance Subst (Term S) where 
+instance Subst (Term S) where
   substitute s t@(V x) =
     case lookup x s of
       Just tx | tx /= t -> substitute s tx
-      _ -> t
+      _                 -> t
   substitute s (C m ts) = C m $ map (substitute s) ts
 
-instance Subst (G S) where 
+instance Subst (G S) where
   substitute s (Invoke name as) = Invoke name (map (substitute s) as)
   substitute _ g = error $ printf "We have only planned to substitute into calls, and you are trying to substitute into:\n%s" (show g)
 
-instance Subst [G S] where 
+instance Subst [G S] where
   substitute = map . substitute
 
 ---- Composing substitutions
@@ -133,7 +149,7 @@ postEval as goal =
   foldr Fresh (go (freshs ++ as) goal) freshs
   where
     go vars (Let (Def f args b) g) =
-      let freshs = (fvg b \\ args) \\ vars in 
+      let freshs = (fvg b \\ args) \\ vars in
       let b' = foldr Fresh (go (vars ++ args ++ freshs) b) freshs in
       Let (Def f args b') $ go vars g
     go vars (g1 :/\: g2) = go vars g1 :/\: go vars g2
@@ -141,8 +157,8 @@ postEval as goal =
     go _ g = g
 
 topLevel :: Program -> Stream (Sigma, Delta)
-topLevel (Program defs goal) = 
-  let gamma = foldl update env0 defs in 
+topLevel (Program defs goal) =
+  let gamma = foldl update env0 defs in
   let (goal', gamma', _) = preEval gamma goal in
   eval gamma' s0 goal'
 
