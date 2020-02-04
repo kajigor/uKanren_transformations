@@ -4,6 +4,7 @@ import qualified Eval as E
 import Syntax
 import Debug.Trace
 import Text.Printf
+import Generalization
 
 type Id = Int
 data Tree =
@@ -18,10 +19,6 @@ data Tree =
 
 -- Renaming
 type Renaming = [(S, S)]
-
----- Generalization
-type Generalizer = E.Sigma
-
 
 -- TODO remove
 conj :: [G a] -> G a

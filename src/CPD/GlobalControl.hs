@@ -1,22 +1,23 @@
+{-# LANGUAGE TupleSections #-}
+
 module CPD.GlobalControl where
 
-import qualified CPD.LocalControl as LC
-import Syntax
-import Prelude hiding (sequence)
-import Data.List (find, partition)
-import qualified Eval as E
-import Purification
-import Text.Printf
-import Debug.Trace
-import qualified Tree as T
-import Util.Miscellaneous
-import Data.Tuple
-import Embed 
+import qualified CPD.LocalControl   as LC
+import           Data.List          (find, partition)
+import           Data.Tuple
+import           Debug.Trace
+import           Embed
+import qualified Eval               as E
+import           Generalization     (Generalizer)
+import           Prelude            hiding (sequence)
+import           Syntax
+import           Text.Printf
+import           Util.Miscellaneous
 
 type Descend = LC.Descend
 
-data GlobalTree = Leaf  (Descend [G S]) T.Generalizer E.Sigma
-                | Node  (Descend [G S]) T.Generalizer LC.SldTree [GlobalTree]
+data GlobalTree = Leaf  (Descend [G S]) Generalizer E.Sigma
+                | Node  (Descend [G S]) Generalizer LC.SldTree [GlobalTree]
                 | Prune (Descend [G S]) E.Sigma
 
 sequence :: Descend a -> [a]
@@ -24,7 +25,7 @@ sequence = LC.getAncs
 
 getNodes (Leaf _ _ _) = []
 getNodes (Node _ _ (LC.Leaf _ _ _) _) = [] -- This happens because of the instance check
-getNodes (Node d _ sld ch) = (LC.getCurr d, sld) : (concatMap getNodes ch)
+getNodes (Node d _ sld ch) = (LC.getCurr d, sld) : concatMap getNodes ch
 
 {- branch :: GlobalTree -> Set [G S]
 branch (Leaf d _ _) = sequence d
@@ -40,11 +41,11 @@ leaves (Node _ _ _ ch) =
 part :: [G S] -> [[G S]]
 part = LC.mcs
 
-abstract :: Descend [G S] -> [G S] -> E.Delta -> ([([G S], T.Generalizer)], E.Delta)
+abstract :: Descend [G S] -> [G S] -> E.Delta -> ([([G S], Generalizer)], E.Delta)
 abstract descend goals d =
   let qCurly = part goals in
-  let result = go (map (\x -> (x, [])) qCurly) d in 
-  result 
+  let result = go (map (, []) qCurly) d in
+  result
    where
     go [] d@(x:_) = ([], d)
     go ((m, gen):gs) d =
@@ -55,34 +56,34 @@ abstract descend goals d =
         Just b ->
           let (goals, delta) = generalize m b d in
           trace ("generalize done " ++ show' goals) $
-          let (blah, halb) = go gs delta in 
+          let (blah, halb) = go gs delta in
           (goals ++ blah, halb)
 
 whistle :: Descend [G S] -> [G S] -> Maybe [G S]
 whistle descend m =
-  find (\b -> Embed.embed b m && (not (Embed.isVariant b m))) (sequence descend)
+  find (\b -> Embed.embed b m && not (Embed.isVariant b m)) (sequence descend)
 
-generalize :: [G S] -> [G S] -> E.Delta -> ([([G S], T.Generalizer)], E.Delta)
+generalize :: [G S] -> [G S] -> E.Delta -> ([([G S], Generalizer)], E.Delta)
 generalize m b d =
   let ((m1, m2), genOrig, delta) = LC.split d b m in -- TODO PCHM
   let genTrue = genOrig in
   --let (generalized, _, gen, delta') = D.generalizeGoals d m1 b in
-  trace (printf "\nAfter split\n%s\n" (show' $ LC.mcs m1)) $  
+  trace (printf "\nAfter split\n%s\n" (show' $ LC.mcs m1)) $
   (map (project genTrue) (LC.mcs m1) ++ map (project []) (LC.mcs m2), delta)
   -- (map (project genTrue) [m1] ++ map (project []) (LC.mcs m2), delta)
     where
       project gen goals = (goals, {- filter (\(x, _) -> (V x) `elem` concatMap LC.vars goals) -} gen)
 
-abstractChild :: [[G S]] -> (E.Sigma, [G S], Maybe E.Gamma) -> [(E.Sigma, [G S], T.Generalizer, E.Gamma)]
+abstractChild :: [[G S]] -> (E.Sigma, [G S], Maybe E.Gamma) -> [(E.Sigma, [G S], Generalizer, E.Gamma)]
 abstractChild _ (_, _, Nothing) = []
 abstractChild ancs (subst, g, Just env@(x, y, d)) =
   let (abstracted, delta) = abstract (LC.Descend g ancs) g d in
   map (\(g, gen) -> (subst, g, gen, (x, y, delta))) abstracted
 
 conjToList :: G a -> [G a]
-conjToList (g :/\: h) = conjToList g ++ conjToList h
+conjToList (g :/\: h)     = conjToList g ++ conjToList h
 conjToList x@(Invoke _ _) = [x]
-conjToList _ = error "This conjunction is not a list of calls"
+conjToList _              = error "This conjunction is not a list of calls"
 
 
 topLevel :: Program -> (GlobalTree, G S, [S])
@@ -97,21 +98,21 @@ topLevel (Program defs goal) =
       -- then (Prune d subst, nodes)
       -- else
         let subst = E.s0 in
-        -- let newNodes = (delete goal nodes) in 
-        let newNodes = filter (not . Embed.isVariant goal) nodes in 
+        -- let newNodes = (delete goal nodes) in
+        let newNodes = filter (not . Embed.isVariant goal) nodes in
 
         let sldTree = LC.sldResolution goal gamma subst newNodes in
         let (substs, bodies) = partition (null . snd3) $ LC.resultants sldTree in
 
-        if null bodies 
-        then 
+        if null bodies
+        then
           (Node d [] sldTree [], nodes)
         else
-          let ancs' = goal : ancs in 
+          let ancs' = goal : ancs in
           let abstracted = map (abstractChild ancs') bodies in
-          trace (printf "\nbodies:\n%s\n" (show' $ map snd3 bodies)) $ 
+          trace (printf "\nbodies:\n%s\n" (show' $ map snd3 bodies)) $
           trace (printf "\nancs':\n%s\n" (show' ancs'))
-          trace (printf "\nAbstracted\n%s" (show' $ map  (map snd4) abstracted)) $ 
+          trace (printf "\nAbstracted\n%s" (show' $ map  (map snd4) abstracted)) $
           let (toUnfold, toNotUnfold, newNodes) =
                   foldl (\ (yes, no, seen) gs ->
                               let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (Embed.isVariant g) seen) gs in
@@ -131,7 +132,7 @@ topLevel (Program defs goal) =
                         )
                         ([], newNodes)
                         toUnfold in
-          -- trace (printf "Everything we've seen so far:\n%s\n" (show everythingSeenSoFar)) $                        
+          -- trace (printf "Everything we've seen so far:\n%s\n" (show everythingSeenSoFar)) $
           let forgetEnv = map (\(x, y, _) -> (x, y, [])) in
           let forgetStuff = map (\(x, y, gen, _) -> (x,y, gen)) in
           let substLeaves = forgetEnv substs in

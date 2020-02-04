@@ -1,6 +1,6 @@
 module Test.Eval where
 
-import           Test.HUnit (Assertion, (@?=))
+import           Test.Helper ((@?=))
 
 import           Eval
 import           Syntax

@@ -1,6 +1,6 @@
 module Test.PartialDeduction where
 
-import           Test.HUnit       (Assertion, (@?=))
+import           Test.Helper (test, test2, manyAssert) 
 
 import qualified PartialDeduction as PD
 import           Printer.Dot
@@ -12,20 +12,6 @@ import           Syntax
 import           System.Directory
 import           System.Process   (system)
 import           Text.Printf
-
-test :: (Eq b, Show b) => (a -> b) -> a -> b -> Assertion
-test f input output = f input @?= output
-
-test2 :: (Eq c, Show c) => (a -> b -> c) -> a -> b -> c -> Assertion
-test2 f input1 input2 output = f input1 input2 @?= output
-
-test5 :: (Eq f, Show f) => (a -> b -> c -> d -> e -> f) -> a -> b -> c -> d -> e -> f -> Assertion
-test5 f input1 input2 input3 input4 input5 output =
-    f input1 input2 input3 input4 input5 @?= output
-
-manyAssert :: (Eq a, Show a) => a -> (b -> с -> a) -> [(b, с)] -> Assertion
-manyAssert expected f =
-  mapM_ (\(x, y) -> test2 f x y expected)
 
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
 revAcco' = Program revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])
@@ -40,8 +26,10 @@ prop = Program.Prop.query3
 
 unit_nonConjunctiveTest = do
   runTest PD.nonConjunctive "da" dA
-  -- runTest "rev" rev
-  -- runTest "revAcco" revAcco'
+  runTest PD.nonConjunctive "rev" rev
+  runTest PD.nonConjunctive "revAcco" revAcco'
+  runTest PD.nonConjunctive "prop" prop
+
 
 unit_unifySubsts = do
   test PD.unifySubsts [] (Just [])

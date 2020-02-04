@@ -1,24 +1,14 @@
-module Test.Embed where 
+module Test.Embed where
 
-import Test.HUnit (Assertion, (@?=))
+import           Test.Helper (manyAssert, test)
 
-import Embed
-import Syntax 
-
-test :: (Eq b, Show b) => (a -> b) -> a -> b -> Assertion
-test f input output = f input @?= output 
-
-test2 :: (Eq c, Show c) => (a -> b -> c) -> a -> b -> c -> Assertion
-test2 f input1 input2 output = f input1 input2 @?= output 
-
-manyAssert :: (Eq a, Show a) => a -> (b -> с -> a) -> [(b, с)] -> Assertion
-manyAssert expected f =
-  mapM_ (\(x, y) -> test2 f x y expected)
+import           Embed
+import           Syntax
 
 unit_homeo = do
-  testHomeoTerm 
-  testHomeoGoal 
-  testHomeoConj 
+  testHomeoTerm
+  testHomeoGoal
+  testHomeoConj
     where
       testHomeoTerm = do
         manyAssert True  homeo [ (x, y)
@@ -50,11 +40,11 @@ unit_homeo = do
                                , ([f [c [v]]], [f [n [m [v]]]])
                                ]
 
-unit_inst = do 
-  testInstTerm 
-  testInstGoal 
+unit_inst = do
+  testInstTerm
+  testInstGoal
   testInstConj
-    where 
+    where
       testInstTerm = do
         manyAssert True  isInst [ (v, x)
                                 , (v, n [])
@@ -93,12 +83,12 @@ unit_inst = do
                                 , ([f [x, y], g [x]], [f [x, x], g [y]])
                                 ]
 
-unit_strictInst = do 
-  testStrictInstTerm 
-  testStrictInstGoal 
-  testStrictInstConj 
-    where 
-      testStrictInstTerm = do 
+unit_strictInst = do
+  testStrictInstTerm
+  testStrictInstGoal
+  testStrictInstConj
+    where
+      testStrictInstTerm = do
         manyAssert True  isStrictInst [ (v, n [])
                                       , (n [x, y], n [x, x])
                                       ]
@@ -137,10 +127,10 @@ unit_strictInst = do
                                       , ([f [x, y], g [x]], [f [x, x], g [y]])
                                       ]
 
-unit_embed = do 
-  testEmbedGoal 
-  testEmbedConj 
-    where 
+unit_embed = do
+  testEmbedGoal
+  testEmbedConj
+    where
       testEmbedGoal = do
         manyAssert False embed [ (f [n [x, v], x, y], f [v, x, y])
                               , (f [x, x], f [x, y])
@@ -191,10 +181,10 @@ unit_variant = do -- TODO more  tests
                              ]
   manyAssert False isVariant [ (app v19 (cons v18 (cons v12 nil)) (cons v12 (cons v18 v19)),
                                  app v22 (cons v18 (cons v21 nil)) (cons v18 (cons v21 v22)))
-                             ]  
+                             ]
   manyAssert True  isVariant [ ([app v12' v1' v13, app v15' v2' v16]
                              , [app v6 v1' v7, app v9 v2' v10])
-                             ] 
+                             ]
 
 unit_renaming = do -- TODO more tests
   manyAssert True  isRenaming [ (f [x, y], f [x, x])
@@ -205,17 +195,17 @@ unit_renaming = do -- TODO more tests
                               ]
   manyAssert True  isRenaming [ ([app v12' v1' v13, app v15' v2' v16]
                               ,  [app v18' v1' v19, app v21' v2' v22])
-                              ] 
+                              ]
 
-unit_ground = do 
-  test isGround x False 
-  test isGround (n [x, y]) False 
-  test isGround (m [n [], n []]) True 
-  test isGround (app nil (cons (n []) nil) (cons (m [n []]) nil)) True 
+unit_ground = do
+  test isGround x False
+  test isGround (n [x, y]) False
+  test isGround (m [n [], n []]) True
+  test isGround (app nil (cons (n []) nil) (cons (m [n []]) nil)) True
   test isGround (app nil (cons x nil) (cons (m [n []]) nil)) False
-  test isGround (app nil (cons (n []) nil) (cons (m [x]) nil)) False 
+  test isGround (app nil (cons (n []) nil) (cons (m [x]) nil)) False
 
-unit_subconjs = do 
+unit_subconjs = do
   test (flip subconjs 0) [1, 2, 3] [[]]
   test (flip subconjs 1) [1, 2, 3] [[1], [2], [3]]
   test (flip subconjs 2) [1, 2, 3] [[1, 2], [1, 3], [2, 3]]

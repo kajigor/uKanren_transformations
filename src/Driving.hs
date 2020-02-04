@@ -2,18 +2,17 @@
 
 module Driving where
 
-import           Control.Exception.Base
 import           Data.Foldable
-import           Data.List hiding (group, groupBy)
+import           Data.List              hiding (group, groupBy)
 import qualified Data.Map.Strict        as Map
 import           Data.Maybe
 import qualified Data.Set               as Set
 import qualified Eval                   as E
+import           Generalization         (Generalizer, generalizeGoals)
 import           Stream
 import           Syntax
 import           Tree
 import           Util.Miscellaneous
-import           Text.Printf (printf)
 
 type TreeContext = (Set.Set Id, Map.Map Id [S], [Id])
 
@@ -67,18 +66,18 @@ embedTerm _ _ = False
 
 embedTerms :: [Ts] -> [Ts] -> Bool
 embedTerms ps qs | length ps == length qs = and $ zipWith embedTerm ps qs
-embedTerms _ _ = False
+embedTerms _ _   = False
 
 embedGoals :: [G S] -> [G S] -> Bool
 embedGoals gs hs = coupleConj gs hs || diveConj gs hs where
   coupleConj [] [] = True
-  coupleConj ((Invoke f fs) : as) ((Invoke g gs) : bs) | f == g && length fs == length gs = embedTerms fs gs && embedConj as bs
+  coupleConj (Invoke f fs : as) (Invoke g gs : bs) | f == g && length fs == length gs = embedTerms fs gs && embedConj as bs
   coupleConj _ _ = False
 
   embedConj as bs = coupleConj as bs || diveConj as bs
 
   diveConj as (b:bs) = embedConj as bs
-  diveConj _ _ = False
+  diveConj _ _       = False
 
 -- Embedding
 -- embed :: G S -> G S -> Maybe Renaming
@@ -118,78 +117,6 @@ embedGoals gs hs = coupleConj gs hs || diveConj gs hs where
 --
 --   diveConj r as' (_:bs') = embedConj r as' bs'
 --   diveConj _ _ _         = Nothing
-
-refine :: ([G S], Generalizer, Generalizer, [S]) ->  ([G S], Generalizer, Generalizer, [S])
-refine msg@(g, s1, s2, d) =
-  -- trace (printf "g: %s\ns1: %s\ns2: %s\n" (show g) (show s1) (show s2)) $
-  let similar1 = filter ((>1) . length) $ groupBy group s1 [] in
-  let similar2 = filter ((>1) . length) $ groupBy group s2 [] in
-  let sim1 = map (map fst) similar1 in
-  let sim2 = map (map fst) similar2 in
-  let toSwap = concatMap (\(x:xs) -> map (\y -> (y, V x)) xs) (sim1 `intersect` sim2) in
-  let newGoal = E.substitute toSwap g in
-  -- let s1' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar1)) s1 in
-  -- let s2' = filter (\(x,_) -> notElem x (concatMap (tail . map fst) similar2)) s2 in
-
-  let s2' = filter (\(x,_) -> notElem x (map fst toSwap)) s2 in
-  let s1' = filter (\(x,_) -> notElem x (map fst toSwap)) s1 in
-  -- trace (printf "\nOld msg: %s\nSimilar1: %s\nSimilar2: %s\nToSwap: %s\nNewGoal: %s\nS1': %s\nS2': %s\n" (show g) (show similar1) (show similar2) (show toSwap) (show newGoal) (show s1') (show s2'))
-  -- trace (printf "\ns1'': %s\ns2'': %s\n" (show s1'') (show s2'')) $
-  (newGoal, s1', s2', d)
-  where
-    groupBy _ [] acc = acc
-    groupBy p xs acc = let (similar, rest) = partition (p (head xs)) xs in assert (similar /= []) $ groupBy p rest (similar : acc)
-    group x y = snd x == snd y
-
-generalize :: [S] -> (Generalizer, Generalizer) -> [G S] -> [G S] -> ([G S], Generalizer, Generalizer, [S])
-generalize d gg gs hs =
-  (\(x, (y,z), t) -> (reverse x, y, z, t)) $
-  foldl (\ (goals, s, vs) gh ->
-           let ((g, s1, s2), vs') = generalizeCall vs s gh in
-           (g:goals, (s1, s2), vs')
-        )
-        ([], gg, d)
-        (zip gs hs)
-
-generalizeCall d gg (Invoke f as, Invoke g bs) | f == g =
-  let ((C _ cs, s1, s2), d') = generalizeTerm d gg (C "()" as, C "()" bs) in
-  ((Invoke f cs, s1, s2), d')
-generalizeCall d gg (x, y) = error (printf "attempting to generalize\n%s\n%s\n" (show x) (show y))
-
-
-{-
-generalize d gg (g1 :/\: g2) (h1 :/\: h2) =
-  let (i, s1' , s2' , d' ) = generalize d  gg         g1 h1 in
-  let (j, s1'', s2'', d'') = generalize d' (s1', s2') g2 h2 in
-  (i :/\: j, s1'', s2'', d'')
-generalize d gg (Invoke f as) (Invoke g bs) =
-  let (msg, d')        = generalizeTerm d gg (C "()" as, C "()" bs) in
-  let (C _ cs, s1, s2) = refine msg in
-  (Invoke f cs, s1, s2, d')
--}
-
-generalizeTerm vs s@(s1, s2) (C m ms, C n ns) | m == n && length ms == length ns =
-  let (gs, (s1, s2), vs') = foldl (\ (gs, s, vs) ts ->
-                                        let ((g, s1, s2), vs') = generalizeTerm vs s ts in
-                                        (g:gs, (s1, s2), vs')
-                                  ) ([], s, vs) $ zip ms ns
-  in
-  ((C m $ reverse gs, s1, s2), vs')
-generalizeTerm vs (s1, s2) (V x, V y) | x == y = ((V x, s1, s2), vs)
-generalizeTerm (v:vs) (s1, s2) (t1, t2) = ((V v, (v, t1):s1, (v, t2):s2), vs)
-
-
-generalizeGoals :: [S] -> [G S] -> [G S] -> ([G S], Generalizer, Generalizer, [S])
-generalizeGoals s as bs =
-  let res@(msg_, s1_, s2_, _) = refine $ generalize s ([], []) as bs in
-  -- trace ("Generalizing\nFirst:  " ++ show as ++ "\nSecond: " ++ show bs ++ "\nmsg: " ++ show msg_ ++ "\ns1:  " ++ show s1_ ++ "\ns2:  " ++ show s2_) $
-  assert (map (substitute s2_) msg_ == bs &&
-          map (substitute s1_) msg_ == as
-         ) $
-  res
-
-  -- res
-
 
 substitute :: E.Sigma -> G S -> G S
 substitute s (t1 :=: t2  ) = E.substitute s t1 :=: E.substitute s t2

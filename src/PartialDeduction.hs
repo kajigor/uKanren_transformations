@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module PartialDeduction where
 
 import qualified CPD.LocalControl   as LC
@@ -6,9 +8,10 @@ import           Data.List          (find, intersect, partition, (\\))
 import qualified Data.Map.Strict    as M
 import           Data.Maybe         (mapMaybe)
 import           Debug.Trace        (trace)
-import           Driving            (generalizeGoals)
 import           Embed
 import qualified Eval               as E
+import           Generalization     (generalizeGoals, generalizeSplit)
+import           Prelude            hiding (or)
 import           Syntax
 import           Text.Printf        (printf)
 import           Util.Miscellaneous (fst3, show')
@@ -19,6 +22,7 @@ data PDTree = Fail
             | Conj [PDTree] [G S] E.Sigma
             | Gen PDTree (G S)
             | Leaf (G S) E.Sigma
+            | Split [PDTree] [G S] E.Sigma
             deriving (Show, Eq)
 
 topLevel :: Program -> (PDTree, G S, [S])
@@ -178,15 +182,27 @@ nonConjunctive (Program defs goal) =
             else
               case find (\x -> conjToList x `embed` conjToList goal) ancs of
                 Just g ->
-                  let (newGoals, gen1, gen2, names) = generalizeGoals z (conjToList g) (conjToList goal) in
+                  let (newGoals, everythingElse, gen1, gen2, names) =
+                        generalizeSplit z (conjToList g) (conjToList goal) in
+
+                  let env' = (x, y, names) in
                   let newGoal = conj newGoals in
-                  if newGoals `isRenaming` conjToList goal
-                  then
-                    Leaf (V 1 === V 2) []
-                  else
-                    let env' = (x, y, names) in
-                    let (ch, _, _) = go (LC.Descend newGoal ancs) env' seen state in
-                    Gen ch newGoal
+                  
+                  let secondChild
+                        = if newGoals `isRenaming` conjToList goal
+                          then
+                            Leaf (V 1 === V 2) []
+                          else
+                            let (ch, _, _) = go (LC.Descend newGoal ancs) env' seen state in
+                            Gen ch newGoal in 
+
+                  if null everythingElse 
+                  then secondChild
+                  else  
+                    let everything :: G S = conj everythingElse in
+                    let firstChild = fst3 $ go (LC.Descend everything ancs) env' seen state in
+                    Split [secondChild, firstChild] [newGoal, everything] state
+
                 Nothing ->
 
                   let incr = incrDeepOneStep 2 0 goal env state in
@@ -197,7 +213,7 @@ nonConjunctive (Program defs goal) =
                   trace "=======================================" $
 
                   let (unified, gamma) = oneStep goal env state in
-                  Or (map (\(g, s') ->
+                  or (map (\(g, s') ->
                         if null g
                         then
                           leaf s'
@@ -212,7 +228,7 @@ nonConjunctive (Program defs goal) =
                                         (case incr of
                                           Nothing -> trace "Nothing"
                                           Just incr' -> trace (printf "\nIncrDeepOneStep\nGoal:\n%s\nResult:\n%s\n\n" (show g') (show' $ fst incr'))) $
-                                        trace "=======================================" 
+                                        trace "======================================="
 
                                         (env', x : acc)
                                       ) (gamma, []) g in
@@ -230,26 +246,28 @@ nonConjunctive (Program defs goal) =
                                             case maybeSubst of
                                               Nothing -> Fail
                                               Just newSubst ->
-                                                let ch =
-                                                      if null conjunction
-                                                      then leaf newSubst
-                                                      else
-                                                        fst3 $ go (LC.Descend (conj conjunction) (conj g : goal : ancs))
-                                                                  newEnv
-                                                                  (conj g : goal : seen)
-                                                                  newSubst
-                                                in
-                                                Conj [ch] (concatMap fst seq) newSubst
+                                                if null conjunction
+                                                then leaf newSubst
+                                                else
+                                                  let ch =  fst3 $ go (LC.Descend (conj conjunction) (conj g : goal : ancs))
+                                                                      newEnv
+                                                                      (conj g : goal : seen)
+                                                                      newSubst
+                                                  in
+                                                  Conj [ch] (concatMap fst seq) newSubst
                                       )
                                       filtered in
-                            Or ch (LC.Descend (conj g) (goal : ancs)) s'
+                              or ch (LC.Descend (conj g) (goal : ancs)) s'
                           else
                             let ch = map (\h -> fst3 $ go (LC.Descend h (goal : ancs)) gamma (goal : seen) s') g in
                             Conj ch g s')
                           unified)
                     d
                     state
-      in (treeResult, V 1 === V 2, [4, 5, 6, 7])
+      in (simplify treeResult, V 1 === V 2, [4, 5, 6, 7])
+
+or :: [PDTree] -> LC.Descend (G S) -> E.Sigma -> PDTree
+or ch = Or (if null ch then [Fail] else ch)
 
 checkConflicts :: [E.Sigma] -> Bool
 checkConflicts sigmas =
@@ -271,7 +289,6 @@ collectSubsts x = trace (printf "\nPattern matching Failed on\n%s\n" $ show x) [
 
 isConflicting :: E.Sigma -> E.Sigma -> Bool
 isConflicting s1 s2 =
-    -- trace (printf "isConflicting\nS1: %s\nS2: %s\n"  (show s1) (show s2)) $
     let m1 = M.fromList s1 in
     let m2 = M.fromList s2 in
     let intersection = M.intersectionWith (\x y -> (E.walk x s1, E.walk y s2)) m1 m2 in
@@ -285,13 +302,32 @@ findConflicting :: [E.Sigma] -> [[E.Sigma]]
 findConflicting [] = []
 findConflicting [x] = [[x]]
 findConflicting (x:xs) =
-    -- trace (printf "findConflicting\n%s\n" (show (x:xs))) $
     go [x] [] xs
   where
     go [] [] [] = []
     go [] conf [] = [reverse conf]
     go [] conf unConf = reverse conf : findConflicting unConf
     go (x:xs) conf unConf =
-      -- trace "find Conflictnig  : go " $
       let (conf', unConf') = partition (isConflicting x) unConf in
       go (xs ++ conf') (x : conf) unConf'
+
+simplify :: PDTree -> PDTree 
+simplify =
+    go 
+  where 
+    go (Or    ch g s) = failOr ch (\x -> Or x g s) 
+    go (Conj  ch g s) = failConj ch (\x -> Conj x g s)
+    go (Split ch g s) = failConj ch (\x -> Split ch g s)
+    go (Gen   ch g  ) = failOr [ch] (\[x] -> Gen x g)
+    go x = x 
+    failOr ch f = 
+      let simplified = filter (/= Fail) $ map simplify ch in 
+      if null simplified 
+      then Fail 
+      else f simplified 
+    failConj ch f = 
+      let simplified = map simplify ch in 
+      if Fail `elem` simplified 
+      then Fail
+      else f simplified 
+
