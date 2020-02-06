@@ -408,6 +408,6 @@ game2Big =
   , getAnswerDef 
   , startDef 
   , finishDef 
-  , getAnswerDef 
+  , getAnswer'Def
   , resultDef 
   ]
