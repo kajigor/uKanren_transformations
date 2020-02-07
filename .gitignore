@@ -29,3 +29,13 @@ test/out/
 oc
 
 uKanren-transformation.cabal
+
+*.bbl
+
+*.blg
+
+*.fdb_latexmk
+
+*.fls
+
+*.gz
