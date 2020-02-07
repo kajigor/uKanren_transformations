@@ -26,6 +26,8 @@ instance OCanren v => OCanren (Term v) where
   ocanren (C "s" [x]) = printf "s (%s)" (ocanren x)
   ocanren (C "true" []) = printf "!!true"
   ocanren (C "false" []) = printf "!!false"
+  ocanren (C "ltrue" []) = printf "ltrue ()"
+  ocanren (C "lfalse" []) = printf "lfalse ()"
   ocanren (C "z" []) = "z ()"
   ocanren (C (f:o) ts) = printf "(%s)" $ (toLower f : o) ++ ' ' : printArgs (map ocanren ts)
 
@@ -50,6 +52,8 @@ ocanrenize' :: String -> (G X, [String], [Def]) -> String
 ocanrenize' topLevelName (g, args, defs) = printf "let %s %s = %s %s" topLevelName (printArgs args) (printDefs defs) (ocanren g) where
   printFstDef (Def n as g) = printf "let rec %s %s = %s" n (printArgs as) (ocanren g)
   printLastDefs [] = "in "
+  printLastDefs ((Def n [] g) : ds) =
+    printLastDefs ds
   printLastDefs ((Def n as g) : ds) =
     printf "and %s %s = %s %s " n (printArgs as) (ocanren g) $ printLastDefs ds
 
