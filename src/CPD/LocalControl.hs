@@ -128,10 +128,9 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
               Or (map step ns) (Just g) s
               where
                 step (xs, s') =
-                  if null xs && null rs
+                  if null xs && null rs && null ls
                   then Success s'
                   else let newDescends = addDescends xs s' in
-                      --  trace (printf "\n\nConj\nNew descends: %s" (show newDescends)) $
                        Conj (sldResolutionStep newDescends env' s' (map getCurr gs : seen) (isFirstTime && length ns == 1)) newDescends s'
                        -- Conj (sldResolutionStep newDescends env' s' (Set.insert (map getCurr gs) seen) False newDescends s'
             ns | not $ null rs ->
@@ -255,10 +254,10 @@ bmc d q (q':qCurly) = trace "why msg does not exist?!" $ bmc d q qCurly
 
 split :: E.Delta -> [G S] -> [G S] -> (([G S], [G S]), Generalizer, E.Delta)
 split d q q' = -- q <= q'
-  trace (printf "splitting\nq:  %s\nq': %s\n" (show q) (show q')) $
+  -- trace (printf "splitting\nq:  %s\nq': %s\n" (show q) (show q')) $
   let n = length q in
   let qCurly = filter (\q'' -> and $ zipWith embed q q'') $ subconjs q' n in
   let (bestMC, delta) = bmc d q qCurly in
   let (b, gen) = minimallyGeneral bestMC in
-  trace (printf "\nQcurly:\n%s\n\nBestMC:\n%s\n\nB:  %s\nQ': %s\nQ:  %s\n" (show' qCurly) (show' bestMC) (show b) (show q') (show q)) $
+  -- trace (printf "\nQcurly:\n%s\n\nBestMC:\n%s\n\nB:  %s\nQ': %s\nQ:  %s\n" (show' qCurly) (show' bestMC) (show b) (show q') (show q)) $
   ((b, if length q' > n then complementSubconjs b q' else []), gen, delta)

@@ -2,58 +2,59 @@
 
 module Main (main, tests) where
 
-import Program.Sort
-import Program.Bool
-import Program.Bridge
-import CPD.LocalControl
-import Control.Monad
-import Data.Maybe
-import Data.Foldable (for_)
-import Data.List
-import Printer.Dot
-import qualified Eval as E
-import qualified CPD.GlobalControl as GC
-import Printer.GlobalTree
-import Program.List
-import Program.LogicInterpreter
-import Program.Num
-import Program.Programs
-import Purification
-import Residualize
-import Printer.SldTree
-import Syntax
-import Text.Printf
-import Debug.Trace
-import Prelude hiding (succ)
-import qualified Data.Set as Set
-import CPD.Residualization
-import System.Directory
+import           Control.Monad
+import qualified CPD.GlobalControl        as GC
+import           CPD.LocalControl
+import           CPD.Residualization
+import           Data.Foldable            (for_)
+import           Data.List
+import           Data.Maybe
+import qualified Data.Set                 as Set
+import           Debug.Trace
+import qualified Eval                     as E
+import qualified OCanrenize               as OC
+import           Prelude                  hiding (succ)
+import           Printer.Dot
+import           Printer.GlobalTree
+import           Printer.SldTree
+import           Program.Bool
 import qualified Program.Bottles
+import           Program.Bridge
 import qualified Program.Desert
+import           Program.List
+import           Program.LogicInterpreter
+import           Program.Num
+import           Program.Path             hiding (elem)
+import           Program.Programs
+import           Program.Prop
+import           Program.Sample1
+import           Program.Sort
+import           Program.SpecialProp
 import qualified Program.Sudoku4x4
-import qualified OCanrenize as OC
-import Util.Miscellaneous
-import Program.Unify
-import Program.Path hiding (elem)
-import Util.ConjRetriever
-import Program.Sample1
-import Program.Prop
+import           Program.Unify
+import           Purification
+import           Residualize
+import           Syntax
+import           System.Directory
+import           Text.Printf
+import           Util.ConjRetriever
+import           Util.Miscellaneous
 -- import TestFramework
-import Embed
+import           Embed
 
-import System.CPUTime
-import System.TimeIt
-import System.IO
-import System.Process (system)
+import           System.CPUTime
+import           System.IO
+import           System.Process           (system)
+import           System.TimeIt
 
 
 --trace :: String -> a -> a
 --trace _ x = x
 
-main :: IO () 
-main = do 
+main :: IO ()
+main = do
   doOcanrenize
-  -- testUnifySubsts 
+  -- testUnifySubsts
 
 
 
@@ -89,7 +90,7 @@ manyAssertOne name expected f =
 
 tests = do
   -- printGlobalStuff
-  doOcanrenize 
+  doOcanrenize
   {-
   testEmbedding
   testGround
@@ -120,7 +121,7 @@ tests = do
 
 printStuff = do
   test "plainEvalo" Program.Prop.plainQuery
-  -- test "propInst" Prop.query'' 
+  -- test "propInst" Prop.query''
 
   -- test "plainEvaloConj" Prop.plainQueryConj
 
@@ -147,25 +148,29 @@ printStuff = do
   -- test "allDiff.dot" Sudoku4x4.queryAllDiff
   where
     test filename goal = do
-      let path = "test/out/" ++ filename 
+      let path = "test/out/" ++ filename
       createDirectoryIfMissing True path
       printTree (printf "%s/local.dot" path) $ topLevel goal
 
-doOcanrenize = do 
-  -- ocanren "doubleRev" (Program doubleReverso $ fresh ["xs"] (call "doubleReverso" [V "xs"])) Nothing 
-  
-  ocanren "doubleAppendo" (Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])) Nothing 
+doOcanrenize = do
+  ocanren "specialProp" Program.SpecialProp.logintoQuery Nothing 
 
-  -- ocanren "fun" (fun $ fresh ["n", "x", "r"] (call "fun" $ map V ["n", "x", "r"])) Nothing 
+  -- ocanren "plainEvalo" Program.Prop.plainQuery Nothing
 
-  -- ocanren "oddo" (oddo $ (call "oddo" [zero])) Nothing 
+  -- ocanren "doubleRev" (Program doubleReverso $ fresh ["xs"] (call "doubleReverso" [V "xs"])) Nothing
+
+  -- ocanren "doubleAppendo" (Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])) Nothing
+
+  -- ocanren "fun" (fun $ fresh ["n", "x", "r"] (call "fun" $ map V ["n", "x", "r"])) Nothing
+
+  -- ocanren "oddo" (oddo $ (call "oddo" [zero])) Nothing
 
   -- ocanren "propInst" Prop.query'' Nothing
 
-  -- ocanren "prop" Prop.query Nothing 
-  -- ocanren "prop2" Prop.query2  Nothing 
-  -- ocanren "prop3" Prop.query3  Nothing 
-  -- ocanren "prop4" Prop.query4  Nothing 
+  -- ocanren "prop" Prop.query Nothing
+  -- ocanren "prop2" Prop.query2  Nothing
+  -- ocanren "prop3" Prop.query3  Nothing
+  -- ocanren "prop4" Prop.query4  Nothing
   -- ocanren "propSimple" Prop.query' Nothing
 
   -- ocanren "propCompl2" Prop.query1'' Nothing
@@ -175,8 +180,8 @@ doOcanrenize = do
   -- ocanren "appLengtho"  (appLengtho $ (call "appLengtho" [])) Nothing
 
 
-  -- ocanren "sort" (sorto $ fresh ["x", "y"] (call "sorto" [V "x", V "y"])) Nothing 
-  -- ocanren "palindromo" (palindromo $ fresh ["xs"] (call "palindromo" [V "xs"])) Nothing 
+  -- ocanren "sort" (sorto $ fresh ["x", "y"] (call "sorto" [V "x", V "y"])) Nothing
+  -- ocanren "palindromo" (palindromo $ fresh ["xs"] (call "palindromo" [V "xs"])) Nothing
 
   -- ocanren "memApp" (memApp $ fresh ["h", "xs", "ys", "zs"] (call "memApp" [V "h", V "xs", V "ys", V "zs"])) Nothing
 
@@ -196,13 +201,13 @@ doOcanrenize = do
   -- ocanren "pathElem" Path.queryElem $ Just Path.env
   -- ocanren "pathElem1" Path.queryElem1 $ Just Path.env
 
-  -- ocanren "isPath" Path.query1 $ Just Path.env 
+  -- ocanren "isPath" Path.query1 $ Just Path.env
   -- ocanren "unify" Unify.query $ Just Unify.env
   -- ocanren "bigBridge"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"])) $ Just Bridge.env
 
   -- ocanren "bottles"         Bottles.query $ Just Bottles.env
 
-  
+
 --  ocanren "fAndS" Sample1.query $ Nothing
 
 -- ocanren "revacco" (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])) Nothing
@@ -240,26 +245,27 @@ doOcanrenize = do
     where
       ocanren filename goal env = do
         let (tree, logicGoal, names) = GC.topLevel goal
-        let path = printf "test/out/%s" filename 
+        let path = printf "test/out/%s" filename
         exists <- doesDirectoryExist path
-        if exists 
-        then removeDirectoryRecursive path 
-        else return () 
+        if exists
+        then removeDirectoryRecursive path
+        else return ()
         let pathLocal = printf "%s/local" path
         createDirectoryIfMissing True path
         printTree (printf "%s/global.dot" path) tree
         createDirectoryIfMissing True pathLocal
-        let nodes = GC.getNodes tree 
-        for_ 
-          nodes 
-          (\(goal, tree) -> 
-            printTree (printf "%s/%s.dot" pathLocal (show goal)) tree 
-          ) 
+        let nodes = GC.getNodes tree
+        for_
+          nodes
+          (\(goal, tree) ->
+            printTree (printf "%s/%s.dot" pathLocal (show goal)) tree
+          )
         system (printf "dot -O -Tpdf %s/*.dot" path)
         system (printf "dot -O -Tpdf %s/*.dot" pathLocal)
         -- let f = residualizeGlobalTree tree
         -- let pur = purification (f $ vident <$> logicGoal, vident <$> reverse names)
         let f = residualizationTopLevel tree
+        writeFile (printf "%s/%s.before.pur" path filename) (show f)
         let pur = purification (f, vident <$> reverse names)
         writeFile (printf "%s/%s.pur" path filename) (show pur)
         let ocamlCodeFileName = printf "%s/%s.ml" path filename
@@ -308,7 +314,7 @@ doOcanrenize = do
 
 
 printGlobalStuff = do
-  -- test "revacco" (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])) 
+  -- test "revacco" (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
   -- test "globalfAndS" Sample1.query
 
   -- test "globalBottles" Bottles.query
@@ -332,10 +338,10 @@ printGlobalStuff = do
   -- test "unify" Unify.query
   -- test "getTerm" Unify.queryGet
 
-  
+
   -- test "globalDouble"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "x", V "r"]))
   -- test "globalReverso"  (reverso $ fresh ["x", "y"] (call "reverso" [V "x", V "y"]))
-  
+
   -- test "globalCommute" (appendo $ fresh ["a", "b", "c"] (call "appendo" [V "a", V "b", V "c"] &&& call "appendo" [V "b", V "a", V "c"]))
   -- test "globalAppNil"  (doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [nil, V "y", V "z", V "r"]))
   -- test "globalRevAcco" (revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"]))
@@ -606,7 +612,7 @@ testUnifyStuff = do
     g x = Invoke "g" [x]
     h = Invoke "h" []
 
-testUnifySubsts = do 
+testUnifySubsts = do
   putStrLn "testing unifySubsts"
   assert "unify 0" (Just []) (E.unifySubsts [] [])
   assert "unify 1" Nothing (E.unifySubsts [(1, V 2)] [])
