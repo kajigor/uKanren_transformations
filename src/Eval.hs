@@ -9,6 +9,8 @@ import           Stream
 import           Syntax
 import           Text.Printf
 
+import qualified Data.Map.Strict as Map
+
 class Substitution s where
   sEmpty  :: s
   sLookup :: S -> s -> Maybe Ts
@@ -18,6 +20,13 @@ instance Substitution Sigma where
   sEmpty = []
   sLookup a s = lookup a s
   sInsert a b s = (a, b) : s
+
+type MapSigma = Map.Map S Ts
+
+instance Substitution MapSigma where
+  sEmpty  = Map.empty
+  sLookup = Map.lookup
+  sInsert = Map.insert
 
 -- States
 type Iota  = ([X], X -> Ts)
