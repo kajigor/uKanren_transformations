@@ -90,7 +90,7 @@ unifySubsts one two =
     manifactureTerm upper subst = C "ManifacturedTerm" $ map snd $ supplement upper subst
 
 unifyNoOccursCheck :: Substitution subst => Maybe subst -> Ts -> Ts -> Maybe subst
-unifyNoOccursCheck = unifyG (\_ _ -> const True)
+unifyNoOccursCheck = unifyG (\_ _ -> const False)
 
 ---- Interpreting syntactic variables
 infix 9 <@>
