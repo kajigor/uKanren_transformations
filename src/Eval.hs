@@ -9,6 +9,25 @@ import           Stream
 import           Syntax
 import           Text.Printf
 
+import qualified Data.Map.Strict as Map
+
+class Substitution s where
+  sEmpty  :: s
+  sLookup :: S -> s -> Maybe Ts
+  sInsert :: S -> Ts -> s -> s
+
+instance Substitution Sigma where
+  sEmpty = []
+  sLookup a s = lookup a s
+  sInsert a b s = (a, b) : s
+
+type MapSigma = Map.Map S Ts
+
+instance Substitution MapSigma where
+  sEmpty  = Map.empty
+  sLookup = Map.lookup
+  sInsert = Map.insert
+
 -- States
 type Iota  = ([X], X -> Ts)
 type Sigma = [(S, Ts)]
@@ -16,38 +35,38 @@ type Delta = [S]
 type P     = Name -> Def
 type Gamma = (P, Iota, Delta)
 
-unifyG :: (S -> Ts -> Sigma -> Bool)
-          -> Maybe Sigma -> Ts -> Ts -> Maybe Sigma
+unifyG :: Substitution subst => (S -> Ts -> subst -> Bool)
+          -> Maybe subst -> Ts -> Ts -> Maybe subst
 unifyG _ Nothing _ _ = Nothing
 unifyG f st@(Just subst) u v =
   unify' (walk u subst) (walk v subst)  where
     unify' (V u') (V v') | u' == v' = Just subst
-    unify' (V u') (V v') = Just $ (min u' v', V $ max u' v') : subst
+    unify' (V u') (V v') = Just $ sInsert (min u' v') (V $ max u' v') subst
     unify' (V u') t = 
       if f u' t subst 
       then Nothing 
-      else return $ (u', v) : subst 
+      else return $ sInsert u' v subst
     unify' t (V v') = 
       if f v' t subst 
       then Nothing 
-      else return $ (v', u) : subst  
+      else return $ sInsert v' u subst
     unify' (C a as) (C b bs) | a == b && length as == length bs =
       foldl (\ st' (u', v') -> unifyG f st' u' v') st $ zip as bs
     unify' _ _ = Nothing
 
-walk :: Ts -> Sigma -> Ts
+walk :: Substitution subst => Ts -> subst -> Ts
 walk x@(V v') s =
-  case lookup v' s of
+  case sLookup v' s of
     Nothing -> x
     Just t  -> walk t s
 walk u' _ = u'
 
 -- Unification
-unify :: Maybe Sigma -> Ts -> Ts -> Maybe Sigma
+unify :: Substitution subst => Maybe subst -> Ts -> Ts -> Maybe subst
 unify =
     unifyG occursCheck
   where
-    occursCheck :: S -> Ts -> Sigma -> Bool
+    occursCheck :: Substitution subst => S -> Ts -> subst -> Bool
     occursCheck u' t s = 
       let t' = walk t s in
       case t' of
@@ -70,8 +89,8 @@ unifySubsts one two =
     supplement upper lst = lst --  [(x, y) | x <- [0..upper], let y = maybe (V x) id (lookup x lst)]
     manifactureTerm upper subst = C "ManifacturedTerm" $ map snd $ supplement upper subst
 
-unifyNoOccursCheck :: Maybe Sigma -> Ts -> Ts -> Maybe Sigma
-unifyNoOccursCheck = unifyG (\_ _ -> const True)
+unifyNoOccursCheck :: Substitution subst => Maybe subst -> Ts -> Ts -> Maybe subst
+unifyNoOccursCheck = unifyG (\_ _ -> const False)
 
 ---- Interpreting syntactic variables
 infix 9 <@>
