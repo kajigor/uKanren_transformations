@@ -24,6 +24,8 @@ Saint Petersburg, Russia}
 \def\authorrunning{E. Verbitskaia, I. Artemeva \& D. Boulytchev}
 
 \newcommand{\miniKanren}{\textsc{miniKanren}}
+\newcommand{\prolog}{\textsc{Prolog}}
+\newcommand{\mercury}{\textsc{mercury}}
 
 
 \begin{document}
@@ -59,60 +61,58 @@ In reality, running time is often unpredictable and depends on the direction.
 There are different approaches to tackling this problem: using a divergence test to stop execution of definitely diverging computations~\cite{rozplokhas2018improving}, employing specialization~\cite{lozov2019relational}, even rewriting a program by hand introducing some redundancy\footnote{Example of a program which can be rewritten by hand to improve running time in both direction: \url{https://github.com/JetBrains-Research/OCanren/blob/master/regression/test002sort.ml}}.
 
 It has been shown in~\cite{lozov2019relational} that online conjunctive partial deduction is capable of improving running time of a program, but we believe that offline specialization may provide better results.
-Offline specializers employ some static analysis before the specialization step.
+Offline specializers employ a static analysis before the specialization step.
 The most prominent of them is \emph{binding-time analysis}.
-This analysis is used to determine which data is available statically, and which --- dynamically.
-Having this annotations, specialization algorithm can ignore all dynamic data and only symbolically execute a program with respect to the static data.
-This usually leads to the more precise and powerful specialization.
+It is used to determine which data is available statically, and which --- dynamically.
+Having this annotations, specialization algorithm can ignore dynamic data and only symbolically execute a program with respect to the static data.
+This usually leads to more precise and powerful specialization.
 
 The authors are also working on translation of the \miniKanren{} code into a functional programming language.
 In translation, it is crucial to know the order in which variables of a program are bound.
 We see binding-time analysis as a suitable technique for determining this order.
 
+In the next section we present a binding-time analysis algorithm for \miniKanren{}.
+
 
 \section{Binding-Time Analysis for \miniKanren{}}
 
-A program in miniKanren is a goal accompanied with a set of relation definitions.
+A binding-time analysis starts by annotating a given goal.
+Some free variables of the goal are marked with $0$ which denotes they are the \emph{input} or \emph{static} variables, others are annotated with $undef$.
+The aim is to determine the order in which the $undef$ variables are bound within the goal as well as to annotate all relation definitions called.
+Existing binding-time analysis for pure \prolog{}~\cite{craig2004fully} and \mercury{}~\cite{vanhoof2004binding} only distinguish between static and dynamic variables, which does not help to work out the order.
+Natural numbers can serve as annotations~\cite{Thiemann1997AUF} and are better suited to our problem.
+Thus we use natural numbers, $0$ and $undef$ for annotations.
 
-The goal of bta is to determine the order in which variables are getting bound within a given goal and all relations called within it.
+We assume that all goals are in \emph{normal form}: a goal is a disjunction of conjunctions of either relation calls or unifications; all free variables are brought up into scope by the $\underline{fresh}$ operator on the top level:
+$$G = \underline{fresh} \ V_1 \dots V_n \bigvee \bigwedge (\underline{call} \ R^k \ T_1 \dots T_k \mid T_1 \equiv T_2)$$
 
-We will consider a goal in \miniKanren{} to be a disjunction of conjunctions of relations invocations or unifications.
-It is always possible to transform any \miniKanren{} goal in this normal form.
+The algorithm is to execute the following steps until a fix-point is reached.
+Since disjuncts do not influence each other, we treat every disjunct in isolation.
+A conjunct is either a unification or a relation call.
+At each step, a unification suitable for annotation is selected.
+If there are no unifications to annotate, then we select a relation call.
+Whenever a new annotation is assigned to a variable, all other uses of the same variable within the conjunction get the same annotation.
 
-We annotate each variable in a goal with either an $undef$ annotation or a natural number.
-
-We start with a goal in which input parameters are annotated with $0$, while all other variables are annotated with $undef$.
-
-Then we run a the following procedure until a fix-point is reached.
-
-Every disjunct is treated seperately from other disjuncts, since they do not influence each other.
-
-Within a conjunction, there can be either a unification or an invocation.
-Whenever a new annotation is assigned to some variable use within a conjunction is propagated onto other uses of the same variable.
-
-First we annotate unifications with some partial annotations.
-When there are no unifications which can be annotated, we annotate invocations of the current relation.
-Then --- all other invocations.
-Any of the later annotations can create new partially annotated unifications, so they have to be treated again, in the order they have appeared.
-
-Annotating unification works like this.
-There are several possible cases to consider.
-The annotations are written in superscripts, $t[x_0, \dots, x_k]$ denotes a term with free variables $x_0, \dots, x_k$.
-
+Unifications are annotated if there is enough information.
+There are several possible cases described below.
+We write annotations in superscripts; $t[x_0, \dots, x_k]$ denotes a term with free variables $x_0, \dots, x_k$.
 \begin{itemize}
-  \item The unification of an unannotated variable with a term: $x^{undef} \equiv t[y_0^{i_0},\dots, y_k^{i_k}]$, where all free variables in a term are annotated with numbers. Then we annotate $x$ with a $1+max\{i_0,\dots,i_k\}$.
-  \item The unification of an annotated variable with a term, in which some variables are not annotated: $x^{n} \equiv t[y_0^{i_0},\dots, y_k^{i_k}]$. Here all unannotated variables within the term are annotated with $1+n$.
-  \item The unification of two constructors with the same name and the same number of arguments: $\underline{cons} \ Name \ [t_0^{i_0}, \dots, t_k^{i_k}] \equiv \underline{cons} \ Name \ [s_0^{j_0}, \dots, s_k^{j_k}]$. This is equivalent to the conjunction of the unifications $t_l^{i_l} \equiv s_l^{j_l}$ and is treated accordingly.
-  \item Two cases symmetrical to the first two.
-  \item If a unification does not conform to any of these cases, do not annotate it, leaving it for later.
+  \item The unification of an unannotated variable with a term in which all free variables are annotated with numbers: $x^{undef} \equiv t[y_0^{i_0},\dots, y_k^{i_k}]$. In this case we annotate $x$ with $1+max\{i_0,\dots,i_k\}$.
+  \item The unification of an annotated variable with a term, in which some variables are not annotated: $x^{n} \equiv t[y_0^{i_0},\dots, y_k^{i_k}]$. Here all unannotated variables of the term are annotated with $1+n$.
+  \item The unification of two constructors with the same name and the same number of arguments: $\underline{cons} \ C^k \ [t_0^{i_0}, \dots, t_k^{i_k}] \equiv \underline{cons} \ C^k \ [s_0^{j_0}, \dots, s_k^{j_k}]$. This is equivalent to the conjunction of the unifications $t_l^{i_l} \equiv s_l^{j_l}$ and is treated accordingly.
+  \item Two cases symmetrical to the first two, in which a term is unified with a variable.
 \end{itemize}
 
-When annotating invocations, there are possible several cases.
+If a unification does not conform to any of these cases, it should not be annotated at the current step.
+Relation calls are only annotated when all unifications have been considered.
+A relation call in which all variables have not been annotated (are marked with $undef$) as well as those already annotated with some positive numbers do not need to be considered.
+Thus relation calls in which only some of the variables are annotated with positive numbers are to be annotated.
+
+We say that two relation calls have a \emph{consistent} direction if they call a relation with the same name and
 
 \begin{itemize}
-  \item All variables used within an invocation are annotated with $undef$. Annotation in this case is impossible, proceed to the next case.
-  \item All variables are annotated. No annotation is needed -- proceed to the next case.
-  \item We have already annotated the relation with the same in the consistent direction. Then all $undef$ variables get the annotation $1+n$, where $n$ is the maximum annotation of the annotated variables.
+  \item
+   We have already annotated the relation with the same name in the consistent direction. Then all $undef$ variables get the annotation $1+n$, where $n$ is the maximum annotation of the annotated variables.
   \item We have not encountered a consistent invocation. Then we try to annotate the body of the corresponding relation.
 \end{itemize}
 
