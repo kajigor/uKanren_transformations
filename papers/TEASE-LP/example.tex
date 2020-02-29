@@ -41,7 +41,7 @@ It is capable to determine the order in which names within a program are bound a
 
 \section{Introduction}
 
-\miniKanren{} is a family of domain-specific languages for pure \emph{relational} programming.
+\miniKanren{}\footnote{\miniKanren{} language web site: \url{http://minikanren.org}} is a family of domain-specific languages for pure \emph{relational} programming.
 The core of \miniKanren{} is very small and can be implemented in few lines of the host language~\cite{hemann2013ukanren}.
 A program in \miniKanren{} consists of a \emph{goal} and a set of \emph{relation definitions} with fixed arity.
 A goal is either a \emph{disjunction} of two goals, a \emph{conjunction} of two goals, \emph{invocation of a relation} or a \emph{unification of two terms}.
@@ -58,7 +58,7 @@ A program in \miniKanren{} can be run in different directions: given some of its
 When the relation is run with only the last argument unknown, we say it is run in the \emph{forward direction}, otherwise we call it running in the \emph{backward direction}.
 The search employed in \miniKanren{} is complete, so all possible answers will be computed eventually, albeit it may take a long time.
 In reality, running time is often unpredictable and depends on the direction.
-There are different approaches to tackling this problem: using a divergence test to stop execution of definitely diverging computations~\cite{rozplokhas2018improving}, employing specialization~\cite{lozov2019relational}, even rewriting a program by hand introducing some redundancy\footnote{Example of a program which can be rewritten by hand to improve running time in both direction: \url{https://github.com/JetBrains-Research/OCanren/blob/master/regression/test002sort.ml}}.
+There are different approaches to tackling this problem: using a divergence test to stop execution of definitely diverging computations~\cite{rozplokhas2018improving}, employing specialization~\cite{lozov2019relational}, even rewriting a program by hand introducing some redundancy. % \footnote{Example of a program which can be rewritten by hand to improve running time in both direction: \url{https://github.com/JetBrains-Research/OCanren/blob/master/regression/test002sort.ml}}.
 
 It has been shown in~\cite{lozov2019relational} that online conjunctive partial deduction is capable of improving running time of a program, but we believe that offline specialization may provide better results.
 Offline specializers employ a static analysis before the specialization step.
@@ -99,7 +99,7 @@ We write annotations in superscripts; $t[x_0, \dots, x_k]$ denotes a term with f
 \begin{itemize}
   \item The unification of an unannotated variable with a term in which all free variables are annotated with numbers: $x^{undef} \equiv t[y_0^{i_0},\dots, y_k^{i_k}]$. In this case we annotate $x$ with $1+max\{i_0,\dots,i_k\}$.
   \item The unification of an annotated variable with a term, in which some variables are not annotated: $x^{n} \equiv t[y_0^{i_0},\dots, y_k^{i_k}]$. Here all unannotated variables of the term are annotated with $1+n$.
-  \item The unification of two constructors with the same name and the same number of arguments: $\underline{cons} \ C^k \ [t_0^{i_0}, \dots, t_k^{i_k}] \equiv \underline{cons} \ C^k \ [s_0^{j_0}, \dots, s_k^{j_k}]$. This is equivalent to the conjunction of the unifications $t_l^{i_l} \equiv s_l^{j_l}$ and is treated accordingly.
+  \item The unification of two constructors with the same name and the same number of arguments: $\underline{cons} \ C^k \ [t_0, \dots, t_k] \equiv \underline{cons} \ C^k \ [s_0, \dots, s_k]$. This is equivalent to the conjunction of the unifications $\bigwedge_{i=0}^{k} t_i \equiv s_i$ and is treated accordingly.
   \item Two cases symmetrical to the first two, in which a term is unified with a variable.
 \end{itemize}
 
@@ -108,14 +108,15 @@ Relation calls are only annotated when all unifications have been considered.
 A relation call in which all variables have not been annotated (are marked with $undef$) as well as those already annotated with some positive numbers do not need to be considered.
 Thus relation calls in which only some of the variables are annotated with positive numbers are to be annotated.
 
-We say that two relation calls have a \emph{consistent} direction if they call a relation with the same name and
+We say that two calls to the same relation have a \emph{consistent} direction if their free variables which are annotated with numbers are ordered in the same way.
+More formally: relation call $R^n [v_1^{i_1}, \dots, v_k^{i_k}]$ has a direction consistent with $R^n [u_1^{j_1}, \dots, u_k^{j_k}]$, if all variables with numerical annotations are ordered in the same way: $v_{l_1}^{i_{l_1}} \leq \dots \leq v_{l_m}^{i_{l_m}}$ and $u_{l_1}^{j_{l_1}} \leq \dots \leq u_{l_m}^{j_{l_m}}$.
 
-\begin{itemize}
-  \item
-   We have already annotated the relation with the same name in the consistent direction. Then all $undef$ variables get the annotation $1+n$, where $n$ is the maximum annotation of the annotated variables.
-  \item We have not encountered a consistent invocation. Then we try to annotate the body of the corresponding relation.
-\end{itemize}
+If the current conjunct has a consistent direction with some relation call annotated before, then we use that relation call to annotate the current.
 
+Only a relation call with the direction which has not been encountered before should be annotated.
+It is done by considering its body: variables annotated within the call keep their annotations in the body, which is annotated by  the described algorithm.
+
+This algorithm terminates since there are finitely many relation calls to consider, and each relation call has finitely many possible annotations.
 
 
 \nocite{*}
