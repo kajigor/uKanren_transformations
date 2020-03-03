@@ -34,59 +34,47 @@ Saint Petersburg, Russia}
 
 \maketitle
 
-\begin{abstract}
-We present a binding-time analysis algorithm for \miniKanren{}.
-It is capable to determine the order in which names within a program are bound and can be used to facilitate specialization and as a step of translation into a functional language.
-\end{abstract}
+% \begin{abstract}
+% We present a binding-time analysis algorithm for \miniKanren{}.
+% It is capable to determine the order in which names within a program are bound and can be used to facilitate specialization and as a step of conversion into a functional language.
+% \end{abstract}
 
-\section{Introduction}
-
-\miniKanren{}\footnote{\miniKanren{} language web site: \url{http://minikanren.org}} is a family of domain-specific languages for pure \emph{relational} programming.
-The core of \miniKanren{} is very small and can be implemented in few lines of the host language~\cite{hemann2013ukanren}.
-A program in \miniKanren{} consists of a \emph{goal} and a set of \emph{relation definitions} with fixed arity.
-A goal is either a \emph{disjunction} of two goals, a \emph{conjunction} of two goals, \emph{invocation of a relation} or a \emph{unification of two terms}.
-A term is either a \emph{variable} or a \emph{constructor} of arity $n$ applied to $n$ terms.
-All free variables within a goal are brought up into scope with a $\underline{fresh}$ operator.
-The abstract syntax of the language is presented below.
-We denote a goal with $G$, a term with $T$, a variable with $V$, a name of the relation with arity $n$ with $R^n$ and a name of the constructor with arity $n$ with $C^n$.
-\begin{align*}
-  G &:= G \vee G \mid G \wedge G \mid \underline{call} \ R^n \ [T_1, \dots, T_n] \mid T \equiv T \mid \underline{fresh} \ V \ G  \\
-  T &:= V \mid \underline{cons} \ C^n \  [T_1, \dots, T_n]
-\end{align*}
-
+\miniKanren{}\footnote{\miniKanren{} language web site: \url{http://minikanren.org}} is a family of domain-specific languages for pure \emph{relational} programming which core can be implemented in a few lines of the host language~\cite{hemann2013ukanren}.
 A program in \miniKanren{} can be run in different directions: given some of its arguments, it computes all the possible values of the rest of the arguments.
 When the relation is run with only the last argument unknown, we say it is run in the \emph{forward direction}, otherwise we call it running in the \emph{backward direction}.
-The search employed in \miniKanren{} is complete, so all possible answers will be computed eventually, albeit it may take a long time.
-In reality, running time is often unpredictable and depends on the direction.
-There are different approaches to tackling this problem: using a divergence test to stop execution of definitely diverging computations~\cite{rozplokhas2018improving}, employing specialization~\cite{lozov2019relational}, even rewriting a program by hand introducing some redundancy. % \footnote{Example of a program which can be rewritten by hand to improve running time in both direction: \url{https://github.com/JetBrains-Research/OCanren/blob/master/regression/test002sort.ml}}.
+A single relational specification creates a multitude of directions, each solving distinctive problems.
 
-It has been shown in~\cite{lozov2019relational} that online conjunctive partial deduction is capable of improving running time of a program, but we believe that offline specialization may provide better results.
+The search employed in \miniKanren{} is complete, so all possible answers will be computed eventually, albeit it may take a long time.
+In reality, the running time depends on the direction and is highly unpredictable.
+This is where the promise of \miniKanren{} falls short: one has to write the relational specification with the specific direction in mind for it to be efficient.
+There are several attempts to tackle this problem in an automatic fashion: one way is to use a \emph{divergence test} to stop execution of definitely diverging computations~\cite{rozplokhas2018improving}, the other is to employ \emph{specialization}~\cite{lozov2019relational}, while the one we have been working recently is to converse a relational specification into a function which runs fast in the given direction.
+
+Given a relational specification equipped with a certain direction, the functional conversion constructs a function in which unifications are mapped either into a pattern matching or are used in let-bindings to compute the intermediate results.
+Disjunctions give rise to branches in pattern matchings within a function definition, while conjunctions mean sequential computations.
+The nondeterministic computations are modeled with lists.
+The most nontrivial part of the functional conversion is to determine the order in which to bind each variable within the function body.
+
+It has been shown in~\cite{lozov2019relational} that an online conjunctive partial deduction is capable of improving running time of a program in a given direction, but we believe that offline specialization may provide better results.
 Offline specializers employ a static analysis before the specialization step.
-The most prominent of them is \emph{binding-time analysis}.
-It is used to determine which data is available statically, and which --- dynamically.
-Having this annotations, specialization algorithm can ignore dynamic data and only symbolically execute a program with respect to the static data.
+The most prominent of them is the \emph{binding-time analysis}.
+It is used to determine which data is available statically, and which~--- dynamically.
+Having this annotations, a specialization algorithm can ignore dynamic data and only symbolically execute a program with respect to the static data.
 This usually leads to more precise and powerful specialization.
 
-The authors are also working on translation of the \miniKanren{} code into a functional programming language.
-In translation, it is crucial to know the order in which variables of a program are bound.
-We see binding-time analysis as a suitable technique for determining this order.
+We believe that a variation of a binding-time analysis can serve as a solution to figuring out the order of variable bindings necessary for functional conversion as well as be a part of an offline specializer.
+The goal of a binding-time analysis is to identify at which step of a computation each variable gets its value.
+This process is called annotations: each variable gets an annotation from the domain of \emph{binding-time}.
+Existing binding-time analyses for pure \prolog{}~\cite{craig2004fully} and \mercury{}~\cite{vanhoof2004binding} only distinguish between static and dynamic variables, which does not help to work out the order.
+Natural numbers serve as annotations in~\cite{Thiemann1997AUF} and are better suited to our problem.
 
-In the next section we present a binding-time analysis algorithm for \miniKanren{}.
+The binding-time analysis for \miniKanren{} should annotate a given goal as well as determine suitable directions for all relation calls involved in the result computation.
+We start by marking some free variables within the goal with $0$ which denotes they are the \emph{input} or \emph{static} variables, while all others are annotated with $undef$.
+This is the way we specify a direction for the goal.
 
+We assume that all goals are in \emph{normal form}: a goal is a disjunction of conjunctions of either relation calls or unifications; all free variables are brought up into scope by the $\underline{fresh}$ operator on the top level. Relation calls and constructors can only have variables as their arguments. Unification should have a single variable on the left-hand side with the exception of unifying two constructors of arity $0$.
+$$G = \underline{fresh} \ V_1 \dots V_n \bigvee \bigwedge (\underline{call} \ R^k \ V_1 \dots V_k \mid V \equiv T \mid \underline{cons} \ C^0 \equiv \underline{cons} \ C^0)$$
 
-\section{Binding-Time Analysis for \miniKanren{}}
-
-A binding-time analysis starts by annotating a given goal.
-Some free variables of the goal are marked with $0$ which denotes they are the \emph{input} or \emph{static} variables, others are annotated with $undef$.
-The aim is to determine the order in which the $undef$ variables are bound within the goal as well as to annotate all relation definitions called.
-Existing binding-time analysis for pure \prolog{}~\cite{craig2004fully} and \mercury{}~\cite{vanhoof2004binding} only distinguish between static and dynamic variables, which does not help to work out the order.
-Natural numbers can serve as annotations~\cite{Thiemann1997AUF} and are better suited to our problem.
-Thus we use natural numbers, $0$ and $undef$ for annotations.
-
-We assume that all goals are in \emph{normal form}: a goal is a disjunction of conjunctions of either relation calls or unifications; all free variables are brought up into scope by the $\underline{fresh}$ operator on the top level:
-$$G = \underline{fresh} \ V_1 \dots V_n \bigvee \bigwedge (\underline{call} \ R^k \ T_1 \dots T_k \mid T_1 \equiv T_2)$$
-
-The algorithm is to execute the following steps until a fix-point is reached.
+The algorithm is to execute the following steps until a fixpoint is reached.
 Since disjuncts do not influence each other, we treat every disjunct in isolation.
 A conjunct is either a unification or a relation call.
 At each step, a unification suitable for annotation is selected.
@@ -99,8 +87,8 @@ We write annotations in superscripts; $t[x_0, \dots, x_k]$ denotes a term with f
 \begin{itemize}
   \item The unification of an unannotated variable with a term in which all free variables are annotated with numbers: $x^{undef} \equiv t[y_0^{i_0},\dots, y_k^{i_k}]$. In this case we annotate $x$ with $1+max\{i_0,\dots,i_k\}$.
   \item The unification of an annotated variable with a term, in which some variables are not annotated: $x^{n} \equiv t[y_0^{i_0},\dots, y_k^{i_k}]$. Here all unannotated variables of the term are annotated with $1+n$.
-  \item The unification of two constructors with the same name and the same number of arguments: $\underline{cons} \ C^k \ [t_0, \dots, t_k] \equiv \underline{cons} \ C^k \ [s_0, \dots, s_k]$. This is equivalent to the conjunction of the unifications $\bigwedge_{i=0}^{k} t_i \equiv s_i$ and is treated accordingly.
-  \item Two cases symmetrical to the first two, in which a term is unified with a variable.
+  % \item The unification of two constructors with the same name and the same number of arguments: $\underline{cons} \ C^k \ [t_0, \dots, t_k] \equiv \underline{cons} \ C^k \ [s_0, \dots, s_k]$. This is equivalent to the conjunction of the unifications $\bigwedge_{i=0}^{k} t_i \equiv s_i$ and is treated accordingly.
+  % \item Two cases symmetrical to the first two, in which a term is unified with a variable.
 \end{itemize}
 
 If a unification does not conform to any of these cases, it should not be annotated at the current step.
@@ -109,7 +97,7 @@ A relation call in which all variables have not been annotated (are marked with 
 Thus relation calls in which only some of the variables are annotated with positive numbers are to be annotated.
 
 We say that two calls to the same relation have a \emph{consistent} direction if their free variables which are annotated with numbers are ordered in the same way.
-More formally: relation call $R^n [v_1^{i_1}, \dots, v_k^{i_k}]$ has a direction consistent with $R^n [u_1^{j_1}, \dots, u_k^{j_k}]$, if all variables with numerical annotations are ordered in the same way: $v_{l_1}^{i_{l_1}} \leq \dots \leq v_{l_m}^{i_{l_m}}$ and $u_{l_1}^{j_{l_1}} \leq \dots \leq u_{l_m}^{j_{l_m}}$.
+More formally: relation call $R^n \ v_1^{i_1} \dots \ v_k^{i_k}$ has a direction consistent with $R^n \ u_1^{j_1} \dots \ u_k^{j_k}$, if all variables with numerical annotations are ordered in the same way: $v_{l_1}^{i_{l_1}} \leq \dots \leq v_{l_m}^{i_{l_m}}$ and $u_{l_1}^{j_{l_1}} \leq \dots \leq u_{l_m}^{j_{l_m}}$.
 
 If the current conjunct has a consistent direction with some relation call annotated before, then we use that relation call to annotate the current.
 
