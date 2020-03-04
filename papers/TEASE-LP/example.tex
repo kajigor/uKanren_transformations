@@ -45,11 +45,11 @@ When the relation is run with only the last argument unknown, we say it is run i
 A single relational specification creates a multitude of directions, each solving a distinctive problem.
 
 The search employed in \miniKanren{} is complete, so all possible answers will be computed eventually, albeit it may take a long time.
-In reality, the running time depends on the direction and is highly unpredictable.
+In fact, the running time depends on the direction and is highly unpredictable.
 This is where the promise of \miniKanren{} falls short: one has to write the relational specification with the specific direction in mind for it to be efficient.
 There are several attempts to tackle this problem in an automatic fashion: one way is to use a \emph{divergence test} to stop execution of definitely diverging computations~\cite{rozplokhas2018improving}, the other is to employ \emph{specialization}~\cite{lozov2019relational}, while the one we have been working on recently is to converse a relational specification into a function which runs fast in the given direction.
 
-Given a relational specification equipped with a certain direction, the functional conversion constructs a function in which unifications are mapped either into a pattern matching or are used in let-bindings to compute the intermediate results.
+Given a relational specification equipped with a certain direction, the \emph{functional conversion} constructs a function in which unifications are mapped either into a pattern matching or are used in let-bindings to compute the intermediate results.
 Disjunctions give rise to branches in pattern matchings within a function definition, while conjunctions mean sequential computations.
 The nondeterministic computations are modeled with lists.
 The most nontrivial part of the functional conversion is to determine the order in which to bind each variable within the function body.
@@ -57,11 +57,11 @@ The most nontrivial part of the functional conversion is to determine the order 
 \emph{Binding-time analysis}, or bta, is used in compilation and specialization to determine at what time the values of the variables can be computed.
 Typically, bta divides all computations into two stages: \emph{compile-time}, or \emph{static}, and \emph{execution time}, or \emph{dynamic}.
 One approach to bta is to explicitly annotate program variables and computations by equipping them with their \emph{binding times}.
-In logic programming there is no predefined execution direction --- no order in which conjunctions should be considered ---
+In relational programming there is no predefined execution direction --- no order in which conjunctions should be considered ---
 which complicates the problem of identifying variables binding times.
 It has been shown~\cite{lozov2019relational} that online conjunctive partial deduction may improve program running time in a given direction.
 We are investigating the applicability of offline specialization methods in the context of functional conversion.
-Offline approaches are known~\cite{jones1993partial} to be safe, helpful in the design and implementation of partial evaluation projects, and more efficient than the online ones, which is crucial in the context of logic programming.
+Offline approaches are known~\cite{jones1993partial} to be safe, helpful in the design and implementation of partial evaluation projects, and more efficient than the online ones, which is crucial in the context of relational programming.
 The existing binding-time analyses for pure \prolog{}~\cite{craig2004fully} and \mercury{}~\cite{vanhoof2004binding} only distinguish between static and dynamic variables, which does not help to work out the order.
 Natural numbers serve as annotations in~\cite{Thiemann1997AUF} and are better suited to our problem.
 
@@ -79,44 +79,44 @@ Natural numbers serve as annotations in~\cite{Thiemann1997AUF} and are better su
 % Natural numbers serve as annotations in~\cite{Thiemann1997AUF} and are better suited to our problem.
 
 The binding-time analysis for \miniKanren{} should annotate a given goal as well as determine suitable directions for all relation calls involved in the result computation.
-We start by marking some free variables within the goal with $0$ which means they are the \emph{input} or \emph{static} variables, while all others are annotated with $\undef{}$.
+We start by annotating some free variables within the goal with $0$ which means they are the \emph{input} or \emph{static} variables, while all others are annotated with $\undef{}$.
 This is the way we specify a direction for the goal.
 
-We assume that all goals are in \emph{canonical normal form}: a goal is a disjunction of conjunctions of either relation calls or unifications; all free variables are brought up into scope by the $\underline{\fresh{}}$ operator on the top level. Relation calls and constructors can only have variables as their arguments. Unification should have a single variable on the left-hand side with the exception of unifying two constructors of arity $0$.
+We assume that all goals are in \emph{canonical normal form}: a goal is a disjunction of conjunctions of either relation calls or unifications; all free variables are brought up into scope by the $\underline{\fresh{}}$ operator on the top level.
+Relation calls ($R^k$) and constructors can only have variables ($V$) as their arguments. Unification should have a single variable on the left-hand side and a term ($T$) on the right-hand side, with the exception of unifying two constructors of arity $0$.
 We leave out unifications of the zero-arity constructors, since they can either evaluate to a failure or to a success without extending the substitution which can be determined statically.
 Any core \miniKanren{} program can be converted to this form.
 $$Goal = \underline{\fresh{}} \ V_1 \dots V_n \bigvee \bigwedge (\underline{call} \ R^k \ V_1 \dots V_k \mid V \equiv T)$$
 
-The algorithm is to execute the following steps until a fixpoint is reached.
+The bta algorithm is to execute the following steps until a fixpoint is reached.
 Since disjuncts do not influence each other, we treat every disjunct in isolation.
-A conjunct is either a unification or a relation call.
-At each step, a unification suitable for annotation is selected.
+At each step, a unification suitable for annotation is selected within the conjunction.
 If there are no unifications to annotate, then we select a relation call.
-Whenever a new annotation is assigned to a variable, all other uses of the same variable within the conjunction get the same annotation.
+Whenever a new annotation is assigned to a variable, all other occurrences of this variable within the conjunction get the same annotation.
 
 Unifications are annotated if there is enough information.
 There are two possible cases described below.
 We write annotations in superscripts; $t[x_0, \dots, x_k]$ denotes a term with free variables $x_0, \dots, x_k$.
 \begin{itemize}
   \item The unification of a variable annotated with $\undef{}$ with a term in which all free variables are annotated with numbers: $x^{\undef{}} \equiv t[y_0^{i_0},\dots, y_k^{i_k}]$. In this case we annotate $x$ with $1+max\{i_0,\dots,i_k\}$.
-  \item The unification of a variable annotated with a number with a term, some variables of which are annotated with $\undef{}$: $x^{n} \equiv t[y_0^{i_0},\dots, y_k^{i_k}]$. Here all $\undef{}$ variables are annotated with $1+n$.
+  \item The unification of a variable annotated with a number with a term, some variables of which are annotated with $\undef{}$: $x^{n} \equiv t[y_0^{i_0},\dots, y_k^{i_k}]$. Here all $\undef{}$ variables are to be annotated with $1+n$.
   % \item The unification of two constructors with the same name and the same number of arguments: $\underline{cons} \ C^k \ [t_0, \dots, t_k] \equiv \underline{cons} \ C^k \ [s_0, \dots, s_k]$. This is equivalent to the conjunction of the unifications $\bigwedge_{i=0}^{k} t_i \equiv s_i$ and is treated accordingly.
   % \item Two cases symmetrical to the first two, in which a term is unified with a variable.
 \end{itemize}
 
 If a unification does not conform to any of these cases, it should not be annotated at the current step.
 Relation calls are only annotated when all unifications have been considered.
-A relation call in which all variables are annotated with $\undef{}$ as well as those annotated with only positive numbers do not need to be considered.
-Thus relation calls in which only some of the variables are annotated with positive numbers are to be annotated.
+A relation call in which all variables are annotated with $\undef{}$ as well as those with numerical annotations do not need to be considered.
+Thus relation calls in which only some of the variables are annotated with numbers should be examined further.
 
-We say that two calls to the same relation have a \emph{consistent} direction if their free variables which are annotated with numbers are ordered in the same way.
-More formally: a relation call $R^n \ v_1^{i_1} \dots \ v_k^{i_k}$ has a direction consistent with $R^n \ u_1^{j_1} \dots \ u_k^{j_k}$, if all variables with numerical annotations are ordered in the same way: $v_{l_1}^{i_{l_1}} \leq \dots \leq v_{l_m}^{i_{l_m}}$ and $u_{l_1}^{j_{l_1}} \leq \dots \leq u_{l_m}^{j_{l_m}}$. For example, relation calls $R^3 \ x^{\undef{}} \ y^{0} \ z^{0}$, $R^3 \ x^{\undef{}} \ y^{1} \ z^{2}$ and $R^3 x^{\undef{}} y^{\undef{}} z^{3}$ all have consistent directions, while the direction of $R^3 \ x^{1} \ y^{2} \ z^{\undef{}}$ is not consistent with the direction of $R^3 \ x^{\undef{}} \ y^{1} \ z^{2}$.
+We say that two calls to the same relation have a \emph{consistent} direction if the annotations order free variables in the same way.
+For example, relation calls $R^3 \ x^{\undef{}} \ y^{0} \ z^{0}$, $R^3 \ x^{\undef{}} \ y^{1} \ z^{2}$ and $R^3 x^{\undef{}} y^{\undef{}} z^{3}$ all have consistent directions, while the direction of $R^3 \ x^{1} \ y^{2} \ z^{\undef{}}$ is not consistent with the direction of $R^3 \ x^{\undef{}} \ y^{1} \ z^{2}$.
 
-If the current conjunct has a consistent direction with some relation call annotated before, then there is no need to explore this direction again.
+If at the current step the conjunct under consideration has a consistent direction with some relation call annotated before, then there is no need to explore this direction again.
 We use the previous call to annotate the current one.
 Only a relation call with the direction which has not been encountered before should be annotated.
 It is done by considering its body: variables annotated within the call keep their annotations in the body, which is annotated by the described algorithm.
-All annotated relation definitions are stored while algorithm runs, so they can be reused if necessary.
+All annotated relation definitions are memoized while algorithm runs, so they can be reused if necessary.
 
 We presented a binding-time analysis algorithm for \miniKanren{} that determines the order in which variables are bound.
 The algorithm terminates since there are finitely many different relation calls to consider, and each relation call has finitely many possible annotations.
