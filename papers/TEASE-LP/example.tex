@@ -53,26 +53,38 @@ Disjunctions give rise to branches in pattern matchings within a function defini
 The nondeterministic computations are modeled with lists.
 The most nontrivial part of the functional conversion is to determine the order in which to bind each variable within the function body.
 
-It has been shown in~\cite{lozov2019relational} that an online conjunctive partial deduction is capable of improving running time of a program in a given direction, but we believe that offline specialization may provide even better results in the context of relational interpreters.
-Offline specializers employ a static analysis before the specialization step.
-The most prominent of them is \emph{binding-time analysis}.
-It is used to determine which data is available statically, and which~--- dynamically.
-Having these annotations, a specialization algorithm can ignore dynamic data and only symbolically execute a program with respect to the static data.
-This usually leads to a more precise and powerful specialization.
-
-We believe that a variation of a binding-time analysis can serve as a solution to figuring out the order of variable bindings necessary for functional conversion as well as be a part of an offline specializer.
-The goal of binding-time analysis is to identify at which step of a computation each variable gets its value.
-This process is called annotation: each variable gets an annotation from the domain of \emph{binding-time}.
-Existing binding-time analyses for pure \prolog{}~\cite{craig2004fully} and \mercury{}~\cite{vanhoof2004binding} only distinguish between static and dynamic variables, which does not help to work out the order.
+In compilation and specialization to determine at what time the values of the variables can be computed, \emph{binding-time analysis}, or bta, is used.
+Typically, bta divides all computations into two stages: \emph{compile-time}, or \emph{static}, and \emph{execution time}, or \emph{dynamic}.
+One approach to bta is to explicitly annotate program variables and computations by equipping them with their binding times.
+In logic programming there is no predefined execution direction --- no order in which conjunctions should be considered ---
+which complicates the problem of identifying variables binding times.
+It has been shown~\cite{lozov2019relational} that online conjunctive partial deduction may improve program running time in a given direction.
+We are investigating the applicability of offline specialization methods in the context of functional conversion.
+Offline approaches are known~\cite{jones1993partial} to be safe, helpful in the design and implementation of partial evaluation projects, and are more efficient than the online ones, which is crucial in the context of logic programming.
+The existing binding-time analyses for pure \prolog{}~\cite{craig2004fully} and \mercury{}~\cite{vanhoof2004binding} only distinguish between static and dynamic variables, which does not help to work out the order.
 Natural numbers serve as annotations in~\cite{Thiemann1997AUF} and are better suited to our problem.
+
+% It has been shown in~\cite{lozov2019relational} that an online conjunctive partial deduction is capable of improving running time of a program in a given direction, but we believe that offline specialization may provide even better results in the context of relational interpreters.
+% Offline specializers employ a static analysis before the specialization step.
+% The most prominent of them is \emph{binding-time analysis}.
+% It is used to determine which data is available statically, and which~--- dynamically.
+% Having these annotations, a specialization algorithm can ignore dynamic data and only symbolically execute a program with respect to the static data.
+% This usually leads to a more precise and powerful specialization.
+
+% We believe that a variation of a binding-time analysis can serve as a solution to figuring out the order of variable bindings necessary for functional conversion as well as be a part of an offline specializer.
+% The goal of binding-time analysis is to identify at which step of a computation each variable gets its value.
+% This process is called annotation: each variable gets an annotation from the domain of \emph{binding-time}.
+% Existing binding-time analyses for pure \prolog{}~\cite{craig2004fully} and \mercury{}~\cite{vanhoof2004binding} only distinguish between static and dynamic variables, which does not help to work out the order.
+% Natural numbers serve as annotations in~\cite{Thiemann1997AUF} and are better suited to our problem.
 
 The binding-time analysis for \miniKanren{} should annotate a given goal as well as determine suitable directions for all relation calls involved in the result computation.
 We start by marking some free variables within the goal with $0$ which means they are the \emph{input} or \emph{static} variables, while all others are annotated with $undef$.
 This is the way we specify a direction for the goal.
 
-We assume that all goals are in \emph{canonical normal form}: $\underline{fresh} \ V_1 \dots V_n \bigvee \bigwedge (\underline{call} \ R^k \ V_1 \dots V_k \mid V \equiv T)$. A goal is a disjunction of conjunctions of either relation calls or unifications; all free variables are brought up into scope by the $\underline{fresh}$ operator on the top level. Relation calls and constructors can only have variables as their arguments. Unification should have a single variable on the left-hand side with the exception of unifying two constructors of arity $0$.
+We assume that all goals are in \emph{canonical normal form}: a goal is a disjunction of conjunctions of either relation calls or unifications; all free variables are brought up into scope by the $\underline{fresh}$ operator on the top level. Relation calls and constructors can only have variables as their arguments. Unification should have a single variable on the left-hand side with the exception of unifying two constructors of arity $0$.
 We leave unifications of the zero-arity constructors out, since they can either be evaluated to a failure or to a success without extending the substitution which can be determined statically.
 Any core \miniKanren{} program can be converted to this form.
+$$Goal = \underline{fresh} \ V_1 \dots V_n \bigvee \bigwedge (\underline{call} \ R^k \ V_1 \dots V_k \mid V \equiv T)$$
 
 The algorithm is to execute the following steps until a fixpoint is reached.
 Since disjuncts do not influence each other, we treat every disjunct in isolation.
