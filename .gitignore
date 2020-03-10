@@ -39,3 +39,5 @@ uKanren-transformation.cabal
 *.fls
 
 *.gz
+
+*.out
