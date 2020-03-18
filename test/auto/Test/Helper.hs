@@ -9,7 +9,7 @@ module Test.Helper
   , manyAssert
   ) where
 
-import           Test.HUnit (Assertion, (@?=))
+import           Test.Tasty.HUnit (Assertion, (@?=))
 
 test :: (Eq b, Show b) => (a -> b) -> a -> b -> Assertion
 test f input output =

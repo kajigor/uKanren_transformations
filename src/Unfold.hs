@@ -1,9 +1,10 @@
 module Unfold where
 
-import           Data.Maybe  (mapMaybe)
-import qualified Eval        as E
+import           Data.Maybe         (mapMaybe)
+import qualified Eval               as E
 import           Syntax
-import           Text.Printf (printf)
+import           Text.Printf        (printf)
+import           Util.Miscellaneous (fst3)
 
 oneStepUnfold :: G S -> E.Gamma -> (G S, E.Gamma)
 oneStepUnfold g@(Invoke f as) env@(p, i, d) =
@@ -39,3 +40,17 @@ unifyStuff state gs =
     go ((t :=: u) : gs) state conjs = do
       s <- E.unify  (Just state) t u
       go gs s conjs
+
+maximumBranches :: Def -> Int
+maximumBranches def@(Def _ args body) =
+    let goal = fst3 $ E.preEval E.env0 (fresh args body) in
+    length $ fst $ oneStep (succeed goal) E.env0 E.s0
+  where
+    succeed (g :/\: h)         = succeed g :/\: succeed h
+    succeed (g :\/: h)         = succeed g :\/: succeed h
+    succeed (Fresh name g)     = Fresh name (succeed g)
+    succeed (Invoke name args) = success
+    succeed (t :=: u)          = t :=: u
+    succeed x                  = error ("Failed to transform " ++ show x)
+
+    success = C "" [] :=: C "" []
