@@ -12,7 +12,8 @@ import           Embed
 import qualified Eval                   as E
 import           Syntax
 import           Text.Printf            (printf)
-import           Util.Miscellaneous     (map1in4)
+import           Util.Miscellaneous     (map1in4, show')
+import Debug.Trace (trace )
 
 type Generalizer = E.Sigma
 
@@ -27,7 +28,7 @@ instance Generalization S (G S) where
 
 instance Generalization S (Term S) where
   generalize vs s1 s2 (C m ms) (C n ns) | m == n =
-    map1in4 (C m) $ generalize vs s1 s2 ms ns 
+    map1in4 (C m) $ generalize vs s1 s2 ms ns
   generalize vs s1 s2 (V x) (V y) | x == y = (V x, s1, s2, vs)
   generalize (v:vs) s1 s2 t1 t2 = (V v, (v, t1):s1, (v, t2):s2, vs)
 
@@ -35,9 +36,9 @@ instance Generalization S (f S) => Generalization S [f S] where
   generalize vs s1 s2 ns ms | length ns == length ms =
     map1in4 reverse $
     foldl (\(gs, gen1, gen2, vs) (t1, t2) ->
-             map1in4 (:gs) $ generalize vs gen1 gen2 t1 t2 
-          ) 
-          ([], s1, s2, vs) 
+             map1in4 (:gs) $ generalize vs gen1 gen2 t1 t2
+          )
+          ([], s1, s2, vs)
           (zip ns ms)
 
 generalizeGoals :: [S] -> [G S] -> [G S] -> ([G S], Generalizer, Generalizer, [S])
@@ -45,12 +46,13 @@ generalizeGoals s as bs | as `isRenaming` bs =
   let (Just subst) = inst as bs Map.empty in
   (bs, Map.toList subst, [], s)
 generalizeGoals s as bs | length as == length bs =
-  refine $ generalize s [] [] as bs 
+  refine $ generalize s [] [] as bs
 generalizeGoals _ as bs = error $ printf "Cannot generalize: different lengths of\nas: %s\nbs: %s\n" (show as) (show bs)
 
 generalizeSplit :: [S] -> [G S] -> [G S] -> ([G S], [G S], Generalizer, Generalizer, [S])
 generalizeSplit s gs hs =
     let (ok, notOk) = go gs hs in
+    -- trace (printf "\n\nIn genearlizeSplit\n\ngs:\n%s\n\nhs:\n%s\n\nok:\n%s\n\nnotOk:\n%s\n\n" (show' gs) (show' hs) (show' ok) (show' notOk) ) $
     let (res, gen1, gen2, d) = generalizeGoals s gs ok in
     (res, notOk, gen1, gen2, d)
   where
@@ -59,7 +61,7 @@ generalizeSplit s gs hs =
       let (ok, notOk) = go gs hs in
       (h : ok, notOk)
     go (g : gs) (h : hs) =
-      let (ok, notOk) = go gs hs in
+      let (ok, notOk) = go (g : gs) hs in
       (ok, h : notOk)
     go [] hs = ([], hs)
 
@@ -76,7 +78,7 @@ refine msg@(g, s1, s2, d) =
   (newGoal, s1', s2', d)
   where
     groupBy _ [] acc = acc
-    groupBy p xs acc = 
-      let (similar, rest) = partition (p (head xs)) xs in 
+    groupBy p xs acc =
+      let (similar, rest) = partition (p (head xs)) xs in
       assert (similar /= []) $ groupBy p rest (similar : acc)
     group x y = snd x == snd y

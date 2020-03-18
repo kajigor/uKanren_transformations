@@ -37,6 +37,7 @@ import           Residualize
 import           Syntax
 import           System.Directory
 import           Text.Printf
+import           Unfold
 import           Util.ConjRetriever
 import           Util.Miscellaneous
 -- import TestFramework
@@ -153,7 +154,10 @@ printStuff = do
       printTree (printf "%s/local.dot" path) $ topLevel goal
 
 doOcanrenize = do
-  ocanren "specialProp" Program.SpecialProp.logintoQuery Nothing 
+  ocanren "unify" Program.Unify.query $ Just Program.Unify.env
+
+
+  -- ocanren "specialProp" Program.SpecialProp.logintoQuery Nothing
 
   -- ocanren "plainEvalo" Program.Prop.plainQuery Nothing
 

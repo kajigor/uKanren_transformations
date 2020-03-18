@@ -6,7 +6,7 @@ import qualified CPD.LocalControl   as LC
 import           Data.Foldable      (foldlM)
 import           Data.List          (find, intersect, partition, (\\))
 import qualified Data.Map.Strict    as M
-import           Data.Maybe         (mapMaybe, fromMaybe)
+import           Data.Maybe         (fromMaybe, mapMaybe)
 import           Debug.Trace        (trace)
 import           Embed
 import qualified Eval               as E
@@ -14,6 +14,7 @@ import           Generalization     (generalizeGoals, generalizeSplit)
 import           Prelude            hiding (or)
 import           Syntax
 import           Text.Printf        (printf)
+import           Unfold             (oneStep)
 import           Util.Miscellaneous (fst3, show')
 
 data SymTree = Fail
@@ -43,13 +44,6 @@ topLevel depth (Program defs goal) =
             (goal : ctx)
             state
 
-oneStep :: G S -> E.Gamma -> E.Sigma -> ([([G S], E.Sigma)], E.Gamma)
-oneStep goal env state =
-    let (unfolded, gamma) = LC.oneStepUnfold goal env in
-    let normalized = LC.normalize unfolded in
-    let unified = mapMaybe (LC.unifyStuff state) normalized in
-    (unified, gamma)
-
 leaf :: E.Sigma -> SymTree
 leaf [] = Fail
 leaf s  = Success s
@@ -60,7 +54,7 @@ simplify =
   where
     go (Disj ch g s) = failOr   ch (\x -> Disj x g s)
     go (Conj ch g s) = failConj ch (\x -> Conj x g s)
-    go x = x
+    go x             = x
     failOr ch f =
       let simplified = filter (/= Fail) $ map go ch in
       if null simplified

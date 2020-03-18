@@ -15,6 +15,7 @@ import           Generalization
 import           Prelude            hiding (lookup, showList)
 import           Syntax
 import           Text.Printf
+import           Unfold             (oneStepUnfold, normalize, unifyStuff)
 import           Util.Miscellaneous
 
 -- trace :: String -> a -> a
@@ -64,17 +65,6 @@ sldResolution goal gamma subst seen  =
   -- sldResolutionStep (map (\x -> Descend x Set.empty) goal) gamma subst Set.empty True
   -- trace "\n\nSLDRESOLUTION \n\n" $
   sldResolutionStep (map (\x -> Descend x []) goal) gamma subst seen True
-
-oneStepUnfold :: G S -> E.Gamma -> (G S, E.Gamma)
-oneStepUnfold g@(Invoke f as) env@(p, i, d) =
-  let (Def n fs body) = p f in
-  if length fs == length as
-  then
-    let i' = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
-    let (g', env', _) = E.preEval (p, i', d) body in
-    (g', env')
-  else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
-oneStepUnfold g env = (g, env)
 
 showList :: Show a => [a] -> String
 showList = unlines . map show
@@ -142,26 +132,6 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
                     (selectNext rs)
             ns ->
               Leaf gs s env
-
-
-normalize :: G S -> [[G S]] -- disjunction of conjunctions of calls and unifications
-normalize (f :\/: g) = normalize f ++ normalize g
-normalize (f :/\: g) = (++) <$> normalize f <*> normalize g
-normalize g@(Invoke _ _) = [[g]]
-normalize g@(_ :=: _) = [[g]]
-normalize g = error ("Unexpected goal type in normalization\n" ++ show g)
-
-unifyStuff :: E.Sigma -> [G S] -> Maybe ([G S], E.Sigma)
-unifyStuff state gs =
-    -- trace (printf "\nIn unifyStuff\nGs\n%s\nState\n%s\n" (show gs) (show state)) $
-    go gs state []
-  where
-    go [] state conjs = Just (reverse conjs, state)
-    go (g@(Invoke _ _) : gs) state conjs = go gs state (g : conjs)
-    go ((t :=: u) : gs) state conjs = do
-      s <- E.unify  (Just state) t u
-      -- trace (printf "unifying\n%s\n" (show s)) $
-      go gs s conjs
 
 bodies :: SldTree -> [[G S]]
 bodies = leaves
