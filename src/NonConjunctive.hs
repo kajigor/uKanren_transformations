@@ -14,7 +14,7 @@ import           Generalization     (generalizeSplit)
 import           Prelude            hiding (or)
 import           Syntax
 import           Text.Printf        (printf)
-import           Unfold             (oneStepUnfold, oneStep)
+import           Unfold             (oneStepUnfold, oneStep, notMaximumBranches)
 import           Util.Miscellaneous (fst3, show')
 
 data NCTree = Fail
@@ -134,6 +134,7 @@ nonConjunctive (Program defs goal) =
     go :: LC.Descend ([G S]) -> E.Gamma -> [[G S]] -> E.Sigma -> NCTree
     go d@(LC.Descend goal' ancs) env@(x,y,z) seen state =
       let goal = E.substitute state goal' in
+      let d = (LC.Descend goal ancs) in
       let treeResult =
             if variantCheck goal seen
             then
@@ -149,8 +150,24 @@ nonConjunctive (Program defs goal) =
                   let secondChild =
                         if newGoals `isInst` goal
                         then
-                          -- !!!
-                          Prune goal state
+                          case find' (notMaximumBranches env' state) goal of
+                            Just (left, g, right) ->
+                              -- trace ("\nHERE!\n") $
+                              let (unified,gamma) = oneStep g env' state in
+                              -- trace (printf "\nDoStepResult: \n%s\n" (show' unified))
+                              or (map (\(goals, subst) ->
+                                          if null goals
+                                          then leaf subst
+                                          else
+                                            go (LC.Descend (left ++ goals ++ right) (goal : ancs)) gamma (goal : seen) subst
+                                      )
+                                      unified
+                                  )
+                                  d
+                                  state
+                            Nothing ->
+                              -- !!!
+                              Prune goal state
                         else
                           let ch = go (LC.Descend newGoals ancs) env' seen state in
                           Gen ch newGoals in
@@ -163,28 +180,42 @@ nonConjunctive (Program defs goal) =
                 Nothing ->
                   if length goal > 1
                   then
-                    let (gs, possibleSubsts) = tryFindSubsts goal env state in
-                    case possibleSubsts of
-                      Nothing ->
-                        let (unified,gamma) = doStep (head gs) env state in
+                    case find' (notMaximumBranches env state) goal of
+                      Just (left, g, right) ->
+                        let (unified,gamma) = oneStep g env state in
                         or (map (\(goals, subst) ->
                                     if null goals
                                     then leaf subst
                                     else
-                                      go (LC.Descend (goals ++ tail gs) (goal : ancs)) gamma (goal : seen) subst
+                                      go (LC.Descend (left ++ goals ++ right) (goal : ancs)) gamma (goal : seen) subst
                                 )
                                 unified
                             )
                             d
                             state
+                      Nothing ->
+                        let (gs, possibleSubsts) = tryFindSubsts goal env state in
+                        case possibleSubsts of
+                          Nothing ->
+                            let (unified,gamma) = doStep (head gs) env state in
+                            or (map (\(goals, subst) ->
+                                        if null goals
+                                        then leaf subst
+                                        else
+                                          go (LC.Descend (goals ++ tail gs) (goal : ancs)) gamma (goal : seen) subst
+                                    )
+                                    unified
+                                )
+                                d
+                                state
 
-                      Just ((substs, notSubsts), gamma) ->
-                        let substituted =
-                              if null gs
-                              then []
-                              else map (go (LC.Descend gs (goal : ancs)) gamma (goal : seen)) substs in
-                        let rest = map (\(goals, subst) -> go (LC.Descend (goals ++ gs) (goal : ancs)) gamma (goal : seen) subst ) notSubsts in
-                        Conj (substituted ++ rest) goal state
+                          Just ((substs, notSubsts), gamma) ->
+                            let substituted =
+                                  if null gs
+                                  then []
+                                  else map (go (LC.Descend gs (goal : ancs)) gamma (goal : seen)) substs in
+                            let rest = map (\(goals, subst) -> go (LC.Descend (goals ++ gs) (goal : ancs)) gamma (goal : seen) subst ) notSubsts in
+                            Conj (substituted ++ rest) goal state
                   else
                     -- REMOVE CODE DUPLICATION
                     let (unified,gamma) = doStep (head goal) env state in
@@ -201,6 +232,9 @@ nonConjunctive (Program defs goal) =
 
       in simplify treeResult
 
+-- Finds a conjunct, for which at least one substitution exists in the unfolding.
+-- The result is the pair in which first element is list of conjuncts excluding the one which generates substitutions.
+-- The second element is the unfolding result for the selected conjunct.
 tryFindSubsts :: [G S] -> E.Gamma -> E.Sigma -> ([G S], Maybe (([E.Sigma], [([G S], E.Sigma)]), E.Gamma))
 tryFindSubsts =
     go []
@@ -213,7 +247,13 @@ tryFindSubsts =
       then go (g:acc) gs env state
       else (reverse acc ++ gs, Just ((map snd substs, notSubsts), gamma))
 
-
+find' :: (a -> Bool) -> [a] -> Maybe ([a], a, [a])
+find' =
+    go []
+  where
+    go _ p [] = Nothing
+    go left p (h:t) | p h = Just (reverse left, h, t)
+    go left p (h:t) = go (h:left) p t
 
 
 

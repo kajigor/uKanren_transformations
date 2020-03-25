@@ -42,13 +42,13 @@ unifyG f st@(Just subst) u v =
   unify' (walk u subst) (walk v subst)  where
     unify' (V u') (V v') | u' == v' = Just subst
     unify' (V u') (V v') = Just $ sInsert (min u' v') (V $ max u' v') subst
-    unify' (V u') t = 
-      if f u' t subst 
-      then Nothing 
+    unify' (V u') t =
+      if f u' t subst
+      then Nothing
       else return $ sInsert u' v subst
-    unify' t (V v') = 
-      if f v' t subst 
-      then Nothing 
+    unify' t (V v') =
+      if f v' t subst
+      then Nothing
       else return $ sInsert v' u subst
     unify' (C a as) (C b bs) | a == b && length as == length bs =
       foldl (\ st' (u', v') -> unifyG f st' u' v') st $ zip as bs
@@ -67,11 +67,11 @@ unify =
     unifyG occursCheck
   where
     occursCheck :: Substitution subst => S -> Ts -> subst -> Bool
-    occursCheck u' t s = 
+    occursCheck u' t s =
       let t' = walk t s in
       case t' of
-        V v' | v' == u' -> True 
-        V _ -> False 
+        V v' | v' == u' -> True
+        V _ -> False
         C _ as -> any (\x -> occursCheck u' x s) as
 
     -- occursCheck u' t s = if elem u' $ fv t then Nothing else s

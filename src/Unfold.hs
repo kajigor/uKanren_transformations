@@ -5,6 +5,7 @@ import qualified Eval               as E
 import           Syntax
 import           Text.Printf        (printf)
 import           Util.Miscellaneous (fst3)
+import Debug.Trace (trace)
 
 oneStepUnfold :: G S -> E.Gamma -> (G S, E.Gamma)
 oneStepUnfold g@(Invoke f as) env@(p, i, d) =
@@ -54,3 +55,12 @@ maximumBranches def@(Def _ args body) =
     succeed x                  = error ("Failed to transform " ++ show x)
 
     success = C "" [] :=: C "" []
+
+notMaximumBranches :: E.Gamma -> E.Sigma -> G S -> Bool
+notMaximumBranches gamma@(p, _, _) state goal@(Invoke name args) =
+    let maxBranches = maximumBranches (p name) in
+    let (unfolded, _) = oneStep goal gamma state in
+    let res = length unfolded < maxBranches in
+    -- trace (printf "\n\nNotMaximumBranches:\nGoal: %s\nMB: %s\nUnf: %s\n" (show goal) (show maxBranches) (show $ length unfolded))  $
+    res
+notMaximumBranches _ _ _ = False
