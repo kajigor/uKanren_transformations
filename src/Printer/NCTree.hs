@@ -4,7 +4,7 @@ module Printer.NCTree where
 import Printer.Dot
 import qualified Eval as E
 import Syntax
-import NonConjunctive
+import NonConjunctive.Unfold (NCTree (..))
 import Text.Printf
 import CPD.LocalControl (getCurr)
 

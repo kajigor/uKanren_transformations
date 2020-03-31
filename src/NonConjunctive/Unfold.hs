@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module NonConjunctive where
+module NonConjunctive.Unfold where
 
 import qualified CPD.LocalControl   as LC
 import           Data.Foldable      (foldlM)
