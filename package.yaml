@@ -22,11 +22,11 @@ description:         Please see the README on GitHub at <https://github.com/kaji
 dependencies:
 - base >= 4.7 && < 5
 - containers
-- process 
-- temporary 
-- text 
+- process
+- temporary
+- text
 - fgl
-- graphviz 
+- graphviz
 - mtl
 - extra
 - directory
@@ -43,24 +43,22 @@ ghc-options:
   - -fwarn-unused-imports
 
 library:
-  source-dirs: 
+  source-dirs:
   - src/
-  - test/resources
+  - test/resources/
 
-executables: 
-  cpd: 
-    main: test/cpd/Main.hs
-    source-dir: 
-    - src/
-    - src/cpd
-    - test/
+executables:
+  cpd:
+    main: Main.hs
+    source-dirs:
+    - test/cpd/
     dependencies: uKanren-transformation
 
 
 tests:
   uKanren-transformation-test:
     main:                Test.hs
-    source-dirs:         
+    source-dirs:
     - test/auto
     - test/resources
     dependencies:

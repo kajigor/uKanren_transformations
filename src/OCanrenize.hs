@@ -8,6 +8,7 @@ import System.IO.Temp
 import Data.Char
 import Syntax
 import Text.Printf
+import Debug.Trace (trace)
 
 class OCanren a where
   ocanren :: a -> String
@@ -49,16 +50,20 @@ ocanrenize topLevelName (g, args) =
   printf "let %s %s = %s" topLevelName (printArgs args) (ocanren g)
 
 ocanrenize' :: String -> (G X, [String], [Def]) -> String
-ocanrenize' topLevelName (g, args, defs) = printf "let %s %s = %s %s" topLevelName (printArgs args) (printDefs defs) (ocanren g) where
-  printFstDef (Def n as g) = printf "let rec %s %s = %s" n (printArgs as) (ocanren g)
-  printLastDefs [] = "in "
-  printLastDefs ((Def n [] g) : ds) =
-    printLastDefs ds
-  printLastDefs ((Def n as g) : ds) =
-    printf "and %s %s = %s %s " n (printArgs as) (ocanren g) $ printLastDefs ds
+ocanrenize' topLevelName input@(g, args, defs) =
+    trace ("OCANRENIZE ") $
+    trace (show $ head args) $
+    printf "let %s %s = %s %s" topLevelName (printArgs args) (printDefs defs) (ocanren g)
+  where
+    printFstDef (Def n as g) = printf "let rec %s %s = %s" n (printArgs as) (ocanren g)
+    printLastDefs [] = "in "
+    printLastDefs ((Def n [] g) : ds) =
+      printLastDefs ds
+    printLastDefs ((Def n as g) : ds) =
+      printf "and %s %s = %s %s " n (printArgs as) (ocanren g) $ printLastDefs ds
 
-  printDefs []     = ""
-  printDefs (d:ds) = (printFstDef d) ++ " " ++ (printLastDefs ds)
+    printDefs []     = trace "Finished printing defs" $ ""
+    printDefs (d:ds) = trace "Printing defs" $ (printFstDef d) ++ " " ++ (printLastDefs ds)
 
 toOCanren = toOCanren' ocanrenize
 
@@ -66,7 +71,7 @@ topLevel = toOCanren' ocanrenize'
 
 toOCanren' printer filename topLevelName environment prog =
   do
-    let fn = filter (/= '/') filename 
+    let fn = filter (/= '/') filename
     withSystemTempFile fn (\ tmp_name tmp ->
                               do
                                 hPutStrLn tmp (printer topLevelName prog)

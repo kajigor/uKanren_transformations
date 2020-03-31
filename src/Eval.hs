@@ -137,7 +137,7 @@ o sigma theta =
     _  -> error "Non-disjoint domains in substitution composition"
 
 dotSigma :: Sigma -> String
-dotSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (dot $ V x) (dot y)) s))
+dotSigma s = "" -- printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (dot $ V x) (dot y)) s))
 
 showSigma :: Sigma -> String
 showSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (show $ V x) (show y)) s))
@@ -206,7 +206,8 @@ updateDefsInGamma = foldl update
 s0 :: Sigma
 s0 = []
 
-run :: G X -> Stream Sigma
-run goal =
-  let (goal', env', _) = preEval env0 goal in
+run :: Program -> Stream Sigma
+run (Program defs goal) =
+  let env = updateDefsInGamma env0 defs in
+  let (goal', env', _) = preEval env goal in
   fmap fst $ eval env' s0 goal'

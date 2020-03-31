@@ -4,20 +4,20 @@ import           Data.List
 import           Debug.Trace
 import           Driving
 import           Eval
-import           List
-import           Num
+import           Program.List
+import           Program.Num
 import           Prelude     hiding (succ)
 import           Residualize
-import           Sort
+import           Program.Sort
 import           Stream
 import           Syntax
 import           Test        hiding (main)
 import           Tree
 import           Printer.Tree
-import           Stlc
-import           Programs
+import           Program.Stlc
+import           Program.Programs
 import           Text.Printf
-import           ConjRetriever
+import           Util.ConjRetriever
 import Util.Miscellaneous
 import Printer.Dot
 
@@ -62,22 +62,22 @@ runTestSimplified name goal =
     printTree (printf "%s.dot" name) tree
     putStr $ printf "Finished %s\n" name
 
-test_palindromo       = runTestSimplified "palindromo" $ palindromo $ fresh ["x"] (call "palindromo" [V "x"])
-test_doubleAppendo    = runTestSimplified "doubleAppendo" $ doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
-test_eveno            = runTestSimplified "eveno" $ eveno $ fresh ["x"] (call "eveno" [V "x"])
-test_doubleo          = runTestSimplified "doubleo" $ doubleo $ fresh ["x", "xx"] (call "doubleo" [V "x", V "xx"])
-test_empty_appendo    = runTestSimplified "emptyAppendo" $ emptyAppendo $ fresh ["x", "y"] (call "emptyAppendo" [V "x", V "y"])
-test_singletonReverso = runTestSimplified "singletonReverso" $ singletonReverso $ fresh ["x", "y"] (call "singletonReverso" [V "x", V "y"])
+test_palindromo       = runTestSimplified "palindromo" $ Program palindromo $ fresh ["x"] (call "palindromo" [V "x"])
+test_doubleAppendo    = runTestSimplified "doubleAppendo" $ Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
+test_eveno            = runTestSimplified "eveno" $ Program eveno $ fresh ["x"] (call "eveno" [V "x"])
+test_doubleo          = runTestSimplified "doubleo" $ Program doubleo $ fresh ["x", "xx"] (call "doubleo" [V "x", V "xx"])
+test_empty_appendo    = runTestSimplified "emptyAppendo" $ Program emptyAppendo $ fresh ["x", "y"] (call "emptyAppendo" [V "x", V "y"])
+test_singletonReverso = runTestSimplified "singletonReverso" $ Program singletonReverso $ fresh ["x", "y"] (call "singletonReverso" [V "x", V "y"])
 
-tc = drive (appendo
+tc = drive (Program appendo
               (fresh ["q", "r", "s", "t", "p"]
                  (call "appendo" [V "q", V "r", V "s"] &&&
                   call "appendo" [V "s", V "t", V "p"])
               )
            )
 
-tc'  = drive (reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
-tc'' = drive (revAcco $ fresh ["q", "s"] (call "revacco" [V "q", nil, V "s"]))
+tc'  = drive (Program reverso $ fresh ["q", "r"] (call "reverso" [V "q", V "r"]))
+tc'' = drive (Program revAcco $ fresh ["q", "s"] (call "revacco" [V "q", nil, V "s"]))
 
 
 tree   = snd3 tc

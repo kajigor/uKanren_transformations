@@ -1,10 +1,11 @@
 module Purification where
 
 import Syntax
-import Tree
 import Data.List
 import qualified Data.Set        as Set
 import qualified Data.Map.Strict as Map
+import Control.Monad.State
+import Debug.Trace (traceM, trace)
 
 type Set = Set.Set
 type Map = Map.Map
@@ -18,18 +19,37 @@ type Erasure     = Map Name [Int]
 type ErasureElem = (Name, Int)
 
 -- Purification of non-essential variables and arguments
-purification x = trace_pur x $
+purification :: (Program, [String]) -> (G X, [String], [Def])
+purification (program@(Program defs x), names) =
+  -- trace_pur (x, names) $
   --identity x
   --justTakeOutLets x
   --purification_old x
   --purificationWithErasure x
-  conservativePurificationWithErasure x
+  conservativePurificationWithErasure program names
 
 {-------------------------------------------}
 {-------------------------------------------}
 {-------------------------------------------}
 identity :: (G X, [String]) -> (G X, [String], [Def])
 identity (g, a) = (g, a, [])
+
+justTakeOutLetsProgram :: Program -> [String] -> (G X, [String], [Def])
+justTakeOutLetsProgram program args =
+    (goalWithoutLets, args, defs)
+  where
+    initialFvs = [0..]
+    (Program defs goalWithoutLets) = evalState state initialFvs
+    state = do
+      -- traceM ("Before " ++ show program )
+      renamed <- renameProgram program
+      traceM $ "\n===============================\nESCAPE\n===============================\n" ++ show renamed
+
+      -- traceM "In the middle"
+      escaped <- escapeFreeVarsProgram renamed
+      -- traceM "After"
+      return escaped
+      -- evalState (renameProgram program >>= escapeFreeVarsProgram) initialFvs
 
 {-------------------------------------------}
 justTakeOutLets :: (G X, [String]) -> (G X, [String], [Def])
@@ -161,49 +181,51 @@ purificationWithErasure x = (g''', args', defs''') where
 {-------------------------------------------}
 {-------------------------------------------}
 {-------------------------------------------}
-conservativePurificationWithErasure :: (G X, [String]) -> (G X, [String], [Def])
-conservativePurificationWithErasure x = (goalAfterPurification, args, defsAfterPurification) where
+conservativePurificationWithErasure :: Program -> [String] -> (G X, [String], [Def])
+conservativePurificationWithErasure program@(Program defs goal) arguments =
+    (goalAfterPurification, args, defsAfterPurification)
+  where
 
-  (goalWithoutLets, args, defs) = justTakeOutLets x
+    (goalWithoutLets, args, defs) = justTakeOutLetsProgram program arguments
 
-  mainFuncs      = defToRules (Def "main" args goalWithoutLets)
-  internalFuncs  = map defToRules defs
-  initialErasure = Map.fromList $ map (\(Def n a _) -> (n, [1..length a])) defs
-  erasure        = removeRedundantArgs (mainFuncs ++ concat internalFuncs) initialErasure
+    mainFuncs      = defToRules (Def "main" args goalWithoutLets)
+    internalFuncs  = map defToRules defs
+    initialErasure = Map.fromList $ map (\(Def n a _) -> (n, [1..length a])) defs
+    erasure        = removeRedundantArgs (mainFuncs ++ concat internalFuncs) initialErasure
 
-  goalAfterPurification  = snd $ purify "main" args goalWithoutLets
-  defsAfterPurification  = {- filter (not . null . snd3) $ -} map (\(Def n a g) -> let (a', g') = purify n a g in (Def n a' g')) defs
+    goalAfterPurification  = snd $ purify "main" args goalWithoutLets
+    defsAfterPurification  = {- filter (not . null . snd3) $ -} map (\(Def n a g) -> let (a', g') = purify n a g in (Def n a' g')) defs
 
-  purify :: Name -> [X] -> G X -> ([X], G X)
-  purify n a = let a' = applyErasure erasure n a in
-    ((,) a') . renameFreshVars . closeByFresh a' . purifyUni a' . applyErasureToG erasure . snd . freshVars []
+    purify :: Name -> [X] -> G X -> ([X], G X)
+    purify n a = let a' = applyErasure erasure n a in
+      ((,) a') . renameFreshVars . closeByFresh a' . purifyUni a' . applyErasureToG erasure . snd . freshVars []
 
-  purifyUni :: [X] -> G X -> G X
-  purifyUni a g = snd $ purifyU (Set.fromList a) [] g where
-    purifyU :: Set X -> [G X] -> G X -> ([G X], G X)
-    purifyU constrV conjs g@(l@(V x) :=: r@(V y)) = if Set.member y constrV then
-                                                      if Set.member x constrV then (conjs, g)
-                                                      else (map (subst_in_goal x r) conjs, success)
-                                                    else (map (subst_in_goal y l) conjs, success)
-    purifyU constrV conjs g@(V x :=: t)           = if Set.member x constrV then (conjs, g)
-                                                    else (map (subst_in_goal x t) conjs, success)
-    purifyU constrV conjs (g1 :\/: g2)            = let constrV' = foldl (\s -> Set.union s . Set.fromList . fvg) constrV conjs in
-                                                    let ([], g1') = purifyU constrV' [] g1 in
-                                                    let ([], g2') = purifyU constrV' [] g2 in
-                                                    case (g1', g2') of
-                                                      (Invoke "success" [], Invoke "success" []) -> (conjs, success)
-                                                      (_                  , Invoke "success" []) -> (conjs, g1')
-                                                      (Invoke "success" [], _                  ) -> (conjs, g2')
-                                                      _                                          -> (conjs, g1' ||| g2')
-                                                    -- (conjs, g1' ||| g2')
-    purifyU constrV conjs (g1 :/\: g2)            = let (g2' :conjs' , g1' ) = purifyU constrV (g2 :conjs ) g1  in
-                                                    let (g1'':conjs'', g2'') = purifyU constrV (g1':conjs') g2' in
-                                                    case (g1'', g2'') of
-                                                      (Invoke "success" [], Invoke "success" []) -> (conjs'', success      )
-                                                      (Invoke "success" [], _                  ) -> (conjs'', g2''         )
-                                                      (_                  , Invoke "success" []) -> (conjs'', g1''         )
-                                                      _                                          -> (conjs'', g1'' &&& g2'')
-    purifyU constrV conjs g                       = (conjs, g)
+    purifyUni :: [X] -> G X -> G X
+    purifyUni a g = snd $ purifyU (Set.fromList a) [] g where
+      purifyU :: Set X -> [G X] -> G X -> ([G X], G X)
+      purifyU constrV conjs g@(l@(V x) :=: r@(V y)) = if Set.member y constrV then
+                                                        if Set.member x constrV then (conjs, g)
+                                                        else (map (subst_in_goal x r) conjs, success)
+                                                      else (map (subst_in_goal y l) conjs, success)
+      purifyU constrV conjs g@(V x :=: t)           = if Set.member x constrV then (conjs, g)
+                                                      else (map (subst_in_goal x t) conjs, success)
+      purifyU constrV conjs (g1 :\/: g2)            = let constrV' = foldl (\s -> Set.union s . Set.fromList . fvg) constrV conjs in
+                                                      let ([], g1') = purifyU constrV' [] g1 in
+                                                      let ([], g2') = purifyU constrV' [] g2 in
+                                                      case (g1', g2') of
+                                                        (Invoke "success" [], Invoke "success" []) -> (conjs, success)
+                                                        (_                  , Invoke "success" []) -> (conjs, g1')
+                                                        (Invoke "success" [], _                  ) -> (conjs, g2')
+                                                        _                                          -> (conjs, g1' ||| g2')
+                                                      -- (conjs, g1' ||| g2')
+      purifyU constrV conjs (g1 :/\: g2)            = let (g2' :conjs' , g1' ) = purifyU constrV (g2 :conjs ) g1  in
+                                                      let (g1'':conjs'', g2'') = purifyU constrV (g1':conjs') g2' in
+                                                      case (g1'', g2'') of
+                                                        (Invoke "success" [], Invoke "success" []) -> (conjs'', success      )
+                                                        (Invoke "success" [], _                  ) -> (conjs'', g2''         )
+                                                        (_                  , Invoke "success" []) -> (conjs'', g1''         )
+                                                        _                                          -> (conjs'', g1'' &&& g2'')
+      purifyU constrV conjs g                       = (conjs, g)
 
 {-------------------------------------------}
 {-------------------------------------------}
@@ -317,8 +339,8 @@ success = call "success" []
 
 {-------------------------------------------}
 takeOutLets :: G X -> (G X, [Def])
-takeOutLets g = (\(x, y, _) -> (x, y)) $ go [] g 
-  where 
+takeOutLets g = (\(x, y, _) -> (x, y)) $ go [] g
+  where
     go seen (g1 :/\: g2)        = let (g1', lets1, seen')  = go seen  g1 in
                                   let (g2', lets2, seen'') = go seen' g2 in
                                   (g1' &&& g2', lets1 ++ lets2, seen'')
@@ -327,19 +349,78 @@ takeOutLets g = (\(x, y, _) -> (x, y)) $ go [] g
                                   (g1' ||| g2', lets1 ++ lets2, seen'')
     go seen (Fresh n g)         = let (g', lets, seen') = go seen g in
                                   (Fresh n g', lets, seen')
-    go seen (Let (Def n a g1) g2) | n `notElem` seen 
-                                = let newSeen = n : seen in 
+    go seen (Let (Def n a g1) g2) | n `notElem` seen
+                                = let newSeen = n : seen in
                                   let (g1', lets1, seen')  = go newSeen g1 in
                                   let (g2', lets2, seen'') = go seen' g2 in
                                   (g2', (Def n a g1') : lets1 ++ lets2, seen'')
-    go seen (Let (Def n a g1) g2) 
+    go seen (Let (Def n a g1) g2)
                                 = let (g1', lets1, seen')  = go seen g1 in
                                   let (g2', lets2, seen'') = go seen' g2 in
                                   (g2', (Def n a g1') : lets1 ++ lets2, seen'')
     go seen g                   = (g, [], seen)
 
+-- renameVar :: X -> (S -> X) -> State ([S], [X], Map X S) X
+-- renameVar x f = do
+--     (names, notToRename, mapping) <- get
+--     if x `elem` notToRename
+--     then return x
+--     else
+--       f <$>
+--       case Map.lookup x mapping of
+--         Just s -> return s
+--         Nothing -> do
+--           let v = head names
+--           put (tail names, notToRename, Map.insert x v mapping)
+--           return v
+
+-- renameGoal :: G X -> (S -> X) -> State ([S], [X], Map X S) (G X)
+-- renameGoal goal f =
+--     case goal of
+--       g1 :/\: g2 -> do
+--         g1 <- renameGoal g1 f
+--         g2 <- renameGoal g2 f
+--         return $ g1 :/\: g2
+--       g1 :\/: g2 -> do
+--         g1 <- renameGoal g1 f
+--         g2 <- renameGoal g2 f
+--         return $ g1 :\/: g2
+--       Fresh n g -> do
+--         before@(fv, notToRename, mapping) <- get
+--         put (fv, n : notToRename, mapping)
+--         g <- renameGoal g fh
+--         put before
+--         return $ Fresh n g
+--       V x :=: V y -> do
+--         x <- renameVar x f
+--         y <- renameVar y f
+--         return $ V x :=: V y
+
+renameGoal :: G X -> Map X X -> G X
+renameGoal goal mapping =
+    (\x -> maybe x id (Map.lookup x mapping)) <$> goal
+
+renameDef :: Def -> State [S] Def
+renameDef (Def name args body) = do
+    names <- get
+    let (newNames, rest) = splitAt (length args) names
+    put rest
+    let args' = map (toV "y") newNames
+    let body' = renameGoal body (Map.fromList (zip args args'))
+    return (Def name args' body')
+
+renameDefs :: [Def] -> State [S] [Def]
+renameDefs = mapM renameDef
+
+renameProgram :: Program -> State [S] Program
+renameProgram (Program defs goal) = do
+    defs' <- renameDefs defs
+    let res = Program defs' goal
+    traceM $ "Done with renameProgram\n" ++ show res
+    return res
+
 {-------------------------------------------}
-renameLetArgs :: [Id] -> G X -> (G X, [Id])
+renameLetArgs :: [S] -> G X -> (G X, [S])
 renameLetArgs fvs (g1 :/\: g2)        = let (g1', fvs')   = renameLetArgs fvs  g1 in
                                         let (g2', fvs'')  = renameLetArgs fvs' g2 in
                                         (g1' &&& g2', fvs'')
@@ -358,8 +439,40 @@ renameLetArgs fvs (Let (Def n a g1) g2)
 renameLetArgs fvs x                   = (x, fvs)
 
 
+escapeFreeVarsDef :: Def -> State ([S], Map Name [X]) Def
+escapeFreeVarsDef (Def name args body) = do
+    (names, mapping) <- get
+    let freeVars = fvg body \\ args
+    let (newNames, rest) = splitAt (length freeVars) names
+    put (rest, Map.insert name freeVars mapping)
+    let new = map (toV "y") newNames
+    return (Def name (new ++ args) (renameGoal body (Map.fromList $ zip freeVars new)))
+
+escapeFreeVarsProgram :: Program -> State [S] Program
+escapeFreeVarsProgram (Program defs goal) = do
+    names <- get
+    let state = mapM escapeFreeVarsDef defs
+    let (defs', (names', mapping)) = runState state (names, Map.empty)
+    put names'
+    let goal' = addArgsInInvocations mapping goal
+    let defs'' = map (\(Def n a b) -> Def n a (addArgsInInvocations mapping b)) defs'
+    return (Program defs'' goal')
+
+addArgsInInvocations :: Map Name [X] -> G X -> G X
+addArgsInInvocations mapping =
+    go
+  where
+    go (Invoke name args) =
+        Invoke name (pref ++ args)
+      where
+        pref = maybe [] (map V) (Map.lookup name mapping)
+    go (g1 :/\: g2) = go g1 :/\: go g2
+    go (g1 :\/: g2) = go g1 :\/: go g2
+    go (Fresh n g) = Fresh n $ go g
+    go g = g
+
 {-------------------------------------------}
-escapeFreeVars :: [Id] -> G X -> (G X, [Id])
+escapeFreeVars :: [S] -> G X -> (G X, [S])
 escapeFreeVars fvs (g1 :/\: g2)        = let (g1', fvs')   = escapeFreeVars fvs  g1 in
                                          let (g2', fvs'')  = escapeFreeVars fvs' g2 in
                                          (g1' &&& g2', fvs'')
@@ -368,7 +481,7 @@ escapeFreeVars fvs (g1 :\/: g2)        = let (g1', fvs')   = escapeFreeVars fvs 
                                          (g1' ||| g2', fvs'')
 escapeFreeVars fvs (Fresh n g)         = let (g', fvs')    = escapeFreeVars fvs g in
                                          (Fresh n g', fvs')
-escapeFreeVars fvs (Let (Def n a g1) g2) 
+escapeFreeVars fvs (Let (Def n a g1) g2)
                                        = let (g1', fvs')   = escapeFreeVars fvs  g1 in
                                          let (g2', fvs'')  = escapeFreeVars fvs' g2 in
                                          let freeVars      = fvg g1' \\ a in
@@ -380,12 +493,14 @@ escapeFreeVars fvs (Let (Def n a g1) g2)
                                          (Let (Def n (nvs' ++ a) g1''') g2'', fvs''')
 escapeFreeVars fvs x                   = (x, fvs)
 
+-- Let (Def "f" ["x", "a"] (V "x" :=: V "a" :/\: V "x" :=: V "b")) (invoke "f" [12, 12])
+
 {-------------------------------------------}
 addArgsInCall :: Name -> [Term X] -> G X -> G X
 addArgsInCall n na   (g1 :/\: g2)         = addArgsInCall n na g1 &&& addArgsInCall n na g2
 addArgsInCall n na   (g1 :\/: g2)         = addArgsInCall n na g1 ||| addArgsInCall n na g2
 addArgsInCall n na   (Fresh v g)          = Fresh v $ addArgsInCall n na g
-addArgsInCall n na   (Let (Def n' a g1) g2) 
+addArgsInCall n na   (Let (Def n' a g1) g2)
                                           = Let (Def n' a (addArgsInCall n na g1)) $ addArgsInCall n na g2
 addArgsInCall n na g@(Invoke n' a)        = if n == n' then Invoke n (na ++ a) else g
 addArgsInCall _ _  g                      = g

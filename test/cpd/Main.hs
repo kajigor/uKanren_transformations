@@ -40,25 +40,17 @@ import           Text.Printf
 import           Unfold
 import           Util.ConjRetriever
 import           Util.Miscellaneous
--- import TestFramework
 import           Embed
-
 import           System.CPUTime
 import           System.IO
 import           System.Process           (system)
 import           System.TimeIt
 
 
---trace :: String -> a -> a
---trace _ x = x
-
 main :: IO ()
 main = do
   doOcanrenize
   -- testUnifySubsts
-
-
-
 
 reportError :: Show a => String -> a -> a -> IO ()
 reportError name expected actual =
@@ -154,7 +146,7 @@ printStuff = do
       printTree (printf "%s/local.dot" path) $ topLevel goal
 
 doOcanrenize = do
-  ocanren "unify" Program.Unify.query $ Just Program.Unify.env
+  -- ocanren "unify" Program.Unify.query $ Just Program.Unify.env
 
 
   -- ocanren "specialProp" Program.SpecialProp.logintoQuery Nothing
@@ -163,7 +155,7 @@ doOcanrenize = do
 
   -- ocanren "doubleRev" (Program doubleReverso $ fresh ["xs"] (call "doubleReverso" [V "xs"])) Nothing
 
-  -- ocanren "doubleAppendo" (Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])) Nothing
+  ocanren "doubleAppendo" (Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])) Nothing
 
   -- ocanren "fun" (fun $ fresh ["n", "x", "r"] (call "fun" $ map V ["n", "x", "r"])) Nothing
 
@@ -249,6 +241,7 @@ doOcanrenize = do
     where
       ocanren filename goal env = do
         let (tree, logicGoal, names) = GC.topLevel goal
+        traceM ("\n\n NAMES \n\n" ++ show (vident <$> reverse names) )
         let path = printf "test/out/%s" filename
         exists <- doesDirectoryExist path
         if exists
@@ -266,14 +259,22 @@ doOcanrenize = do
           )
         system (printf "dot -O -Tpdf %s/*.dot" path)
         system (printf "dot -O -Tpdf %s/*.dot" pathLocal)
-        -- let f = residualizeGlobalTree tree
-        -- let pur = purification (f $ vident <$> logicGoal, vident <$> reverse names)
-        let f = residualizationTopLevel tree
-        writeFile (printf "%s/%s.before.pur" path filename) (show f)
-        let pur = purification (f, vident <$> reverse names)
-        writeFile (printf "%s/%s.pur" path filename) (show pur)
+        let prog = residualizationTopLevel tree
+        writeFile (printf "%s/%s.before.pur" path filename) (show prog)
+        traceM "Wait"
+        let pur@(goal, xs, defs) = purification (prog, vident <$> reverse names)
+        traceM ("LKSDJFLKJS: " ++ show xs)
+        traceM "waht"
+        traceM "goal"
+        traceM (show $ length defs)
+        traceM (show goal)
+        let prog = Program defs goal
+        writeFile (printf "%s/%s.pur" path filename) (show prog)
+        traceM "Are"
         let ocamlCodeFileName = printf "%s/%s.ml" path filename
+        traceM "you"
         OC.topLevel ocamlCodeFileName "topLevel" env pur
+        traceM "kidding me?"
         print "doOcanrenize done"
 
 -- doResidualization = do

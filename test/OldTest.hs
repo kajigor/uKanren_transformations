@@ -18,50 +18,50 @@ reify s x@(V v) =
     Just t  -> reify s t
 reify s (C n ts) = C n $ map (reify s) ts
 
-toplevel :: Integer -> (Term S -> String) -> G X -> [String]
-toplevel n printer g =
-  map (\s -> printer $ reify s (V 0)) $ takeS n $ run g
+toplevel :: Integer -> (Term S -> String) -> Program -> [String]
+toplevel n printer program =
+  map (\s -> printer $ reify s (V 0)) $ takeS n $ run program
 
 main :: IO ()
 main =
   do
-    print (toplevel 1 bool (nando $ fresh ["q"] (call "nando" [falso, falso, V "q"])))
-    print (toplevel 1 bool (nando $ fresh ["q"] (call "nando" [V "q", V "q", V "q"])))
-    print (toplevel 1 show (nando $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "nando" [V "r", V "r", V "p"])))
+    print (toplevel 1 bool (Program nando $ fresh ["q"] (call "nando" [falso, falso, V "q"])))
+    print (toplevel 1 bool (Program nando $ fresh ["q"] (call "nando" [V "q", V "q", V "q"])))
+    print (toplevel 1 show (Program nando $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "nando" [V "r", V "r", V "p"])))
 
-    print (toplevel 1 bool (noto $ fresh ["q"] (call "noto" [falso, V "q"])))
-    print (toplevel 1 bool (noto $ fresh ["q"] (call "noto" [V "q", V "q"])))
-    print (toplevel 2 show (noto $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "noto" [V "p", V "r"])))
+    print (toplevel 1 bool (Program noto $ fresh ["q"] (call "noto" [falso, V "q"])))
+    print (toplevel 1 bool (Program noto $ fresh ["q"] (call "noto" [V "q", V "q"])))
+    print (toplevel 2 show (Program noto $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "noto" [V "p", V "r"])))
 
-    print (toplevel 3 show (oro $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "oro" [V "p", V "r", C "true" []])))
-    print (toplevel 4 show (ando $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "ando" [V "p", V "r", C "false" []])))
-
-
-    print (toplevel 4 show (leo $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "leo" [V "p", V "p", V "r"] )))
-    print (toplevel 4 show (leo $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "leo" [V "p", V "r", C "false" []])))
-
-    print (toplevel 4 show (geo $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "geo" [V "p", V "r", C "false" []])))
-
-    print (toplevel 4 show (gto $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "gto" [zero, V "p", V "r"] )))
-
-    print (toplevel 4 show (gto $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "gto" [V "p", V "p", V "r"] )))
-    print (toplevel 4 show (gto $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "gto" [V "p", V "r", C "false" []])))
-
-    print (toplevel 4 show (gto $ fresh ["q"] (call "gto" [succ zero, zero, V "q"])))
+    print (toplevel 3 show (Program oro $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "oro" [V "p", V "r", C "true" []])))
+    print (toplevel 4 show (Program ando $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "ando" [V "p", V "r", C "false" []])))
 
 
-    print (toplevel 4 show (lto $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "lto" [V "p", V "r", C "false" []])))
+    print (toplevel 4 show (Program leo $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "leo" [V "p", V "p", V "r"] )))
+    print (toplevel 4 show (Program leo $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "leo" [V "p", V "r", C "false" []])))
 
-    print (toplevel 4 list (singletono $ fresh ["q"] (call "singletono" [V "q", peanify 1])))
-    print (toplevel 4 show (singletono $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "singletono" [V "p", V "r"])))
+    print (toplevel 4 show (Program geo $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "geo" [V "p", V "r", C "false" []])))
 
-    print (toplevel 4 show (smallesto $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "smallesto" [peanify 2 % (peanify 1 % nil), V "p", V "r"])))
+    print (toplevel 4 show (Program gto $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "gto" [zero, V "p", V "r"] )))
 
-    print (toplevel 4 show (minmaxo $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "minmaxo" [peanify 1, peanify 0, V "p", V "r"])))
+    print (toplevel 4 show (Program gto $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "gto" [V "p", V "p", V "r"] )))
+    print (toplevel 4 show (Program gto $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "gto" [V "p", V "r", C "false" []])))
+
+    print (toplevel 4 show (Program gto $ fresh ["q"] (call "gto" [succ zero, zero, V "q"])))
+
+
+    print (toplevel 4 show (Program lto $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "lto" [V "p", V "r", C "false" []])))
+
+    print (toplevel 4 list (Program singletono $ fresh ["q"] (call "singletono" [V "q", peanify 1])))
+    print (toplevel 4 show (Program singletono $ fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "singletono" [V "p", V "r"])))
+
+    print (toplevel 4 show (Program smallesto (fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "smallesto" [peanify 2 % (peanify 1 % nil), V "p", V "r"]))))
+
+    print (toplevel 4 show (Program minmaxo (fresh ["q", "p", "r"] (V "q" === C "pair" [V "p", V "r"] &&& call "minmaxo" [peanify 1, peanify 0, V "p", V "r"]))))
 
 --    print (toplevel 1 show (sorto $ fresh ["q"] $ call "sorto" [peanify 3 % (peanify 1 % (peanify 0 % nil)), V "q"]))
 
-    print (toplevel 1 show (sorto $ fresh ["q"] $ call "sorto" [peanify 0 % (peanify 1 % (peanify 1 % (peanify 0 % nil))), V "q"]))
+    print (toplevel 1 show (Program sorto (fresh ["q"] $ call "sorto" [peanify 0 % (peanify 1 % (peanify 1 % (peanify 0 % nil))), V "q"])))
 
 
 --    putStrLn $ show (toplevel 1 show (sorto $ fresh ["q", "q1", "q2", "q3", "r"] (V "q" === C "pair" [C "triple" [V "q1", V "q2", V "q3"], V "r"] &&& call "sorto" [(V "q1" % (V "q2" % (V "q3" % nil))), V "r"])))

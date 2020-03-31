@@ -29,15 +29,16 @@ data Def = Def Name [Name] (G X)
 instance Show Def where
   show (Def name args body) = printf "%s %s = %s" name (unwords args) (show body)
 
--- type DefMap = Map.Map (Name, Int) Def 
+-- type DefMap = Map.Map (Name, Int) Def
 
--- insertDef :: Def -> DefMap -> DefMap 
--- insertDef def@(Def n a _) = Map.insert (n, length a) def 
+-- insertDef :: Def -> DefMap -> DefMap
+-- insertDef def@(Def n a _) = Map.insert (n, length a) def
 
 -- defMapFromList :: [Def] -> DefMap
--- defMapFromList = foldr insertDef Map.empty 
+-- defMapFromList = foldr insertDef Map.empty
 
 data Program = Program [Def] (G X)
+             deriving (Show, Eq)
 
 -- Goals
 data G a =
@@ -110,7 +111,7 @@ subst_in_goal v t   (g1 :/\: g2)        = subst_in_goal v t g1 &&& subst_in_goal
 subst_in_goal v t   (g1 :\/: g2)        = subst_in_goal v t g1 ||| subst_in_goal v t g2
 subst_in_goal v t g@(Fresh n g')        = if v == n then g else Fresh n $ subst_in_goal v t g'
 subst_in_goal v t   (Invoke n ts)       = Invoke n $ map (subst_in_term v t) ts
-subst_in_goal v t   (Let (Def n a g1) g2) = 
+subst_in_goal v t   (Let (Def n a g1) g2) =
   Let (Def n a (if elem v a then g1 else subst_in_goal v t g1)) $ subst_in_goal v t g2
 
 instance Show a => Show (Term a) where
