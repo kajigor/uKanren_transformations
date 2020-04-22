@@ -4,9 +4,9 @@ module NonConjunctive.Unfold where
 
 import qualified CPD.LocalControl   as LC
 import           Data.Foldable      (foldlM)
-import           Data.List          (find, intersect, partition, (\\))
+import           Data.List          (find, intersect, partition, (\\), sortBy)
 import qualified Data.Map.Strict    as M
-import           Data.Maybe         (mapMaybe, fromMaybe)
+import           Data.Maybe         (mapMaybe, fromMaybe, isJust)
 import           Debug.Trace        (trace)
 import           Embed
 import qualified Eval               as E
@@ -14,7 +14,7 @@ import           Generalization     (generalizeSplit, Generalizer)
 import           Prelude            hiding (or)
 import           Syntax
 import           Text.Printf        (printf)
-import           Unfold             (oneStepUnfold, oneStep, notMaximumBranches)
+import           Unfold             (oneStepUnfold, oneStep, notMaximumBranches, unfoldComplexity)
 import           Util.Miscellaneous (fst3, show')
 
 data NCTree = Fail
@@ -150,22 +150,29 @@ nonConjunctive (Program defs goal) =
               let env' = (x, y, names) in
 
               let firstChild =
-                    case if newGoals `isInst` goal
-                         then pinpoint (notMaximumBranches env' state) goal
-                         else Nothing
-                    of
-                      Just (left, g, right) ->
-                        let (unified,gamma) = oneStep g env' state in
-                        let children =
-                              map (\(goals, subst) ->
-                                      nullGoals goals subst $
-                                        go (LC.Descend (left ++ goals ++ right) ancs') gamma seen' subst
-                                  )
-                                  unified in
-                        or children d state
-                      Nothing ->
-                        let ch = go (LC.Descend newGoals ancs') env' seen' state in
-                        Gen ch newGoals gen2
+                    if newGoals `isInst` goal
+                    then
+                      let estimated = map (\g -> (g, unfoldComplexity env' state g)) goal in
+                      let selected@(ls,g',rs) = selectMin estimated in
+                      let (left, g, right) = dropEstimation selected in
+                      trace (printf "\nGoal: %s\nNewGoals: %s\nLs: %s\nG': %s\nRs: %s\n" (show goal) (show newGoals) (show ls) (show g') (show rs)) $
+                      let (unified, gamma) = oneStep g env' state in
+                      let children =
+                            map (\(goals, subst) ->
+                                    let goals' = wrap left right goals in
+                                    if shouldStop goals' goal seen ancs
+                                    then Prune goals' state
+                                    else nullGoals (wrap left right goals) subst $
+                                            go (LC.Descend (wrap left right goals) ancs') gamma seen' subst
+                                )
+                                unified in
+                      or children d state
+                    else
+                      -- trace (printf "\nGeneralization\nGoal: %s\nAnc: %s\nGeneralization: %s\nEverythingElse: %s\n" (show goal) (show g) (show newGoals) (show everythingElse)) $
+                      let ch = go (LC.Descend newGoals ancs') env' seen' state in
+                      if null gen2
+                      then ch
+                      else Gen ch newGoals gen2
               in
               if null everythingElse
               then firstChild
@@ -173,50 +180,126 @@ nonConjunctive (Program defs goal) =
                 let secondChild = go (LC.Descend everythingElse ancs') env' seen' state in
                 Split [firstChild, secondChild] (newGoals ++ everythingElse) state
             Nothing ->
-              if length goal > 1
-              then
-                case pinpoint (notMaximumBranches env state) goal of
-                  Just (left, g, right) ->
-                    let (unified,gamma) = oneStep g env state in
-                    let children =
-                          map (\(goals, subst) ->
-                                  nullGoals goals subst $
-                                    go (LC.Descend (left ++ goals ++ right) ancs') gamma seen' subst
-                              )
-                              unified in
-                    or children d state
-                  Nothing ->
-                    case tryFindSubsts goal env state of
-                      Nothing ->
-                        let (unified,gamma) = doStep (head goal) env state in
-                        let children =
-                              map (\(goals, subst) ->
-                                      nullGoals goals subst $
-                                        go (LC.Descend (goals ++ tail goal) ancs') gamma seen' subst
-                                  )
-                                  unified in
-                        or children d state
-                      Just (left, ((substs, notSubsts), gamma), right) ->
-                        -- propagates substitutions computed by unfolding of a conjunct
-                        let substituted =
-                              if null (left ++ right)
-                              then []
-                              else map (go (LC.Descend (left ++ right) ancs') gamma seen') substs in
-                        -- invocations gotten by unfolding are stuck where they are supposed to be
-                        let rest = map (\(goals, subst) -> go (LC.Descend (left ++ goals ++ right) ancs') gamma seen' subst) notSubsts in
-                        Conj (substituted ++ rest) goal state
-              else
-                -- REMOVE CODE DUPLICATION
-                let (unified,gamma) = doStep (head goal) env state in
-                let children =
-                      map (\(goals, subst) ->
-                              nullGoals goals subst $
-                                go (LC.Descend goals ancs') gamma seen' subst
-                          )
-                          unified in
-                or children d state
-
+              let estimated = map (\g -> (g, unfoldComplexity env state g)) goal in
+              let selected = selectMin estimated in
+              let (left, g, right) = dropEstimation selected in
+              let (unified, gamma) = oneStep g env state in
+              let children =
+                    map (\(goals, subst) ->
+                            let goals' = wrap left right goals in
+                            if shouldStop goals' goal seen ancs
+                            then Prune goals' state
+                            else
+                              nullGoals (wrap left right goals) subst $
+                                    go (LC.Descend (wrap left right goals) ancs') gamma seen' subst
+                        )
+                        unified in
+              or children d state
+    wrap left right x = left ++ x ++ right
+    dropEstimation (ls, g, rs) = (map fst ls, fst g, map fst rs)
     nullGoals goals subst v = if null goals then leaf subst else v
+    shouldStop curGoal goal seen ancs = False
+      -- variantCheck curGoal (goal : seen) || isJust (find (`embed` curGoal) (goal : ancs))
+
+
+-- nonConjunctive :: Program -> (NCTree, G S, [S])
+-- nonConjunctive (Program defs goal) =
+--     let gamma = E.updateDefsInGamma E.env0 defs in
+--     let (logicGoal, gamma', names) = E.preEval gamma goal in
+--     let nodes = [] in
+--     let descend = LC.Descend (conjToList logicGoal) [] in
+--     (go descend gamma' nodes E.s0,  V 1 === V 2, [4, 5, 6, 7])
+--   where
+--     go :: LC.Descend ([G S]) -> E.Gamma -> [[G S]] -> E.Sigma -> NCTree
+--     go d@(LC.Descend goal' ancs) env@(x,y,z) seen state =
+--       let goal = E.substitute state goal' in
+--       let seen' = goal : seen in
+--       let ancs' = goal : ancs in
+--       let d = LC.Descend goal ancs in
+--       simplify $
+--         if variantCheck goal seen
+--         then
+--           Leaf goal state
+--         else
+--           case find (`embed` goal) ancs of
+--             Just g ->
+--               let (newGoals, everythingElse, gen1, gen2, names) =
+--                     generalizeSplit z g goal in
+
+--               let env' = (x, y, names) in
+
+--               let firstChild =
+--                     case if newGoals `isInst` goal
+--                          then pinpoint (notMaximumBranches env' state) goal
+--                          else Nothing
+--                     of
+--                       Just (left, g, right) ->
+--                         let (unified,gamma) = oneStep g env' state in
+--                         let children =
+--                               map (\(goals, subst) ->
+--                                       nullGoals (left ++ goals ++ right) subst $
+--                                         go (LC.Descend (left ++ goals ++ right) ancs') gamma seen' subst
+--                                   )
+--                                   unified in
+--                         or children d state
+--                       Nothing ->
+--                         trace (printf "\nGeneralization\nGoal: %s\nAnc: %s\nGeneralization: %s\nEverythingElse: %s\n" (show goal) (show g) (show newGoals) (show everythingElse)) $
+--                         let ch = go (LC.Descend newGoals ancs') env' seen' state in
+--                         if null gen2
+--                         then ch
+--                         else Gen ch newGoals gen2
+--               in
+--               if null everythingElse
+--               then firstChild
+--               else
+--                 let secondChild = go (LC.Descend everythingElse ancs') env' seen' state in
+--                 Split [firstChild, secondChild] (newGoals ++ everythingElse) state
+--             Nothing ->
+--               if length goal > 1
+--               then
+--                 case pinpoint (notMaximumBranches env state) goal of
+--                   Just (left, g, right) ->
+--                     let (unified,gamma) = oneStep g env state in
+--                     let children =
+--                           map (\(goals, subst) ->
+--                                   nullGoals (left ++ goals ++ right) subst $
+--                                     go (LC.Descend (left ++ goals ++ right) ancs') gamma seen' subst
+--                               )
+--                               unified in
+--                     or children d state
+--                   Nothing ->
+--                     case tryFindSubsts goal env state of
+--                       Nothing ->
+--                         let (unified,gamma) = doStep (head goal) env state in
+--                         let children =
+--                               map (\(goals, subst) ->
+--                                       nullGoals (goals ++ tail goal) subst $
+--                                         go (LC.Descend (goals ++ tail goal) ancs') gamma seen' subst
+--                                   )
+--                                   unified in
+--                         or children d state
+--                       Just (left, ((substs, notSubsts), gamma), right) ->
+--                         -- propagates substitutions computed by unfolding of a conjunct
+--                         let substituted =
+--                               if null (left ++ right)
+--                               then []
+--                               else map (go (LC.Descend (left ++ right) ancs') gamma seen') substs in
+--                         -- invocations gotten by unfolding are stuck where they are supposed to be
+--                         let rest = map (\(goals, subst) -> go (LC.Descend (left ++ goals ++ right) ancs') gamma seen' subst) notSubsts in
+--                         Conj (substituted ++ rest) goal state
+--               else
+--                 -- REMOVE CODE DUPLICATION
+--                 let (unified,gamma) = doStep (head goal) env state in
+--                 let children =
+--                       map (\(goals, subst) ->
+
+--                               nullGoals goals subst $
+--                                 go (LC.Descend goals ancs') gamma seen' subst
+--                           )
+--                           unified in
+--                 or children d state
+
+--     nullGoals goals subst v = if null goals then leaf subst else v
 
 -- Finds a conjunct, for which at least one substitution exists in the unfolding.
 -- The result is the pair in which first element is list of conjuncts excluding the one which generates substitutions.
@@ -242,6 +325,12 @@ pinpoint =
     go left p (h:t) | p h = Just (reverse left, h, t)
     go left p (h:t) = go (h:left) p t
 
+
+selectMin :: (Eq a, Ord b) => [(a, b)] -> ([(a, b)], (a, b), [(a, b)])
+selectMin xs =
+    let minimal = head $ sortBy (\(x,n) (y,m) -> n `compare` m) xs in
+    let (ls, (h:rs)) = span (/= minimal) xs in
+    (ls, h, rs)
 
 
 -- nonConjunctive :: Program -> (NCTree, G S, [S])

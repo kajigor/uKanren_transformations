@@ -4,7 +4,7 @@ import           Data.Maybe         (mapMaybe)
 import qualified Eval               as E
 import           Syntax
 import           Text.Printf        (printf)
-import           Util.Miscellaneous (fst3)
+import           Util.Miscellaneous (fst3, show')
 import Debug.Trace (trace)
 
 oneStepUnfold :: G S -> E.Gamma -> (G S, E.Gamma)
@@ -60,7 +60,19 @@ notMaximumBranches :: E.Gamma -> E.Sigma -> G S -> Bool
 notMaximumBranches gamma@(p, _, _) state goal@(Invoke name args) =
     let maxBranches = maximumBranches (p name) in
     let (unfolded, _) = oneStep goal gamma state in
-    let res = length unfolded < maxBranches in
-    -- trace (printf "\n\nNotMaximumBranches:\nGoal: %s\nMB: %s\nUnf: %s\n" (show goal) (show maxBranches) (show $ length unfolded))  $
-    res
+    length unfolded < maxBranches
+    -- let result = length unfolded < maxBranches in
+    -- trace (printf "\nGoal: %s\nNot maximum branches: %s\nUnfoldComplexity: %s\nUnfolded: %s\nMaxBranches: %s\n" (show goal) (show result) (show $ length $ filter (not . null . fst) unfolded) (show $ length unfolded) (show maxBranches)) $
+    -- result
 notMaximumBranches _ _ _ = False
+
+-- unfoldComplexity :: E.Gamma -> E.Sigma -> G S -> Int
+-- unfoldComplexity gamma@(p, _, _) state goal@(Invoke name args) =
+--     let (unfolded, _) = oneStep goal gamma state in
+--     (length $ filter (not . null . fst) unfolded)
+
+unfoldComplexity :: E.Gamma -> E.Sigma -> G S -> (Int, Int)
+unfoldComplexity gamma@(p, _, _) state goal@(Invoke name args) =
+    let (unfolded, _) = oneStep goal gamma state in
+    trace (printf "\nUnfolded:\nGoal: %s\n%s\n" (show goal) (show' unfolded)) $
+    (length $ filter (not . null . fst) unfolded, length unfolded)

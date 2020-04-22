@@ -4,9 +4,10 @@ import           Test.Helper (test, test2, manyAssert)
 
 import           Printer.Dot
 import           Printer.NCTree   ()
-import           Program.List     (nil, revAcco, reverso, (%))
+import           Program.List     (nil, revAcco, reverso, (%), maxLengtho)
 import           Program.Programs (doubleAppendo)
 import qualified Program.Prop
+import           Program.Stlc     (evalo)
 import           Syntax
 import           System.Directory
 import           System.Process   (system)
@@ -17,13 +18,16 @@ dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V
 revAcco' = Program revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])
 rev = Program reverso $ fresh ["x", "y"] (call "reverso" [V "x", V "y"])
 prop = Program.Prop.query3
+maxLen = Program maxLengtho $ fresh ["xs", "m", "l"] (call "maxLengtho" [V "xs", V "m", V "l"])
+lambda = Program evalo $ fresh ["m", "n"] (call "evalo" [V "m", V "n"])
 
 unit_nonConjunctiveTest = do
-  runTest NC.nonConjunctive "da" dA
-  runTest NC.nonConjunctive "rev" rev
-  runTest NC.nonConjunctive "revAcco" revAcco'
-  runTest NC.nonConjunctive "prop" prop
-
+  -- runTest NC.nonConjunctive "da" dA
+  -- runTest NC.nonConjunctive "rev" rev
+  -- runTest NC.nonConjunctive "revAcco" revAcco'
+  -- runTest NC.nonConjunctive "prop" prop
+  -- runTest NC.nonConjunctive "maxLen" maxLen
+  runTest NC.nonConjunctive "lambda" lambda
 
 runTest function filename goal = do
   let (tree, logicGoal, names) = function goal
@@ -128,3 +132,9 @@ unit_unifySubsts = do
                       , [(3, V 8 % V 10), (4, V 8 % V 9)]
                       ]
                       (Just [(7, V 9), (5, V 8), (3, V 8 % V 10), (4, V 5 % V 7), (0, V 5 % V 6)])
+
+unit_selectMin = do
+  test NC.selectMin [(0,0)] ([], (0,0), [])
+  test NC.selectMin [(0,0), (1,1), (2,2)] ([], (0,0), [(1,1), (2,2)])
+  test NC.selectMin [(2,2), (1,1), (0,0)] ([(2,2), (1,1)], (0,0), [])
+  test NC.selectMin [(1,2), (2,3), (3,0), (4,0), (5,2)] ([(1,2),(2,3)],(3,0),[(4,0),(5,2)])

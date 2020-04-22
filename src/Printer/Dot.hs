@@ -70,6 +70,9 @@ class Dot a => DotPrinter a where
     let (vs, es, _) = labelNode tree treeId [] [] ids
     in  (vs, es)
 
+  simplify :: a -> a
+  simplify = id
+
 params :: GraphvizParams n Text Text () Text
 params = nonClusteredParams {
   globalAttributes = ga,
@@ -101,4 +104,4 @@ simplyPrintTree tree = unpack $ removeQuots $ renderDot $ toDot $ graphToDot par
 
 printTree :: DotPrinter a => FilePath -> a -> IO ()
 printTree filename tree =
-  writeFile filename $ unpack $ removeQuots $ renderDot $ toDot $ graphToDot params $ treeToGraph tree
+  writeFile filename $ unpack $ removeQuots $ renderDot $ toDot $ graphToDot params $ treeToGraph $ simplify tree

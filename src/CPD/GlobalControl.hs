@@ -55,7 +55,7 @@ abstract descend goals d =
           ((m, gen) : goals, delta)
         Just b ->
           let (goals, delta) = generalize m b d in
-          trace ("generalize done " ++ show' goals) $
+          -- trace ("generalize done " ++ show' goals) $
           let (blah, halb) = go gs delta in
           (goals ++ blah, halb)
 
@@ -68,7 +68,7 @@ generalize m b d =
   let ((m1, m2), genOrig, delta) = LC.split d b m in -- TODO PCHM
   let genTrue = genOrig in
   --let (generalized, _, gen, delta') = D.generalizeGoals d m1 b in
-  trace (printf "\nAfter split\n%s\n" (show' $ LC.mcs m1)) $
+  -- trace (printf "\nAfter split\n%s\n" (show' $ LC.mcs m1)) $
   (map (project genTrue) (LC.mcs m1) ++ map (project []) (LC.mcs m2), delta)
   -- (map (project genTrue) [m1] ++ map (project []) (LC.mcs m2), delta)
     where
@@ -91,6 +91,7 @@ topLevel (Program defs goal) =
   -- let (goal', defs) = takeOutLets goal in
   let gamma = E.updateDefsInGamma E.env0 defs in
   let (logicGoal, gamma', names) = E.preEval gamma goal in
+  trace (printf "\nGoal:\n%s\nNames:\n%s\n" (show goal) (show names)) $
   let nodes = [[logicGoal]] in
   (fst $ go nodes (LC.Descend [logicGoal] []) gamma' E.s0 [], logicGoal, names) where
     go nodes d@(LC.Descend goal ancs) gamma subst generalizer =
@@ -110,9 +111,6 @@ topLevel (Program defs goal) =
         else
           let ancs' = goal : ancs in
           let abstracted = map (abstractChild ancs') bodies in
-          trace (printf "\nbodies:\n%s\n" (show' $ map snd3 bodies)) $
-          trace (printf "\nancs':\n%s\n" (show' ancs'))
-          trace (printf "\nAbstracted\n%s" (show' $ map  (map snd4) abstracted)) $
           let (toUnfold, toNotUnfold, newNodes) =
                   foldl (\ (yes, no, seen) gs ->
                               let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (Embed.isVariant g) seen) gs in
@@ -122,17 +120,14 @@ topLevel (Program defs goal) =
                         ([], [], nodes)
                         abstracted
           in
-          -- trace (printf "Here are the new nodes:\n%s\n" (show newNodes)) $
           let (ch, everythingSeenSoFar) =
                   (swap . (reverse <$>) . swap) $
                   foldl (\(trees, seen) (subst, g, gen, env)  ->
                             let (t, s) = go seen (LC.Descend g (goal : ancs)) env subst gen in
-                            -- trace (printf "\nprocessing\n%s\nseen\n%s\n" (show g) (intercalate "\n" $ map show seen)) $
                             (t:trees, s)
                         )
                         ([], newNodes)
                         toUnfold in
-          -- trace (printf "Everything we've seen so far:\n%s\n" (show everythingSeenSoFar)) $
           let forgetEnv = map (\(x, y, _) -> (x, y, [])) in
           let forgetStuff = map (\(x, y, gen, _) -> (x,y, gen)) in
           let substLeaves = forgetEnv substs in
