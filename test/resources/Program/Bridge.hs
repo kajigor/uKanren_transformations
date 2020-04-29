@@ -3,14 +3,14 @@ module Program.Bridge where
 import Prelude hiding (succ, max)
 import Syntax
 
-query = topLevelBigBridge
+query = Program topLevelBigBridge (fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"]))
 
 env = "open MiniKanren\nopen MiniKanrenStd\ntype 'a0 gpeano =\n  | O \n  | S of 'a0 \nlet rec fmap fa0 = function | O -> O | S a0 -> S (fa0 a0)\nmodule For_gpeano =\n  (Fmap)(struct\n           let rec fmap fa0 = function | O -> O | S a0 -> S (fa0 a0)\n           type 'a0 t = 'a0 gpeano\n         end)\nlet rec o () = inj (For_gpeano.distrib O)\nand s x__0 = inj (For_gpeano.distrib (S x__0))\ntype person =\n  | A \n  | B \n  | C \n  | D \nlet a () = !! A\nlet b () = !! B\nlet c () = !! C\nlet d () = !! D\ntype 'a0 gstep =\n  | One of 'a0 \n  | Two of 'a0 * 'a0 \nlet rec fmap fa0 =\n  function\n  | One a0 -> One (fa0 a0)\n  | Two (a0_0, a0_1) -> Two ((fa0 a0_0), (fa0 a0_1))\nmodule For_gstep =\n  (Fmap)(struct\n           let rec fmap fa0 =\n             function\n             | One a0 -> One (fa0 a0)\n             | Two (a0_0, a0_1) -> Two ((fa0 a0_0), (fa0 a0_1))\n           type 'a0 t = 'a0 gstep\n         end)\nlet rec one x__0 = inj (For_gstep.distrib (One x__0))\nand two x__0 x__1 = inj (For_gstep.distrib (Two (x__0, x__1)))\ntype 'a0 gstate =\n  | St of 'a0 * 'a0 * 'a0 * 'a0 * 'a0 \nlet rec fmap fa0 =\n  function\n  | St (a0_0, a0_1, a0_2, a0_3, a0_4) ->\n      St ((fa0 a0_0), (fa0 a0_1), (fa0 a0_2), (fa0 a0_3), (fa0 a0_4))\nmodule For_gstate =\n  (Fmap)(struct\n           let rec fmap fa0 =\n             function\n             | St (a0_0, a0_1, a0_2, a0_3, a0_4) ->\n                 St\n                   ((fa0 a0_0), (fa0 a0_1), (fa0 a0_2), (fa0 a0_3),\n                     (fa0 a0_4))\n           type 'a0 t = 'a0 gstate\n         end)\nlet rec st x__0 x__1 x__2 x__3 x__4 =\n  inj (For_gstate.distrib (St (x__0, x__1, x__2, x__3, x__4)))"
 
 topLevelBigBridge :: [Def]
-topLevelBigBridge = topLevelBigBridgeDef : result ++ getAnswer 
+topLevelBigBridge = topLevelBigBridgeDef : result ++ getAnswer
 
-topLevelBigBridgeDef :: Def 
+topLevelBigBridgeDef :: Def
 topLevelBigBridgeDef =
     Def "tlBigBridge" ["a", "b"] (
       call "result" [V "b"] &&& call "getAnswer" [V "a", C "some" [V "b"]]
@@ -20,9 +20,9 @@ topLevelBigBridgeDef =
 
 greater :: [Def]
 greater = [greaterDef]
-   
+
 greaterDef :: Def
-greaterDef = 
+greaterDef =
     Def "greater" ["a0", "b0", "q146"] (
       ((V "a0" === C "o" []) &&&
       (V "q146" === C "false" [])) |||
@@ -40,7 +40,7 @@ grForPerson :: [Def]
 grForPerson = [grForPersonDef]
 
 grForPersonDef :: Def
-grForPersonDef = 
+grForPersonDef =
     Def "grForPerson" ["x", "y", "q129"] (
       ((V "x" === C "a" []) &&&
       (((V "y" === C "a" []) &&&
@@ -73,11 +73,11 @@ grForPersonDef =
       (V "q129" === C "false" []))
     )
 
-max :: [Def] 
-max = maxDef : greater 
+max :: [Def]
+max = maxDef : greater
 
 maxDef :: Def
-maxDef = 
+maxDef =
     Def "max" ["a0", "b0", "q125"] (
       fresh ["q126"] (
         (call "greater" [V "a0", V "b0", V "q126"]) &&&
@@ -87,11 +87,11 @@ maxDef =
         (V "b0" === V "q125"))))
     )
 
-add :: [Def] 
-add = [addDef] 
+add :: [Def]
+add = [addDef]
 
-addDef :: Def 
-addDef = 
+addDef :: Def
+addDef =
     Def "add" ["a0", "b0", "q123"] (
       ((V "a0" === C "o" []) &&&
       (V "b0" === V "q123")) |||
@@ -100,11 +100,11 @@ addDef =
           (call "add" [V "x", C "s" [V "b0"], V "q123"])))
     )
 
-eqForBool :: [Def] 
+eqForBool :: [Def]
 eqForBool = [eqForBoolDef]
 
-eqForBoolDef :: Def 
-eqForBoolDef = 
+eqForBoolDef :: Def
+eqForBoolDef =
     Def "eqForBool" ["a", "b", "q109"] (
       fresh ["q107", "q108"] (
         (((V "a" === C "false" []) &&&
@@ -126,11 +126,11 @@ eqForBoolDef =
         (V "q109" === V "q108"))))
     )
 
-eqForState :: [Def] 
+eqForState :: [Def]
 eqForState = eqForStateDef : eqForBool
 
 eqForStateDef :: Def
-eqForStateDef = 
+eqForStateDef =
     Def "eqForState" ["x", "y", "q81"] (
       fresh ["l1", "a1", "b1", "c1", "d1"] (
         (V "x" === C "st" [V "l1", V "a1", V "b1", V "c1", V "d1"]) &&&
@@ -164,7 +164,7 @@ eqForStateDef =
     )
 
 
-checkPerson :: [Def] 
+checkPerson :: [Def]
 checkPerson = checkPersonDef : eqForBool
 
 checkPersonDef :: Def
@@ -185,8 +185,8 @@ checkPersonDef =
 checkStep :: [Def]
 checkStep = checkStepDef : checkPerson ++ grForPerson
 
-checkStepDef :: Def 
-checkStepDef = 
+checkStepDef :: Def
+checkStepDef =
     Def "checkStep" ["state", "step", "q66"] (
       (fresh ["p"] (
         (V "step" === C "one" [V "p"]) &&&
@@ -208,11 +208,11 @@ checkStepDef =
             (V "q66" === V "q68")))))))
     )
 
-moveLight :: [Def] 
+moveLight :: [Def]
 moveLight = [moveLightDef]
 
 moveLightDef :: Def
-moveLightDef = 
+moveLightDef =
     Def "moveLight" ["state", "q61"] (
       fresh ["l", "a0", "b0", "c0", "d0"] (
         (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
@@ -224,11 +224,11 @@ moveLightDef =
           (V "q62" === C "true" []))))))
     )
 
-movePerson :: [Def] 
+movePerson :: [Def]
 movePerson = [movePersonDef]
 
-movePersonDef :: Def 
-movePersonDef = 
+movePersonDef :: Def
+movePersonDef =
     Def "movePerson" ["state", "person", "q43"] (
       fresh ["l", "a0", "b0", "c0", "d0"] (
         (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
@@ -262,10 +262,10 @@ movePersonDef =
           (V "q57" === C "true" []))))))))
     )
 
-step :: [Def] 
+step :: [Def]
 step = stepDef : movePerson ++ moveLight
 
-stepDef :: Def 
+stepDef :: Def
 stepDef =
     Def "step" ["state", "step", "q36"] (
       (fresh ["p"] (
@@ -282,11 +282,11 @@ stepDef =
             (call "moveLight" [V "q39", V "q36"])))))
     )
 
-times :: [Def] 
+times :: [Def]
 times = [timesDef]
 
-timesDef :: Def 
-timesDef = 
+timesDef :: Def
+timesDef =
     Def "times" ["p", "q31"] (
       ((V "p" === C "a" []) &&&
       (V "q31" === C "s" [C "o" []])) |||
@@ -298,10 +298,10 @@ timesDef =
       (V "q31" === C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]))
     )
 
-getTime :: [Def] 
+getTime :: [Def]
 getTime = getTimeDef : times ++ max
 
-getTimeDef :: Def 
+getTimeDef :: Def
 getTimeDef =
     Def "getTime" ["state", "q27"] (
       (fresh ["p"] (
@@ -318,8 +318,8 @@ getTimeDef =
 start :: [Def]
 start = [startDef]
 
-startDef :: Def 
-startDef = 
+startDef :: Def
+startDef =
     Def "start" ["q1"] (
         V "q1" === C "st" [C "true" [], C "true" [], C "true" [], C "true" [], C "true" []]
     )
@@ -327,16 +327,16 @@ startDef =
 finish :: [Def]
 finish = [finishDef]
 
-finishDef :: Def 
-finishDef = 
+finishDef :: Def
+finishDef =
     Def "finish" ["q2"] (
       V "q2" === C "st" [C "false" [], C "false" [], C "false" [], C "false" [], C "false" []]
     )
 
-getAnswer' :: [Def] 
+getAnswer' :: [Def]
 getAnswer' = getAnswer'Def : checkStep ++ finish ++ eqForState ++ add ++ step ++ getTime
 
-getAnswer'Def :: Def 
+getAnswer'Def :: Def
 getAnswer'Def =
     Def "getAnswer'" ["answer", "state", "q3"] (
       (fresh ["x", "xs"] (
@@ -370,11 +370,11 @@ getAnswer'Def =
          (V "q3" === C "none" []))))))
     )
 
-getAnswer :: [Def] 
+getAnswer :: [Def]
 getAnswer = getAnswerDef : start ++ getAnswer'
 
-getAnswerDef :: Def 
-getAnswerDef = 
+getAnswerDef :: Def
+getAnswerDef =
     Def "getAnswer" ["answer", "q26"] (
       fresh ["q22"] (
         (call "start" [V "q22"]) &&&
@@ -384,30 +384,30 @@ getAnswerDef =
 result :: [Def]
 result = [resultDef]
 
-resultDef :: Def 
-resultDef = 
+resultDef :: Def
+resultDef =
     Def "result" ["q0"] (
       V "q0" === C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]]]]]]]]
     )
 
 game2Big :: [Def]
 game2Big =
-  [ greaterDef 
-  , grForPersonDef 
-  , maxDef 
-  , addDef 
-  , eqForBoolDef 
-  , eqForStateDef 
-  , checkPersonDef 
-  , checkStepDef 
-  , moveLightDef 
-  , movePersonDef 
-  , stepDef 
-  , timesDef 
-  , getTimeDef 
-  , getAnswerDef 
-  , startDef 
-  , finishDef 
+  [ greaterDef
+  , grForPersonDef
+  , maxDef
+  , addDef
+  , eqForBoolDef
+  , eqForStateDef
+  , checkPersonDef
+  , checkStepDef
+  , moveLightDef
+  , movePersonDef
+  , stepDef
+  , timesDef
+  , getTimeDef
+  , getAnswerDef
+  , startDef
+  , finishDef
   , getAnswer'Def
-  , resultDef 
+  , resultDef
   ]

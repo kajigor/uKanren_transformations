@@ -24,10 +24,10 @@ map1in2 :: (a -> b) -> (a, c) -> (b, c)
 map1in2 f (x, y) = (f x, y)
 
 map1in3 :: (a -> b) -> (a, c, d) -> (b, c, d)
-map1in3 f (x, y, z) = (f x, y, z) 
+map1in3 f (x, y, z) = (f x, y, z)
 
 map2in3 :: (a -> b) -> (c, a, d) -> (c, b, d)
-map2in3 f (x, y, z) = (x, f y, z) 
+map2in3 f (x, y, z) = (x, f y, z)
 
 map3in3 :: (a -> b) -> (c, d, a) -> (c, d, b)
 map3in3 f (x, y, z) = (x, y, f z)
@@ -49,6 +49,18 @@ generateSplits xs n =
   let sub = filter (\x -> n == length x) $ subsequences xs in
   [ (x, xs \\ x) | x <- sub ]
 
-show' :: Show a => [a] -> String 
-show' xs = 
-  intercalate "\n" $ map show xs 
+pinpoint :: (a -> Bool) -> [a] -> Maybe ([a], a, [a])
+pinpoint =
+    go []
+  where
+    go _ p [] = Nothing
+    go left p (h:t) | p h = Just (reverse left, h, t)
+    go left p (h:t) = go (h:left) p t
+
+
+show' :: Show a => [a] -> String
+show' xs =
+  intercalate "\n" $ map show xs
+
+escapeTick :: String -> String
+escapeTick = concatMap (\x -> if x == '\'' then "\\\'" else [x])

@@ -156,7 +156,7 @@ preEval = go []
   go vars g           (g1 :\/: g2) = let (g1', g' , vars')  = go vars  g  g1 in
                                      let (g2', g'', vars'') = go vars' g' g2 in
                                      (g1' :\/: g2', g'', vars'')
-  go vars   (p, icd , y : d') (Fresh x g') =
+  go vars   (p, i , y : d') (Fresh x g') =
     go (y : vars) (p, extend i x (V y), d') g'
   go vars g@(_, i, _) (Invoke f fs)  = (Invoke f (map (i <@>) fs), g, vars)
   go vars e           (Let    def g) = let (g', e', vars') = go vars e g in

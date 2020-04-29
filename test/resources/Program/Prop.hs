@@ -13,21 +13,20 @@ fm1 = C "conj" [C "var" [C "x" []], C "neg" [C "var" [C "y" []]]]
 query  = Program evalo $ fresh ["st"] (call "evalo" [V "st", fm, trueo])
 query1 = Program evalo $ fresh ["st"] (call "evalo" [V "st", fm, falso])
 query2 = Program evalo $ fresh ["st"] (call "evalo" [V "st", fm1, trueo])
-query3 = Program evalo $ fresh ["fm", "st"] (call "evalo" [V "st", V "fm", trueo])
+
+query3 = Program evalo $ fresh ["fm", "st"]     (call "evalo" [V "st", V "fm", trueo])
 query4 = Program evalo $ fresh ["x", "y", "st"] (call "evalo" [V "st",  C "conj" [V "x", C "neg" [V "y"]], trueo])
 
-query' = Program evalo' (fresh ["st", "fm"] (call "evalo" [V "st", V "fm", trueo]))
-
-query'' = Program evalo'' (fresh ["st", "fm"] (call "evalo" [V "st", V "fm", trueo]))
+query'  = Program evalo'  $ fresh ["st", "fm"] (call "evalo" [V "st", V "fm", trueo])
+query'' = Program evalo'' $ fresh ["st", "fm"] (call "evalo" [V "st", V "fm", trueo])
 
 fm2 = C "disj" [C "var" [zero], C "var" [succ zero]]
 
-query1''  = Program evalo'' (fresh ["fm", "st"] (call "evalo" [V "st", V "fm", trueo]))
-query1''' = Program evalo''' (fresh ["fm", "st"] (call "evalo" [V "st", V "fm", trueo]))
-query2''' = Program evalo''' (fresh ["fm", "st", "res"] (call "evalo" [V "st", V "fm", V "res"]))
+query1''' = Program evalo''' $ fresh ["fm", "st"]        (call "evalo" [V "st", V "fm", trueo])
+query2''' = Program evalo''' $ fresh ["fm", "st", "res"] (call "evalo" [V "st", V "fm", V "res"])
 
-plainQuery  = Program plainEvalo (fresh ["fm", "st"] (call "evalo" [V "st", V "fm", trueo]))
-plainQuery' = Program plainEvalo (fresh ["fm", "st", "res"] (call "evalo" [V "st", V "fm", V "res"]))
+plainQuery  = Program plainEvalo $ fresh ["fm", "st"]        (call "evalo" [V "st", V "fm", trueo])
+plainQuery' = Program plainEvalo $ fresh ["fm", "st", "res"] (call "evalo" [V "st", V "fm", V "res"])
 
 plainQueryConj = Program evaloConj (fresh ["st", "fm1", "fm2"] (call "evaloConj" $ map V ["st", "fm1", "fm2"]))
 
@@ -45,6 +44,7 @@ evaloConj = evaloConjDef : plainEvalo
 evalo' :: [Def]
 evalo' = evalo'Def : elemo
 
+-- no ando/oro
 evalo'Def :: Def
 evalo'Def =
     ( Def "evalo" ["st", "fm", "u"]
@@ -111,6 +111,8 @@ elemoDef =
 evalo'' :: [Def]
 evalo'' = evalo''Def : ando ++ oro ++ noto ++ elemo
 
+-- ando/oro last
+-- uses elemo
 evalo''Def :: Def
 evalo''Def =
     ( Def "evalo" ["st", "fm", "u"]
@@ -129,11 +131,11 @@ evalo''Def =
             call "evalo" [st, y, w] &&&
             call "oro" [v, w, u]
           ) |||
-          -- (
-          --   fm === C "neg" [x] &&&
-          --   call "evalo" [st, x, v] &&&
-          --   call "noto" [v, u]
-          -- ) |||
+          (
+            fm === C "neg" [x] &&&
+            call "evalo" [st, x, v] &&&
+            call "noto" [v, u]
+          ) |||
           (
             fm === C "var" [x] &&&
             call "elemo" [x, st, u]
@@ -147,6 +149,8 @@ evalo''Def =
 evalo''' :: [Def]
 evalo''' = evalo'''Def : ando ++ oro ++ noto ++ elemo
 
+-- ando/oro first
+-- uses elemo
 evalo'''Def :: Def
 evalo'''Def =
     ( Def "evalo" ["st", "fm", "u"]
@@ -165,11 +169,11 @@ evalo'''Def =
             call "evalo" [st, x, v] &&&
             call "evalo" [st, y, w]
           ) |||
-          -- (
-          --   fm === C "neg" [x] &&&
-          --   call "evalo" [st, x, v] &&&
-          --   call "noto" [v, u]
-          -- ) |||
+          (
+            fm === C "neg" [x] &&&
+            call "evalo" [st, x, v] &&&
+            call "noto" [v, u]
+          ) |||
           (
             fm === C "var" [x] &&&
             call "elemo" [x, st, u]
@@ -180,6 +184,8 @@ evalo'''Def =
     where
       [st, fm, u, x, y, v, w] = map V ["st", "fm", "u", "x", "y", "v", "w"]
 
+
+-- table implementation of ando/oro
 plainEvalo :: [Def]
 plainEvalo =
     plainEvaloDef : ando ++ oro ++ noto ++ elemo
@@ -250,6 +256,8 @@ plainEvaloDef =
 evalo :: [Def]
 evalo = evaloDef : ando ++ oro ++ noto ++ assoco
 
+-- ando/oro last
+-- uses assoco
 evaloDef :: Def
 evaloDef =
     ( Def "evalo" ["st", "fm", "u"]
@@ -268,11 +276,11 @@ evaloDef =
             call "evalo" [st, y, w] &&&
             call "oro" [v, w, u]
           ) |||
-          -- (
-          --   fm === C "neg" [x] &&&
-          --   call "evalo" [st, x, v] &&&
-          --   call "noto" [v, u]
-          -- ) |||
+          (
+            fm === C "neg" [x] &&&
+            call "evalo" [st, x, v] &&&
+            call "noto" [v, u]
+          ) |||
           (
             fm === C "var" [x] &&&
             call "assoco" [x, st, u]

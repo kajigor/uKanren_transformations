@@ -13,16 +13,17 @@ ofInt = peanify
     zero = C "o" []
     succ x = C "s" [x]
 
-query = Program tree $ fresh ["q"] (call "checkAnswer" [V "q", ofInt 8, ofInt 5, some $ ofInt 22])
-query' = Program tree $ fresh ["a", "b"] (call "checkAnswer" [V "a", ofInt 6, ofInt 4, some $ V "b"])
-query'' = Program tree $ fresh ["a", "b"] (call "checkAnswer" [V "a", ofInt 5, ofInt 4, some $ V "b"])
+query    = Program tree $ fresh ["q"]      (call "checkAnswer" [V "q", ofInt 8, ofInt 5, some $ ofInt 22])
+query'   = Program tree $ fresh ["a", "b"] (call "checkAnswer" [V "a", ofInt 6, ofInt 4, some $ V "b"])
+query''  = Program tree $ fresh ["a", "b"] (call "checkAnswer" [V "a", ofInt 5, ofInt 4, some $ V "b"])
 query''' = Program tree $ fresh ["a", "b"] (call "checkAnswer" [V "a", ofInt 8, ofInt 5, some $ V "b"])
+query1   = Program tree $ fresh ["a", "b", "c", "d"] (call "checkAnswer" [V "a", V "b", V "c", some $ V "d"])
 
-add :: [Def] 
+add :: [Def]
 add = [addDef]
 
-addDef :: Def 
-addDef = 
+addDef :: Def
+addDef =
     Def "add" ["a", "b", "q193"] (
       ((V "a" === C "o" []) &&&
       (V "b" === V "q193")) |||
@@ -34,8 +35,8 @@ addDef =
 goe :: [Def]
 goe = [goeDef]
 
-goeDef :: Def 
-goeDef = 
+goeDef :: Def
+goeDef =
     Def "goe" ["a", "b", "q186"] (
       ((V "a" === C "o" []) &&&
       (((V "b" === C "o" []) &&&
@@ -56,7 +57,7 @@ sub :: [Def]
 sub = [subDef]
 
 subDef :: Def
-subDef = 
+subDef =
     Def "sub" ["a", "b", "q182"] (
       ((V "b" === C "o" []) &&&
       (V "a" === V "q182")) |||
@@ -72,8 +73,8 @@ subDef =
 elem :: [Def]
 elem = [elemDef]
 
-elemDef :: Def 
-elemDef = 
+elemDef :: Def
+elemDef =
     Def "elem" ["l", "n", "q179"] (
       fresh ["x", "xs"] (
         (V "l" === C "%" [V "x", V "xs"]) &&&
@@ -87,8 +88,8 @@ elemDef =
 eqNat :: [Def]
 eqNat = [eqNatDef]
 
-eqNatDef :: Def 
-eqNatDef = 
+eqNatDef :: Def
+eqNatDef =
     Def "eqNat" ["a", "b", "q172"] (
       ((V "a" === C "o" []) &&&
       (((V "b" === C "o" []) &&&
@@ -109,7 +110,7 @@ checkStep :: [Def]
 checkStep = checkStepDef : goe ++ eqNat ++ add ++ elem
 
 checkStepDef :: Def
-checkStepDef = 
+checkStepDef =
     Def "checkStep" ["step", "state", "len", "cop", "q85"] (
       fresh ["pos", "fuel", "sts"] (
         (V "state" === C "st" [V "pos", V "fuel", V "sts"]) &&&
@@ -223,10 +224,10 @@ checkStepDef =
     )
 
 addForElem :: [Def]
-addForElem = addForElemDef : add 
+addForElem = addForElemDef : add
 
-addForElemDef :: Def  
-addForElemDef = 
+addForElemDef :: Def
+addForElemDef =
     Def "addForElem" ["l", "n", "v", "q79"] (
       fresh ["x", "xs"] (
         (V "l" === C "%" [V "x", V "xs"]) &&&
@@ -242,10 +243,10 @@ addForElemDef =
     )
 
 setForElem :: [Def]
-setForElem = [setForElemDef] 
+setForElem = [setForElemDef]
 
-setForElemDef :: Def 
-setForElemDef = 
+setForElemDef :: Def
+setForElemDef =
     Def "setForElem" ["l", "n", "v", "q74"] (
       fresh ["x", "xs"] (
         (V "l" === C "%" [V "x", V "xs"]) &&&
@@ -260,10 +261,10 @@ setForElemDef =
 
 
 step :: [Def]
-step = stepDef : sub ++ add ++ addForElem ++ goe ++ setForElem 
+step = stepDef : sub ++ add ++ addForElem ++ goe ++ setForElem
 
-stepDef :: Def 
-stepDef = 
+stepDef :: Def
+stepDef =
     Def "step" ["step", "state", "len", "cop", "q50"] (
       fresh ["pos", "fuel", "sts"] (
         (V "state" === C "st" [V "pos", V "fuel", V "sts"]) &&&
@@ -313,8 +314,8 @@ stepDef =
 isFinishState :: [Def ]
 isFinishState = isFinishStateDef : eqNat
 
-isFinishStateDef :: Def 
-isFinishStateDef = 
+isFinishStateDef :: Def
+isFinishStateDef =
     Def "isFinishState" ["state", "len", "q49"] (
       fresh ["pos", "fuel", "sts"] (
         (V "state" === C "st" [V "pos", V "fuel", V "sts"]) &&&
@@ -324,8 +325,8 @@ isFinishStateDef =
 getFuel :: [Def]
 getFuel = getFuelDef : sub
 
-getFuelDef :: Def 
-getFuelDef = 
+getFuelDef :: Def
+getFuelDef =
     Def "getFuel" ["step", "state", "cop", "q42"] (
       (fresh ["d"] (
         (V "step" === C "left" [V "d"]) &&&
@@ -350,7 +351,7 @@ isMove :: [Def]
 isMove = [isMoveDef]
 
 isMoveDef :: Def
-isMoveDef = 
+isMoveDef =
     Def "isMove" ["step", "q34"] (
       (fresh ["q35"] (
         (V "step" === C "left" [V "q35"]) &&&
@@ -368,8 +369,8 @@ isMoveDef =
 eqBool :: [Def]
 eqBool = [eqBoolDef]
 
-eqBoolDef :: Def 
-eqBoolDef = 
+eqBoolDef :: Def
+eqBoolDef =
     Def "eqBool" ["a", "b", "q30"] (
       ((V "a" === C "true" []) &&&
       (V "b" === V "q30")) |||
@@ -384,7 +385,7 @@ stations :: [Def]
 stations = [stationsDef]
 
 stationsDef :: Def
-stationsDef = 
+stationsDef =
     Def "stations" ["n", "q23"] (
       ((V "n" === C "o" []) &&&
       (V "q23" === C "nil" [])) |||
@@ -398,8 +399,8 @@ stationsDef =
 startState :: [Def]
 startState = startStateDef : stations
 
-startStateDef :: Def 
-startStateDef = 
+startStateDef :: Def
+startStateDef =
   Def "startState" ["len", "cop", "q29"] (
     fresh ["q27"] (
       (V "q29" === C "st" [C "o" [], V "cop", V "q27"]) &&&
@@ -409,8 +410,8 @@ startStateDef =
 calcFuel :: [Def]
 calcFuel = calcFuelDef : isFinishState ++ isMove ++ eqBool ++ checkStep ++ add ++ getFuel ++ step
 
-calcFuelDef :: Def 
-calcFuelDef = 
+calcFuelDef :: Def
+calcFuelDef =
     Def "calcFuel" ["state", "ans", "len", "cop", "prevIsMove", "q2"] (
       ((V "ans" === C "nil" []) &&&
       (fresh ["q4"] (
@@ -448,11 +449,11 @@ calcFuelDef =
                   (V "q2" === C "none" [])))))))))))))
     )
 
-checkAnswer :: [Def] 
+checkAnswer :: [Def]
 checkAnswer = checkAnswerDef : startState ++ calcFuel
 
-checkAnswerDef :: Def 
-checkAnswerDef = 
+checkAnswerDef :: Def
+checkAnswerDef =
     Def "checkAnswer" ["answer", "len", "cop", "q1"] (
       fresh ["q0"] (
         (call "startState" [V "len", V "cop", V "q0"]) &&&
@@ -480,6 +481,6 @@ tree =
   , checkAnswerDef
   ]
 
-env :: String 
-env = 
+env :: String
+env =
   "open MiniKanren\nopen MiniKanrenStd\ntype 'a0 gnat =\n  | O \n  | S of 'a0 \nlet rec fmap fa0 = function | O -> O | S a0 -> S (fa0 a0)\nmodule For_gnat =\n  (Fmap)(struct\n           let rec fmap fa0 = function | O -> O | S a0 -> S (fa0 a0)\n           type 'a0 t = 'a0 gnat\n         end)\nlet rec o () = inj (For_gnat.distrib O)\nand s x__0 = inj (For_gnat.distrib (S x__0))\ntype 'a0 gstep =\n  | Left of 'a0 \n  | Right of 'a0 \n  | Fill \n  | Pour of 'a0 \nlet rec fmap fa0 =\n  function\n  | Left a0 -> Left (fa0 a0)\n  | Right a0 -> Right (fa0 a0)\n  | Fill -> Fill\n  | Pour a0 -> Pour (fa0 a0)\nmodule For_gstep =\n  (Fmap)(struct\n           let rec fmap fa0 =\n             function\n             | Left a0 -> Left (fa0 a0)\n             | Right a0 -> Right (fa0 a0)\n             | Fill -> Fill\n             | Pour a0 -> Pour (fa0 a0)\n           type 'a0 t = 'a0 gstep\n         end)\nlet rec left x__0 = inj (For_gstep.distrib (Left x__0))\nand right x__0 = inj (For_gstep.distrib (Right x__0))\nand fill () = inj (For_gstep.distrib Fill)\nand pour x__0 = inj (For_gstep.distrib (Pour x__0))\ntype ('a1, 'a0) gstate =\n  | St of 'a1 * 'a1 * 'a0 \nlet rec fmap fa1 fa0 =\n  function | St (a1_0, a1_1, a0_2) -> St ((fa1 a1_0), (fa1 a1_1), (fa0 a0_2))\nmodule For_gstate =\n  (Fmap2)(struct\n            let rec fmap fa1 fa0 =\n              function\n              | St (a1_0, a1_1, a0_2) ->\n                  St ((fa1 a1_0), (fa1 a1_1), (fa0 a0_2))\n            type ('a1, 'a0) t = ('a1, 'a0) gstate\n          end)\nlet rec st x__0 x__1 x__2 = inj (For_gstate.distrib (St (x__0, x__1, x__2)))"

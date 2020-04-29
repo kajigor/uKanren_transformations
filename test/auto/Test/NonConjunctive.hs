@@ -1,33 +1,85 @@
 module Test.NonConjunctive  where
 
-import           Test.Helper (test, test2, manyAssert)
+import           Test.Helper           (manyAssert, test, test2)
 
+import qualified NonConjunctive.Unfold as NC
 import           Printer.Dot
-import           Printer.NCTree   ()
-import           Program.List     (nil, revAcco, reverso, (%), maxLengtho)
-import           Program.Programs (doubleAppendo)
+import           Printer.NCTree        ()
+import qualified Program.Bottles
+import qualified Program.Bridge
+import qualified Program.Bridge2
+import qualified Program.Desert
+import           Program.List          (maxLengtho, nil, revAcco, reverso, (%))
+import           Program.Programs      (doubleAppendo)
 import qualified Program.Prop
-import           Program.Stlc     (evalo)
+import           Program.Stlc          (evalo)
 import           Syntax
 import           System.Directory
-import           System.Process   (system)
+import           System.Process        (system)
 import           Text.Printf
-import qualified NonConjunctive.Unfold as NC
+import           Util.Miscellaneous    (escapeTick)
 
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
 revAcco' = Program revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])
 rev = Program reverso $ fresh ["x", "y"] (call "reverso" [V "x", V "y"])
-prop = Program.Prop.query3
 maxLen = Program maxLengtho $ fresh ["xs", "m", "l"] (call "maxLengtho" [V "xs", V "m", V "l"])
 lambda = Program evalo $ fresh ["m", "n"] (call "evalo" [V "m", V "n"])
 
+runNc l = runTest (NC.nonConjunctive l)
+
+runProp = do
+    runNc 33 "prop"  prop
+    runNc 33 "prop1" prop1
+    runNc 33 "prop2" prop2
+    runNc (-1) "prop3" prop3
+    runNc (-1) "prop4" prop4
+    runNc (-1) "prop'" prop'
+    runNc (-1) "prop''" prop''
+    runNc (-1) "prop1'''" prop1'''
+    runNc (-1) "prop2'''" prop2'''
+    runNc (-1) "propPlain" propPlain
+    runNc (-1) "propPlain'" propPlain'
+  where
+    -- won't terminate: accumulator in assoco
+    prop       = Program.Prop.query
+    -- won't terminate: accumulator in assoco
+    prop1      = Program.Prop.query1
+    -- won't terminate: accumulator in assoco
+    prop2      = Program.Prop.query2
+    prop3      = Program.Prop.query3
+    prop4      = Program.Prop.query4
+    prop'      = Program.Prop.query'
+    prop''     = Program.Prop.query''
+    prop1'''   = Program.Prop.query1'''
+    prop2'''   = Program.Prop.query2'''
+    propPlain  = Program.Prop.plainQuery
+    propPlain' = Program.Prop.plainQuery'
+
+runBottles = do
+    runNc 100 "bottles" Program.Bottles.query
+
+runBridge = do
+    runNc 100 "bridge" Program.Bridge.query
+    runNc (-1) "bridge2" Program.Bridge2.query
+
+runDesert = do
+    -- runNc (-1) "desert"    Program.Desert.query
+    -- runNc (-1) "desert'"   Program.Desert.query'
+    -- runNc (-1) "desert''"  Program.Desert.query''
+    -- runNc (-1) "desert'''" Program.Desert.query'''
+    runNc 20 "desert1" Program.Desert.query1
+
 unit_nonConjunctiveTest = do
-  -- runTest NC.nonConjunctive "da" dA
+  runProp
+  runBottles
+  runBridge
+  runDesert
+  runNc (-1) "da" dA
+
   -- runTest NC.nonConjunctive "rev" rev
   -- runTest NC.nonConjunctive "revAcco" revAcco'
-  -- runTest NC.nonConjunctive "prop" prop
   -- runTest NC.nonConjunctive "maxLen" maxLen
-  runTest NC.nonConjunctive "lambda" lambda
+  -- runTest NC.nonConjunctive "lambda" lambda
 
 runTest function filename goal = do
   let (tree, logicGoal, names) = function goal
@@ -38,7 +90,7 @@ runTest function filename goal = do
   else return ()
   createDirectoryIfMissing True path
   printTree (printf "%s/tree.dot" path) tree
-  system (printf "dot -O -Tpdf %s/*.dot" path)
+  system (printf "dot -O -Tpdf %s/*.dot" (escapeTick path))
   return ()
 
 unit_isConflicting = do

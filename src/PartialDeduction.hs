@@ -15,7 +15,7 @@ import           Prelude            hiding (or)
 import           Syntax
 import           Text.Printf        (printf)
 import           Unfold             (oneStepUnfold, unifyStuff, normalize)
-import           Util.Miscellaneous (fst3, show')
+import           Util.Miscellaneous (fst3)
 
 data PDTree = Fail
             | Success E.Sigma

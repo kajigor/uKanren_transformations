@@ -169,7 +169,6 @@ doOcanrenize = do
   -- ocanren "prop4" Prop.query4  Nothing
   -- ocanren "propSimple" Prop.query' Nothing
 
-  -- ocanren "propCompl2" Prop.query1'' Nothing
   -- ocanren "propCompl4" Prop.query2''' Nothing
   -- ocanren "plainEvaloDescends" Prop.plainQuery Nothing
 
