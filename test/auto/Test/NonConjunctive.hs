@@ -76,10 +76,10 @@ unit_nonConjunctiveTest = do
   runDesert
   runNc (-1) "da" dA
 
-  -- runTest NC.nonConjunctive "rev" rev
-  -- runTest NC.nonConjunctive "revAcco" revAcco'
-  -- runTest NC.nonConjunctive "maxLen" maxLen
-  -- runTest NC.nonConjunctive "lambda" lambda
+  runNc (-1) "rev" rev
+  runNc (-1) "revAcco" revAcco'
+  runNc (-1) "maxLen" maxLen
+  runNc (-1) "lambda" lambda
 
 runTest function filename goal = do
   let (tree, logicGoal, names) = function goal

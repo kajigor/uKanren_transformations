@@ -146,27 +146,30 @@ nonConjunctive limit (Program defs goal) =
         then
           Leaf goal state
         else
+          trace (printf "\nGoal:\n%s\nAncs:\n%s\n" (show goal) (show' ancs')) $
           case find (`embed` goal) ancs' of
             Just g ->
               let (newGoals, everythingElse, gen1, gen2, names) =
                     generalizeSplit z g goal in
+              trace (printf "\nEmbedded:\n%s\nGeneralized:\n%s\nElse:\n%s\n" (show g) (show newGoals) (show everythingElse)) $
 
               let env' = (x, y, names) in
 
               let firstChild =
                     if newGoals `isInst` goal
                     then
-                      case findBestByComplexity env' state goal of
-                        Just (ls, g, rs) ->
-                          let (unified, gamma) = oneStep g env' state in
-                          let children =
-                                map (\(goals, subst) ->
-                                        let goals' = wrap ls rs goals in
-                                        nullGoals goals' subst $
-                                          go (addAnc goals') gamma seen' subst
-                                    )
-                                    unified in
-                          or children d state
+                      Gen (Leaf newGoals state) newGoals gen2
+                      -- case findBestByComplexity env' state goal of
+                      --   Just (ls, g, rs) ->
+                      --     let (unified, gamma) = oneStep g env' state in
+                      --     let children =
+                      --           map (\(goals, subst) ->
+                      --                   let goals' = wrap ls rs goals in
+                      --                   nullGoals goals' subst $
+                      --                     go (addAnc goals') gamma seen' subst
+                      --               )
+                      --               unified in
+                      --     or children d state
                     else
                       -- trace (printf "\nGeneralization\nGoal: %s\nAnc: %s\nGeneralization: %s\nEverythingElse: %s\n" (show goal) (show g) (show newGoals) (show everythingElse)) $
                       let ch = go (LC.Descend newGoals ancs') env' seen' state in
@@ -180,6 +183,7 @@ nonConjunctive limit (Program defs goal) =
                 let secondChild = go (LC.Descend everythingElse ancs') env' seen' state in
                 Split [firstChild, secondChild] (newGoals ++ everythingElse) state
             Nothing ->
+              trace "\nnot embedded\n" $
               case if length goal == 1
                    then Just ([], head goal, [])
                    else findBestByComplexity env state goal of
