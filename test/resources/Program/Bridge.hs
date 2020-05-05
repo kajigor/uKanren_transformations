@@ -90,15 +90,28 @@ maxDef =
 add :: [Def]
 add = [addDef]
 
+-- addDef :: Def
+-- addDef =
+--     Def "add" ["a0", "b0", "q123"] (
+--       ((V "a0" === C "o" []) &&&
+--       (V "b0" === V "q123")) |||
+--       (fresh ["x"] (
+--           (V "a0" === C "s" [V "x"]) &&&
+--           (call "add" [V "x", C "s" [V "b0"], V "q123"])))
+--     )
+
+
 addDef :: Def
 addDef =
-    Def "add" ["a0", "b0", "q123"] (
-      ((V "a0" === C "o" []) &&&
-      (V "b0" === V "q123")) |||
-      (fresh ["x"] (
-          (V "a0" === C "s" [V "x"]) &&&
-          (call "add" [V "x", C "s" [V "b0"], V "q123"])))
+    ( Def "add" ["x", "y", "z"]
+        (
+          x === C "o" []  &&& z === y |||
+          fresh ["x'", "z'"]
+            (x === C "s" [x'] &&& z === C "s" [z'] &&& call "add" [x', y, z'])
+        )
     )
+  where
+    [x, y, z, x', z'] = map V ["x", "y", "z", "x'", "z'"]
 
 eqForBool :: [Def]
 eqForBool = [eqForBoolDef]

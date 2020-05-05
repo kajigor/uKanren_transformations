@@ -6,7 +6,7 @@ import qualified CPD.LocalControl   as LC
 import           Data.Foldable      (foldlM)
 import           Data.List          (find, intersect, partition, (\\), sortBy)
 import qualified Data.Map.Strict    as M
-import           Data.Maybe         (mapMaybe, fromMaybe, isJust)
+import           Data.Maybe         (mapMaybe, fromMaybe, isJust, catMaybes, isNothing, fromJust)
 import           Debug.Trace        (trace)
 import           Embed
 import qualified Eval               as E
@@ -15,17 +15,27 @@ import           Prelude            hiding (or)
 import           Syntax
 import           Text.Printf        (printf)
 import           Unfold             (oneStepUnfold, oneStep, notMaximumBranches, unfoldComplexity, findBestByComplexity)
-import           Util.Miscellaneous (fst3, show')
+import           Util.Miscellaneous (fst3, snd3, show')
 
 data NCTree = Fail
-            | Success E.Sigma
+            | Success E.Sigma E.Gamma
             | Or [NCTree] (LC.Descend [G S]) E.Sigma
             | Conj [NCTree] [G S] E.Sigma
             | Gen NCTree [G S] Generalizer
-            | Leaf [G S] E.Sigma
+            | Leaf [G S] E.Sigma E.Gamma
             | Split [NCTree] [G S] E.Sigma
             | Prune [G S] E.Sigma
-            deriving (Show, Eq)
+            -- deriving (Show, Eq)
+
+instance Eq NCTree where
+  Fail == Fail = True
+  Success s _ == Success s' _ = s == s'
+  Or ch ds s == Or ch' ds' s' = ch == ch' && ds == ds' && s == s'
+  Conj ch gs s == Conj ch' gs' s' = ch == ch' && gs == gs' && s == s'
+  Leaf gs s _ == Leaf gs' s' _ = gs == gs' && s == s'
+  Split ch gs s == Split ch' gs' s' = ch == ch' && gs == gs' && s == s'
+  Prune gs s == Prune gs' s' = gs == gs' && s == s'
+  _ == _ = False
 
 conjConcat :: [([([G S], E.Sigma)], E.Gamma)] -> Maybe ([([G S], E.Sigma)], E.Gamma)
 conjConcat x = do
@@ -97,9 +107,9 @@ realIncrDeep globalLimit f x =
     go localLimit curr f x =
       go localLimit (curr + 1) f (f x)
 
-leaf :: E.Sigma -> NCTree
-leaf [] = Fail
-leaf s  = Success s
+leaf :: E.Sigma -> E.Gamma -> NCTree
+leaf [] _ = Fail
+leaf s  e = Success s e
 
 unifySubsts :: [E.Sigma] -> Maybe E.Sigma
 unifySubsts [] = return []
@@ -129,81 +139,190 @@ nonConjunctive limit (Program defs goal) =
     let (logicGoal, gamma', names) = E.preEval gamma goal in
     let nodes = [] in
     let descend = LC.Descend (conjToList logicGoal) [] in
-    (go descend gamma' nodes E.s0, V 1 === V 2, [4, 5, 6, 7])
+    (fst $ go descend gamma' nodes E.s0, V 1 === V 2, [4, 5, 6, 7])
   where
-    go :: LC.Descend [G S] -> E.Gamma -> [[G S]] -> E.Sigma -> NCTree
+    go :: LC.Descend [G S] -> E.Gamma -> [[G S]] -> E.Sigma -> (NCTree, [[G S]])
     go (LC.Descend goal' ancs') env@(x,y,z) seen state =
       let goal = E.substitute state goal' in
       let seen' = goal : seen in
       let addAnc x = LC.Descend x (goal : ancs') in
-      let d = addAnc goal' in
       if limit > 0 && head z > limit
       then
-        Prune goal state
+        (Prune goal state, seen)
       else
-       simplify $
-        if variantCheck goal seen
-        then
-          Leaf goal state
-        else
-          trace (printf "\nGoal:\n%s\nAncs:\n%s\n" (show goal) (show' ancs')) $
-          case find (`embed` goal) ancs' of
-            Just g ->
-              let (newGoals, everythingElse, gen1, gen2, names) =
-                    generalizeSplit z g goal in
-              trace (printf "\nEmbedded:\n%s\nGeneralized:\n%s\nElse:\n%s\n" (show g) (show newGoals) (show everythingElse)) $
-
-              let env' = (x, y, names) in
-
-              let firstChild =
-                    if newGoals `isInst` goal
-                    then
-                      Gen (Leaf newGoals state) newGoals gen2
-                      -- case findBestByComplexity env' state goal of
-                      --   Just (ls, g, rs) ->
-                      --     let (unified, gamma) = oneStep g env' state in
-                      --     let children =
-                      --           map (\(goals, subst) ->
-                      --                   let goals' = wrap ls rs goals in
-                      --                   nullGoals goals' subst $
-                      --                     go (addAnc goals') gamma seen' subst
-                      --               )
-                      --               unified in
-                      --     or children d state
-                    else
-                      -- trace (printf "\nGeneralization\nGoal: %s\nAnc: %s\nGeneralization: %s\nEverythingElse: %s\n" (show goal) (show g) (show newGoals) (show everythingElse)) $
-                      let ch = go (LC.Descend newGoals ancs') env' seen' state in
-                      if null gen2
-                      then ch
-                      else Gen ch newGoals gen2
-              in
-              if null everythingElse
-              then firstChild
+        (\(x, y) -> (simplify x, y)) $
+          if variantCheck goal seen
+          then
+            (Leaf goal state env, seen)
+          else
+            -- Here should be a test for accumulating parameter
+            -- f (x, y) /\ f (z, y) -> f (m, n) /\ f (z, C (n))
+            if any (`isInst` goal) ancs'
+            then
+              (Prune goal state, seen)
+            else
+              if length goal == 1
+              then
+                let (unified, env') = oneStep (head goal) env state in
+                let (ch, allSeenGoals) = unfoldSequentially seen' unified env' addAnc in
+                (or ch (addAnc goal) state, allSeenGoals)
               else
-                let secondChild = go (LC.Descend everythingElse ancs') env' seen' state in
-                Split [firstChild, secondChild] (newGoals ++ everythingElse) state
-            Nothing ->
-              trace "\nnot embedded\n" $
-              case if length goal == 1
-                   then Just ([], head goal, [])
-                   else findBestByComplexity env state goal of
-                Just (ls, g, rs) ->
-                  let (unified, gamma) = oneStep g env state in
-                  let children =
-                        map (\(goals, subst) ->
-                                let goals' = wrap ls rs goals in
-                                nullGoals goals' subst $
-                                  go (addAnc goals') gamma seen' subst
-                            )
-                            unified in
-                  or children d state
-                Nothing ->
-                  -- Prune goal state
-                  let ch = map (\g -> go (addAnc [g]) env seen' state) goal in
-                  Split ch goal state
+                case if length goal > 3 then Nothing else findBestByComplexity env state goal of
+                  -- Either ls or rs is not empty!
+                  Just (ls, x, rs) ->
+                    if variantCheck [x] seen'
+                    then
+                      let x' = Conj [Leaf [x] state env] [x] state in
+                      let (ls', seen'')  = goNotNull ls seen'  state env addAnc in
+                      let (rs', seen''') = goNotNull rs seen'' state env addAnc in
+                      (Split (catMaybes [ls', Just x', rs']) goal state, seen''')
+                    else
+                      let (unified, env') = oneStep x env state in
+                      let (ch, allSeenGoals) = unfoldSequentially seen' unified env' addAnc in
+                      let x' = or ch (addAnc [x]) state in
+                      case computedAnswers x' of
+                        Just xs ->
+                          -- WHAT IF IT RENAMES WITHIN THIS SUBTREE???
+                          let (children, allSeenGoals) =
+                                foldl (\(ys, seenGoals) (goals, subst, newEnv) ->
+                                          let toUnfold = wrap ls rs goals in
+                                          let (node, newSeen) = go (addAnc toUnfold) newEnv seenGoals subst in
+                                          (nullGoals toUnfold subst newEnv node : ys, newSeen)
+                                      )
+                                      ([], seen')
+                                      xs in
+                          (or (reverse children) (addAnc $ wrap ls rs [x]) state, allSeenGoals)
+                        Nothing ->
+                          let (ls', seen'')  = goNotNull ls allSeenGoals state env addAnc in
+                          let (rs', seen''') = goNotNull rs seen'' state env addAnc in
+                          (Split (catMaybes [ls', Just x', rs']) goal state, seen''')
+                  Nothing ->
+                    let (children, allSeenGoals) = unfoldSequentially seen' (zip (map (:[]) goal) (repeat state)) env addAnc in
+                    (Split children goal state, allSeenGoals)
     wrap left right x = left ++ x ++ right
-    nullGoals goals subst v = if null goals then leaf subst else v
-      -- variantCheck curGoal (goal : seen) || isJust (find (`embed` curGoal) (goal : ancs))
+    nullGoals goals subst env v = if null goals then leaf subst env else v
+
+    goNotNull xs seen state env addAnc =
+      if null xs
+      then (Nothing, seen)
+      else
+        let (node, seen') = go (addAnc xs) env seen state in
+        (Just node, seen')
+
+    unfoldSequentially seen unified env addAnc =
+      let (ch, allSeenGoals) =
+                      foldl (\(xs, seenGoals) (goals, subst) ->
+                                let (node, newSeen) = go (addAnc goals) env seenGoals subst in
+                                (nullGoals goals subst env node : xs, newSeen)
+                            )
+                            ([], seen)
+                            unified in
+      (reverse ch, allSeenGoals)
+
+-- data NCTree = Fail
+--             | Success E.Sigma E.Gamma
+--             | Or [NCTree] (LC.Descend [G S]) E.Sigma
+--             | Conj [NCTree] [G S] E.Sigma
+--             | Gen NCTree [G S] Generalizer
+--             | Leaf [G S] E.Sigma E.Gamma
+--             | Split [NCTree] [G S] E.Sigma
+--             | Prune [G S] E.Sigma
+--             deriving (Show, Eq)
+
+computedAnswers :: NCTree -> Maybe ([([G S], E.Sigma, E.Gamma)])
+computedAnswers (Success s e) = Just [([], s, e)]
+computedAnswers Fail = Just []
+computedAnswers (Leaf g s e) = Just [(g, s, e)]
+computedAnswers (Or ch _ _) =
+  let xs = map computedAnswers ch in
+  if any isNothing xs
+  then Nothing
+  else Just $ concatMap fromJust xs
+computedAnswers _ = Nothing
+
+
+
+-- nonConjunctive :: Int -> Program -> (NCTree, G S, [S])
+-- nonConjunctive limit (Program defs goal) =
+--     let gamma = E.updateDefsInGamma E.env0 defs in
+--     let (logicGoal, gamma', names) = E.preEval gamma goal in
+--     let nodes = [] in
+--     let descend = LC.Descend (conjToList logicGoal) [] in
+--     (go descend gamma' nodes E.s0, V 1 === V 2, [4, 5, 6, 7])
+--   where
+--     go :: LC.Descend [G S] -> E.Gamma -> [[G S]] -> E.Sigma -> NCTree
+--     go (LC.Descend goal' ancs') env@(x,y,z) seen state =
+--       let goal = E.substitute state goal' in
+--       let seen' = goal : seen in
+--       let addAnc x = LC.Descend x (goal : ancs') in
+--       -- let d = addAnc goal' in
+--       if limit > 0 && head z > limit
+--       then
+--         Prune goal state
+--       else
+--        simplify $
+--         if variantCheck goal seen
+--         then
+--           Leaf goal state
+--         else
+--           trace (printf "\nGoal:\n%s\nAncs:\n%s\n" (show goal) (show' ancs')) $
+--           case find (`embed` goal) ancs' of
+--             Just g ->
+--               let (newGoals, everythingElse, gen1, gen2, names) =
+--                     generalizeSplit z g goal in
+--               trace (printf "\nEmbedded:\n%s\nGeneralized:\n%s\nElse:\n%s\n" (show g) (show newGoals) (show everythingElse)) $
+
+--               let env' = (x, y, names) in
+
+--               let firstChild =
+--                     if newGoals `isInst` goal
+--                     then
+--                       -- Gen (Leaf newGoals state) newGoals gen2
+--                       case findBestByComplexity env' state goal of
+--                         Just (ls, g, rs) ->
+--                           let (unified, gamma) = oneStep g env' state in
+--                           let children =
+--                                 map (\(goals, subst) ->
+--                                         let goals' = wrap ls rs goals in
+--                                         nullGoals goals' subst $
+--                                           go (addAnc goals') gamma seen' subst
+--                                     )
+--                                     unified in
+--                           or children (addAnc goal) state
+--                     else
+--                       -- trace (printf "\nGeneralization\nGoal: %s\nAnc: %s\nGeneralization: %s\nEverythingElse: %s\n" (show goal) (show g) (show newGoals) (show everythingElse)) $
+--                       let ch = go (LC.Descend newGoals ancs') env' seen' state in
+--                       if null gen2
+--                       then ch
+--                       else Gen ch newGoals gen2
+--               in
+--               if null everythingElse
+--               then firstChild
+--               else
+--                 let secondChild = go (LC.Descend everythingElse ancs') env' seen' state in
+--                 Split [firstChild, secondChild] (newGoals ++ everythingElse) state
+--             Nothing ->
+--               trace "\nnot embedded\n" $
+--               case if length goal == 1
+--                    then Just ([], head goal, [])
+--                    else findBestByComplexity env state goal of
+--                 Just (ls, g, rs) ->
+--                   let (unified, gamma) = oneStep g env state in
+--                   let children =
+--                         map (\(goals, subst) ->
+--                                 let goals' = wrap ls rs goals in
+--                                 nullGoals goals' subst $
+--                                   go (addAnc goals') gamma seen' subst
+--                             )
+--                             unified in
+--                   or children (addAnc goal) state
+--                 Nothing ->
+--                   -- Prune goal state
+--                   let ch = map (\g -> go (addAnc [g]) env seen' state) goal in
+--                   Split ch goal state
+--     wrap left right x = left ++ x ++ right
+--     nullGoals goals subst v = if null goals then leaf subst else v
+--       -- variantCheck curGoal (goal : seen) || isJust (find (`embed` curGoal) (goal : ancs))
 
 -- nonConjunctive :: Program -> (NCTree, G S, [S])
 -- nonConjunctive (Program defs goal) =
@@ -434,13 +553,13 @@ collectSubsts (Or ch _ _) =
     mapMaybe go ch
   where
     go Fail         = Nothing
-    go (Success s)  = Just s
+    go (Success s _) = Just s
     go (Or _ _ s)   = Just s
     go (Conj _ _ s) = Just s
     go (Gen _ _ _)  = Nothing
-    go (Leaf _ s)   = Just s
-collectSubsts (Leaf _ s) = [s]
-collectSubsts x = trace (printf "\nPattern matching Failed on\n%s\n" $ show x) []
+    go (Leaf _ s _) = Just s
+collectSubsts (Leaf _ s _) = [s]
+collectSubsts x = []
 
 isConflicting :: E.Sigma -> E.Sigma -> Bool
 isConflicting s1 s2 =

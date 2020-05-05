@@ -22,15 +22,27 @@ query1   = Program tree $ fresh ["a", "b", "c", "d"] (call "checkAnswer" [V "a",
 add :: [Def]
 add = [addDef]
 
+-- addDef :: Def
+-- addDef =
+--     Def "add" ["a", "b", "q193"] (
+--       ((V "a" === C "o" []) &&&
+--       (V "b" === V "q193")) |||
+--       (fresh ["x"] (
+--         (V "a" === C "s" [V "x"]) &&&
+--         (call "add" [V "x", C "s" [V "b"], V "q193"])))
+--     )
+
 addDef :: Def
 addDef =
-    Def "add" ["a", "b", "q193"] (
-      ((V "a" === C "o" []) &&&
-      (V "b" === V "q193")) |||
-      (fresh ["x"] (
-        (V "a" === C "s" [V "x"]) &&&
-        (call "add" [V "x", C "s" [V "b"], V "q193"])))
+    ( Def "add" ["x", "y", "z"]
+        (
+          x === C "o" []  &&& z === y |||
+          fresh ["x'", "z'"]
+            (x === C "s" [x'] &&& z === C "s" [z'] &&& call "add" [x', y, z'])
+        )
     )
+  where
+    [x, y, z, x', z'] = map V ["x", "y", "z", "x'", "z'"]
 
 goe :: [Def]
 goe = [goeDef]

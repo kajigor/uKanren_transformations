@@ -28,9 +28,9 @@ lambda = Program evalo $ fresh ["m", "n"] (call "evalo" [V "m", V "n"])
 runNc l = runTest (NC.nonConjunctive l)
 
 runProp = do
-    runNc 33 "prop"  prop
-    runNc 33 "prop1" prop1
-    runNc 33 "prop2" prop2
+    runNc (-1) "prop"  prop
+    runNc (-1) "prop1" prop1
+    runNc (-1) "prop2" prop2
     runNc (-1) "prop3" prop3
     runNc (-1) "prop4" prop4
     runNc (-1) "prop'" prop'
@@ -39,6 +39,10 @@ runProp = do
     runNc (-1) "prop2'''" prop2'''
     runNc (-1) "propPlain" propPlain
     runNc (-1) "propPlain'" propPlain'
+    runNc (-1) "prop''1" prop''1
+    runNc (-1) "prop''2" prop''2
+    runNc (-1) "prop''3" prop''3
+
   where
     -- won't terminate: accumulator in assoco
     prop       = Program.Prop.query
@@ -54,32 +58,35 @@ runProp = do
     prop2'''   = Program.Prop.query2'''
     propPlain  = Program.Prop.plainQuery
     propPlain' = Program.Prop.plainQuery'
+    prop''1    = Program.Prop.query''1
+    prop''2    = Program.Prop.query''2
+    prop''3    = Program.Prop.query''3
 
 runBottles = do
-    runNc 100 "bottles" Program.Bottles.query
+    runNc (150) "bottles" Program.Bottles.query
 
 runBridge = do
-    runNc 100 "bridge" Program.Bridge.query
+    runNc (-1) "bridge" Program.Bridge.query
     runNc (-1) "bridge2" Program.Bridge2.query
 
 runDesert = do
-    -- runNc (-1) "desert"    Program.Desert.query
-    -- runNc (-1) "desert'"   Program.Desert.query'
-    -- runNc (-1) "desert''"  Program.Desert.query''
-    -- runNc (-1) "desert'''" Program.Desert.query'''
-    runNc 20 "desert1" Program.Desert.query1
+    runNc (-1) "desert"    Program.Desert.query
+    runNc (-1) "desert'"   Program.Desert.query'
+    runNc (-1) "desert''"  Program.Desert.query''
+    runNc (-1) "desert'''" Program.Desert.query'''
+    runNc (-1) "desert1" Program.Desert.query1
 
 unit_nonConjunctiveTest = do
   runProp
-  runBottles
-  runBridge
-  runDesert
-  runNc (-1) "da" dA
+  -- runBottles
+  -- runBridge
+  -- runDesert
+  -- runNc (-1) "da" dA
 
-  runNc (-1) "rev" rev
-  runNc (-1) "revAcco" revAcco'
-  runNc (-1) "maxLen" maxLen
-  runNc (-1) "lambda" lambda
+  -- runNc (-1) "rev" rev
+  -- runNc (33) "revAcco" revAcco'
+  -- runNc (33) "maxLen" maxLen
+  -- runNc (33) "lambda" lambda
 
 runTest function filename goal = do
   let (tree, logicGoal, names) = function goal

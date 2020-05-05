@@ -90,11 +90,10 @@ instance Ord Complexity where
 findBestByComplexity :: E.Gamma -> E.Sigma -> [G S] -> Maybe ([G S], G S, [G S])
 findBestByComplexity gamma sigma goals =
     let estimated = map (\g -> (g, unfoldComplexity gamma sigma g)) goals in
-    -- trace (printf "\nComplexity\nGoals:\n%s\nEstimated\n%s\n" (show goals) (show estimated)) $
-    let res = pinpoint (\(Invoke name _) -> static gamma name) goals <|> throwAwayComplexity (onlySubsts estimated <|> maxBranch estimated <|> partialSubst estimated) in
-    -- let res = throwAwayComplexity (onlySubsts estimated <|> maxBranch estimated) in
-    -- trace (printf "\nResult:\n%s\n" (show res)) $
-    res
+    pinpoint (\(Invoke name _) -> static gamma name) goals
+    <|> throwAwayComplexity (onlySubsts estimated
+                             <|> maxBranch estimated
+                             <|> partialSubst estimated)
   where
     onlySubsts xs = pinpoint (\(g, compl) -> curBranches compl == substs compl) xs
     maxBranch  xs = pinpoint (\(g, compl) -> maxBranches compl > curBranches compl) xs

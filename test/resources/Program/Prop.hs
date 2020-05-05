@@ -9,10 +9,16 @@ import Prelude hiding (succ)
 fm  = C "conj" [C "var" [C "x" []], C "neg" [C "var" [C "x" []]]] -- always fails
 fm1 = C "conj" [C "var" [C "x" []], C "neg" [C "var" [C "y" []]]]
 
-
 query  = Program evalo $ fresh ["st"] (call "evalo" [V "st", fm, trueo])
 query1 = Program evalo $ fresh ["st"] (call "evalo" [V "st", fm, falso])
 query2 = Program evalo $ fresh ["st"] (call "evalo" [V "st", fm1, trueo])
+
+fm'  = C "conj" [C "var" [zero], C "neg" [C "var" [zero]]] -- always fails
+fm1' = C "conj" [C "var" [zero], C "neg" [C "var" [succ zero]]]
+
+query''1 = Program evalo'' $ fresh ["st"] (call "evalo" [V "st", fm', trueo])
+query''2 = Program evalo'' $ fresh ["st"] (call "evalo" [V "st", fm', falso])
+query''3 = Program evalo'' $ fresh ["st"] (call "evalo" [V "st", fm1', trueo])
 
 query3 = Program evalo $ fresh ["fm", "st"]     (call "evalo" [V "st", V "fm", trueo])
 query4 = Program evalo $ fresh ["x", "y", "st"] (call "evalo" [V "st",  C "conj" [V "x", C "neg" [V "y"]], trueo])

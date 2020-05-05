@@ -23,16 +23,16 @@ instance DotPrinter NCTree where
       go subst (Conj ch gs s)  = Conj (map (go s) ch) gs (s \\ subst)
       go subst (Or ch gs s)    = Or (map (go s) ch) gs (s \\ subst)
       go subst (Gen ch gs gen) = Gen (go subst ch) gs gen
-      go subst (Leaf gs s)     = Leaf gs (s \\ subst)
+      go subst (Leaf gs s e)   = Leaf gs (s \\ subst) e
       go subst (Split ch gs s) = Split (map (go s) ch) gs (s \\ subst)
       go subst (Prune gs s)    = Prune gs (s \\ subst)
-      go subst (Success s)     = Success (s \\ subst)
+      go subst (Success s e)   = Success (s \\ subst) e
       go _ Fail                = Fail
 
 instance Dot NCTree where
-  dot (Leaf gs s) = printf "Leaf <BR/> %s <BR/> %s" (dot gs) (E.dotSigma s)
+  dot (Leaf gs s _) = printf "Leaf <BR/> %s <BR/> %s" (dot gs) (E.dotSigma s)
   dot Fail = "_|_"
-  dot (Success s) = printf "Success <BR/> %s" (E.dotSigma s)
+  dot (Success s _) = printf "Success <BR/> %s" (E.dotSigma s)
   dot (Or _ g s) = printf "Or <BR/> %s <BR/> %s" (dot $ LC.getCurr g) (E.dotSigma s)
   dot (Conj _ gs s)  = printf "And <BR/> %s <BR/> %s" (dot gs) (E.dotSigma s)
   dot (Gen _ g gen) = printf "Gen <BR/> %s <BR/> %s"  (dot g) (E.dotSigma gen)
