@@ -194,7 +194,9 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
     erasure        = removeRedundantArgs (mainFuncs ++ concat internalFuncs) initialErasure
 
     goalAfterPurification  = snd $ purify "main" args goalWithoutLets
-    defsAfterPurification  = {- filter (not . null . snd3) $ -} map (\(Def n a g) -> let (a', g') = purify n a g in (Def n a' g')) defs
+    defsAfterPurification  = filter (\(Def _ a _) -> not $ null a) $ map (\(Def n a g) -> let (a', g') = purify n a g in (Def n a' g')) defs
+
+    -- defsAfterPurification  = {- filter (not . null . snd3) $ -} map (\(Def n a g) -> let (a', g') = purify n a g in (Def n a' g')) defs
 
     purify :: Name -> [X] -> G X -> ([X], G X)
     purify n a = let a' = applyErasure erasure n a in

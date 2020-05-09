@@ -4,12 +4,12 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Embed where 
+module Embed where
 
 import Syntax
 import qualified Data.Map.Strict as Map
 import Data.Maybe (isJust)
-import Data.List (subsequences)
+import Data.List (subsequences, find)
 
 -- ordered subconjunctions of the proper length
 subconjs :: [a] -> Int -> [[a]]
@@ -99,6 +99,9 @@ class (Eq b, Show b, Show a) => Instance a b | b -> a where
 
   variantCheck :: Foldable t => b -> t b -> Bool
   variantCheck g = any (isVariant g)
+
+  findVariant :: Foldable t => b -> t b -> Maybe b
+  findVariant g = find (isVariant g)
 
 instance (Eq a, Ord a, Show a) => Instance a (Term a) where
   inst (V v) u subst =

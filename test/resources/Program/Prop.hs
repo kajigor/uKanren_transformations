@@ -55,11 +55,11 @@ evalo'Def :: Def
 evalo'Def =
     ( Def "evalo" ["st", "fm", "u"]
       (
-        fresh ["x", "y"]
+        fresh ["x", "y", "z"]
         (
           (
-            fm === C "var" [x] &&&
-            call "elemo" [x, st, u]
+            fm === C "var" [z] &&&
+            call "elemo" [z, st, u]
           ) |||
           (
             fm === C "conj" [x, y] &&&
@@ -96,7 +96,7 @@ evalo'Def =
         )
       )
     )
-    where [st, fm, u, x, y] = map V ["st", "fm", "u", "x", "y"]
+    where [st, fm, u, x, y, z] = map V ["st", "fm", "u", "x", "y", "z"]
 
 elemo :: [Def]
 elemo = [elemoDef]
@@ -123,7 +123,7 @@ evalo''Def :: Def
 evalo''Def =
     ( Def "evalo" ["st", "fm", "u"]
       (
-        fresh ["x", "y", "v", "w"]
+        fresh ["x", "y", "v", "w", "z"]
         (
           (
             fm === C "conj" [x, y] &&&
@@ -143,14 +143,14 @@ evalo''Def =
             call "noto" [v, u]
           ) |||
           (
-            fm === C "var" [x] &&&
-            call "elemo" [x, st, u]
+            fm === C "var" [z] &&&
+            call "elemo" [z, st, u]
           )
         )
       )
     )
     where
-      [st, fm, u, x, y, v, w] = map V ["st", "fm", "u", "x", "y", "v", "w"]
+      [st, fm, u, x, y, z, v, w] = map V ["st", "fm", "u", "x", "y", "z", "v", "w"]
 
 evalo''' :: [Def]
 evalo''' = evalo'''Def : ando ++ oro ++ noto ++ elemo
@@ -268,7 +268,7 @@ evaloDef :: Def
 evaloDef =
     ( Def "evalo" ["st", "fm", "u"]
       (
-        fresh ["x", "y", "v", "w"]
+        fresh ["x", "y", "v", "w", "var"]
         (
           (
             fm === C "conj" [x, y] &&&
@@ -288,14 +288,14 @@ evaloDef =
             call "noto" [v, u]
           ) |||
           (
-            fm === C "var" [x] &&&
-            call "assoco" [x, st, u]
+            fm === C "var" [var] &&&
+            call "assoco" [var, st, u]
           )
         )
       )
     )
     where
-      [st, fm, u, x, y, v, w] = map V ["st", "fm", "u", "x", "y", "v", "w"]
+      [st, fm, u, x, y, v, w, var] = map V ["st", "fm", "u", "x", "y", "v", "w", "var"]
 
 
 -- let rec evalo st fm u = ocanren (

@@ -1,23 +1,32 @@
 module Test.NonConjunctive  where
 
-import           Test.Helper           (manyAssert, test, test2)
+import           Test.Helper                    (Assertion, manyAssert, test,
+                                                 test2)
 
-import qualified NonConjunctive.Unfold as NC
+import           Control.Applicative            ((<|>))
+import           Control.Monad                  (guard)
+import           Debug.Trace                    (traceM)
+import           NonConjunctive.Residualization
+import qualified NonConjunctive.Unfold          as NC
+import qualified OCanrenize                     as OC
 import           Printer.Dot
-import           Printer.NCTree        ()
+import           Printer.NCTree                 ()
 import qualified Program.Bottles
 import qualified Program.Bridge
 import qualified Program.Bridge2
 import qualified Program.Desert
-import           Program.List          (maxLengtho, nil, revAcco, reverso, (%))
-import           Program.Programs      (doubleAppendo)
+import           Program.List                   (maxLengtho, nil, revAcco,
+                                                 reverso, (%))
+import           Program.Programs               (doubleAppendo)
 import qualified Program.Prop
-import           Program.Stlc          (evalo)
+import           Program.Stlc                   (evalo)
+import           Purification
+import           Residualize                    (vident)
 import           Syntax
 import           System.Directory
-import           System.Process        (system)
+import           System.Process                 (system)
 import           Text.Printf
-import           Util.Miscellaneous    (escapeTick)
+import           Util.Miscellaneous             (escapeTick)
 
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
 revAcco' = Program revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])
@@ -25,7 +34,7 @@ rev = Program reverso $ fresh ["x", "y"] (call "reverso" [V "x", V "y"])
 maxLen = Program maxLengtho $ fresh ["xs", "m", "l"] (call "maxLengtho" [V "xs", V "m", V "l"])
 lambda = Program evalo $ fresh ["m", "n"] (call "evalo" [V "m", V "n"])
 
-runNc l = runTest (NC.nonConjunctive l)
+runNc l = runTest Nothing (NC.nonConjunctive l)
 
 runProp = do
     runNc (-1) "prop"  prop
@@ -33,15 +42,15 @@ runProp = do
     runNc (-1) "prop2" prop2
     runNc (-1) "prop3" prop3
     runNc (-1) "prop4" prop4
-    runNc (-1) "prop'" prop'
-    runNc (-1) "prop''" prop''
-    runNc (-1) "prop1'''" prop1'''
-    runNc (-1) "prop2'''" prop2'''
+    runNc (-1) "prop_" prop'
+    runNc (-1) "prop__" prop''
+    runNc (-1) "prop1___" prop1'''
+    runNc (-1) "prop2___" prop2'''
     runNc (-1) "propPlain" propPlain
-    runNc (-1) "propPlain'" propPlain'
-    runNc (-1) "prop''1" prop''1
-    runNc (-1) "prop''2" prop''2
-    runNc (-1) "prop''3" prop''3
+    runNc (-1) "propPlain_" propPlain'
+    runNc (-1) "prop__1" prop''1
+    runNc (-1) "prop__2" prop''2
+    runNc (-1) "prop__3" prop''3
 
   where
     -- won't terminate: accumulator in assoco
@@ -63,7 +72,7 @@ runProp = do
     prop''3    = Program.Prop.query''3
 
 runBottles = do
-    runNc (150) "bottles" Program.Bottles.query
+    runNc (-1) "bottles" Program.Bottles.query
 
 runBridge = do
     runNc (-1) "bridge" Program.Bridge.query
@@ -71,9 +80,9 @@ runBridge = do
 
 runDesert = do
     runNc (-1) "desert"    Program.Desert.query
-    runNc (-1) "desert'"   Program.Desert.query'
-    runNc (-1) "desert''"  Program.Desert.query''
-    runNc (-1) "desert'''" Program.Desert.query'''
+    runNc (-1) "desert_"   Program.Desert.query'
+    runNc (-1) "desert__"  Program.Desert.query''
+    runNc (-1) "desert___" Program.Desert.query'''
     runNc (-1) "desert1" Program.Desert.query1
 
 unit_nonConjunctiveTest = do
@@ -81,15 +90,16 @@ unit_nonConjunctiveTest = do
   -- runBottles
   -- runBridge
   -- runDesert
-  -- runNc (-1) "da" dA
+  runNc (-1) "da" dA
 
-  -- runNc (-1) "rev" rev
-  -- runNc (33) "revAcco" revAcco'
-  -- runNc (33) "maxLen" maxLen
-  -- runNc (33) "lambda" lambda
+  runNc (-1) "rev" rev
+  runNc (-1) "revAcco" revAcco'
+  runNc (-1) "maxLen" maxLen
+  -- runNc (55) "lambda" lambda
 
-runTest function filename goal = do
-  let (tree, logicGoal, names) = function goal
+runTest env function filename goal = (do
+  traceM filename
+  let transformed@(tree, logicGoal, names) = function goal
   let path = printf "test/out/nc/%s" filename
   exists <- doesDirectoryExist path
   if exists
@@ -98,6 +108,15 @@ runTest function filename goal = do
   createDirectoryIfMissing True path
   printTree (printf "%s/tree.dot" path) tree
   system (printf "dot -O -Tpdf %s/*.dot" (escapeTick path))
+  guard (NC.noPrune tree)
+  let prog = residualize transformed
+  writeFile (printf "%s/%s.before.pur" path filename) (show prog)
+  let pur@(goal, xs, defs) = purification (prog, vident <$> reverse names)
+  let prog = Program defs goal
+  writeFile (printf "%s/%s.pur" path filename) (show prog)
+  let ocamlCodeFileName = printf "%s/%s.ml" path filename
+  OC.topLevel ocamlCodeFileName "topLevel" env pur
+  ) <|>
   return ()
 
 unit_isConflicting = do

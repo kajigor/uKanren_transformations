@@ -41,3 +41,9 @@ uKanren-transformation.cabal
 *.gz
 
 *.out
+
+*.cmi
+
+*.cmo
+
+test/ocamlTest/peval/peval

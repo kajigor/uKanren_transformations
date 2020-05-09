@@ -5,7 +5,7 @@ import qualified CPD.LocalControl      as LC
 import           Data.List             ((\\))
 import           Debug.Trace           (trace)
 import qualified Eval                  as E
-import           NonConjunctive.Unfold (NCTree (..))
+import           NonConjunctive.Unfold (NCTree (..), restrictSubsts)
 import           Printer.Dot
 import           Syntax
 import           Text.Printf
@@ -17,20 +17,10 @@ instance DotPrinter NCTree where
   labelNode t@(Gen ch _ _)   = addChild    t ch
   labelNode t                = addLeaf     t
 
-  simplify =
-      go []
-    where
-      go subst (Conj ch gs s)  = Conj (map (go s) ch) gs (s \\ subst)
-      go subst (Or ch gs s)    = Or (map (go s) ch) gs (s \\ subst)
-      go subst (Gen ch gs gen) = Gen (go subst ch) gs gen
-      go subst (Leaf gs s e)   = Leaf gs (s \\ subst) e
-      go subst (Split ch gs s) = Split (map (go s) ch) gs (s \\ subst)
-      go subst (Prune gs s)    = Prune gs (s \\ subst)
-      go subst (Success s e)   = Success (s \\ subst) e
-      go _ Fail                = Fail
+  simplify = restrictSubsts
 
 instance Dot NCTree where
-  dot (Leaf gs s _) = printf "Leaf <BR/> %s <BR/> %s" (dot gs) (E.dotSigma s)
+  dot (Leaf gs s _ v) = printf "Leaf <BR/> %s <BR/> %s <BR/> %s" (dot gs) (E.dotSigma s) (dot v)
   dot Fail = "_|_"
   dot (Success s _) = printf "Success <BR/> %s" (E.dotSigma s)
   dot (Or _ g s) = printf "Or <BR/> %s <BR/> %s" (dot $ LC.getCurr g) (E.dotSigma s)
