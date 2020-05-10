@@ -19,191 +19,16 @@ module Helper =
     let var  x   = inj @@ F.distrib (Var x)
     let neg  x   = inj @@ F.distrib (Neg x)
 
-    let rec reify_f f = F.reify reify_f Std.Nat.reify f
-
-    let var_to_string r = (show(logic) (show(bool))) (r#reify reify)
-    let fm_to_string fm = (show(f)) (fm#reify reify_f)
-
-    let show_env c = show(Std.List.logic) (show(logic) (show(bool))) c
-    let reify_env = Std.List.reify reify
-
-    let run_st textRepr r =
-      Printf.printf "\n-----------------------------\n%s\n" textRepr;
-      List.iter (fun s ->
-          Printf.printf "%s\n" @@ show_env
-                                  (s#reify reify_env)) @@ RStream.take ~n:10 @@
-          r (fun st -> st)
-
-    let run_st1 textRepr r =
-      Printf.printf "\n-----------------------------\n%s\n" textRepr;
-      List.iter (fun s ->
-          Printf.printf "%s\n" @@ show_env
-                                  (s#reify reify_env)) @@ RStream.take ~n:3 @@
-          r (fun st r -> st)
-
-    let run_st2 textRepr r =
-      Printf.printf "\n-----------------------------\n%s\n" textRepr;
-      List.iter (fun s ->
-          Printf.printf "%s\n" @@ show_env
-                                  (s#reify reify_env)) @@ RStream.take ~n:3 @@
-          r (fun st r t -> st)
-
-    let run_formula n textRepr r =
-      Printf.printf "-----------------------------\n%s\n" textRepr;
-      List.iter (fun (q, r, fm) -> Printf.printf "O:\t%s\tS(O):\t%s\tFm:\t%s\n" (var_to_string q) (var_to_string r) (fm_to_string fm)) @@ RStream.take ~n:n @@
-                r (fun q r fm -> (q, r, fm))
+    let run_time n text r =
+      let t = Sys.time() in
+      let fx = RStream.take ~n:n @@ r (fun _ _ fm -> fm) in
+      Printf.printf "%s: %fs\n" text (Sys.time() -. t);
+      fx
   end
-(*
+
 module Ecce =
   struct
     open Helper
-
-    (* let rec eval__1 st fm r =
-      conde [
-        fresh (a b c) (
-              st === Std.List.(%) a b
-          &&& fm === var c
-          &&& elem__2 c a b (!!true)
-        );
-        fresh (a b c) (
-              st === a
-          &&& fm === conj b c
-          &&& eval__1 a b
-          &&& eval__1 a c
-        );
-        fresh (a b c) (
-              st === a
-          &&& fm === disj b c
-          &&& eval_conj__3 a b c
-        );
-        fresh (a b c d e f g h i ) (
-              st === a
-          &&& fm === not b
-          &&& eval__4 a b
-        )
-      ]
-    and elem__2 n x xs r =
-      conde [
-        fresh (a b) (n === Std.Nat.zero &&& x === a &&& xs === b &&& r === a);
-        fresh (a b c d e) (
-              n === Std.Nat.succ a
-          &&& x === b
-          &&& xs === Std.List.(%) c d
-          &&& r === e
-          &&& elem__2 a c d e
-        )
-      ]
-    and eval_conj__3 xs fm r =
-      conde [
-        fresh (a b c d e f g) (
-          xs === Std.List.(%) a b
-          &&& fm === var c
-          &&& r === d
-          &&& elem__2 c a b e
-          &&& eval__13 a b d f
-          &&& nand__8 e g
-          &&& nand_conj__14 f g
-        );
-        fresh (a b c d e f g h i) (
-          xs === a
-          &&& fm === conj b c
-          &&& r === d
-          &&& eval__6 a b e
-          &&& eval__6 a c f
-          &&& nand_conj__12 e f g
-          &&& eval__6 a d h
-          &&& nand__8 g i
-          &&& nand_conj__14 h i
-        );
-        fresh (a b c d e f g h i j) (
-          xs === a
-          &&& fm === disj b c
-          &&& r === d
-          &&& eval__6 a b e
-          &&& eval__6 a c f
-          &&& nand__8 e g
-          &&& nand_conj__9 f g h
-          &&& eval__6 a d i
-          &&& nand__8 h j
-          &&& nand_conj__14 i j
-        );
-        fresh (a b c d e) (
-          xs === a
-          &&& fm === not b
-          &&& r === c
-          &&& eval_conj__15 a b c d e
-          &&& nand__16 d e
-        )
-      ]
-    and eval__4 st fm =
-      conde [
-        fresh (a b c) (
-          st === % a b
-          &&& fm === var c
-          &&& elem__2 c a b false
-        );
-        fresh (a b c d) (
-          st = a
-          & fm = conj b c
-          & eval_conj__5 a b d c d
-        );
-        fresh () (
-          st = a
-          & fm = disj b c
-          & eval__4 a b
-          & eval__4 a c
-        );
-        fresh ( ) (
-          st = a
-          & fm = not b
-          & eval__1 a b
-        )
-      ]
-    and eval_conj__5 st fm x y z =
-      conde [
-        fresh () (
-          st = % a b
-          & fm = var c
-          & x = d
-          & y = e
-          & z = f
-          & elem__2 c a b d
-          & eval__13 a b e g
-          & nand__7 f g (!!true)
-        );
-        fresh () (
-          st = a
-          fm = conj b c
-          x = d
-          y = e
-          z = f
-        );
-        fresh () ();
-        fresh () ();
-      ]
-
-
-  eval_conj__5(a conj(b c) d e f) :-
-    eval__6(a b g)
-    eval__6(a c h)
-    nand_conj__12(g h d)
-    eval__6(a e i)
-    nand__7(f i (!!true))
-  eval_conj__5(a disj(b c) d e f) :-
-    eval__6(a b g)
-    eval__6(a c h)
-    nand__8(g i)
-    nand_conj__9(h i d)
-    eval__6(a e j)
-    nand__7(f j (!!true))
-  eval_conj__5(a not(b) c d e) :-
-    eval__6(a b f)
-    nand__8(c f)
-    eval__6(a d g)
-    nand__7(e g (!!true))
-
-
-    let topLevel st fm = eval__1 st fm *)
 
 
     let topLevel y1 y2 =
@@ -481,41 +306,11 @@ module Ecce =
       eval__1 y1 y2
 
     let _ =
-      let x = Std.nat 0 in
-      let y = Std.nat 1 in
-
-      run_st "not x && x" @@
-      run q (fun st ->
-        topLevel st (conj (neg @@ var x) (var x))) ;
-
-      run_st "not x && y" @@
-      run q (fun st ->
-        topLevel st (conj (neg @@ var x) (var y)));
-
-      run_st "not x || x" @@
-      run q (fun st ->
-        topLevel st (disj (neg @@ var x) (var x)));
-
-
-    (*
-      (* won't terminate *)
-      run_fm1 "\\forall x . not x && x" @@
-      run qr (fun st r ->
-        topLevel st (conj (neg @@ var r) (var r))) ;
-    *)
-
-      run_st2 "\\forall x y . not x && y" @@
-      run qrs (fun st r t ->
-        topLevel st (conj (neg @@ var r) (var t))) ;
-
-      run_st1 "\\forall x . not x || x" @@
-      run qr (fun st r ->
-        topLevel st (disj (neg @@ var r) (var r))) ;
-
-      run_formula 10000 "[x, y]" @@
+      run_time 10000 "ecce" @@
       run qrs (fun r t fm ->
         topLevel (Std.(%<) r t) fm)
-  end *)
+  end
+
 
 module Original =
   struct
@@ -544,44 +339,13 @@ module Original =
     let topLevel st fm = evalo st fm (!!true)
 
     let _ =
-      let x = Std.nat 0 in
-      let y = Std.nat 1 in
-
-      run_st "not x && x" @@
-      run q (fun st ->
-        topLevel st (conj (neg @@ var x) (var x))) ;
-
-      run_st "not x && y" @@
-      run q (fun st ->
-        topLevel st (conj (neg @@ var x) (var y)));
-
-      run_st "not x || x" @@
-      run q (fun st ->
-        topLevel st (disj (neg @@ var x) (var x)));
-
-
-    (*
-      (* won't terminate *)
-      run_fm1 "\\forall x . not x && x" @@
-      run qr (fun st r ->
-        topLevel st (conj (neg @@ var r) (var r))) ;
-    *)
-
-      run_st2 "\\forall x y . not x && y" @@
-      run qrs (fun st r t ->
-        topLevel st (conj (neg @@ var r) (var t))) ;
-
-      run_st1 "\\forall x . not x || x" @@
-      run qr (fun st r ->
-        topLevel st (disj (neg @@ var r) (var r))) ;
-
-      run_formula 10000 "[x, y]" @@
+      run_time 10000 "original" @@
       run qrs (fun r t fm ->
         topLevel (Std.(%<) r t) fm)
   end
 
 
-(* module Transformed =
+module Transformed =
   struct
     open Helper
 
@@ -613,39 +377,7 @@ module Original =
       _evalo x0 x1
 
     let _ =
-      let x = Std.nat 0 in
-      let y = Std.nat 1 in
-
-      run_st "not x && x" @@
-      run q (fun st ->
-        topLevel st (conj (neg @@ var x) (var x))) ;
-
-      run_st "not x && y" @@
-      run q (fun st ->
-        topLevel st (conj (neg @@ var x) (var y)));
-
-      run_st "not x || x" @@
-      run q (fun st ->
-        topLevel st (disj (neg @@ var x) (var x)));
-
-
-    (*
-      (* won't terminate *)
-      run_fm1 "\\forall x . not x && x" @@
-      run qr (fun st r ->
-        topLevel st (conj (neg @@ var r) (var r))) ;
-    *)
-
-      run_st2 "\\forall x y . not x && y" @@
-      run qrs (fun st r t ->
-        topLevel st (conj (neg @@ var r) (var t))) ;
-
-      run_st1 "\\forall x . not x || x" @@
-      run qr (fun st r ->
-        topLevel st (disj (neg @@ var r) (var r))) ;
-
-      run_formula 10000 "[x, y]" @@
+      run_time 10000 "transformed" @@
       run qrs (fun r t fm ->
         topLevel (Std.(%<) r t) fm)
-
-  end *)
+  end
