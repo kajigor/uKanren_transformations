@@ -38,6 +38,7 @@ dependencies:
 - tasty
 - tasty-hedgehog
 - tasty-hunit
+- parsec
 
 ghc-options:
   - -fwarn-unused-imports

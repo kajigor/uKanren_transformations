@@ -24,9 +24,11 @@ import           Purification
 import           Residualize                    (vident)
 import           Syntax
 import           System.Directory
+import           System.IO
 import           System.Process                 (system)
 import           Text.Printf
 import           Util.Miscellaneous             (escapeTick)
+import           Util.ToProlog
 
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
 revAcco' = Program revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])
@@ -118,6 +120,18 @@ runTest env function filename goal = (do
   OC.topLevel ocamlCodeFileName "topLevel" env pur
   ) <|>
   return ()
+
+unit_ecce = do
+    test "ecce_prop_last.txt"
+  where
+    test fileName = do
+      handle <- openFile fileName ReadMode
+      contents <- hGetContents handle
+      let ocamlCodeFileName = printf "%s.ml" fileName
+      let g = prologToG contents
+      let env = Nothing
+      OC.topLevel ocamlCodeFileName "topLevel" env g
+
 
 unit_isConflicting = do
   test2 NC.isConflicting [] [] False
