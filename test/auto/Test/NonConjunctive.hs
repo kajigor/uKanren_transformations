@@ -123,6 +123,7 @@ runTest env function filename goal = (do
 
 unit_ecce = do
     test "ecce_prop_last.txt"
+    test "ecce_plain.txt"
   where
     test fileName = do
       handle <- openFile fileName ReadMode

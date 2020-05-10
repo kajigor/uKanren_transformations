@@ -246,8 +246,8 @@ plainEvaloDef =
           ) |||
           (
             fm === C "neg" [x] &&&
-            call "evalo" [st, x, v] &&&
-            call "noto" [v, u]
+            call "noto" [v, u] &&&
+            call "evalo" [st, x, v]
           ) |||
           (
             fm === C "var" [z] &&&

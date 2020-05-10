@@ -47,3 +47,5 @@ uKanren-transformation.cabal
 *.cmo
 
 test/ocamlTest/peval/peval
+
+papers/miniKanren/ocanren/last/peval
