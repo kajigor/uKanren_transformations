@@ -19,6 +19,16 @@ module Helper =
     let var  x   = inj @@ F.distrib (Var x)
     let neg  x   = inj @@ F.distrib (Neg x)
 
+    let rec reify_f f = F.reify reify_f Std.Nat.reify f
+
+    let var_to_string r = (show(logic) (show(bool))) (r#reify reify)
+    let fm_to_string fm = (show(f)) (fm#reify reify_f)
+
+    let run_formula n textRepr r =
+      Printf.printf "-----------------------------\n%s\n" textRepr;
+      List.iter (fun (q, r, fm) -> Printf.printf "O:\t%s\tS(O):\t%s\tFm:\t%s\n" (var_to_string q) (var_to_string r) (fm_to_string fm)) @@ RStream.take ~n:n @@
+                r (fun q r fm -> (q, r, fm))
+
     let run_time n text r =
       let t = Sys.time() in
       let fx = RStream.take ~n:n @@ r (fun _ _ fm -> fm) in
@@ -306,7 +316,7 @@ module Ecce =
       eval__1 y1 y2
 
     let _ =
-      run_time 10000 "ecce" @@
+      run_time 1000 "ecce" @@
       run qrs (fun r t fm ->
         topLevel (Std.(%<) r t) fm)
   end
@@ -339,16 +349,46 @@ module Original =
     let topLevel st fm = evalo st fm (!!true)
 
     let _ =
-      run_time 10000 "original" @@
+      run_time 100 "original" @@
       run qrs (fun r t fm ->
         topLevel (Std.(%<) r t) fm)
   end
 
-
-module Transformed =
+  module OriginalFresh =
   struct
     open Helper
 
+    let rec elemo xs n v =
+      fresh (t n1 h) (
+        conde [
+          n === Std.Nat.zero &&& (xs === Std.( % ) h t) &&& (h === v);
+          n === Std.Nat.succ n1 &&& (xs === Std.( % ) h t) &&& (elemo t n1 v)
+        ]
+      )
+
+    let rec evalo st fm u =
+      (* fresh (x y z v w) ( *)
+        conde [
+          fresh (x y z v w) (fm === conj x y &&& evalo st x v &&& evalo st y w &&& Std.Bool.ando v w u);
+          fresh (x y z v w) (fm === disj x y &&& evalo st x v &&& evalo st y w &&& Std.Bool.oro  v w u);
+          fresh (x y z v w) (fm === neg  x   &&& evalo st x v &&& Std.Bool.noto v u);
+          fresh (x y z v w) (fm === var  z   &&& elemo st z u)
+      ]
+      (* ) *)
+
+    let topLevel st fm = evalo st fm (!!true)
+
+    let _ =
+      run_time 100 "original: fresh" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm)
+  end
+
+module TransformedOriginal =
+  struct
+    open Helper
+
+      (* original algo *)
     let topLevel x0 x1 =
       let rec _evalo y2 y3 =
         fresh (q1 q2 q3 q4 q5 q6)
@@ -377,7 +417,563 @@ module Transformed =
       _evalo x0 x1
 
     let _ =
-      run_time 10000 "transformed" @@
+      run_formula 5 "transformed" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm);
+
+      run_time 100 "transformed original" @@
       run qrs (fun r t fm ->
         topLevel (Std.(%<) r t) fm)
   end
+
+  module TransformedCFA =
+  struct
+    open Helper
+
+    let topLevel x0 x1 =
+      let rec _evalo y2 y3 =
+        fresh (q2 q1) (y3 === conj q1 q2 &&& ___evaloEvalo y2 q1 q2)
+        ||| fresh (q2 q1) (y3 === disj q1 q2 &&& (__evalo y2 q1 &&& _evalo y2 q2 ||| __evaloEvalo y2 q1 q2 ||| ___evaloEvalo y2 q1 q2))
+        ||| fresh (q1) (y3 === neg q1 &&& __evalo y2 q1)
+        ||| fresh (q3)
+              ( y3 === var q3
+              &&& ( fresh (q4) (q3 === Std.Nat.zero &&& (y2 === Std.( % ) !!true q4))
+                  ||| fresh (q4 q6 q5) (q3 === Std.Nat.succ q5 &&& (y2 === Std.( % ) q6 q4) &&& _elemo q4 q5) ) )
+      and __evalo y4 y5 =
+        fresh (q2 q1) (y5 === conj q1 q2 &&& (_evaloEvalo y4 q1 q2 ||| evaloEvalo y4 q1 q2 ||| (_evalo y4 q1 &&& __evalo y4 q2)))
+        ||| fresh (q2 q1) (y5 === disj q1 q2 &&& _evaloEvalo y4 q1 q2)
+        ||| fresh (q1) (y5 === neg q1 &&& _evalo y4 q1)
+        ||| fresh (q3)
+              ( y5 === var q3
+              &&& ( fresh (q4) (q3 === Std.Nat.zero &&& (y4 === Std.( % ) !!false q4))
+                  ||| fresh (q4 q6 q5) (q3 === Std.Nat.succ q5 &&& (y4 === Std.( % ) q6 q4) &&& elemo q4 q5) ) )
+      and evaloEvalo y6 y7 y8 = __evalo y6 y7 &&& _evalo y6 y8
+      and _evaloEvalo y9 y10 y11 = __evalo y9 y10 &&& __evalo y9 y11
+      and elemo y12 y13 =
+        fresh (q1) (y13 === Std.Nat.zero &&& (y12 === Std.( % ) !!false q1))
+        ||| fresh (q1 q3 q2) (y13 === Std.Nat.succ q2 &&& (y12 === Std.( % ) q3 q1) &&& elemo q1 q2)
+      and __evaloEvalo y14 y15 y16 = _evalo y14 y15 &&& __evalo y14 y16
+      and ___evaloEvalo y17 y18 y19 = _evalo y17 y18 &&& _evalo y17 y19
+      and _elemo y20 y21 =
+        fresh (q1) (y21 === Std.Nat.zero &&& (y20 === Std.( % ) !!true q1))
+        ||| fresh (q1 q3 q2) (y21 === Std.Nat.succ q2 &&& (y20 === Std.( % ) q3 q1) &&& _elemo q1 q2)
+      in
+      _evalo x0 x1
+
+    let _ =
+      run_formula 5 "transformed" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm);
+
+      run_time 100 "transformed: close fresh auto" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm)
+  end
+
+
+module TransformedBottle =
+  struct
+    open Helper
+    (* after fixes aimed at bottles *)
+    let topLevel x0 x1 =
+      let rec _evalo y2 y3 =
+        fresh (q1 q2 q3 q4 q5 q6)
+          ( y3 === conj q1 q2 &&& ___evaloEvalo y2 q1 q2
+          ||| (y3 === disj q1 q2 &&& (__evalo y2 q1 &&& _evalo y2 q2 ||| __evaloEvalo y2 q1 q2 ||| ___evaloEvalo y2 q1 q2))
+          ||| (y3 === neg q1 &&& __evalo y2 q1)
+          ||| (y3 === var q3 &&& (q3 === Std.Nat.zero &&& (y2 === Std.( % ) !!true q4) ||| (q3 === Std.Nat.succ q5 &&& (y2 === Std.( % ) q6 q4) &&& _elemo q4 q5)))
+          )
+      and __evalo y4 y5 =
+        fresh (q1 q2 q3 q4 q5 q6)
+          ( y5 === conj q1 q2
+          &&& (_evaloEvalo y4 q1 q2 ||| evaloEvalo y4 q1 q2 ||| (_evalo y4 q1 &&& __evalo y4 q2))
+          ||| (y5 === disj q1 q2 &&& _evaloEvalo y4 q1 q2)
+          ||| (y5 === neg q1 &&& _evalo y4 q1)
+          ||| (y5 === var q3 &&& (q3 === Std.Nat.zero &&& (y4 === Std.( % ) !!false q4) ||| (q3 === Std.Nat.succ q5 &&& (y4 === Std.( % ) q6 q4) &&& elemo q4 q5)))
+          )
+      and evaloEvalo y6 y7 y8 = __evalo y6 y7 &&& _evalo y6 y8
+      and _evaloEvalo y9 y10 y11 = __evalo y9 y10 &&& __evalo y9 y11
+      and elemo y12 y13 =
+        fresh (q1 q2 q3) (y13 === Std.Nat.zero &&& (y12 === Std.( % ) !!false q1) ||| (y13 === Std.Nat.succ q2 &&& (y12 === Std.( % ) q3 q1) &&& elemo q1 q2))
+      and __evaloEvalo y14 y15 y16 = _evalo y14 y15 &&& __evalo y14 y16
+      and ___evaloEvalo y17 y18 y19 = _evalo y17 y18 &&& _evalo y17 y19
+      and _elemo y20 y21 =
+        fresh (q1 q2 q3) (y21 === Std.Nat.zero &&& (y20 === Std.( % ) !!true q1) ||| (y21 === Std.Nat.succ q2 &&& (y20 === Std.( % ) q3 q1) &&& _elemo q1 q2))
+      in
+      _evalo x0 x1
+
+    let _ =
+      run_formula 5 "transformed" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm);
+
+      run_time 100 "transformed: bottle" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm)
+  end
+
+
+
+
+module TransformedCFNP =
+  struct
+    open Helper
+
+      (* close fresh, no purification *)
+    let topLevel x0 x1 =
+      let rec _evalo y2 y3 =
+        fresh (x7 x5 x4 x3 x2) (y3 === conj x2 x3 &&& (x4 === !!true &&& (x5 === !!true) &&& (x7 === !!false) &&& ___evaloEvalo y2 x2 x3))
+        ||| fresh (x3 x2)
+              ( y3 === disj x2 x3
+              &&& ( fresh (x8 x5 x7 x4)
+                      (x4 === !!false &&& (x7 === !!true) &&& (x5 === !!true) &&& (x8 === !!false) &&& (success &&& __evalo y2 x2 &&& (success &&& _evalo y2 x3)))
+                  ||| fresh (x8 x5 x7 x4) (x4 === !!true &&& (x7 === !!false) &&& (x5 === !!false) &&& (x8 === !!true) &&& __evaloEvalo y2 x2 x3)
+                  ||| fresh (x8 x5 x7 x4) (x4 === !!true &&& (x7 === !!false) &&& (x5 === !!true) &&& (x8 === !!false) &&& ___evaloEvalo y2 x2 x3) ) )
+        ||| fresh (x4 x2) (y3 === neg x2 &&& (x4 === !!false &&& __evalo y2 x2))
+        ||| fresh (x6)
+              ( y3 === var x6
+              &&& ( fresh (x8 x7) (x6 === Std.Nat.zero &&& (y2 === Std.( % ) x7 x8) &&& (x7 === !!true))
+                  ||| fresh (x8 x7 x9) (x6 === Std.Nat.succ x9 &&& (y2 === Std.( % ) x7 x8) &&& _elemo x8 x9) ) )
+      and __evalo y4 y5 =
+        fresh (x10 x9)
+          ( y5 === conj x9 x10
+          &&& ( fresh (x14 x12 x11) (x11 === !!false &&& (x12 === !!false) &&& (x14 === !!true) &&& _evaloEvalo y4 x9 x10)
+              ||| fresh (x14 x12 x11) (x11 === !!false &&& (x12 === !!true) &&& (x14 === !!true) &&& evaloEvalo y4 x9 x10)
+              ||| fresh (x14 x12 x11) (x11 === !!true &&& (x12 === !!false) &&& (x14 === !!true) &&& (success &&& _evalo y4 x9 &&& (success &&& __evalo y4 x10)))
+              ) )
+        ||| fresh (x15 x12 x14 x11 x10 x9)
+              (y5 === disj x9 x10 &&& (x11 === !!false &&& (x14 === !!true) &&& (x12 === !!false) &&& (x15 === !!true) &&& _evaloEvalo y4 x9 x10))
+        ||| fresh (x11 x9) (y5 === neg x9 &&& (x11 === !!true &&& _evalo y4 x9))
+        ||| fresh (x13)
+              ( y5 === var x13
+              &&& ( fresh (x15 x14) (x13 === Std.Nat.zero &&& (y4 === Std.( % ) x14 x15) &&& (x14 === !!false))
+                  ||| fresh (x15 x14 x16) (x13 === Std.Nat.succ x16 &&& (y4 === Std.( % ) x14 x15) &&& elemo x15 x16) ) )
+      and evaloEvalo y6 y7 y8 = __evalo y6 y7 &&& _evalo y6 y8
+      and _evaloEvalo y9 y10 y11 = __evalo y9 y10 &&& __evalo y9 y11
+      and elemo y12 y13 =
+        fresh (x15 x14) (y13 === Std.Nat.zero &&& (y12 === Std.( % ) x14 x15) &&& (x14 === !!false))
+        ||| fresh (x15 x14 x16) (y13 === Std.Nat.succ x16 &&& (y12 === Std.( % ) x14 x15) &&& elemo x15 x16)
+      and __evaloEvalo y14 y15 y16 = _evalo y14 y15 &&& __evalo y14 y16
+      and ___evaloEvalo y17 y18 y19 = _evalo y17 y18 &&& _evalo y17 y19
+      and _elemo y20 y21 =
+        fresh (x8 x7) (y21 === Std.Nat.zero &&& (y20 === Std.( % ) x7 x8) &&& (x7 === !!true))
+        ||| fresh (x8 x7 x9) (y21 === Std.Nat.succ x9 &&& (y20 === Std.( % ) x7 x8) &&& _elemo x8 x9)
+      in
+      _evalo x0 x1
+
+    let _ =
+      run_formula 5 "transformed" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm);
+
+      run_time 100 "transformed: close fresh, no purification" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm)
+  end
+
+module TransformedCFHU =
+  struct
+    open Helper
+
+    (* fresh close to the use, no extra unifications *)
+    let topLevel x0 x1 =
+      let rec _evalo y2 y3 =
+        fresh (x7 x5 x4 x3 x2) (y3 === conj x2 x3 &&& ___evaloEvalo y2 x2 x3)
+        ||| fresh (x3 x2)
+              ( y3 === disj x2 x3
+              &&& ( fresh (x8 x5 x7 x4)
+                      (( __evalo y2 x2 &&& _evalo y2 x3))
+                  ||| fresh (x8 x5 x7 x4) (__evaloEvalo y2 x2 x3)
+                  ||| fresh (x8 x5 x7 x4) (___evaloEvalo y2 x2 x3) ) )
+        ||| fresh (x4 x2) (y3 === neg x2 &&& (__evalo y2 x2))
+        ||| fresh (x6)
+              ( y3 === var x6
+              &&& ( fresh (x8 x7) (x6 === Std.Nat.zero &&& (y2 === Std.( % ) x7 x8) &&& (x7 === !!true))
+                  ||| fresh (x8 x7 x9) (x6 === Std.Nat.succ x9 &&& (y2 === Std.( % ) x7 x8) &&& _elemo x8 x9) ) )
+      and __evalo y4 y5 =
+        fresh (x10 x9)
+          ( y5 === conj x9 x10
+          &&& ( fresh (x14 x12 x11) ( _evaloEvalo y4 x9 x10)
+              ||| fresh (x14 x12 x11) (evaloEvalo y4 x9 x10)
+              ||| fresh (x14 x12 x11) (_evalo y4 x9 &&& __evalo y4 x10)
+              ) )
+        ||| fresh (x15 x12 x14 x11 x10 x9)
+              (y5 === disj x9 x10 &&& (_evaloEvalo y4 x9 x10))
+        ||| fresh (x11 x9) (y5 === neg x9 &&& (_evalo y4 x9))
+        ||| fresh (x13)
+              ( y5 === var x13
+              &&& ( fresh (x15 x14) (x13 === Std.Nat.zero &&& (y4 === Std.( % ) x14 x15) &&& (x14 === !!false))
+                  ||| fresh (x15 x14 x16) (x13 === Std.Nat.succ x16 &&& (y4 === Std.( % ) x14 x15) &&& elemo x15 x16) ) )
+      and evaloEvalo y6 y7 y8 = __evalo y6 y7 &&& _evalo y6 y8
+      and _evaloEvalo y9 y10 y11 = __evalo y9 y10 &&& __evalo y9 y11
+      and elemo y12 y13 =
+        fresh (x15 x14) (y13 === Std.Nat.zero &&& (y12 === Std.( % ) x14 x15) &&& (x14 === !!false))
+        ||| fresh (x15 x14 x16) (y13 === Std.Nat.succ x16 &&& (y12 === Std.( % ) x14 x15) &&& elemo x15 x16)
+      and __evaloEvalo y14 y15 y16 = _evalo y14 y15 &&& __evalo y14 y16
+      and ___evaloEvalo y17 y18 y19 = _evalo y17 y18 &&& _evalo y17 y19
+      and _elemo y20 y21 =
+        fresh (x8 x7) (y21 === Std.Nat.zero &&& (y20 === Std.( % ) x7 x8) &&& (x7 === !!true))
+        ||| fresh (x8 x7 x9) (y21 === Std.Nat.succ x9 &&& (y20 === Std.( % ) x7 x8) &&& _elemo x8 x9)
+      in
+      _evalo x0 x1
+
+    let _ =
+      run_formula 5 "transformed" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm);
+
+      run_time 100 "transformed: close fresh, extra unifs removed by hand" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm)
+  end
+
+(* module TransformedTFNP =
+  struct
+    open Helper
+
+    (* top level fresh, no purification *)
+    let topLevel x0 x1 =
+      let rec evalo y0 y1 =
+        fresh (x9 x6 x8 x7 x5 x4 x3 x2)
+          ( success
+          &&& ( y1 === conj x2 x3
+              &&& (x4 === !!true &&& (x5 === !!true) &&& (x7 === !!false) &&& ___evaloEvalo y0 x2 x3)
+              ||| ( y1 === disj x2 x3
+                  &&& ( x4 === !!false &&& (x7 === !!true) &&& (x5 === !!true) &&& (x8 === !!false)
+                      &&& (success &&& __evalo y0 x2 &&& (success &&& _evalo y0 x3))
+                      ||| (x4 === !!true &&& (x7 === !!false) &&& (x5 === !!false) &&& (x8 === !!true) &&& __evaloEvalo y0 x2 x3)
+                      ||| (x4 === !!true &&& (x7 === !!false) &&& (x5 === !!true) &&& (x8 === !!false) &&& ___evaloEvalo y0 x2 x3) ) )
+              ||| (y1 === neg x2 &&& (x4 === !!false &&& __evalo y0 x2))
+              ||| ( y1 === var x6
+                  &&& ( x6 === Std.Nat.zero
+                      &&& (y0 === Std.( % ) x7 x8)
+                      &&& (x7 === !!true)
+                      ||| (x6 === Std.Nat.succ x9 &&& (y0 === Std.( % ) x7 x8) &&& _elemo x8 x9) ) ) ) )
+      and _evalo y2 y3 =
+        fresh (x9 x6 x8 x7 x5 x4 x3 x2)
+          ( success
+          &&& ( y3 === conj x2 x3
+              &&& (x4 === !!true &&& (x5 === !!true) &&& (x7 === !!false) &&& ___evaloEvalo y2 x2 x3)
+              ||| ( y3 === disj x2 x3
+                  &&& ( x4 === !!false &&& (x7 === !!true) &&& (x5 === !!true) &&& (x8 === !!false)
+                      &&& (success &&& __evalo y2 x2 &&& (success &&& _evalo y2 x3))
+                      ||| (x4 === !!true &&& (x7 === !!false) &&& (x5 === !!false) &&& (x8 === !!true) &&& __evaloEvalo y2 x2 x3)
+                      ||| (x4 === !!true &&& (x7 === !!false) &&& (x5 === !!true) &&& (x8 === !!false) &&& ___evaloEvalo y2 x2 x3) ) )
+              ||| (y3 === neg x2 &&& (x4 === !!false &&& __evalo y2 x2))
+              ||| ( y3 === var x6
+                  &&& ( x6 === Std.Nat.zero
+                      &&& (y2 === Std.( % ) x7 x8)
+                      &&& (x7 === !!true)
+                      ||| (x6 === Std.Nat.succ x9 &&& (y2 === Std.( % ) x7 x8) &&& _elemo x8 x9) ) ) ) )
+      and __evalo y4 y5 =
+        fresh (x16 x13 x15 x14 x12 x11 x10 x9)
+          ( success
+          &&& ( y5 === conj x9 x10
+              &&& ( x11 === !!false &&& (x12 === !!false) &&& (x14 === !!true) &&& _evaloEvalo y4 x9 x10
+                  ||| (x11 === !!false &&& (x12 === !!true) &&& (x14 === !!true) &&& evaloEvalo y4 x9 x10)
+                  ||| (x11 === !!true &&& (x12 === !!false) &&& (x14 === !!true) &&& (success &&& _evalo y4 x9 &&& (success &&& __evalo y4 x10))) )
+              ||| (y5 === disj x9 x10 &&& (x11 === !!false &&& (x14 === !!true) &&& (x12 === !!false) &&& (x15 === !!true) &&& _evaloEvalo y4 x9 x10))
+              ||| (y5 === neg x9 &&& (x11 === !!true &&& _evalo y4 x9))
+              ||| ( y5 === var x13
+                  &&& ( x13 === Std.Nat.zero
+                      &&& (y4 === Std.( % ) x14 x15)
+                      &&& (x14 === !!false)
+                      ||| (x13 === Std.Nat.succ x16 &&& (y4 === Std.( % ) x14 x15) &&& elemo x15 x16) ) ) ) )
+      and evaloEvalo y6 y7 y8 =
+        fresh (x8 x5 x7 x4)
+          (x4 === !!false &&& (x7 === !!true) &&& (x5 === !!true) &&& (x8 === !!false) &&& (success &&& __evalo y6 y7 &&& (success &&& _evalo y6 y8)))
+      and _evaloEvalo y9 y10 y11 =
+        fresh (x14 x12 x11) (x11 === !!false &&& (x12 === !!false) &&& (x14 === !!true) &&& (success &&& __evalo y9 y10 &&& (success &&& __evalo y9 y11)))
+      and elemo y12 y13 =
+        fresh (x16 x15 x14 x2)
+          ( x2 === var y13
+          &&& ( y13 === Std.Nat.zero
+              &&& (y12 === Std.( % ) x14 x15)
+              &&& (x14 === !!false)
+              ||| (y13 === Std.Nat.succ x16 &&& (y12 === Std.( % ) x14 x15) &&& elemo x15 x16) ) )
+      and __evaloEvalo y14 y15 y16 =
+        fresh (x14 x12 x11) (x11 === !!true &&& (x12 === !!false) &&& (x14 === !!true) &&& (success &&& _evalo y14 y15 &&& (success &&& __evalo y14 y16)))
+      and ___evaloEvalo y17 y18 y19 =
+        fresh (x7 x5 x4) (x4 === !!true &&& (x5 === !!true) &&& (x7 === !!false) &&& (success &&& _evalo y17 y18 &&& (success &&& _evalo y17 y19)))
+      and _elemo y20 y21 =
+        fresh (x9 x8 x7 x1)
+          ( x1 === var y21
+          &&& (y21 === Std.Nat.zero &&& (y20 === Std.( % ) x7 x8) &&& (x7 === !!true) ||| (y21 === Std.Nat.succ x9 &&& (y20 === Std.( % ) x7 x8) &&& _elemo x8 x9))
+          )
+      in
+      _evalo x0 x1
+
+    let _ =
+      run_formula 5 "transformed" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm);
+
+      run_time 100 "transformed: top level fresh, no purification" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm)
+  end *)
+
+
+(* module Transformed =
+  struct
+    open Helper
+
+    let topLevel x0 x1 =
+      let rec _evalo y2 y3 =
+        fresh (q2 q1) (y3 === conj q1 q2 &&& ___evaloEvalo y2 q1 q2)
+        ||| fresh (q2 q1) (y3 === disj q1 q2 &&& (__evalo y2 q1 &&& _evalo y2 q2 ||| __evaloEvalo y2 q1 q2 ||| ___evaloEvalo y2 q1 q2))
+        ||| fresh (q1) (y3 === neg q1 &&& __evalo y2 q1)
+        ||| fresh (q3)
+              ( y3 === var q3
+              &&& ( fresh (q4) (q3 === Std.Nat.zero &&& (y2 === Std.( % ) !!true q4))
+                  ||| fresh (q4 q6 q5) (q3 === Std.Nat.succ q5 &&& (y2 === Std.( % ) q6 q4) &&& _elemo q4 q5) ) )
+      and __evalo y4 y5 =
+        fresh (q2 q1) (y5 === conj q1 q2 &&& (_evaloEvalo y4 q1 q2 ||| evaloEvalo y4 q1 q2 ||| (_evalo y4 q1 &&& __evalo y4 q2)))
+        ||| fresh (q2 q1) (y5 === disj q1 q2 &&& _evaloEvalo y4 q1 q2)
+        ||| fresh (q1) (y5 === neg q1 &&& _evalo y4 q1)
+        ||| fresh (q3)
+              ( y5 === var q3
+              &&& ( fresh (q4) (q3 === Std.Nat.zero &&& (y4 === Std.( % ) !!false q4))
+                  ||| fresh (q4 q6 q5) (q3 === Std.Nat.succ q5 &&& (y4 === Std.( % ) q6 q4) &&& elemo q4 q5) ) )
+      and evaloEvalo y6 y7 y8 = __evalo y6 y7 &&& _evalo y6 y8
+      and _evaloEvalo y9 y10 y11 = __evalo y9 y10 &&& __evalo y9 y11
+      and elemo y12 y13 =
+        fresh (q1) (y13 === Std.Nat.zero &&& (y12 === Std.( % ) !!false q1))
+        ||| fresh (q1 q3 q2) (y13 === Std.Nat.succ q2 &&& (y12 === Std.( % ) q3 q1) &&& elemo q1 q2)
+      and __evaloEvalo y14 y15 y16 = _evalo y14 y15 &&& __evalo y14 y16
+      and ___evaloEvalo y17 y18 y19 = _evalo y17 y18 &&& _evalo y17 y19
+      and _elemo y20 y21 =
+        fresh (q1) (y21 === Std.Nat.zero &&& (y20 === Std.( % ) !!true q1))
+        ||| fresh (q1 q3 q2) (y21 === Std.Nat.succ q2 &&& (y20 === Std.( % ) q3 q1) &&& _elemo q1 q2)
+      in
+      _evalo x0 x1
+
+
+
+(* (* fresh close to the use, no extra unifications *)
+    let topLevel x0 x1 =
+      let rec _evalo y2 y3 =
+        fresh (x7 x5 x4 x3 x2) (y3 === conj x2 x3 &&& ___evaloEvalo y2 x2 x3)
+        ||| fresh (x3 x2)
+              ( y3 === disj x2 x3
+              &&& ( fresh (x8 x5 x7 x4)
+                      (( __evalo y2 x2 &&& _evalo y2 x3))
+                  ||| fresh (x8 x5 x7 x4) (__evaloEvalo y2 x2 x3)
+                  ||| fresh (x8 x5 x7 x4) (___evaloEvalo y2 x2 x3) ) )
+        ||| fresh (x4 x2) (y3 === neg x2 &&& (__evalo y2 x2))
+        ||| fresh (x6)
+              ( y3 === var x6
+              &&& ( fresh (x8 x7) (x6 === Std.Nat.zero &&& (y2 === Std.( % ) x7 x8) &&& (x7 === !!true))
+                  ||| fresh (x8 x7 x9) (x6 === Std.Nat.succ x9 &&& (y2 === Std.( % ) x7 x8) &&& _elemo x8 x9) ) )
+      and __evalo y4 y5 =
+        fresh (x10 x9)
+          ( y5 === conj x9 x10
+          &&& ( fresh (x14 x12 x11) ( _evaloEvalo y4 x9 x10)
+              ||| fresh (x14 x12 x11) (evaloEvalo y4 x9 x10)
+              ||| fresh (x14 x12 x11) (_evalo y4 x9 &&& __evalo y4 x10)
+              ) )
+        ||| fresh (x15 x12 x14 x11 x10 x9)
+              (y5 === disj x9 x10 &&& (_evaloEvalo y4 x9 x10))
+        ||| fresh (x11 x9) (y5 === neg x9 &&& (_evalo y4 x9))
+        ||| fresh (x13)
+              ( y5 === var x13
+              &&& ( fresh (x15 x14) (x13 === Std.Nat.zero &&& (y4 === Std.( % ) x14 x15) &&& (x14 === !!false))
+                  ||| fresh (x15 x14 x16) (x13 === Std.Nat.succ x16 &&& (y4 === Std.( % ) x14 x15) &&& elemo x15 x16) ) )
+      and evaloEvalo y6 y7 y8 = __evalo y6 y7 &&& _evalo y6 y8
+      and _evaloEvalo y9 y10 y11 = __evalo y9 y10 &&& __evalo y9 y11
+      and elemo y12 y13 =
+        fresh (x15 x14) (y13 === Std.Nat.zero &&& (y12 === Std.( % ) x14 x15) &&& (x14 === !!false))
+        ||| fresh (x15 x14 x16) (y13 === Std.Nat.succ x16 &&& (y12 === Std.( % ) x14 x15) &&& elemo x15 x16)
+      and __evaloEvalo y14 y15 y16 = _evalo y14 y15 &&& __evalo y14 y16
+      and ___evaloEvalo y17 y18 y19 = _evalo y17 y18 &&& _evalo y17 y19
+      and _elemo y20 y21 =
+        fresh (x8 x7) (y21 === Std.Nat.zero &&& (y20 === Std.( % ) x7 x8) &&& (x7 === !!true))
+        ||| fresh (x8 x7 x9) (y21 === Std.Nat.succ x9 &&& (y20 === Std.( % ) x7 x8) &&& _elemo x8 x9)
+      in
+      _evalo x0 x1 *)
+
+
+
+    (* (* top level fresh, no purification *)
+    let topLevel x0 x1 =
+      let rec evalo y0 y1 =
+        fresh (x9 x6 x8 x7 x5 x4 x3 x2)
+          ( success
+          &&& ( y1 === conj x2 x3
+              &&& (x4 === !!true &&& (x5 === !!true) &&& (x7 === !!false) &&& ___evaloEvalo y0 x2 x3)
+              ||| ( y1 === disj x2 x3
+                  &&& ( x4 === !!false &&& (x7 === !!true) &&& (x5 === !!true) &&& (x8 === !!false)
+                      &&& (success &&& __evalo y0 x2 &&& (success &&& _evalo y0 x3))
+                      ||| (x4 === !!true &&& (x7 === !!false) &&& (x5 === !!false) &&& (x8 === !!true) &&& __evaloEvalo y0 x2 x3)
+                      ||| (x4 === !!true &&& (x7 === !!false) &&& (x5 === !!true) &&& (x8 === !!false) &&& ___evaloEvalo y0 x2 x3) ) )
+              ||| (y1 === neg x2 &&& (x4 === !!false &&& __evalo y0 x2))
+              ||| ( y1 === var x6
+                  &&& ( x6 === Std.Nat.zero
+                      &&& (y0 === Std.( % ) x7 x8)
+                      &&& (x7 === !!true)
+                      ||| (x6 === Std.Nat.succ x9 &&& (y0 === Std.( % ) x7 x8) &&& _elemo x8 x9) ) ) ) )
+      and _evalo y2 y3 =
+        fresh (x9 x6 x8 x7 x5 x4 x3 x2)
+          ( success
+          &&& ( y3 === conj x2 x3
+              &&& (x4 === !!true &&& (x5 === !!true) &&& (x7 === !!false) &&& ___evaloEvalo y2 x2 x3)
+              ||| ( y3 === disj x2 x3
+                  &&& ( x4 === !!false &&& (x7 === !!true) &&& (x5 === !!true) &&& (x8 === !!false)
+                      &&& (success &&& __evalo y2 x2 &&& (success &&& _evalo y2 x3))
+                      ||| (x4 === !!true &&& (x7 === !!false) &&& (x5 === !!false) &&& (x8 === !!true) &&& __evaloEvalo y2 x2 x3)
+                      ||| (x4 === !!true &&& (x7 === !!false) &&& (x5 === !!true) &&& (x8 === !!false) &&& ___evaloEvalo y2 x2 x3) ) )
+              ||| (y3 === neg x2 &&& (x4 === !!false &&& __evalo y2 x2))
+              ||| ( y3 === var x6
+                  &&& ( x6 === Std.Nat.zero
+                      &&& (y2 === Std.( % ) x7 x8)
+                      &&& (x7 === !!true)
+                      ||| (x6 === Std.Nat.succ x9 &&& (y2 === Std.( % ) x7 x8) &&& _elemo x8 x9) ) ) ) )
+      and __evalo y4 y5 =
+        fresh (x16 x13 x15 x14 x12 x11 x10 x9)
+          ( success
+          &&& ( y5 === conj x9 x10
+              &&& ( x11 === !!false &&& (x12 === !!false) &&& (x14 === !!true) &&& _evaloEvalo y4 x9 x10
+                  ||| (x11 === !!false &&& (x12 === !!true) &&& (x14 === !!true) &&& evaloEvalo y4 x9 x10)
+                  ||| (x11 === !!true &&& (x12 === !!false) &&& (x14 === !!true) &&& (success &&& _evalo y4 x9 &&& (success &&& __evalo y4 x10))) )
+              ||| (y5 === disj x9 x10 &&& (x11 === !!false &&& (x14 === !!true) &&& (x12 === !!false) &&& (x15 === !!true) &&& _evaloEvalo y4 x9 x10))
+              ||| (y5 === neg x9 &&& (x11 === !!true &&& _evalo y4 x9))
+              ||| ( y5 === var x13
+                  &&& ( x13 === Std.Nat.zero
+                      &&& (y4 === Std.( % ) x14 x15)
+                      &&& (x14 === !!false)
+                      ||| (x13 === Std.Nat.succ x16 &&& (y4 === Std.( % ) x14 x15) &&& elemo x15 x16) ) ) ) )
+      and evaloEvalo y6 y7 y8 =
+        fresh (x8 x5 x7 x4)
+          (x4 === !!false &&& (x7 === !!true) &&& (x5 === !!true) &&& (x8 === !!false) &&& (success &&& __evalo y6 y7 &&& (success &&& _evalo y6 y8)))
+      and _evaloEvalo y9 y10 y11 =
+        fresh (x14 x12 x11) (x11 === !!false &&& (x12 === !!false) &&& (x14 === !!true) &&& (success &&& __evalo y9 y10 &&& (success &&& __evalo y9 y11)))
+      and elemo y12 y13 =
+        fresh (x16 x15 x14 x2)
+          ( x2 === var y13
+          &&& ( y13 === Std.Nat.zero
+              &&& (y12 === Std.( % ) x14 x15)
+              &&& (x14 === !!false)
+              ||| (y13 === Std.Nat.succ x16 &&& (y12 === Std.( % ) x14 x15) &&& elemo x15 x16) ) )
+      and __evaloEvalo y14 y15 y16 =
+        fresh (x14 x12 x11) (x11 === !!true &&& (x12 === !!false) &&& (x14 === !!true) &&& (success &&& _evalo y14 y15 &&& (success &&& __evalo y14 y16)))
+      and ___evaloEvalo y17 y18 y19 =
+        fresh (x7 x5 x4) (x4 === !!true &&& (x5 === !!true) &&& (x7 === !!false) &&& (success &&& _evalo y17 y18 &&& (success &&& _evalo y17 y19)))
+      and _elemo y20 y21 =
+        fresh (x9 x8 x7 x1)
+          ( x1 === var y21
+          &&& (y21 === Std.Nat.zero &&& (y20 === Std.( % ) x7 x8) &&& (x7 === !!true) ||| (y21 === Std.Nat.succ x9 &&& (y20 === Std.( % ) x7 x8) &&& _elemo x8 x9))
+          )
+      in
+      _evalo x0 x1 *)
+
+
+    (*
+      (* close fresh, no purification *)
+    let topLevel x0 x1 =
+      let rec _evalo y2 y3 =
+        fresh (x7 x5 x4 x3 x2) (y3 === conj x2 x3 &&& (x4 === !!true &&& (x5 === !!true) &&& (x7 === !!false) &&& ___evaloEvalo y2 x2 x3))
+        ||| fresh (x3 x2)
+              ( y3 === disj x2 x3
+              &&& ( fresh (x8 x5 x7 x4)
+                      (x4 === !!false &&& (x7 === !!true) &&& (x5 === !!true) &&& (x8 === !!false) &&& (success &&& __evalo y2 x2 &&& (success &&& _evalo y2 x3)))
+                  ||| fresh (x8 x5 x7 x4) (x4 === !!true &&& (x7 === !!false) &&& (x5 === !!false) &&& (x8 === !!true) &&& __evaloEvalo y2 x2 x3)
+                  ||| fresh (x8 x5 x7 x4) (x4 === !!true &&& (x7 === !!false) &&& (x5 === !!true) &&& (x8 === !!false) &&& ___evaloEvalo y2 x2 x3) ) )
+        ||| fresh (x4 x2) (y3 === neg x2 &&& (x4 === !!false &&& __evalo y2 x2))
+        ||| fresh (x6)
+              ( y3 === var x6
+              &&& ( fresh (x8 x7) (x6 === Std.Nat.zero &&& (y2 === Std.( % ) x7 x8) &&& (x7 === !!true))
+                  ||| fresh (x8 x7 x9) (x6 === Std.Nat.succ x9 &&& (y2 === Std.( % ) x7 x8) &&& _elemo x8 x9) ) )
+      and __evalo y4 y5 =
+        fresh (x10 x9)
+          ( y5 === conj x9 x10
+          &&& ( fresh (x14 x12 x11) (x11 === !!false &&& (x12 === !!false) &&& (x14 === !!true) &&& _evaloEvalo y4 x9 x10)
+              ||| fresh (x14 x12 x11) (x11 === !!false &&& (x12 === !!true) &&& (x14 === !!true) &&& evaloEvalo y4 x9 x10)
+              ||| fresh (x14 x12 x11) (x11 === !!true &&& (x12 === !!false) &&& (x14 === !!true) &&& (success &&& _evalo y4 x9 &&& (success &&& __evalo y4 x10)))
+              ) )
+        ||| fresh (x15 x12 x14 x11 x10 x9)
+              (y5 === disj x9 x10 &&& (x11 === !!false &&& (x14 === !!true) &&& (x12 === !!false) &&& (x15 === !!true) &&& _evaloEvalo y4 x9 x10))
+        ||| fresh (x11 x9) (y5 === neg x9 &&& (x11 === !!true &&& _evalo y4 x9))
+        ||| fresh (x13)
+              ( y5 === var x13
+              &&& ( fresh (x15 x14) (x13 === Std.Nat.zero &&& (y4 === Std.( % ) x14 x15) &&& (x14 === !!false))
+                  ||| fresh (x15 x14 x16) (x13 === Std.Nat.succ x16 &&& (y4 === Std.( % ) x14 x15) &&& elemo x15 x16) ) )
+      and evaloEvalo y6 y7 y8 = __evalo y6 y7 &&& _evalo y6 y8
+      and _evaloEvalo y9 y10 y11 = __evalo y9 y10 &&& __evalo y9 y11
+      and elemo y12 y13 =
+        fresh (x15 x14) (y13 === Std.Nat.zero &&& (y12 === Std.( % ) x14 x15) &&& (x14 === !!false))
+        ||| fresh (x15 x14 x16) (y13 === Std.Nat.succ x16 &&& (y12 === Std.( % ) x14 x15) &&& elemo x15 x16)
+      and __evaloEvalo y14 y15 y16 = _evalo y14 y15 &&& __evalo y14 y16
+      and ___evaloEvalo y17 y18 y19 = _evalo y17 y18 &&& _evalo y17 y19
+      and _elemo y20 y21 =
+        fresh (x8 x7) (y21 === Std.Nat.zero &&& (y20 === Std.( % ) x7 x8) &&& (x7 === !!true))
+        ||| fresh (x8 x7 x9) (y21 === Std.Nat.succ x9 &&& (y20 === Std.( % ) x7 x8) &&& _elemo x8 x9)
+      in
+      _evalo x0 x1 *)
+
+(*
+    (* after fixes aimed at bottles *)
+    let topLevel x0 x1 =
+      let rec _evalo y2 y3 =
+        fresh (q1 q2 q3 q4 q5 q6)
+          ( y3 === conj q1 q2 &&& ___evaloEvalo y2 q1 q2
+          ||| (y3 === disj q1 q2 &&& (__evalo y2 q1 &&& _evalo y2 q2 ||| __evaloEvalo y2 q1 q2 ||| ___evaloEvalo y2 q1 q2))
+          ||| (y3 === neg q1 &&& __evalo y2 q1)
+          ||| (y3 === var q3 &&& (q3 === Std.Nat.zero &&& (y2 === Std.( % ) !!true q4) ||| (q3 === Std.Nat.succ q5 &&& (y2 === Std.( % ) q6 q4) &&& _elemo q4 q5)))
+          )
+      and __evalo y4 y5 =
+        fresh (q1 q2 q3 q4 q5 q6)
+          ( y5 === conj q1 q2
+          &&& (_evaloEvalo y4 q1 q2 ||| evaloEvalo y4 q1 q2 ||| (_evalo y4 q1 &&& __evalo y4 q2))
+          ||| (y5 === disj q1 q2 &&& _evaloEvalo y4 q1 q2)
+          ||| (y5 === neg q1 &&& _evalo y4 q1)
+          ||| (y5 === var q3 &&& (q3 === Std.Nat.zero &&& (y4 === Std.( % ) !!false q4) ||| (q3 === Std.Nat.succ q5 &&& (y4 === Std.( % ) q6 q4) &&& elemo q4 q5)))
+          )
+      and evaloEvalo y6 y7 y8 = __evalo y6 y7 &&& _evalo y6 y8
+      and _evaloEvalo y9 y10 y11 = __evalo y9 y10 &&& __evalo y9 y11
+      and elemo y12 y13 =
+        fresh (q1 q2 q3) (y13 === Std.Nat.zero &&& (y12 === Std.( % ) !!false q1) ||| (y13 === Std.Nat.succ q2 &&& (y12 === Std.( % ) q3 q1) &&& elemo q1 q2))
+      and __evaloEvalo y14 y15 y16 = _evalo y14 y15 &&& __evalo y14 y16
+      and ___evaloEvalo y17 y18 y19 = _evalo y17 y18 &&& _evalo y17 y19
+      and _elemo y20 y21 =
+        fresh (q1 q2 q3) (y21 === Std.Nat.zero &&& (y20 === Std.( % ) !!true q1) ||| (y21 === Std.Nat.succ q2 &&& (y20 === Std.( % ) q3 q1) &&& _elemo q1 q2))
+      in
+      _evalo x0 x1 *)
+
+    (*
+      (* original algo *)
+    let topLevel x0 x1 =
+      let rec _evalo y2 y3 =
+        fresh (q1 q2 q3 q4 q5 q6)
+          ( y3 === conj q1 q2 &&& ___evaloEvalo y2 q1 q2
+          ||| (y3 === disj q1 q2 &&& (__evalo y2 q1 &&& _evalo y2 q2 ||| __evaloEvalo y2 q1 q2 ||| ___evaloEvalo y2 q1 q2))
+          ||| (y3 === neg q1 &&& __evalo y2 q1)
+          ||| (y3 === var q3 &&& (q3 === Std.Nat.zero &&& (y2 === Std.( % ) !!true q4) ||| (q3 === Std.Nat.succ q5 &&& (y2 === Std.( % ) q6 q4) &&& _elemo q4 q5)))
+          )
+      and __evalo y4 y5 =
+        fresh (q1 q2 q3 q4 q5 q6)
+          ( y5 === conj q1 q2
+          &&& (_evaloEvalo y4 q1 q2 ||| evaloEvalo y4 q1 q2 ||| (_evalo y4 q1 &&& __evalo y4 q2))
+          ||| (y5 === disj q1 q2 &&& _evaloEvalo y4 q1 q2)
+          ||| (y5 === neg q1 &&& _evalo y4 q1)
+          ||| (y5 === var q3 &&& (q3 === Std.Nat.zero &&& (y4 === Std.( % ) !!false q4) ||| (q3 === Std.Nat.succ q5 &&& (y4 === Std.( % ) q6 q4) &&& elemo q4 q5)))
+          )
+      and evaloEvalo y6 y7 y8 = __evalo y6 y7 &&& _evalo y6 y8
+      and _evaloEvalo y9 y10 y11 = __evalo y9 y10 &&& __evalo y9 y11
+      and elemo y12 y13 =
+        fresh (q1 q2 q3) (y13 === Std.Nat.zero &&& (y12 === Std.( % ) !!false q1) ||| (y13 === Std.Nat.succ q2 &&& (y12 === Std.( % ) q3 q1) &&& elemo q1 q2))
+      and __evaloEvalo y14 y15 y16 = _evalo y14 y15 &&& __evalo y14 y16
+      and ___evaloEvalo y17 y18 y19 = _evalo y17 y18 &&& _evalo y17 y19
+      and _elemo y20 y21 =
+        fresh (q1 q2 q3) (y21 === Std.Nat.zero &&& (y20 === Std.( % ) !!true q1) ||| (y21 === Std.Nat.succ q2 &&& (y20 === Std.( % ) q3 q1) &&& _elemo q1 q2))
+      in
+      _evalo x0 x1 *)
+
+    let _ =
+      run_formula 5 "transformed" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm);
+
+      run_time 100 "transformed" @@
+      run qrs (fun r t fm ->
+        topLevel (Std.(%<) r t) fm)
+  end *)

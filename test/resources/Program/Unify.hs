@@ -18,8 +18,8 @@ unify = unifyTree
 eqNat :: [Def]
 eqNat = [eqNatDef]
 
-eqNatDef :: Def 
-eqNatDef = 
+eqNatDef :: Def
+eqNatDef =
     Def "eq_nat" ["a", "b", "q36"] (
      fresh ["q37"] (
        (V "q37" === C "pair" [V "a", V "b"]) &&&
@@ -39,8 +39,8 @@ eqNatDef =
 getTerm :: [Def]
 getTerm = [getTermDef]
 
-getTermDef :: Def 
-getTermDef = 
+getTermDef :: Def
+getTermDef =
     Def "get_term" ["var", "subst", "q32"] (
       ((V "subst" === C "nil" []) &&&
       (V "q32" === C "none" [])) |||
@@ -54,10 +54,11 @@ getTermDef =
     )
 
 checkUni :: [Def]
-checkUni = checkUniDef : getTerm ++ eqNat ++ forall2
+-- checkUni = checkUniDef : getTerm ++ eqNat ++ forall2
+checkUni = [checkUniDef, getTermDef, eqNatDef, forall2Def]
 
-checkUniDef :: Def 
-checkUniDef = 
+checkUniDef :: Def
+checkUniDef =
     Def "check_uni" ["subst", "t1", "t2", "q31"] (
       fresh ["q11"] (
         (V "q11" === C "pair" [V "t1", V "t2"]) &&&
@@ -103,8 +104,8 @@ checkUniDef =
 forall2 :: [Def]
 forall2 = forall2Def : checkUni
 
-forall2Def :: Def 
-forall2Def = 
+forall2Def :: Def
+forall2Def =
     Def "forall2" ["subst", "l1", "l2", "q0"] (
       fresh ["q1"] (
         (V "q1" === C "pair" [V "l1", V "l2"]) &&&
@@ -121,11 +122,11 @@ forall2Def =
     )
 
 
-unifyTree :: [Def] 
+unifyTree :: [Def]
 unifyTree = eqNat ++ getTerm ++ checkUni ++ forall2
 
 env :: String
-env = 
+env =
   "open MiniKanren\nopen MiniKanrenStd\ntype 'a0 gnat =\n  | Z \n  | S of 'a0 \nlet rec fmap fa0 = function | Z -> Z | S a0 -> S (fa0 a0)\nmodule For_gnat =\n  (Fmap)(struct\n           let rec fmap fa0 = function | Z -> Z | S a0 -> S (fa0 a0)\n           type 'a0 t = 'a0 gnat\n         end)\nlet rec z () = inj (For_gnat.distrib Z)\nand s x__0 = inj (For_gnat.distrib (S x__0))\ntype ('a1, 'a0) gterm =\n  | Var_ of 'a1 \n  | Constr of 'a1 * 'a0 \nlet rec fmap fa1 fa0 =\n  function\n  | Var_ a1 -> Var_ (fa1 a1)\n  | Constr (a1_0, a0_1) -> Constr ((fa1 a1_0), (fa0 a0_1))\nmodule For_gterm =\n  (Fmap2)(struct\n            let rec fmap fa1 fa0 =\n              function\n              | Var_ a1 -> Var_ (fa1 a1)\n              | Constr (a1_0, a0_1) -> Constr ((fa1 a1_0), (fa0 a0_1))\n            type ('a1, 'a0) t = ('a1, 'a0) gterm\n          end)\nlet rec var_ x__0 = inj (For_gterm.distrib (Var_ x__0))\nand constr x__0 x__1 = inj (For_gterm.distrib (Constr (x__0, x__1)))"
 
 --

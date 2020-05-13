@@ -4,7 +4,7 @@ module NonConjunctive.Unfold where
 
 import qualified CPD.LocalControl   as LC
 import           Data.Foldable      (foldlM)
-import           Data.List          (find, intersect, partition, sortBy, (\\))
+import           Data.List          (find, intersect, partition, sortBy, (\\), delete)
 import qualified Data.Map.Strict    as M
 import           Data.Maybe         (catMaybes, fromJust, fromMaybe, isJust,
                                      isNothing, mapMaybe)
@@ -176,8 +176,8 @@ nonConjunctive limit (Program defs goal) =
      let goal = E.substitute state goal' in
      let seen' = goal : seen in
      let addAnc x = LC.Descend x (goal : ancs') in
-     trace (printf "go\nGoal:\n%s\nSeen:\n%s\n" (show goal) (show' seen)) $
-     if goal `elem` failed
+    --  if goal `elem` failed
+     if variantCheck goal failed
      then
        (Fail, seen, failed)
      else
@@ -185,9 +185,10 @@ nonConjunctive limit (Program defs goal) =
       then
         (Prune goal state, seen, failed)
       else
-        (\(x, y, z) -> (simplify x, y, z)) $
+        -- (\(x, y, z) -> (simplify x, y, z)) $
           case if isGround goal then Nothing else findVariant goal seen of
             Just v ->
+              trace (printf "go\nGoal:\n%s\nSeen:\n%s\n" (show goal) (show' seen)) $
               (Leaf goal state env v, seen, failed)
             _ ->
               -- A test for accumulating parameter
@@ -196,10 +197,12 @@ nonConjunctive limit (Program defs goal) =
               then
                 if length goal == 1
                 then
-                  (Prune goal state, seen, failed)
+                  case findInstance goal seen of
+                    Just v -> (Leaf goal state env v, seen, failed)
+                    Nothing -> (Prune goal state, seen, failed)
                 else
                   let (children, allSeenGoals, failed') = unfoldSequentially failed seen' (zip (map (:[]) goal) (repeat state)) env addAnc in
-                  (Split children goal state, allSeenGoals, failed')
+                  split children goal state allSeenGoals failed'
               else
                 if length goal == 1
                 then
@@ -212,10 +215,11 @@ nonConjunctive limit (Program defs goal) =
                     Just (ls, x, rs) ->
                       case findVariant [x] seen' of
                         Just v ->
-                          let x' = Conj [Leaf [x] state env v] [x] state in
+                          -- let x' = Conj [Leaf [x] state env v] [x] state in
+                          let x' = Leaf [x] state env v in
                           let (ls', seen'', failed'')  = unfoldNotNull failed ls seen'  state env addAnc in
                           let (rs', seen''', failed''') = unfoldNotNull failed'' rs seen'' state env addAnc in
-                          (Split (catMaybes [ls', Just x', rs']) goal state, seen''', failed''')
+                          split (catMaybes [ls', Just x', rs']) goal state seen''' failed'''
                         Nothing ->
                           let (unified, env') = oneStep x env state in
                           let (ch, allSeenGoals', failed_') = unfoldSequentially failed seen' unified env' addAnc in
@@ -241,14 +245,14 @@ nonConjunctive limit (Program defs goal) =
                               else
                                 let (ls', seen'', failed'')  = unfoldNotNull failed' ls allSeenGoals state env addAnc in
                                 let (rs', seen''', failed''') = unfoldNotNull failed'' rs seen'' state env addAnc in
-                                (Split (catMaybes [ls', Just x', rs']) goal state, seen''', failed''')
+                                split (catMaybes [ls', Just x', rs']) goal state seen''' failed'''
                             Nothing ->
                               let (ls', seen'', failed'')  = unfoldNotNull failed' ls allSeenGoals state env addAnc in
                               let (rs', seen''', failed''') = unfoldNotNull failed'' rs seen'' state env addAnc in
-                              (Split (catMaybes [ls', Just x', rs']) goal state, seen''', failed''')
+                              split (catMaybes [ls', Just x', rs']) goal state seen''' failed'''
                     Nothing ->
                       let (children, allSeenGoals, failed'') = unfoldSequentially failed seen' (zip (map (:[]) goal) (repeat state)) env addAnc in
-                      (Split children goal state, allSeenGoals, failed'')
+                      split children goal state allSeenGoals failed''
     wrap left right x = left ++ x ++ right
     nullGoals goals subst env v = if null goals then leaf subst env else v
 
@@ -257,8 +261,9 @@ nonConjunctive limit (Program defs goal) =
       then (Nothing, seen, failed)
       else
         let (children, seen', failed') = unfoldSequentially failed seen (zip (map (:[]) xs) (repeat state)) env addAnc in
-        trace "5" $
-        (Just $ Split children xs state, seen', failed')
+        let (n, x, y) = split children xs state seen' failed' in
+        (Just n, x, y)
+        -- (Just $ Split children xs state, seen', failed')
 
     goNotNull xs seen state env addAnc failed =
       if null xs
@@ -322,9 +327,16 @@ doStep goal env state =
 
 or :: [NCTree] -> LC.Descend [G S] -> E.Sigma -> [[G S]] -> [[G S]] -> (NCTree, [[G S]], [[G S]])
 or ch d@(LC.Descend gs _) state seen failed =
-  if null ch
-  then (Or [Fail] d state, seen, (gs:failed))
+  if null ch || all (\x -> case x of Fail -> True; _ -> False) ch
+  then (Fail, (delete gs seen), (gs:failed))
   else (Or ch d state, seen, failed)
+    -- case ch of
+    --   [x] -> (x, seen, failed)
+    --   _ -> (Or ch d state, seen, failed)
+
+split :: [NCTree] -> [G S] -> E.Sigma -> [[G S]] -> [[G S]] -> (NCTree, [[G S]], [[G S]])
+split [x] goal state seen failed = (x, seen, failed)
+split ch goal state seen failed = (Split ch goal state, seen, failed)
 
 checkConflicts :: [E.Sigma] -> Bool
 checkConflicts sigmas =
@@ -369,12 +381,28 @@ findConflicting (x:xs) =
       go (xs ++ conf') (x : conf) unConf'
 
 simplify :: NCTree -> NCTree
-simplify =
-    go
+simplify tree = go tree
   where
+  --   -- trace (printf "simplifying\n%s\n" (show tree)) $
+  --   keepRoot tree
+  -- where
+  --   keepRoot (Or ch g s) =
+  --     case failOr ch (\x -> Or x g s) of
+  --       Fail -> Or [Fail] g s
+  --       x -> x
+  --   keepRoot (Conj ch g s) =
+  --     case failConj ch (\x -> Conj x g s) of
+  --       Fail -> Conj [Fail] g s
+  --       x -> x
+  --   keepRoot (Split ch g s) =
+  --     case failConj ch (\x -> Split ch g s) of
+  --       Fail -> Split [Fail] g s
+  --       x -> x
+  --   keepRoot x = go x
+
     go (Or    ch g s)   = failOr ch (\x -> Or x g s)
     go (Conj  ch g s)   = failConj ch (\x -> Conj x g s)
-    go (Split ch g s)   = failConj ch (\x -> Split ch g s)
+    go (Split ch g s)   = failConj ch (\x -> Split x g s)
     go (Gen   ch g gen) = failOr [ch] (\[x] -> Gen x g gen)
     go x                = x
     failOr ch f =

@@ -8,6 +8,7 @@ import           Data.List
 import           Stream
 import           Syntax
 import           Text.Printf
+import Debug.Trace
 
 import qualified Data.Map.Strict as Map
 
@@ -147,20 +148,26 @@ showSigma' s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s ->
 
 -- Pre-evaluation
 preEval :: Gamma -> G X -> (G S, Gamma, [S])
-preEval = go []
- where
-  go vars g@(_, i, _) (t1 :=: t2)  = (i <@> t1 :=: i <@> t2, g, vars)
-  go vars g           (g1 :/\: g2) = let (g1', g' , vars' ) = go vars  g  g1 in
-                                     let (g2', g'', vars'') = go vars' g' g2 in
-                                     (g1' :/\: g2', g'', vars'')
-  go vars g           (g1 :\/: g2) = let (g1', g' , vars')  = go vars  g  g1 in
-                                     let (g2', g'', vars'') = go vars' g' g2 in
-                                     (g1' :\/: g2', g'', vars'')
-  go vars   (p, i , y : d') (Fresh x g') =
-    go (y : vars) (p, extend i x (V y), d') g'
-  go vars g@(_, i, _) (Invoke f fs)  = (Invoke f (map (i <@>) fs), g, vars)
-  go vars e           (Let    def g) = let (g', e', vars') = go vars e g in
-                                       (Let def g', e', vars')
+preEval =
+    go []
+  where
+    go vars g@(_, i, _) (t1 :=: t2) =
+      (i <@> t1 :=: i <@> t2, g, vars)
+    go vars g (g1 :/\: g2) =
+      let (g1', g' , vars' ) = go vars  g  g1 in
+      let (g2', g'', vars'') = go vars' g' g2 in
+      (g1' :/\: g2', g'', vars'')
+    go vars g (g1 :\/: g2) =
+      let (g1', g' , vars')  = go vars  g  g1 in
+      let (g2', g'', vars'') = go vars' g' g2 in
+      (g1' :\/: g2', g'', vars'')
+    go vars (p, i , y : d') (Fresh x g') =
+      go (y : vars) (p, extend i x (V y), d') g'
+    go vars g@(_, i, _) (Invoke f fs)  =
+      (Invoke f (map (i <@>) fs), g, vars)
+    go vars e (Let def g) =
+      let (g', e', vars') = go vars e g in
+      (Let def g', e', vars')
 
 postEval :: [X] -> G X -> G X
 postEval as goal =
@@ -174,6 +181,46 @@ postEval as goal =
     go vars (g1 :/\: g2) = go vars g1 :/\: go vars g2
     go vars (g1 :\/: g2) = go vars g1 :\/: go vars g2
     go _ g = g
+
+closeFresh :: [X] -> G X -> G X
+closeFresh as goal =
+    let goalNoFresh = stripFresh goal in
+    trace (printf "\n========================================\nCloseFresh\nBefore\n%s\nAfter\n%s\n" (show goal) (show goalNoFresh)) $
+    -- let (f, xs) = go as goal in
+    let (f, xs) = go as goalNoFresh in
+    let res = f [] in
+    trace (printf "\nResult:\n%s\n" (show res)) $
+    res
+  where
+    go as (g :/\: h) =
+      let (f1, uv1) = go as g in
+      let (f2, uv2) = go as h in
+      let uv = union uv1 uv2 in
+      let func = (\dv ->
+                      let udv = uv \\ dv in
+                      trace (printf "In conj\n%s\nudv: %s\n" (show goal) (show udv)) $
+                      let goal = (f1 (udv ++ dv) :/\: f2 (udv ++ dv)) in
+                      surrFresh goal udv) in
+      (func, uv)
+    go as (g :\/: h) =
+      let (f1, uv1) = go as g in
+      let (f2, uv2) = go as h in
+      let func = (\dv -> f1 dv :\/: f2 dv) in
+      (func, [])
+    go as g = -- @(_ :=: _) = or @(Invoke _ _)
+      let fresh = getFresh g as in
+      let func = (\dv -> let fs = fresh \\ dv in surrFresh g fs) in
+      (func, fresh)
+
+    stripFresh (Fresh _ g) = stripFresh g
+    stripFresh g = g
+
+    surrFresh goal [] = goal
+    surrFresh goal vs = foldr Fresh goal vs
+
+    getFresh goal as = fvg goal \\ as
+
+
 
 topLevel :: Program -> Stream (Sigma, Delta)
 topLevel (Program defs goal) =

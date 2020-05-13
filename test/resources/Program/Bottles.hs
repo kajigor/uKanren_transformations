@@ -147,7 +147,7 @@ fancyEq = [fancyEqDef]
 
 fancyEqDef :: Def
 fancyEqDef =
-    Def "|=|" ["a", "b", "q85"] (
+    Def "fancyEq" ["a", "b", "q85"] (
       ((V "a" === C "o" []) &&&
       (((V "b" === C "o" []) &&&
       (V "q85" === C "true" [])) |||
@@ -160,7 +160,7 @@ fancyEqDef =
         (V "q85" === C "false" [])) |||
         (fresh ["y"] (
             (V "b" === C "s" [V "y"]) &&&
-            (call "|=|" [V "x", V "y", V "q85"]))))))
+            (call "fancyEq" [V "x", V "y", V "q85"]))))))
     )
 
 
@@ -180,7 +180,7 @@ checkStepDef =
               (V "f" === V "q51")) |||
               ((V "b" === C "snd" []) &&&
               (V "s" === V "q51"))) &&&
-              (call "|=|" [V "q51", C "o" [], V "q48"])))) |||
+              (call "fancyEq" [V "q51", C "o" [], V "q48"])))) |||
           ((V "t" === C "empty" []) &&&
           (fresh ["q56", "q57"] (
               (((V "b" === C "fst" []) &&&
@@ -188,7 +188,7 @@ checkStepDef =
               ((V "b" === C "snd" []) &&&
               (V "s" === V "q56"))) &&&
               (call "get_capacity" [V "capacities", V "b", V "q57"]) &&&
-              (call "|=|" [V "q56", V "q57", V "q48"])))) |||
+              (call "fancyEq" [V "q56", V "q57", V "q48"])))) |||
           ((V "t" === C "pour" []) &&&
           (fresh ["q62"] (
               (fresh ["q66", "q67"] (
@@ -197,7 +197,7 @@ checkStepDef =
                     (V "f" === V "q72")) |||
                     ((V "b" === C "snd" []) &&&
                     (V "s" === V "q72"))) &&&
-                    (call "|=|" [V "q72", C "o" [], V "q66"]))) &&&
+                    (call "fancyEq" [V "q72", C "o" [], V "q66"]))) &&&
                 (fresh ["q77", "q78"] (
                     (((V "b" === C "fst" []) &&&
                     (V "s" === V "q77")) |||
@@ -206,7 +206,7 @@ checkStepDef =
                     (fresh ["q83"] (
                       (call "anotherBottle" [V "b", V "q83"]) &&&
                       (call "get_capacity" [V "capacities", V "q83", V "q78"]))) &&&
-                    (call "|=|" [V "q77", V "q78", V "q67"]))) &&&
+                    (call "fancyEq" [V "q77", V "q78", V "q67"]))) &&&
                 (((V "q66" === C "true" []) &&&
                 (V "q62" === C "true" [])) |||
                 ((V "q66" === C "false" []) &&&
@@ -278,8 +278,8 @@ isFinishStateDef =
       fresh ["f", "s"] (
         (V "state0" === C "pair" [V "f", V "s"]) &&&
         (fresh ["q9", "q10"] (
-          (call "|=|" [V "f", V "reqLvl", V "q9"]) &&&
-          (call "|=|" [V "s", V "reqLvl", V "q10"]) &&&
+          (call "fancyEq" [V "f", V "reqLvl", V "q9"]) &&&
+          (call "fancyEq" [V "s", V "reqLvl", V "q10"]) &&&
           (((V "q9" === C "true" []) &&&
           (V "q8" === C "true" [])) |||
           ((V "q9" === C "false" []) &&&

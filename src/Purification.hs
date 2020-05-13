@@ -21,8 +21,9 @@ type ErasureElem = (Name, Int)
 -- Purification of non-essential variables and arguments
 purification :: (Program, [String]) -> (G X, [String], [Def])
 purification (program@(Program defs x), names) =
+  -- justTakeOutLetsProgram program names
   -- trace_pur (x, names) $
-  --identity x
+  -- identity x
   --justTakeOutLets x
   --purification_old x
   --purificationWithErasure x

@@ -103,6 +103,9 @@ class (Eq b, Show b, Show a) => Instance a b | b -> a where
   findVariant :: Foldable t => b -> t b -> Maybe b
   findVariant g = find (isVariant g)
 
+  findInstance :: Foldable t => b -> t b -> Maybe b
+  findInstance g = find (`isInst` g)
+
 instance (Eq a, Ord a, Show a) => Instance a (Term a) where
   inst (V v) u subst =
     case Map.lookup v subst of

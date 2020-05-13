@@ -17,9 +17,11 @@ import qualified Program.Bridge2
 import qualified Program.Desert
 import           Program.List                   (maxLengtho, nil, revAcco,
                                                  reverso, (%))
+import           Program.Path
 import           Program.Programs               (doubleAppendo)
 import qualified Program.Prop
 import           Program.Stlc                   (evalo)
+import qualified Program.Unify
 import           Purification
 import           Residualize                    (vident)
 import           Syntax
@@ -29,6 +31,7 @@ import           System.Process                 (system)
 import           Text.Printf
 import           Util.Miscellaneous             (escapeTick)
 import           Util.ToProlog
+import qualified Eval as E
 
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
 revAcco' = Program revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])
@@ -39,20 +42,20 @@ lambda = Program evalo $ fresh ["m", "n"] (call "evalo" [V "m", V "n"])
 runNc l = runTest Nothing (NC.nonConjunctive l)
 
 runProp = do
-    runNc (-1) "prop"  prop
-    runNc (-1) "prop1" prop1
-    runNc (-1) "prop2" prop2
-    runNc (-1) "prop3" prop3
-    runNc (-1) "prop4" prop4
-    runNc (-1) "prop_" prop'
+    -- runNc (-1) "prop"  prop
+    -- runNc (-1) "prop1" prop1
+    -- runNc (-1) "prop2" prop2
+    -- runNc (-1) "prop3" prop3
+    -- runNc (-1) "prop4" prop4
+    -- runNc (-1) "prop_" prop'
     runNc (-1) "prop__" prop''
-    runNc (-1) "prop1___" prop1'''
-    runNc (-1) "prop2___" prop2'''
-    runNc (-1) "propPlain" propPlain
-    runNc (-1) "propPlain_" propPlain'
-    runNc (-1) "prop__1" prop''1
-    runNc (-1) "prop__2" prop''2
-    runNc (-1) "prop__3" prop''3
+    -- runNc (-1) "prop1___" prop1'''
+    -- runNc (-1) "prop2___" prop2'''
+    -- runNc (-1) "propPlain" propPlain
+    -- runNc (-1) "propPlain_" propPlain'
+    -- runNc (-1) "prop__1" prop''1
+    -- runNc (-1) "prop__2" prop''2
+    -- runNc (-1) "prop__3" prop''3
 
   where
     -- won't terminate: accumulator in assoco
@@ -87,17 +90,25 @@ runDesert = do
     runNc (-1) "desert___" Program.Desert.query'''
     runNc (-1) "desert1" Program.Desert.query1
 
-unit_nonConjunctiveTest = do
-  runProp
-  -- runBottles
-  -- runBridge
-  -- runDesert
-  runNc (-1) "da" dA
+runUnify = do
+    runNc (-1) "unify" Program.Unify.query
 
-  runNc (-1) "rev" rev
-  runNc (-1) "revAcco" revAcco'
-  runNc (-1) "maxLen" maxLen
-  -- runNc (55) "lambda" lambda
+runPath = do
+    runNc (-1) "path" Program.Path.query1
+
+unit_nonConjunctiveTest = do
+  -- runUnify
+  -- runPath
+  runProp
+  runBottles
+  -- -- runBridge
+  -- -- runDesert
+  -- runNc (-1) "da" dA
+
+  -- runNc (-1) "rev" rev
+  -- runNc (-1) "revAcco" revAcco'
+  -- runNc (-1) "maxLen" maxLen
+  -- -- runNc (55) "lambda" lambda
 
 runTest env function filename goal = (do
   traceM filename
@@ -113,7 +124,8 @@ runTest env function filename goal = (do
   guard (NC.noPrune tree)
   let prog = residualize transformed
   writeFile (printf "%s/%s.before.pur" path filename) (show prog)
-  let pur@(goal, xs, defs) = purification (prog, vident <$> reverse names)
+  let pur'@(goal, xs, defs) = purification (prog, vident <$> reverse names)
+  let pur = (goal, xs, map (\(Def n as b) -> Def n as (E.closeFresh as b)) defs)
   let prog = Program defs goal
   writeFile (printf "%s/%s.pur" path filename) (show prog)
   let ocamlCodeFileName = printf "%s/%s.ml" path filename

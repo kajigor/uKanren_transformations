@@ -30,10 +30,11 @@ residualize (tree, goal, names) =
 
 generateDefs :: NCTree -> ([Def], G X)
 generateDefs tree =
-  let toplevel = nodeContent tree in
+  let toplevel = fromJust $ nodeContent tree in
   let leaves = collectLeaves tree in
   let distinct = nub $ map snd leaves in
-  let nodes = (toplevel, tree) : map (flip findNode tree) distinct in
+  let simplified = simplify tree in
+  let nodes = (toplevel, simplified) : map (flip findNode tree) distinct in
   let definitions = foldl (\defs gs -> fst3 (CpdR.renameGoals gs defs) ) [] $ map fst nodes in
   trace (printf "\nDefs:\n%s\n" (showDefinitions definitions)) $
   let defWithTree = zip (reverse definitions) (map snd nodes) in
@@ -65,7 +66,7 @@ findNode :: [G S] -> NCTree -> ([G S], NCTree)
 findNode v tree =
     let nodes = go tree in
     case find nontrivial nodes of
-      Just n -> trace (printf "\nNontrivialTreeFor\nGs:\n%s\n\nTree:\n%s\n" (show v) (show n)) $  (v, n)
+      Just n -> trace (printf "\nNontrivialTreeFor\nGs:\n%s\n\nTree:\n%s\n" (show v) (show n)) $  (v, simplify n)
       Nothing -> error $ printf "Residualization error: no node for\n%s" (show v)
   where
     go node@(Or _ (LC.Descend goal _) _) | goal == v = return node
@@ -80,10 +81,10 @@ nontrivial :: NCTree -> Bool
 nontrivial (Leaf _ _ _ _) = False
 nontrivial _ = True
 
-nodeContent (Or _ (LC.Descend goal _) _) = goal
-nodeContent (Conj _ goal _)              = goal
-nodeContent (Split _ goal _)             = goal
-nodeContent _                            = error "Failed to get node content: unsupported node type"
+nodeContent (Or _ (LC.Descend goal _) _) = Just goal
+nodeContent (Conj _ goal _)              = Just goal
+nodeContent (Split _ goal _)             = Just goal
+nodeContent x                            = Nothing -- error "Failed to get node content: unsupported node type"
 
 generateDef :: [([G S], G S)] -> (([G S], Name, [S]), NCTree) -> Def
 generateDef invocations ((gs, n, args), tree) =
@@ -165,7 +166,15 @@ collectLeaves :: NCTree -> [([G S], [G S])]
 collectLeaves (Leaf  gs _ _ v) = [(gs, v)]
 collectLeaves (Or    ch _ _)   = concatMap collectLeaves ch
 collectLeaves (Conj  ch _ _)   = concatMap collectLeaves ch
-collectLeaves (Split ch _ _)   = concatMap collectLeaves ch
+collectLeaves (Split [x] _ _)  = collectLeaves x
+collectLeaves (Split ch _ _)   =
+  let children = []
+        -- catMaybes $ map (\x -> do y <- nodeContent x
+        --                           return (y,y))
+        --                 ch
+  in
+  let deeperLeaves = concatMap collectLeaves ch in
+  children ++ deeperLeaves
 collectLeaves (Prune _ _)      = error "Cannot residualize a tree with Prune nodes"
 collectLeaves (Gen _ _ _)      = error "This method was not supposed to create Gen nodes"
 collectLeaves g = []

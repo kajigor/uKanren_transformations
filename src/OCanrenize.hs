@@ -18,20 +18,41 @@ instance OCanren String where
 
 instance OCanren v => OCanren (Term v) where
   ocanren (V v)        = ocanren v
-  ocanren (C nil _) | map toLower nil == "nil"  = "nil ()"
+  ocanren (C nil _) | map toLower nil == "nil"  = "Std.List.nil ()"
   -- ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "(%s %% %s)" (ocanren h) (ocanren t)
   -- ocanren (C "%"    [h,t]) = printf "(%s %% %s)" (ocanren h) (ocanren t)
   ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "Std.(%%) %s %s" (ocanren h) (ocanren t)
   ocanren (C "%" [h, t]) = printf "Std.(%%) %s %s" (ocanren h) (ocanren t)
   ocanren (C "O" []) = "Std.Nat.zero"
   ocanren (C "S" [x]) = printf "Std.Nat.succ (%s)" (ocanren x)
-  ocanren (C "o" []) = "o ()"
-  ocanren (C "s" [x]) = printf "s (%s)" (ocanren x)
+
+  ocanren (C "o" []) = "(o ())"
+  ocanren (C "s" [x]) = printf "(s (%s))" (ocanren x)
+
+
+  -- ocanren (C "o" []) = "Std.Nat.zero"
+  -- ocanren (C "s" [x]) = printf "Std.Nat.succ (%s)" (ocanren x)
+  ocanren (C "z" []) = "Std.Nat.zero"
+
+  ocanren (C "pair" [x,y]) = printf "Std.Pair.pair (%s) (%s)" (ocanren x) (ocanren y)
+  ocanren (C "none" []) = "Std.Option.none ()"
+  ocanren (C "some" [x]) = printf "Std.Option.some (%s)" (ocanren x)
+
+
+  ocanren (C "fst" []) = "(fst_ ())"
+  ocanren (C "snd" []) = "(snd_ ())"
+  ocanren (C "fill" []) = "(fill ())"
+  ocanren (C "empty" []) = "(empty ())"
+  ocanren (C "pour" []) = "(pour ())"
+
+
   ocanren (C "true" []) = printf "!!true"
   ocanren (C "false" []) = printf "!!false"
   ocanren (C "ltrue" []) = printf "ltrue ()"
   ocanren (C "lfalse" []) = printf "lfalse ()"
-  ocanren (C "z" []) = "z ()"
+  -- ocanren (C "o" []) = "o ()"
+  -- ocanren (C "s" [x]) = printf "s (%s)" (ocanren x)
+  -- ocanren (C "z" []) = "z ()"
   ocanren (C (f:o) ts) = printf "(%s)" $ (toLower f : o) ++ ' ' : printArgs (map ocanren ts)
 
 instance OCanren v => OCanren (G v) where
@@ -53,8 +74,6 @@ ocanrenize topLevelName (g, args) =
 
 ocanrenize' :: String -> (G X, [String], [Def]) -> String
 ocanrenize' topLevelName input@(g, args, defs) =
-    trace ("OCANRENIZE ") $
-    trace (show $ head args) $
     printf "let %s %s = %s %s" topLevelName (printArgs args) (printDefs defs) (ocanren g)
   where
     printFstDef (Def n as g) = printf "let rec %s %s = %s" n (printArgs as) (ocanren g)
@@ -64,8 +83,8 @@ ocanrenize' topLevelName input@(g, args, defs) =
     printLastDefs ((Def n as g) : ds) =
       printf "and %s %s = %s %s " n (printArgs as) (ocanren g) $ printLastDefs ds
 
-    printDefs []     = trace "Finished printing defs" $ ""
-    printDefs (d:ds) = trace "Printing defs" $ (printFstDef d) ++ " " ++ (printLastDefs ds)
+    printDefs []     = ""
+    printDefs (d:ds) = (printFstDef d) ++ " " ++ (printLastDefs ds)
 
 toOCanren = toOCanren' ocanrenize
 
