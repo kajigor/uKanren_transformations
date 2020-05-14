@@ -91,6 +91,16 @@ fv t = nub $ go t where
   go (V v)    = [v]
   go (C _ ts) = concatMap go ts
 
+fvgs :: G S -> [S]
+fvgs = nub . go
+ where
+  go (t1 :=:  t2) = fv t1 ++ fv t2
+  go (g1 :/\: g2) = go g1 ++ go g2
+  go (g1 :\/: g2) = go g1 ++ go g2
+  go (Invoke _ ts) = concatMap fv ts
+  -- go (Fresh x g)   = filter (x /=) $ go g
+  go (Let _ g) = go g
+
 fvg :: G X -> [X]
 fvg = nub . go
  where

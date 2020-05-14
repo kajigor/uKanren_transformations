@@ -6,6 +6,8 @@ import qualified Data.Set        as Set
 import qualified Data.Map.Strict as Map
 import Control.Monad.State
 import Debug.Trace (traceM, trace)
+import Text.Printf (printf)
+import Util.Miscellaneous (show')
 
 type Set = Set.Set
 type Map = Map.Map
@@ -567,6 +569,7 @@ removeUnifications _ g              = g
 renameFreshVars g =
   let (vars, g') = freshVars [] g in
   let vars' = reverse $ map (toV "q") [1..length vars] in
+  trace (printf "\n==================================\nRenamed vars\n%s\n" (show' (zip vars' vars))) $
   let g'' = foldr (\(v, v') -> subst_in_goal v (V v')) g' $ zip vars vars' in
   fresh vars'   g''
 

@@ -99,7 +99,7 @@ runPath = do
 unit_nonConjunctiveTest = do
   -- runUnify
   -- runPath
-  runProp
+  -- runProp
   runBottles
   -- -- runBridge
   -- -- runDesert
@@ -113,6 +113,7 @@ unit_nonConjunctiveTest = do
 runTest env function filename goal = (do
   traceM filename
   let transformed@(tree, logicGoal, names) = function goal
+  let tree' = renameAmbigousVars tree
   let path = printf "test/out/nc/%s" filename
   exists <- doesDirectoryExist path
   if exists
@@ -120,10 +121,16 @@ runTest env function filename goal = (do
   else return ()
   createDirectoryIfMissing True path
   printTree (printf "%s/tree.dot" path) tree
+  printTree (printf "%s/tree.after.dot" path) tree'
   system (printf "dot -O -Tpdf %s/*.dot" (escapeTick path))
   guard (NC.noPrune tree)
   let prog = residualize transformed
   writeFile (printf "%s/%s.before.pur" path filename) (show prog)
+
+  let beforePur = justTakeOutLetsProgram prog (vident <$> reverse names)
+  let ocamlCodeFileName = printf "%s/%s.before.ml" path filename
+  OC.topLevel ocamlCodeFileName "topLevel" env beforePur
+
   let pur'@(goal, xs, defs) = purification (prog, vident <$> reverse names)
   let pur = (goal, xs, map (\(Def n as b) -> Def n as (E.closeFresh as b)) defs)
   let prog = Program defs goal

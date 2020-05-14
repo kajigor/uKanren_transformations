@@ -188,7 +188,7 @@ nonConjunctive limit (Program defs goal) =
         -- (\(x, y, z) -> (simplify x, y, z)) $
           case if isGround goal then Nothing else findVariant goal seen of
             Just v ->
-              trace (printf "go\nGoal:\n%s\nSeen:\n%s\n" (show goal) (show' seen)) $
+              -- trace (printf "go\nGoal:\n%s\nSeen:\n%s\n" (show goal) (show' seen)) $
               (Leaf goal state env v, seen, failed)
             _ ->
               -- A test for accumulating parameter

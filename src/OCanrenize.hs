@@ -16,7 +16,8 @@ class OCanren a where
 instance OCanren String where
   ocanren = id
 
-instance OCanren v => OCanren (Term v) where
+instance {- OCanren v => -} OCanren (Term X) where
+  ocanren (V v@('q':_)) = printf "(Obj.magic %s)" (ocanren v)
   ocanren (V v)        = ocanren v
   ocanren (C nil _) | map toLower nil == "nil"  = "Std.List.nil ()"
   -- ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "(%s %% %s)" (ocanren h) (ocanren t)
@@ -55,7 +56,7 @@ instance OCanren v => OCanren (Term v) where
   -- ocanren (C "z" []) = "z ()"
   ocanren (C (f:o) ts) = printf "(%s)" $ (toLower f : o) ++ ' ' : printArgs (map ocanren ts)
 
-instance OCanren v => OCanren (G v) where
+instance {-OCanren v =>-} OCanren (G X) where
 --ocanren (t1 :=:  t2)  = printf "(print_string \"%s === %s\\n\"; %s === %s)" (ocanren t1) (ocanren t2) (ocanren t1) (ocanren t2)
   ocanren (t1 :=:  t2)  = printf "(%s === %s)" (ocanren t1) (ocanren t2)
   ocanren (g1 :/\: g2)  = printf "(%s &&& %s)" (ocanren g1) (ocanren g2)

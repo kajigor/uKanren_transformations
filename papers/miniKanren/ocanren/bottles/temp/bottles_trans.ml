@@ -3,351 +3,734 @@ open OCanren
 open OCanren.Std
 open General
 
+
+
+
 let topLevel x0 x1 x2 =
-let rec checkAnswer y0 y1 y2 =
-  fresh
-    (q1 q2 q3 q4 q5 q6 q7 q8 q9 q10 q11 q12 q13 q14 q15 q16 q17 q18 q19 q20 q21 q22 q23 q24 q25 q26 q27 q28 q29 q30)
-    ( y0 === Std.List.nil ()
-    &&& (y2 === o ())
-    ||| ( y0 === Std.( % ) q1 q2
-        &&& ( q3 === o ()
-            &&& (q4 === o ())
-            &&& (q1 === Std.Pair.pair q5 q6)
-            &&& (q5 === fill ())
-            &&& (q6 === fst_ ())
-            &&& (q7 === q3)
-            ||| (q3 === o () &&& (q4 === o ()) &&& (q1 === Std.Pair.pair q5 q6) &&& (q5 === fill ()) &&& (q6 === snd_ ()) &&& (q7 === q4))
-            ||| ( q3 === o ()
-                &&& (q4 === o ())
-                &&& (q1 === Std.Pair.pair q5 q6)
-                &&& (q5 === empty ())
-                &&& (q6 === fst_ ())
-                &&& (q8 === q3)
-                &&& (y1 === Std.Pair.pair q9 q10 &&& (q11 === q9) &&& (q9 === o ())) )
-            ||| ( q3 === o ()
-                &&& (q4 === o ())
-                &&& (q1 === Std.Pair.pair q5 q6)
-                &&& (q5 === empty ())
-                &&& (q6 === snd_ ())
-                &&& (q8 === q4)
-                &&& (y1 === Std.Pair.pair q9 q10 &&& (q11 === q10) &&& fancyEq q10) )
-            &&& ( q3 === o ()
-                &&& (q4 === o ())
-                &&& (q1 === Std.Pair.pair q5 q6)
-                &&& (q5 === fill ())
-                &&& (q6 === fst_ ())
-                &&& (q8 === q4)
-                &&& (y1 === Std.Pair.pair q12 q13 &&& (q7 === q12) &&& (q14 === Std.Pair.pair q12 (o ())))
-                ||| ( q3 === o ()
-                    &&& (q4 === o ())
-                    &&& (q1 === Std.Pair.pair q5 q6)
-                    &&& (q5 === fill ())
-                    &&& (q6 === snd_ ())
-                    &&& (q8 === q3)
-                    &&& (y1 === Std.Pair.pair q12 q13 &&& (q7 === q13) &&& (q14 === Std.Pair.pair (o ()) q13)) )
-                ||| ( q3 === o ()
-                    &&& (q4 === o ())
-                    &&& (q1 === Std.Pair.pair q5 q6)
-                    &&& (q5 === empty ())
-                    &&& (q6 === fst_ ())
-                    &&& (q11 === q4)
-                    &&& (q14 === Std.Pair.pair (o ()) (o ())) )
-                ||| ( q3 === o ()
-                    &&& (q4 === o ())
-                    &&& (q1 === Std.Pair.pair q5 q6)
-                    &&& (q5 === empty ())
-                    &&& (q6 === snd_ ())
-                    &&& (q11 === q3)
-                    &&& (q14 === Std.Pair.pair (o ()) (o ())) )
-                ||| (fresh (q16) ( q3 === o ()
-                    &&& (q4 === o ())
-                    &&& (q1 === Std.Pair.pair q5 q6)
-                    &&& (q5 === pour ())
-                    &&& (q15 === !!false)
-                    &&& (fresh (q18) ( q6 === fst_ ()
-                        &&& (q16 === snd_ ())
-                        &&& (y1 === Std.Pair.pair q12 q13 &&& (q17 === q13) &&& (q14 === Std.Pair.pair (o ()) q18 &&& (q19 === o () &&& (q18 === o ()))))
-                        ||| ( q6 === snd_ ()
-                            &&& (q16 === fst_ ())
-                            &&& (y1 === Std.Pair.pair q12 q13 &&& (q17 === q12) &&& (q14 === Std.Pair.pair q18 (o ()) &&& addGreaterAdd q19 q18 q12)) ) ) )))
-                &&& ( q2 === Std.List.nil ()
-                    &&& (fresh (q11) ( q14 === Std.Pair.pair q7 q8 &&& (q11 === !!true)
-                        &&& ( q7 === o ()
-                            &&& (y2 === o ())
-                            ||| ( q7 === s q17
-                                &&& (y2 === s q16)
-                                &&& (q17 === o () &&& (q16 === o ()) ||| (q17 === s q20 &&& (q16 === s q21) &&& _fancyEq q20 q21)) )
-                            &&& ( q8 === o ()
-                                &&& (y2 === o ())
-                                &&& (q15 === !!true)
-                                ||| (q8 === o () &&& (y2 === s q19) &&& (q15 === !!false))
-                                ||| (q8 === s q17 &&& (y2 === o ()) &&& (q15 === !!false))
-                                ||| (q8 === s q17 &&& (y2 === s q16) &&& __fancyEq q16 q17 q15) ) )
-                        ||| ( q14 === Std.Pair.pair q7 q8 &&& (q11 === !!false) &&& (q15 === !!true)
-                            &&& ( q7 === o ()
-                                &&& (y2 === s q19)
-                                &&& (q8 === s q20 &&& _fancyEq q20 q19)
-                                ||| (q7 === s q17 &&& (y2 === o ()) &&& (q8 === o ()))
-                                ||| (q7 === s q17 &&& (y2 === s q16) &&& (q17 === o ()) &&& (q16 === s q22) &&& (q8 === s q10 &&& ___fancyEq q10 q22))
-                                ||| (q7 === s q17 &&& (y2 === s q16) &&& (q17 === s q20) &&& (q16 === o ()) &&& (q8 === s q10 &&& ____fancyEq q10))
-                                ||| ( q7 === s q17
-                                    &&& (y2 === s q16)
-                                    &&& (q17 === s q20)
-                                    &&& (q16 === s q21)
-                                    &&& ( q20 === o ()
-                                        &&& (q21 === s q9)
-                                        ||| (q20 === s q10 &&& (q21 === o ()))
-                                        ||| (q20 === s q10 &&& (q21 === s q23) &&& _____fancyEq q10 q23)
-                                        &&& ______fancyEq q8 q21 ) )) ) ) )
-                    ||| (fresh (q3 q4 q5 q6 q20 q21 q22) ( q2 === Std.( % ) q3 q4 &&& (q5 === !!true)
-                        &&& (fresh (q11 q15) ( q14 === Std.Pair.pair q7 q8
-                            &&& (q3 === Std.Pair.pair q11 q15)
-                            &&& (q11 === fill ())
-                            &&& (q15 === fst_ ())
-                            &&& (q7 === q19) &&& ____fancyEq q19
-                            ||| ( q14 === Std.Pair.pair q7 q8
-                                &&& (q3 === Std.Pair.pair q11 q15)
-                                &&& (q11 === fill ())
-                                &&& (q15 === snd_ ())
-                                &&& (q8 === q19) &&& ____fancyEq q19 )
-                            ||| ( q14 === Std.Pair.pair q7 q8
-                                &&& (q3 === Std.Pair.pair q11 q15)
-                                &&& (q11 === empty ())
-                                &&& (q15 === fst_ ())
-                                &&& (q7 === q17)
-                                &&& (y1 === Std.Pair.pair q12 q13 &&& (q16 === q12) &&& _fancyEq q17 q12) )
-                            ||| ( q14 === Std.Pair.pair q7 q8
-                                &&& (q3 === Std.Pair.pair q11 q15)
-                                &&& (q11 === empty ())
-                                &&& (q15 === snd_ ())
-                                &&& (q8 === q17)
-                                &&& (y1 === Std.Pair.pair q12 q13 &&& (q16 === q13) &&& _fancyEq q17 q13) )
-                            ||| ( q14 === Std.Pair.pair q7 q8
-                                &&& (q3 === Std.Pair.pair q11 q15)
-                                &&& (q11 === pour ())
-                                &&& (q15 === fst_ ())
-                                &&& (q7 === q9) &&& (q8 === q10) &&& (q20 === !!false) &&& (q22 === q21) &&& (q21 === !!false)
-                                &&& (q18 === snd_ () &&& (y1 === Std.Pair.pair q12 q13 &&& (q23 === q13) &&& (q9 === s q24 &&& _____fancyEq q10 q13))) )
-                            ||| ( q14 === Std.Pair.pair q7 q8
-                                &&& (q3 === Std.Pair.pair q11 q15)
-                                &&& (q11 === pour ())
-                                &&& (q15 === snd_ ())
-                                &&& (q8 === q9) &&& (q7 === q10) &&& (q20 === !!false) &&& (q22 === q21) &&& (q21 === !!false)
-                                &&& (q18 === fst_ () &&& (y1 === Std.Pair.pair q12 q13 &&& (q23 === q12) &&& fancyEqFancyEq q9 q10 q12)) )
-                            &&& ( q14 === Std.Pair.pair q7 q8
-                                &&& (q3 === Std.Pair.pair q11 q15)
-                                &&& (q11 === fill ())
-                                &&& (q15 === fst_ ())
-                                &&& (q8 === q17)
-                                &&& (y1 === Std.Pair.pair q19 q25 &&& (q6 === Std.Pair.pair q19 q17))
-                                ||| ( q14 === Std.Pair.pair q7 q8
-                                    &&& (q3 === Std.Pair.pair q11 q15)
-                                    &&& (q11 === fill ())
-                                    &&& (q15 === snd_ ())
-                                    &&& (q7 === q17)
-                                    &&& (y1 === Std.Pair.pair q26 q19 &&& (q6 === Std.Pair.pair q17 q19)) )
-                                ||| ( q14 === Std.Pair.pair q7 q8
-                                    &&& (q3 === Std.Pair.pair q11 q15)
-                                    &&& (q11 === empty ())
-                                    &&& (q15 === fst_ ())
-                                    &&& (q8 === q16)
-                                    &&& (q6 === Std.Pair.pair (o ()) q16) )
-                                ||| ( q14 === Std.Pair.pair q7 q8
-                                    &&& (q3 === Std.Pair.pair q11 q15)
-                                    &&& (q11 === empty ())
-                                    &&& (q15 === snd_ ())
-                                    &&& (q7 === q16)
-                                    &&& (q6 === Std.Pair.pair q16 (o ())) )
-                                ||| (fresh (q9 q13 q18 q20 q21 q22 q27) ( q14 === Std.Pair.pair q7 q8
-                                    &&& (q3 === Std.Pair.pair q11 q15)
-                                    &&& (q11 === pour ())
-                                    &&& (q22 === !!true)
-                                    &&& ( q15 === fst_ ()
-                                        &&& (q9 === snd_ ())
-                                        &&& ( y1 === Std.Pair.pair q26 q21
-                                            &&& ( q13 === snd_ ()
-                                                &&& ( q12 === q21
-                                                    &&& ( q23 === q21
-                                                        &&& ( add q7 q8 q20
-                                                            &&& (q20 === s q27 &&& (q21 === o ()) ||| (q20 === s q27 &&& (q21 === s q28) &&& greater q27 q28))
-                                                            &&& add q7 q8 q18
-                                                            &&& ( q21 === o () &&& (q10 === q18)
-                                                                ||| (q21 === s q27 &&& (q18 === o ()) &&& (q10 === o ()))
-                                                                ||| (q21 === s q27 &&& (q18 === s q28) &&& sub q10 q28 q27) )
-                                                            &&& createState q6 q21 q10 ) ) ) ) )
-                                        ||| ( q15 === snd_ ()
-                                            &&& (q9 === fst_ ())
-                                            &&& ( y1 === Std.Pair.pair q21 q25
-                                                &&& ( q13 === fst_ ()
-                                                    &&& ( q12 === q21
-                                                        &&& ( q23 === q21
-                                                            &&& ( add q7 q8 q20 &&& greater q20 q21 &&& add q7 q8 q18 &&& sub q10 q18 q21
-                                                                &&& _createState q6 q21 q10 ) ) ) ) ) ) ) ))
-                                ||| (fresh (q9 q18 q20 q21 q22) ( q14 === Std.Pair.pair q7 q8
-                                    &&& (q3 === Std.Pair.pair q11 q15)
-                                    &&& (q11 === pour ())
-                                    &&& (q22 === !!false)
-                                    &&& ( q15 === fst_ ()
-                                        &&& (q9 === snd_ ())
-                                        &&& ( y1 === Std.Pair.pair q26 q21
-                                            &&& ( add q7 q8 q20
-                                                &&& (q20 === o () ||| (q20 === s q29 &&& (q21 === s q30) &&& _greater q29 q30))
-                                                &&& add q7 q8 q24 &&& __createState q6 q24 ) )
-                                        ||| ( q15 === snd_ ()
-                                            &&& (q9 === fst_ ())
-                                            &&& ( y1 === Std.Pair.pair q21 q25
-                                                &&& (add q7 q8 q20 &&& _greater q20 q21 &&& add q7 q8 q24 &&& ___createState q6 q24) ) ) ) )) )
-                            &&& checkAnswer_ y1 y2 q4 q6 )) ) ) )) ) ) )
-and fancyEq y3 = y3 === o ()
-and addGreaterAdd y4 y5 y6 = y4 === o () &&& (y5 === o ())
-and _fancyEq y7 y8 = fresh (q1 q2) (y7 === o () &&& (y8 === o ()) ||| (y7 === s q1 &&& (y8 === s q2) &&& _fancyEq q1 q2))
-and __fancyEq y9 y10 y11 =
-  fresh (q1 q2 q3)
-    ( y10 === o ()
-    &&& (y9 === o ())
-    &&& (y11 === !!true)
-    ||| (y10 === o () &&& (y9 === s q1) &&& (y11 === !!false))
-    ||| (y10 === s q2 &&& (y9 === o ()) &&& (y11 === !!false))
-    ||| (y10 === s q2 &&& (y9 === s q3) &&& __fancyEq q3 q2 y11) )
-and ___fancyEq y12 y13 = fresh (q1) (y12 === s q1 &&& _fancyEq q1 y13)
-and ____fancyEq y14 = y14 === o ()
-and _____fancyEq y15 y16 =
-  fresh (q1 q2 q3) (y15 === o () &&& (y16 === s q1) ||| (y15 === s q2 &&& (y16 === o ())) ||| (y15 === s q2 &&& (y16 === s q3) &&& _____fancyEq q2 q3))
-and ______fancyEq y17 y18 = fresh (q1) (y17 === s q1 &&& ___fancyEq q1 y18)
-and fancyEqFancyEq y19 y20 y21 = fresh (q1) (y19 === s q1 &&& _____fancyEq y20 y21)
-and add y22 y23 y24 = fresh (q1 q2) (y22 === o () &&& (y23 === y24) ||| (y22 === s q1 &&& (y24 === s q2) &&& add q1 y23 q2))
-and greater y25 y26 = fresh (q1 q2) (y25 === s q1 &&& (y26 === o ()) ||| (y25 === s q1 &&& (y26 === s q2) &&& greater q1 q2))
-and sub y27 y28 y29 =
-  fresh (q1 q2)
-    (y29 === o () &&& (y27 === y28) ||| (y29 === s q1 &&& (y28 === o ()) &&& (y27 === o ())) ||| (y29 === s q1 &&& (y28 === s q2) &&& sub y27 q2 q1))
-and createState y30 y31 y32 = y30 === Std.Pair.pair y32 y31
-and _createState y33 y34 y35 = y33 === Std.Pair.pair y34 y35
-and _greater y36 y37 = fresh (q1 q2) (y36 === o () ||| (y36 === s q1 &&& (y37 === s q2) &&& _greater q1 q2))
-and __createState y38 y39 = y38 === Std.Pair.pair (o ()) y39
-and ___createState y40 y41 = y40 === Std.Pair.pair y41 (o ())
-and checkAnswer_ y42 y43 y44 y45 =
-  fresh
-    (q1 q2 q3 q4 q5 q6 q7 q8 q9 q10 q11 q12 q13 q14 q15 q16 q17 q18 q19 q20 q21 q22 q23 q24 q25 q26)
-    ( y44 === Std.List.nil ()
-    &&& ( y45 === Std.Pair.pair q1 q2
-        &&& ( q1 === o ()
-            &&& (y43 === o ())
-            ||| (q1 === s q3 &&& (y43 === s q4) &&& (q3 === o () &&& (q4 === o ()) ||| (q3 === s q5 &&& (q4 === s q6) &&& _fancyEq q5 q6)))
-            &&& ( q2 === o ()
-                &&& (y43 === o ())
-                ||| (q2 === o () &&& (y43 === s q7))
-                ||| (q2 === s q3 &&& (y43 === o ()))
-                ||| (q2 === s q3 &&& (y43 === s q4) &&& __fancyEq q4 q3 q8) ) )
-        ||| ( y45 === Std.Pair.pair q1 q2
-            &&& ( q1 === o ()
-                &&& (y43 === s q7)
-                &&& (q2 === s q5 &&& _fancyEq q5 q7)
-                ||| (q1 === s q3 &&& (y43 === o ()) &&& (q2 === o ()))
-                ||| (q1 === s (o ()) &&& (y43 === s (s q9)) &&& (q2 === s q10 &&& ___fancyEq q10 q9))
-                ||| (q1 === s (s q5) &&& (y43 === s (o ())) &&& (q2 === s q10 &&& ____fancyEq q10))
-                ||| ( q1
-                    === s (s q5)
-                    &&& (y43 === s (s q6))
-                    &&& ( q5 === o ()
-                        &&& (q6 === s q11)
-                        ||| (q5 === s q10 &&& (q6 === o ()))
-                        ||| (q5 === s q10 &&& (q6 === s q12) &&& _____fancyEq q10 q12)
-                        &&& ______fancyEq q2 q6 ) ) ) ) )
-    ||| (fresh (q5 q6 q8 q9) ( y44 === Std.( % ) q13 q14
-        &&& ( y45 === Std.Pair.pair q1 q2
-            &&& (q13 === Std.Pair.pair q15 q8)
-            &&& (q15 === fill ())
-            &&& (q8 === fst_ ())
-            &&& (q1 === q7) &&& ____fancyEq q7
-            ||| (y45 === Std.Pair.pair q1 q2 &&& (q13 === Std.Pair.pair q15 q8) &&& (q15 === fill ()) &&& (q8 === snd_ ()) &&& (q2 === q7) &&& ____fancyEq q7)
-            ||| ( y45 === Std.Pair.pair q1 q2
-                &&& (q13 === Std.Pair.pair q15 q8)
-                &&& (q15 === empty ())
-                &&& (q8 === fst_ ())
-                &&& (q1 === q3)
-                &&& (y42 === Std.Pair.pair q16 q17 &&& (q4 === q16) &&& _fancyEq q3 q16) )
-            ||| ( y45 === Std.Pair.pair q1 q2
-                &&& (q13 === Std.Pair.pair q15 q8)
-                &&& (q15 === empty ())
-                &&& (q8 === snd_ ())
-                &&& (q2 === q3)
-                &&& (y42 === Std.Pair.pair q16 q17 &&& (q4 === q17) &&& _fancyEq q3 q17) )
-            ||| ( y45 === Std.Pair.pair q1 q2
-                &&& (q13 === Std.Pair.pair q15 q8)
-                &&& (q15 === pour ())
-                &&& (q8 === fst_ ())
-                &&& (q1 === q11) &&& (q2 === q10) &&& (q5 === !!false) &&& (q9 === q6) &&& (q6 === !!false)
-                &&& (q18 === snd_ () &&& (y42 === Std.Pair.pair q16 q17 &&& (q12 === q17) &&& (q11 === s q19 &&& _____fancyEq q10 q17))) )
-            ||| ( y45 === Std.Pair.pair q1 q2
-                &&& (q13 === Std.Pair.pair q15 q8)
-                &&& (q15 === pour ())
-                &&& (q8 === snd_ ())
-                &&& (q2 === q11) &&& (q1 === q10) &&& (q5 === !!false) &&& (q9 === q6) &&& (q6 === !!false)
-                &&& (q18 === fst_ () &&& (y42 === Std.Pair.pair q16 q17 &&& (q12 === q16) &&& fancyEqFancyEq q11 q10 q16)) )
-            &&& ( y45 === Std.Pair.pair q1 q2
-                &&& (q13 === Std.Pair.pair q15 q8)
-                &&& (q15 === fill ())
-                &&& (q8 === fst_ ())
-                &&& (q2 === q3)
-                &&& (y42 === Std.Pair.pair q7 q20 &&& (q21 === Std.Pair.pair q7 q3))
-                ||| ( y45 === Std.Pair.pair q1 q2
-                    &&& (q13 === Std.Pair.pair q15 q8)
-                    &&& (q15 === fill ())
-                    &&& (q8 === snd_ ())
-                    &&& (q1 === q3)
-                    &&& (y42 === Std.Pair.pair q22 q7 &&& (q21 === Std.Pair.pair q3 q7)) )
-                ||| ( y45 === Std.Pair.pair q1 q2
-                    &&& (q13 === Std.Pair.pair q15 q8)
-                    &&& (q15 === empty ())
-                    &&& (q8 === fst_ ())
-                    &&& (q2 === q4)
-                    &&& (q21 === Std.Pair.pair (o ()) q4) )
-                ||| ( y45 === Std.Pair.pair q1 q2
-                    &&& (q13 === Std.Pair.pair q15 q8)
-                    &&& (q15 === empty ())
-                    &&& (q8 === snd_ ())
-                    &&& (q1 === q4)
-                    &&& (q21 === Std.Pair.pair q4 (o ())) )
-                ||| (fresh (q5 q6 q9 q10 q11 q17 q18) ( y45 === Std.Pair.pair q1 q2
-                    &&& (q13 === Std.Pair.pair q15 q8)
-                    &&& (q15 === pour ())
-                    &&& (q9 === !!true)
-                    &&& ( q8 === fst_ ()
-                        &&& (q11 === snd_ ())
-                        &&& ( y42 === Std.Pair.pair q22 q6
-                            &&& ( q17 === snd_ ()
-                                &&& ( q16 === q6
-                                    &&& ( q12 === q6
-                                        &&& ( add q1 q2 q5
-                                            &&& (q5 === s q23 &&& (q6 === o ()) ||| (q5 === s q23 &&& (q6 === s q24) &&& greater q23 q24))
-                                            &&& add q1 q2 q18
-                                            &&& ( q6 === o () &&& (q10 === q18)
-                                                ||| (q6 === s q23 &&& (q18 === o ()) &&& (q10 === o ()))
-                                                ||| (q6 === s q23 &&& (q18 === s q24) &&& sub q10 q24 q23) )
-                                            &&& createState q21 q6 q10 ) ) ) ) )
-                        ||| ( q8 === snd_ ()
-                            &&& (q11 === fst_ ())
-                            &&& ( y42 === Std.Pair.pair q6 q20
-                                &&& ( q17 === fst_ ()
-                                    &&& ( q16 === q6
-                                        &&& (q12 === q6 &&& (add q1 q2 q5 &&& greater q5 q6 &&& add q1 q2 q18 &&& sub q10 q18 q6 &&& _createState q21 q6 q10))
-                                        ) ) ) ) ) ))
-                ||| (fresh (q5 q6 q9 q11) ( y45 === Std.Pair.pair q1 q2
-                    &&& (q13 === Std.Pair.pair q15 q8)
-                    &&& (q15 === pour ())
-                    &&& (q9 === !!false)
-                    &&& ( q8 === fst_ ()
-                        &&& (q11 === snd_ ())
-                        &&& ( y42 === Std.Pair.pair q22 q6
-                            &&& ( add q1 q2 q5
-                                &&& (q5 === o () ||| (q5 === s q25 &&& (q6 === s q26) &&& _greater q25 q26))
-                                &&& add q1 q2 q19 &&& __createState q21 q19 ) )
-                        ||| ( q8 === snd_ ()
-                            &&& (q11 === fst_ ())
-                            &&& (y42 === Std.Pair.pair q6 q20 &&& (add q1 q2 q5 &&& _greater q5 q6 &&& add q1 q2 q19 &&& ___createState q21 q19)) ) ) ) ))
-            &&& checkAnswer_ y42 y43 q14 q21 ) )) )
-in
-checkAnswer x0 x1 x2
+  let rec checkAnswer y0 y1 y2 =
+    fresh
+      (q1 q2 q3 q4 q5 q6 q7 q8 q9 q10 q11 q12 q13 q14 q15 q16 q17 q18 q19 q20 q21 q22 q23 q24 q25 q26 q27 q28 q29 q30 q31 q32 q33 q34 q35 q36 q37 q38 q39 q40
+         q41)
+      ( y0 === Std.List.nil ()
+      &&& (y2 === o ())
+      ||| ( y0
+          === Std.( % ) (Obj.magic q1) (Obj.magic q2)
+          &&& ( y1
+              === Std.Pair.pair (o ()) (Obj.magic q3)
+              ||| (y1 === Std.Pair.pair (Obj.magic q4) (Obj.magic q5) &&& fancyEq (Obj.magic q5))
+              &&& ( y1
+                  === Std.Pair.pair (Obj.magic q6) (Obj.magic q7)
+                  ||| (y1 === Std.Pair.pair (Obj.magic q8) (Obj.magic q6))
+                  ||| ( y1
+                      === Std.Pair.pair (Obj.magic q8) (Obj.magic q9)
+                      ||| (y1 === Std.Pair.pair (Obj.magic q9) (Obj.magic q7) &&& addGreaterAdd (Obj.magic q9)) )
+                  &&& ( y2 === o ()
+                      ||| (y2 === s (Obj.magic q10) &&& (Obj.magic q10 === o () ||| (Obj.magic q10 === s (Obj.magic q11) &&& _fancyEq (Obj.magic q11))))
+                      &&& (y2 === o () ||| (y2 === s (Obj.magic q12)) ||| (y2 === o ()) ||| (y2 === s (Obj.magic q13) ))
+                      ||| ( y2
+                          === s (Obj.magic q14)
+                          &&& _fancyEq (Obj.magic q14)
+                          ||| (y2 === o ())
+                          ||| (y2 === s (s (Obj.magic q15)) &&& ___fancyEq (Obj.magic q15))
+                          ||| (y2 === s (o ()))
+                          ||| (y2 === s (s (Obj.magic q16)) &&& (_____fancyEq (Obj.magic q17))) )
+                      ||| ( Obj.magic q18
+                          === Std.Pair.pair (Obj.magic q19) (Obj.magic q20)
+
+                          ||| (Obj.magic q18 === Std.Pair.pair (Obj.magic q19) (Obj.magic q20))
+                          ||| ( Obj.magic q18
+                              === Std.Pair.pair (Obj.magic q19) (Obj.magic q20)
+                              &&& (y1 === Std.Pair.pair (Obj.magic q21) (Obj.magic q22) &&& _fancyEq (Obj.magic q21)) )
+                          ||| ( Obj.magic q18
+                              === Std.Pair.pair (Obj.magic q19) (Obj.magic q20)
+                              &&& (y1 === Std.Pair.pair (Obj.magic q23) (Obj.magic q21) &&& _fancyEq (Obj.magic q21)) )
+                          ||| ( Obj.magic q18
+                              === Std.Pair.pair (s (Obj.magic q24)) (Obj.magic q20)
+                              &&& (y1 === Std.Pair.pair (Obj.magic q23) (Obj.magic q25) &&& _____fancyEq (Obj.magic q25)) )
+                          ||| ( Obj.magic q18
+                              === Std.Pair.pair (Obj.magic q19) (Obj.magic q20)
+                              &&& (y1 === Std.Pair.pair (Obj.magic q25) (Obj.magic q22) &&& fancyEqFancyEq (Obj.magic q25)) )
+                          &&& ( Obj.magic q18
+                              === Std.Pair.pair (Obj.magic q26) (Obj.magic q27)
+                              &&& (y1 === Std.Pair.pair (Obj.magic q28) (Obj.magic q29))
+                              ||| (Obj.magic q18 === Std.Pair.pair (Obj.magic q26) (Obj.magic q27) &&& (y1 === Std.Pair.pair (Obj.magic q30) (Obj.magic q28)))
+                              ||| (Obj.magic q18 === Std.Pair.pair (Obj.magic q26) (Obj.magic q27))
+                              ||| (Obj.magic q18 === Std.Pair.pair (Obj.magic q26) (Obj.magic q27))
+                              ||| ( Obj.magic q18
+                                  === Std.Pair.pair (Obj.magic q26) (Obj.magic q27)
+                                  &&& ( y1
+                                      === Std.Pair.pair (Obj.magic q30) (Obj.magic q31)
+                                      &&& ( Obj.magic q26 === o ()
+                                          &&& (Obj.magic q27 === Obj.magic q32)
+                                          ||| ( Obj.magic q26
+                                              === s (Obj.magic q33)
+                                              &&& (Obj.magic q32 === s (Obj.magic q34))
+                                              &&& add (Obj.magic q33) (Obj.magic q27) (Obj.magic q34) )
+                                          &&& (Obj.magic q32 === s (Obj.magic q35) ||| (Obj.magic q32 === s (Obj.magic q35) &&& greater (Obj.magic q35)))
+                                          &&& add (Obj.magic q26) (Obj.magic q27) (Obj.magic q36)
+                                          &&& ( Obj.magic q37 === Obj.magic q36
+                                              ||| (Obj.magic q36 === o () &&& (Obj.magic q37 === o ()))
+                                              ||| (Obj.magic q36 === s (Obj.magic q38) &&& sub (Obj.magic q37) (Obj.magic q38)) )
+                                          &&& createState (Obj.magic q37) )
+                                      ||| ( y1
+                                          === Std.Pair.pair (Obj.magic q31) (Obj.magic q29)
+                                          &&& ( add (Obj.magic q26) (Obj.magic q27) (Obj.magic q32)
+                                              &&& greater (Obj.magic q32)
+                                              &&& add (Obj.magic q26) (Obj.magic q27) (Obj.magic q36)
+                                              &&& sub (Obj.magic q37) (Obj.magic q36)
+                                              &&& _createState (Obj.magic q37) ) ) ) )
+                              ||| ( Obj.magic q18
+                                  === Std.Pair.pair (Obj.magic q26) (Obj.magic q27)
+                                  &&& ( y1
+                                      === Std.Pair.pair (Obj.magic q30) (Obj.magic q39)
+                                      &&& ( add (Obj.magic q26) (Obj.magic q27) (Obj.magic q32)
+                                          &&& (Obj.magic q32 === o () ||| (Obj.magic q32 === s (Obj.magic q40) &&& _greater (Obj.magic q40)))
+                                          &&& add (Obj.magic q26) (Obj.magic q27) (Obj.magic q41)
+                                          &&& __createState (Obj.magic q41) )
+                                      ||| ( y1
+                                          === Std.Pair.pair (Obj.magic q39) (Obj.magic q29)
+                                          &&& ( add (Obj.magic q26) (Obj.magic q27) (Obj.magic q32)
+                                              &&& _greater (Obj.magic q32)
+                                              &&& add (Obj.magic q26) (Obj.magic q27) (Obj.magic q41)
+                                              &&& ___createState (Obj.magic q41) ) ) ) ) )
+                          &&& checkAnswer_ y1 y2 ) ) ) ) ) )
+  and fancyEq y3 = y3 === o ()
+  and addGreaterAdd y6 = success
+  and _fancyEq y8 = fresh (q1) (y8 === o () ||| (y8 === s (Obj.magic q1) &&& _fancyEq (Obj.magic q1)))
+  and ___fancyEq y13 = _fancyEq y13
+  and _____fancyEq y16 = fresh (q1 q2) (y16 === s (Obj.magic q1) ||| (y16 === o ()) ||| (y16 === s (Obj.magic q2) &&& _____fancyEq (Obj.magic q2)))
+  and fancyEqFancyEq y21 = _____fancyEq y21
+  and add y22 y23 y24 =
+    fresh (q1 q2) (y22 === o () &&& (y23 === y24) ||| (y22 === s (Obj.magic q1) &&& (y24 === s (Obj.magic q2)) &&& add (Obj.magic q1) y23 (Obj.magic q2)))
+  and greater y25 = fresh (q1) (y25 === s (Obj.magic q1) ||| (y25 === s (Obj.magic q1) &&& greater (Obj.magic q1)))
+  and sub y27 y28 = fresh (q1) (y27 === y28 ||| (y28 === o () &&& (y27 === o ())) ||| (y28 === s (Obj.magic q1) &&& sub y27 (Obj.magic q1)))
+  and createState y32 = success
+  and _createState y35 = success
+  and _greater y36 = fresh (q1) (y36 === o () ||| (y36 === s (Obj.magic q1) &&& _greater (Obj.magic q1)))
+  and __createState y39 = success
+  and ___createState y41 = success
+  and checkAnswer_ y42 y43 =
+    fresh
+      (q1 q2 q3 q4 q5 q6 q7 q8 q9 q10 q11 q12 q13 q14 q15 q16 q17 q18 q19 q20 q21 q22 q23 q24 q25 q26 q27 q28 q29 q30 q31 q32)
+      ( y43 === o ()
+      ||| (y43 === s (Obj.magic q1) &&& (Obj.magic q1 === o () ||| (Obj.magic q1 === s (Obj.magic q2) &&& _fancyEq (Obj.magic q2))))
+      &&& (y43 === o () ||| (y43 === s (Obj.magic q3)) ||| (y43 === o ()) ||| (y43 === s (Obj.magic q4)))
+      ||| ( y43
+          === s (Obj.magic q5)
+          &&& _fancyEq (Obj.magic q5)
+          ||| (y43 === o ())
+          ||| (y43 === s (s (Obj.magic q6)) &&& ___fancyEq (Obj.magic q6))
+          ||| (y43 === s (o ()))
+          ||| (y43 === s (s (Obj.magic q7)) &&& (_____fancyEq (Obj.magic q8) )) )
+      ||| ( Obj.magic q9
+          === Std.Pair.pair (Obj.magic q10) (Obj.magic q11)
+          ||| (Obj.magic q9 === Std.Pair.pair (Obj.magic q10) (Obj.magic q11))
+          ||| ( Obj.magic q9
+              === Std.Pair.pair (Obj.magic q10) (Obj.magic q11)
+              &&& (y42 === Std.Pair.pair (Obj.magic q12) (Obj.magic q13) &&& _fancyEq (Obj.magic q12)) )
+          ||| ( Obj.magic q9
+              === Std.Pair.pair (Obj.magic q10) (Obj.magic q11)
+              &&& (y42 === Std.Pair.pair (Obj.magic q14) (Obj.magic q12) &&& _fancyEq (Obj.magic q12)) )
+          ||| ( Obj.magic q9
+              === Std.Pair.pair (s (Obj.magic q15)) (Obj.magic q11)
+              &&& (y42 === Std.Pair.pair (Obj.magic q14) (Obj.magic q16) &&& _____fancyEq (Obj.magic q16)) )
+          ||| ( Obj.magic q9
+              === Std.Pair.pair (Obj.magic q10) (Obj.magic q11)
+              &&& (y42 === Std.Pair.pair (Obj.magic q16) (Obj.magic q13) &&& fancyEqFancyEq (Obj.magic q16)) )
+          &&& ( Obj.magic q9
+              === Std.Pair.pair (Obj.magic q17) (Obj.magic q18)
+              &&& (y42 === Std.Pair.pair (Obj.magic q19) (Obj.magic q20))
+              ||| (Obj.magic q9 === Std.Pair.pair (Obj.magic q17) (Obj.magic q18) &&& (y42 === Std.Pair.pair (Obj.magic q21) (Obj.magic q19)))
+              ||| (Obj.magic q9 === Std.Pair.pair (Obj.magic q17) (Obj.magic q18))
+              ||| (Obj.magic q9 === Std.Pair.pair (Obj.magic q17) (Obj.magic q18))
+              ||| ( Obj.magic q9
+                  === Std.Pair.pair (Obj.magic q17) (Obj.magic q18)
+                  &&& ( y42
+                      === Std.Pair.pair (Obj.magic q21) (Obj.magic q22)
+                      &&& ( Obj.magic q17 === o ()
+                          &&& (Obj.magic q18 === Obj.magic q23)
+                          ||| ( Obj.magic q17
+                              === s (Obj.magic q24)
+                              &&& (Obj.magic q23 === s (Obj.magic q25))
+                              &&& add (Obj.magic q24) (Obj.magic q18) (Obj.magic q25) )
+                          &&& (Obj.magic q23 === s (Obj.magic q26) ||| (Obj.magic q23 === s (Obj.magic q26) &&& greater (Obj.magic q26)))
+                          &&& add (Obj.magic q17) (Obj.magic q18) (Obj.magic q27)
+                          &&& ( Obj.magic q28 === Obj.magic q27
+                              ||| (Obj.magic q27 === o () &&& (Obj.magic q28 === o ()))
+                              ||| (Obj.magic q27 === s (Obj.magic q29) &&& sub (Obj.magic q28) (Obj.magic q29)) )
+                          &&& createState (Obj.magic q28) )
+                      ||| ( y42
+                          === Std.Pair.pair (Obj.magic q22) (Obj.magic q20)
+                          &&& ( add (Obj.magic q17) (Obj.magic q18) (Obj.magic q23)
+                              &&& greater (Obj.magic q23)
+                              &&& add (Obj.magic q17) (Obj.magic q18) (Obj.magic q27)
+                              &&& sub (Obj.magic q28) (Obj.magic q27)
+                              &&& _createState (Obj.magic q28) ) ) ) )
+              ||| ( Obj.magic q9
+                  === Std.Pair.pair (Obj.magic q17) (Obj.magic q18)
+                  &&& ( y42
+                      === Std.Pair.pair (Obj.magic q21) (Obj.magic q30)
+                      &&& ( add (Obj.magic q17) (Obj.magic q18) (Obj.magic q23)
+                          &&& (Obj.magic q23 === o () ||| (Obj.magic q23 === s (Obj.magic q31) &&& _greater (Obj.magic q31)))
+                          &&& add (Obj.magic q17) (Obj.magic q18) (Obj.magic q32)
+                          &&& __createState (Obj.magic q32) )
+                      ||| ( y42
+                          === Std.Pair.pair (Obj.magic q30) (Obj.magic q20)
+                          &&& ( add (Obj.magic q17) (Obj.magic q18) (Obj.magic q23)
+                              &&& _greater (Obj.magic q23)
+                              &&& add (Obj.magic q17) (Obj.magic q18) (Obj.magic q32)
+                              &&& ___createState (Obj.magic q32) ) ) ) ) )
+          &&& checkAnswer_ y42 y43 ) )
+  in
+  checkAnswer x0 x1 x2
+
+(*
+let topLevel x0 x1 x2 =
+  let rec checkAnswer y0 y1 y2 =
+    fresh
+      (q1 q2 q3 q4 q5 q6 q7 q8 q9 q10 q11 q12 q13 q14 q15 q16 q17 q18 q19 q20 q21 q22 q23 q24 q25 q26 q27 q28 q29 q30)
+      ( y0 === Std.List.nil ()
+      &&& (y2 === o ())
+      ||| ( y0
+          === Std.( % ) (Obj.magic q1) (Obj.magic q2)
+          &&& ( Obj.magic q3 === o ()
+              &&& (Obj.magic q4 === o ())
+              &&& (Obj.magic q1 === Std.Pair.pair (Obj.magic q5) (Obj.magic q6))
+              &&& (Obj.magic q5 === fill ())
+              &&& (Obj.magic q6 === fst_ ())
+              &&& (Obj.magic q7 === Obj.magic q3)
+              ||| ( Obj.magic q3 === o ()
+                  &&& (Obj.magic q4 === o ())
+                  &&& (Obj.magic q1 === Std.Pair.pair (Obj.magic q5) (Obj.magic q6))
+                  &&& (Obj.magic q5 === fill ())
+                  &&& (Obj.magic q6 === snd_ ())
+                  &&& (Obj.magic q7 === Obj.magic q4) )
+              ||| ( Obj.magic q3 === o ()
+                  &&& (Obj.magic q4 === o ())
+                  &&& (Obj.magic q1 === Std.Pair.pair (Obj.magic q5) (Obj.magic q6))
+                  &&& (Obj.magic q5 === empty ())
+                  &&& (Obj.magic q6 === fst_ ())
+                  &&& (Obj.magic q8 === Obj.magic q3)
+                  &&& (y1 === Std.Pair.pair (Obj.magic q9) (Obj.magic q10) &&& (Obj.magic q11 === Obj.magic q9) &&& (Obj.magic q9 === o ())) )
+              ||| ( Obj.magic q3 === o ()
+                  &&& (Obj.magic q4 === o ())
+                  &&& (Obj.magic q1 === Std.Pair.pair (Obj.magic q5) (Obj.magic q6))
+                  &&& (Obj.magic q5 === empty ())
+                  &&& (Obj.magic q6 === snd_ ())
+                  &&& (Obj.magic q8 === Obj.magic q4)
+                  &&& (y1 === Std.Pair.pair (Obj.magic q9) (Obj.magic q10) &&& (Obj.magic q11 === Obj.magic q10) &&& fancyEq (Obj.magic q10)) )
+              &&& ( Obj.magic q3 === o ()
+                  &&& (Obj.magic q4 === o ())
+                  &&& (Obj.magic q1 === Std.Pair.pair (Obj.magic q5) (Obj.magic q6))
+                  &&& (Obj.magic q5 === fill ())
+                  &&& (Obj.magic q6 === fst_ ())
+                  &&& (Obj.magic q8 === Obj.magic q4)
+                  &&& ( y1
+                      === Std.Pair.pair (Obj.magic q12) (Obj.magic q13)
+                      &&& (Obj.magic q7 === Obj.magic q12)
+                      &&& (Obj.magic q14 === Std.Pair.pair (Obj.magic q12) (o ())) )
+                  ||| ( Obj.magic q3 === o ()
+                      &&& (Obj.magic q4 === o ())
+                      &&& (Obj.magic q1 === Std.Pair.pair (Obj.magic q5) (Obj.magic q6))
+                      &&& (Obj.magic q5 === fill ())
+                      &&& (Obj.magic q6 === snd_ ())
+                      &&& (Obj.magic q8 === Obj.magic q3)
+                      &&& ( y1
+                          === Std.Pair.pair (Obj.magic q12) (Obj.magic q13)
+                          &&& (Obj.magic q7 === Obj.magic q13)
+                          &&& (Obj.magic q14 === Std.Pair.pair (o ()) (Obj.magic q13)) ) )
+                  ||| ( Obj.magic q3 === o ()
+                      &&& (Obj.magic q4 === o ())
+                      &&& (Obj.magic q1 === Std.Pair.pair (Obj.magic q5) (Obj.magic q6))
+                      &&& (Obj.magic q5 === empty ())
+                      &&& (Obj.magic q6 === fst_ ())
+                      &&& (Obj.magic q11 === Obj.magic q4)
+                      &&& (Obj.magic q14 === Std.Pair.pair (o ()) (o ())) )
+                  ||| ( Obj.magic q3 === o ()
+                      &&& (Obj.magic q4 === o ())
+                      &&& (Obj.magic q1 === Std.Pair.pair (Obj.magic q5) (Obj.magic q6))
+                      &&& (Obj.magic q5 === empty ())
+                      &&& (Obj.magic q6 === snd_ ())
+                      &&& (Obj.magic q11 === Obj.magic q3)
+                      &&& (Obj.magic q14 === Std.Pair.pair (o ()) (o ())) )
+                  ||| ( Obj.magic q3 === o ()
+                      &&& (Obj.magic q4 === o ())
+                      &&& (Obj.magic q1 === Std.Pair.pair (Obj.magic q5) (Obj.magic q6))
+                      &&& (Obj.magic q5 === pour ())
+                      &&& (Obj.magic q15 === !!false)
+                      &&& ( Obj.magic q6 === fst_ ()
+                          &&& (Obj.magic q16 === snd_ ())
+                          &&& ( y1
+                              === Std.Pair.pair (Obj.magic q12) (Obj.magic q13)
+                              &&& (Obj.magic q17 === Obj.magic q13)
+                              &&& (Obj.magic q14 === Std.Pair.pair (o ()) (Obj.magic q18) &&& (Obj.magic q19 === o () &&& (Obj.magic q18 === o ()))) )
+                          ||| ( Obj.magic q6 === snd_ ()
+                              &&& (Obj.magic q16 === fst_ ())
+                              &&& ( y1
+                                  === Std.Pair.pair (Obj.magic q12) (Obj.magic q13)
+                                  &&& (Obj.magic q17 === Obj.magic q12)
+                                  &&& (Obj.magic q14 === Std.Pair.pair (Obj.magic q18) (o ()) &&& addGreaterAdd (Obj.magic q19) (Obj.magic q18) (Obj.magic q12))
+                                  ) ) ) )
+                  &&& ( Obj.magic q2 === Std.List.nil ()
+                      &&& ( Obj.magic q14
+                          === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                          &&& (Obj.magic q11 === !!true)
+                          &&& ( Obj.magic q7 === o ()
+                              &&& (y2 === o ())
+                              ||| ( Obj.magic q7
+                                  === s (Obj.magic q17)
+                                  &&& (y2 === s (Obj.magic q16))
+                                  &&& ( Obj.magic q17 === o ()
+                                      &&& (Obj.magic q16 === o ())
+                                      ||| ( Obj.magic q17
+                                          === s (Obj.magic q20)
+                                          &&& (Obj.magic q16 === s (Obj.magic q21))
+                                          &&& _fancyEq (Obj.magic q20) (Obj.magic q21) ) ) )
+                              &&& ( Obj.magic q8 === o ()
+                                  &&& (y2 === o ())
+                                  &&& (Obj.magic q15 === !!true)
+                                  ||| (Obj.magic q8 === o () &&& (y2 === s (Obj.magic q19)) &&& (Obj.magic q15 === !!false))
+                                  ||| (Obj.magic q8 === s (Obj.magic q17) &&& (y2 === o ()) &&& (Obj.magic q15 === !!false))
+                                  ||| ( Obj.magic q8
+                                      === s (Obj.magic q17)
+                                      &&& (y2 === s (Obj.magic q16))
+                                      &&& __fancyEq (Obj.magic q16) (Obj.magic q17) (Obj.magic q15) ) ) )
+                          ||| ( Obj.magic q14
+                              === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                              &&& (Obj.magic q11 === !!false)
+                              &&& (Obj.magic q15 === !!true)
+                              &&& ( Obj.magic q7 === o ()
+                                  &&& (y2 === s (Obj.magic q19))
+                                  &&& (Obj.magic q8 === s (Obj.magic q20) &&& _fancyEq (Obj.magic q20) (Obj.magic q19))
+                                  ||| (Obj.magic q7 === s (Obj.magic q17) &&& (y2 === o ()) &&& (Obj.magic q8 === o ()))
+                                  ||| ( Obj.magic q7
+                                      === s (Obj.magic q17)
+                                      &&& (y2 === s (Obj.magic q16))
+                                      &&& (Obj.magic q17 === o ())
+                                      &&& (Obj.magic q16 === s (Obj.magic q22))
+                                      &&& (Obj.magic q8 === s (Obj.magic q10) &&& ___fancyEq (Obj.magic q10) (Obj.magic q22)) )
+                                  ||| ( Obj.magic q7
+                                      === s (Obj.magic q17)
+                                      &&& (y2 === s (Obj.magic q16))
+                                      &&& (Obj.magic q17 === s (Obj.magic q20))
+                                      &&& (Obj.magic q16 === o ())
+                                      &&& (Obj.magic q8 === s (Obj.magic q10) &&& ____fancyEq (Obj.magic q10)) )
+                                  ||| ( Obj.magic q7
+                                      === s (Obj.magic q17)
+                                      &&& (y2 === s (Obj.magic q16))
+                                      &&& (Obj.magic q17 === s (Obj.magic q20))
+                                      &&& (Obj.magic q16 === s (Obj.magic q21))
+                                      &&& ( Obj.magic q20 === o ()
+                                          &&& (Obj.magic q21 === s (Obj.magic q9))
+                                          ||| (Obj.magic q20 === s (Obj.magic q10) &&& (Obj.magic q21 === o ()))
+                                          ||| ( Obj.magic q20
+                                              === s (Obj.magic q10)
+                                              &&& (Obj.magic q21 === s (Obj.magic q23))
+                                              &&& _____fancyEq (Obj.magic q10) (Obj.magic q23) )
+                                          &&& ______fancyEq (Obj.magic q8) (Obj.magic q21) ) ) ) ) )
+                      ||| ( Obj.magic q2
+                          === Std.( % ) (Obj.magic q3) (Obj.magic q4)
+                          &&& (Obj.magic q5 === !!true)
+                          &&& ( Obj.magic q14
+                              === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                              &&& (Obj.magic q3 === Std.Pair.pair (Obj.magic q11) (Obj.magic q15))
+                              &&& (Obj.magic q11 === fill ())
+                              &&& (Obj.magic q15 === fst_ ())
+                              &&& (Obj.magic q7 === Obj.magic q19)
+                              &&& ____fancyEq (Obj.magic q19)
+                              ||| ( Obj.magic q14
+                                  === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                                  &&& (Obj.magic q3 === Std.Pair.pair (Obj.magic q11) (Obj.magic q15))
+                                  &&& (Obj.magic q11 === fill ())
+                                  &&& (Obj.magic q15 === snd_ ())
+                                  &&& (Obj.magic q8 === Obj.magic q19)
+                                  &&& ____fancyEq (Obj.magic q19) )
+                              ||| ( Obj.magic q14
+                                  === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                                  &&& (Obj.magic q3 === Std.Pair.pair (Obj.magic q11) (Obj.magic q15))
+                                  &&& (Obj.magic q11 === empty ())
+                                  &&& (Obj.magic q15 === fst_ ())
+                                  &&& (Obj.magic q7 === Obj.magic q17)
+                                  &&& ( y1
+                                      === Std.Pair.pair (Obj.magic q12) (Obj.magic q13)
+                                      &&& (Obj.magic q16 === Obj.magic q12)
+                                      &&& _fancyEq (Obj.magic q17) (Obj.magic q12) ) )
+                              ||| ( Obj.magic q14
+                                  === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                                  &&& (Obj.magic q3 === Std.Pair.pair (Obj.magic q11) (Obj.magic q15))
+                                  &&& (Obj.magic q11 === empty ())
+                                  &&& (Obj.magic q15 === snd_ ())
+                                  &&& (Obj.magic q8 === Obj.magic q17)
+                                  &&& ( y1
+                                      === Std.Pair.pair (Obj.magic q12) (Obj.magic q13)
+                                      &&& (Obj.magic q16 === Obj.magic q13)
+                                      &&& _fancyEq (Obj.magic q17) (Obj.magic q13) ) )
+                              ||| ( Obj.magic q14
+                                  === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                                  &&& (Obj.magic q3 === Std.Pair.pair (Obj.magic q11) (Obj.magic q15))
+                                  &&& (Obj.magic q11 === pour ())
+                                  &&& (Obj.magic q15 === fst_ ())
+                                  &&& (Obj.magic q7 === Obj.magic q9)
+                                  &&& (Obj.magic q8 === Obj.magic q10)
+                                  &&& (Obj.magic q20 === !!false)
+                                  &&& (Obj.magic q22 === Obj.magic q21)
+                                  &&& (Obj.magic q21 === !!false)
+                                  &&& ( Obj.magic q18 === snd_ ()
+                                      &&& ( y1
+                                          === Std.Pair.pair (Obj.magic q12) (Obj.magic q13)
+                                          &&& (Obj.magic q23 === Obj.magic q13)
+                                          &&& (Obj.magic q9 === s (Obj.magic q24) &&& _____fancyEq (Obj.magic q10) (Obj.magic q13)) ) ) )
+                              ||| ( Obj.magic q14
+                                  === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                                  &&& (Obj.magic q3 === Std.Pair.pair (Obj.magic q11) (Obj.magic q15))
+                                  &&& (Obj.magic q11 === pour ())
+                                  &&& (Obj.magic q15 === snd_ ())
+                                  &&& (Obj.magic q8 === Obj.magic q9)
+                                  &&& (Obj.magic q7 === Obj.magic q10)
+                                  &&& (Obj.magic q20 === !!false)
+                                  &&& (Obj.magic q22 === Obj.magic q21)
+                                  &&& (Obj.magic q21 === !!false)
+                                  &&& ( Obj.magic q18 === fst_ ()
+                                      &&& ( y1
+                                          === Std.Pair.pair (Obj.magic q12) (Obj.magic q13)
+                                          &&& (Obj.magic q23 === Obj.magic q12)
+                                          &&& fancyEqFancyEq (Obj.magic q9) (Obj.magic q10) (Obj.magic q12) ) ) )
+                              &&& ( Obj.magic q14
+                                  === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                                  &&& (Obj.magic q3 === Std.Pair.pair (Obj.magic q11) (Obj.magic q15))
+                                  &&& (Obj.magic q11 === fill ())
+                                  &&& (Obj.magic q15 === fst_ ())
+                                  &&& (Obj.magic q8 === Obj.magic q17)
+                                  &&& ( y1
+                                      === Std.Pair.pair (Obj.magic q19) (Obj.magic q25)
+                                      &&& (Obj.magic q6 === Std.Pair.pair (Obj.magic q19) (Obj.magic q17)) )
+                                  ||| ( Obj.magic q14
+                                      === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                                      &&& (Obj.magic q3 === Std.Pair.pair (Obj.magic q11) (Obj.magic q15))
+                                      &&& (Obj.magic q11 === fill ())
+                                      &&& (Obj.magic q15 === snd_ ())
+                                      &&& (Obj.magic q7 === Obj.magic q17)
+                                      &&& ( y1
+                                          === Std.Pair.pair (Obj.magic q26) (Obj.magic q19)
+                                          &&& (Obj.magic q6 === Std.Pair.pair (Obj.magic q17) (Obj.magic q19)) ) )
+                                  ||| ( Obj.magic q14
+                                      === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                                      &&& (Obj.magic q3 === Std.Pair.pair (Obj.magic q11) (Obj.magic q15))
+                                      &&& (Obj.magic q11 === empty ())
+                                      &&& (Obj.magic q15 === fst_ ())
+                                      &&& (Obj.magic q8 === Obj.magic q16)
+                                      &&& (Obj.magic q6 === Std.Pair.pair (o ()) (Obj.magic q16)) )
+                                  ||| ( Obj.magic q14
+                                      === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                                      &&& (Obj.magic q3 === Std.Pair.pair (Obj.magic q11) (Obj.magic q15))
+                                      &&& (Obj.magic q11 === empty ())
+                                      &&& (Obj.magic q15 === snd_ ())
+                                      &&& (Obj.magic q7 === Obj.magic q16)
+                                      &&& (Obj.magic q6 === Std.Pair.pair (Obj.magic q16) (o ())) )
+                                  ||| ( Obj.magic q14
+                                      === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                                      &&& (Obj.magic q3 === Std.Pair.pair (Obj.magic q11) (Obj.magic q15))
+                                      &&& (Obj.magic q11 === pour ())
+                                      &&& (Obj.magic q22 === !!true)
+                                      &&& ( Obj.magic q15 === fst_ ()
+                                          &&& (Obj.magic q9 === snd_ ())
+                                          &&& ( y1
+                                              === Std.Pair.pair (Obj.magic q26) (Obj.magic q21)
+                                              &&& ( Obj.magic q13 === snd_ ()
+                                                  &&& ( Obj.magic q12 === Obj.magic q21
+                                                      &&& ( Obj.magic q23 === Obj.magic q21
+                                                          &&& ( add (Obj.magic q7) (Obj.magic q8) (Obj.magic q20)
+                                                              &&& ( Obj.magic q20
+                                                                  === s (Obj.magic q27)
+                                                                  &&& (Obj.magic q21 === o ())
+                                                                  ||| ( Obj.magic q20
+                                                                      === s (Obj.magic q27)
+                                                                      &&& (Obj.magic q21 === s (Obj.magic q28))
+                                                                      &&& greater (Obj.magic q27) (Obj.magic q28) ) )
+                                                              &&& add (Obj.magic q7) (Obj.magic q8) (Obj.magic q18)
+                                                              &&& ( Obj.magic q21 === o ()
+                                                                  &&& (Obj.magic q10 === Obj.magic q18)
+                                                                  ||| ( Obj.magic q21
+                                                                      === s (Obj.magic q27)
+                                                                      &&& (Obj.magic q18 === o ())
+                                                                      &&& (Obj.magic q10 === o ()) )
+                                                                  ||| ( Obj.magic q21
+                                                                      === s (Obj.magic q27)
+                                                                      &&& (Obj.magic q18 === s (Obj.magic q28))
+                                                                      &&& sub (Obj.magic q10) (Obj.magic q28) (Obj.magic q27) ) )
+                                                              &&& createState (Obj.magic q6) (Obj.magic q21) (Obj.magic q10) ) ) ) ) )
+                                          ||| ( Obj.magic q15 === snd_ ()
+                                              &&& (Obj.magic q9 === fst_ ())
+                                              &&& ( y1
+                                                  === Std.Pair.pair (Obj.magic q21) (Obj.magic q25)
+                                                  &&& ( Obj.magic q13 === fst_ ()
+                                                      &&& ( Obj.magic q12 === Obj.magic q21
+                                                          &&& ( Obj.magic q23 === Obj.magic q21
+                                                              &&& ( add (Obj.magic q7) (Obj.magic q8) (Obj.magic q20)
+                                                                  &&& greater (Obj.magic q20) (Obj.magic q21)
+                                                                  &&& add (Obj.magic q7) (Obj.magic q8) (Obj.magic q18)
+                                                                  &&& sub (Obj.magic q10) (Obj.magic q18) (Obj.magic q21)
+                                                                  &&& _createState (Obj.magic q6) (Obj.magic q21) (Obj.magic q10) ) ) ) ) ) ) ) )
+                                  ||| ( Obj.magic q14
+                                      === Std.Pair.pair (Obj.magic q7) (Obj.magic q8)
+                                      &&& (Obj.magic q3 === Std.Pair.pair (Obj.magic q11) (Obj.magic q15))
+                                      &&& (Obj.magic q11 === pour ())
+                                      &&& (Obj.magic q22 === !!false)
+                                      &&& ( Obj.magic q15 === fst_ ()
+                                          &&& (Obj.magic q9 === snd_ ())
+                                          &&& ( y1
+                                              === Std.Pair.pair (Obj.magic q26) (Obj.magic q21)
+                                              &&& ( add (Obj.magic q7) (Obj.magic q8) (Obj.magic q20)
+                                                  &&& ( Obj.magic q20 === o ()
+                                                      ||| ( Obj.magic q20
+                                                          === s (Obj.magic q29)
+                                                          &&& (Obj.magic q21 === s (Obj.magic q30))
+                                                          &&& _greater (Obj.magic q29) (Obj.magic q30) ) )
+                                                  &&& add (Obj.magic q7) (Obj.magic q8) (Obj.magic q24)
+                                                  &&& __createState (Obj.magic q6) (Obj.magic q24) ) )
+                                          ||| ( Obj.magic q15 === snd_ ()
+                                              &&& (Obj.magic q9 === fst_ ())
+                                              &&& ( y1
+                                                  === Std.Pair.pair (Obj.magic q21) (Obj.magic q25)
+                                                  &&& ( add (Obj.magic q7) (Obj.magic q8) (Obj.magic q20)
+                                                      &&& _greater (Obj.magic q20) (Obj.magic q21)
+                                                      &&& add (Obj.magic q7) (Obj.magic q8) (Obj.magic q24)
+                                                      &&& ___createState (Obj.magic q6) (Obj.magic q24) ) ) ) ) ) )
+                              &&& checkAnswer_ y1 y2 (Obj.magic q4) (Obj.magic q6) ) ) ) ) ) ) )
+  and fancyEq y3 = y3 === o ()
+  and addGreaterAdd y4 y5 y6 = y4 === o () &&& (y5 === o ())
+  and _fancyEq y7 y8 =
+    fresh (q1 q2) (y7 === o () &&& (y8 === o ()) ||| (y7 === s (Obj.magic q1) &&& (y8 === s (Obj.magic q2)) &&& _fancyEq (Obj.magic q1) (Obj.magic q2)))
+  and __fancyEq y9 y10 y11 =
+    fresh (q1 q2 q3)
+      ( y10 === o ()
+      &&& (y9 === o ())
+      &&& (y11 === !!true)
+      ||| (y10 === o () &&& (y9 === s (Obj.magic q1)) &&& (y11 === !!false))
+      ||| (y10 === s (Obj.magic q2) &&& (y9 === o ()) &&& (y11 === !!false))
+      ||| (y10 === s (Obj.magic q2) &&& (y9 === s (Obj.magic q3)) &&& __fancyEq (Obj.magic q3) (Obj.magic q2) y11) )
+  and ___fancyEq y12 y13 = fresh (q1) (y12 === s (Obj.magic q1) &&& _fancyEq (Obj.magic q1) y13)
+  and ____fancyEq y14 = y14 === o ()
+  and _____fancyEq y15 y16 =
+    fresh (q1 q2 q3)
+      ( y15 === o ()
+      &&& (y16 === s (Obj.magic q1))
+      ||| (y15 === s (Obj.magic q2) &&& (y16 === o ()))
+      ||| (y15 === s (Obj.magic q2) &&& (y16 === s (Obj.magic q3)) &&& _____fancyEq (Obj.magic q2) (Obj.magic q3)) )
+  and ______fancyEq y17 y18 = fresh (q1) (y17 === s (Obj.magic q1) &&& ___fancyEq (Obj.magic q1) y18)
+  and fancyEqFancyEq y19 y20 y21 = fresh (q1) (y19 === s (Obj.magic q1) &&& _____fancyEq y20 y21)
+  and add y22 y23 y24 =
+    fresh (q1 q2) (y22 === o () &&& (y23 === y24) ||| (y22 === s (Obj.magic q1) &&& (y24 === s (Obj.magic q2)) &&& add (Obj.magic q1) y23 (Obj.magic q2)))
+  and greater y25 y26 =
+    fresh (q1 q2)
+      (y25 === s (Obj.magic q1) &&& (y26 === o ()) ||| (y25 === s (Obj.magic q1) &&& (y26 === s (Obj.magic q2)) &&& greater (Obj.magic q1) (Obj.magic q2)))
+  and sub y27 y28 y29 =
+    fresh (q1 q2)
+      ( y29 === o () &&& (y27 === y28)
+      ||| (y29 === s (Obj.magic q1) &&& (y28 === o ()) &&& (y27 === o ()))
+      ||| (y29 === s (Obj.magic q1) &&& (y28 === s (Obj.magic q2)) &&& sub y27 (Obj.magic q2) (Obj.magic q1)) )
+  and createState y30 y31 y32 = y30 === Std.Pair.pair y32 y31
+  and _createState y33 y34 y35 = y33 === Std.Pair.pair y34 y35
+  and _greater y36 y37 = fresh (q1 q2) (y36 === o () ||| (y36 === s (Obj.magic q1) &&& (y37 === s (Obj.magic q2)) &&& _greater (Obj.magic q1) (Obj.magic q2)))
+  and __createState y38 y39 = y38 === Std.Pair.pair (o ()) y39
+  and ___createState y40 y41 = y40 === Std.Pair.pair y41 (o ())
+  and checkAnswer_ y42 y43 y44 y45 =
+    fresh
+      (q1 q2 q3 q4 q5 q6 q7 q8 q9 q10 q11 q12 q13 q14 q15 q16 q17 q18 q19 q20 q21 q22 q23 q24 q25 q26)
+      ( y44 === Std.List.nil ()
+      &&& ( y45
+          === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+          &&& ( Obj.magic q1 === o ()
+              &&& (y43 === o ())
+              ||| ( Obj.magic q1
+                  === s (Obj.magic q3)
+                  &&& (y43 === s (Obj.magic q4))
+                  &&& ( Obj.magic q3 === o ()
+                      &&& (Obj.magic q4 === o ())
+                      ||| (Obj.magic q3 === s (Obj.magic q5) &&& (Obj.magic q4 === s (Obj.magic q6)) &&& _fancyEq (Obj.magic q5) (Obj.magic q6)) ) )
+              &&& ( Obj.magic q2 === o ()
+                  &&& (y43 === o ())
+                  ||| (Obj.magic q2 === o () &&& (y43 === s (Obj.magic q7)))
+                  ||| (Obj.magic q2 === s (Obj.magic q3) &&& (y43 === o ()))
+                  ||| (Obj.magic q2 === s (Obj.magic q3) &&& (y43 === s (Obj.magic q4)) &&& __fancyEq (Obj.magic q4) (Obj.magic q3) (Obj.magic q8)) ) )
+          ||| ( y45
+              === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+              &&& ( Obj.magic q1 === o ()
+                  &&& (y43 === s (Obj.magic q7))
+                  &&& (Obj.magic q2 === s (Obj.magic q5) &&& _fancyEq (Obj.magic q5) (Obj.magic q7))
+                  ||| (Obj.magic q1 === s (Obj.magic q3) &&& (y43 === o ()) &&& (Obj.magic q2 === o ()))
+                  ||| ( Obj.magic q1
+                      === s (o ())
+                      &&& (y43 === s (s (Obj.magic q9)))
+                      &&& (Obj.magic q2 === s (Obj.magic q10) &&& ___fancyEq (Obj.magic q10) (Obj.magic q9)) )
+                  ||| (Obj.magic q1 === s (s (Obj.magic q5)) &&& (y43 === s (o ())) &&& (Obj.magic q2 === s (Obj.magic q10) &&& ____fancyEq (Obj.magic q10)))
+                  ||| ( Obj.magic q1
+                      === s (s (Obj.magic q5))
+                      &&& (y43 === s (s (Obj.magic q6)))
+                      &&& ( Obj.magic q5 === o ()
+                          &&& (Obj.magic q6 === s (Obj.magic q11))
+                          ||| (Obj.magic q5 === s (Obj.magic q10) &&& (Obj.magic q6 === o ()))
+                          ||| (Obj.magic q5 === s (Obj.magic q10) &&& (Obj.magic q6 === s (Obj.magic q12)) &&& _____fancyEq (Obj.magic q10) (Obj.magic q12))
+                          &&& ______fancyEq (Obj.magic q2) (Obj.magic q6) ) ) ) ) )
+      ||| ( y44
+          === Std.( % ) (Obj.magic q13) (Obj.magic q14)
+          &&& ( y45
+              === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+              &&& (Obj.magic q13 === Std.Pair.pair (Obj.magic q15) (Obj.magic q8))
+              &&& (Obj.magic q15 === fill ())
+              &&& (Obj.magic q8 === fst_ ())
+              &&& (Obj.magic q1 === Obj.magic q7)
+              &&& ____fancyEq (Obj.magic q7)
+              ||| ( y45
+                  === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+                  &&& (Obj.magic q13 === Std.Pair.pair (Obj.magic q15) (Obj.magic q8))
+                  &&& (Obj.magic q15 === fill ())
+                  &&& (Obj.magic q8 === snd_ ())
+                  &&& (Obj.magic q2 === Obj.magic q7)
+                  &&& ____fancyEq (Obj.magic q7) )
+              ||| ( y45
+                  === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+                  &&& (Obj.magic q13 === Std.Pair.pair (Obj.magic q15) (Obj.magic q8))
+                  &&& (Obj.magic q15 === empty ())
+                  &&& (Obj.magic q8 === fst_ ())
+                  &&& (Obj.magic q1 === Obj.magic q3)
+                  &&& (y42 === Std.Pair.pair (Obj.magic q16) (Obj.magic q17) &&& (Obj.magic q4 === Obj.magic q16) &&& _fancyEq (Obj.magic q3) (Obj.magic q16))
+                  )
+              ||| ( y45
+                  === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+                  &&& (Obj.magic q13 === Std.Pair.pair (Obj.magic q15) (Obj.magic q8))
+                  &&& (Obj.magic q15 === empty ())
+                  &&& (Obj.magic q8 === snd_ ())
+                  &&& (Obj.magic q2 === Obj.magic q3)
+                  &&& (y42 === Std.Pair.pair (Obj.magic q16) (Obj.magic q17) &&& (Obj.magic q4 === Obj.magic q17) &&& _fancyEq (Obj.magic q3) (Obj.magic q17))
+                  )
+              ||| ( y45
+                  === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+                  &&& (Obj.magic q13 === Std.Pair.pair (Obj.magic q15) (Obj.magic q8))
+                  &&& (Obj.magic q15 === pour ())
+                  &&& (Obj.magic q8 === fst_ ())
+                  &&& (Obj.magic q1 === Obj.magic q11)
+                  &&& (Obj.magic q2 === Obj.magic q10)
+                  &&& (Obj.magic q5 === !!false)
+                  &&& (Obj.magic q9 === Obj.magic q6)
+                  &&& (Obj.magic q6 === !!false)
+                  &&& ( Obj.magic q18 === snd_ ()
+                      &&& ( y42
+                          === Std.Pair.pair (Obj.magic q16) (Obj.magic q17)
+                          &&& (Obj.magic q12 === Obj.magic q17)
+                          &&& (Obj.magic q11 === s (Obj.magic q19) &&& _____fancyEq (Obj.magic q10) (Obj.magic q17)) ) ) )
+              ||| ( y45
+                  === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+                  &&& (Obj.magic q13 === Std.Pair.pair (Obj.magic q15) (Obj.magic q8))
+                  &&& (Obj.magic q15 === pour ())
+                  &&& (Obj.magic q8 === snd_ ())
+                  &&& (Obj.magic q2 === Obj.magic q11)
+                  &&& (Obj.magic q1 === Obj.magic q10)
+                  &&& (Obj.magic q5 === !!false)
+                  &&& (Obj.magic q9 === Obj.magic q6)
+                  &&& (Obj.magic q6 === !!false)
+                  &&& ( Obj.magic q18 === fst_ ()
+                      &&& ( y42
+                          === Std.Pair.pair (Obj.magic q16) (Obj.magic q17)
+                          &&& (Obj.magic q12 === Obj.magic q16)
+                          &&& fancyEqFancyEq (Obj.magic q11) (Obj.magic q10) (Obj.magic q16) ) ) )
+              &&& ( y45
+                  === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+                  &&& (Obj.magic q13 === Std.Pair.pair (Obj.magic q15) (Obj.magic q8))
+                  &&& (Obj.magic q15 === fill ())
+                  &&& (Obj.magic q8 === fst_ ())
+                  &&& (Obj.magic q2 === Obj.magic q3)
+                  &&& (y42 === Std.Pair.pair (Obj.magic q7) (Obj.magic q20) &&& (Obj.magic q21 === Std.Pair.pair (Obj.magic q7) (Obj.magic q3)))
+                  ||| ( y45
+                      === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+                      &&& (Obj.magic q13 === Std.Pair.pair (Obj.magic q15) (Obj.magic q8))
+                      &&& (Obj.magic q15 === fill ())
+                      &&& (Obj.magic q8 === snd_ ())
+                      &&& (Obj.magic q1 === Obj.magic q3)
+                      &&& (y42 === Std.Pair.pair (Obj.magic q22) (Obj.magic q7) &&& (Obj.magic q21 === Std.Pair.pair (Obj.magic q3) (Obj.magic q7))) )
+                  ||| ( y45
+                      === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+                      &&& (Obj.magic q13 === Std.Pair.pair (Obj.magic q15) (Obj.magic q8))
+                      &&& (Obj.magic q15 === empty ())
+                      &&& (Obj.magic q8 === fst_ ())
+                      &&& (Obj.magic q2 === Obj.magic q4)
+                      &&& (Obj.magic q21 === Std.Pair.pair (o ()) (Obj.magic q4)) )
+                  ||| ( y45
+                      === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+                      &&& (Obj.magic q13 === Std.Pair.pair (Obj.magic q15) (Obj.magic q8))
+                      &&& (Obj.magic q15 === empty ())
+                      &&& (Obj.magic q8 === snd_ ())
+                      &&& (Obj.magic q1 === Obj.magic q4)
+                      &&& (Obj.magic q21 === Std.Pair.pair (Obj.magic q4) (o ())) )
+                  ||| ( y45
+                      === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+                      &&& (Obj.magic q13 === Std.Pair.pair (Obj.magic q15) (Obj.magic q8))
+                      &&& (Obj.magic q15 === pour ())
+                      &&& (Obj.magic q9 === !!true)
+                      &&& ( Obj.magic q8 === fst_ ()
+                          &&& (Obj.magic q11 === snd_ ())
+                          &&& ( y42
+                              === Std.Pair.pair (Obj.magic q22) (Obj.magic q6)
+                              &&& ( Obj.magic q17 === snd_ ()
+                                  &&& ( Obj.magic q16 === Obj.magic q6
+                                      &&& ( Obj.magic q12 === Obj.magic q6
+                                          &&& ( add (Obj.magic q1) (Obj.magic q2) (Obj.magic q5)
+                                              &&& ( Obj.magic q5
+                                                  === s (Obj.magic q23)
+                                                  &&& (Obj.magic q6 === o ())
+                                                  ||| ( Obj.magic q5
+                                                      === s (Obj.magic q23)
+                                                      &&& (Obj.magic q6 === s (Obj.magic q24))
+                                                      &&& greater (Obj.magic q23) (Obj.magic q24) ) )
+                                              &&& add (Obj.magic q1) (Obj.magic q2) (Obj.magic q18)
+                                              &&& ( Obj.magic q6 === o ()
+                                                  &&& (Obj.magic q10 === Obj.magic q18)
+                                                  ||| (Obj.magic q6 === s (Obj.magic q23) &&& (Obj.magic q18 === o ()) &&& (Obj.magic q10 === o ()))
+                                                  ||| ( Obj.magic q6
+                                                      === s (Obj.magic q23)
+                                                      &&& (Obj.magic q18 === s (Obj.magic q24))
+                                                      &&& sub (Obj.magic q10) (Obj.magic q24) (Obj.magic q23) ) )
+                                              &&& createState (Obj.magic q21) (Obj.magic q6) (Obj.magic q10) ) ) ) ) )
+                          ||| ( Obj.magic q8 === snd_ ()
+                              &&& (Obj.magic q11 === fst_ ())
+                              &&& ( y42
+                                  === Std.Pair.pair (Obj.magic q6) (Obj.magic q20)
+                                  &&& ( Obj.magic q17 === fst_ ()
+                                      &&& ( Obj.magic q16 === Obj.magic q6
+                                          &&& ( Obj.magic q12 === Obj.magic q6
+                                              &&& ( add (Obj.magic q1) (Obj.magic q2) (Obj.magic q5)
+                                                  &&& greater (Obj.magic q5) (Obj.magic q6)
+                                                  &&& add (Obj.magic q1) (Obj.magic q2) (Obj.magic q18)
+                                                  &&& sub (Obj.magic q10) (Obj.magic q18) (Obj.magic q6)
+                                                  &&& _createState (Obj.magic q21) (Obj.magic q6) (Obj.magic q10) ) ) ) ) ) ) ) )
+                  ||| ( y45
+                      === Std.Pair.pair (Obj.magic q1) (Obj.magic q2)
+                      &&& (Obj.magic q13 === Std.Pair.pair (Obj.magic q15) (Obj.magic q8))
+                      &&& (Obj.magic q15 === pour ())
+                      &&& (Obj.magic q9 === !!false)
+                      &&& ( Obj.magic q8 === fst_ ()
+                          &&& (Obj.magic q11 === snd_ ())
+                          &&& ( y42
+                              === Std.Pair.pair (Obj.magic q22) (Obj.magic q6)
+                              &&& ( add (Obj.magic q1) (Obj.magic q2) (Obj.magic q5)
+                                  &&& ( Obj.magic q5 === o ()
+                                      ||| ( Obj.magic q5
+                                          === s (Obj.magic q25)
+                                          &&& (Obj.magic q6 === s (Obj.magic q26))
+                                          &&& _greater (Obj.magic q25) (Obj.magic q26) ) )
+                                  &&& add (Obj.magic q1) (Obj.magic q2) (Obj.magic q19)
+                                  &&& __createState (Obj.magic q21) (Obj.magic q19) ) )
+                          ||| ( Obj.magic q8 === snd_ ()
+                              &&& (Obj.magic q11 === fst_ ())
+                              &&& ( y42
+                                  === Std.Pair.pair (Obj.magic q6) (Obj.magic q20)
+                                  &&& ( add (Obj.magic q1) (Obj.magic q2) (Obj.magic q5)
+                                      &&& _greater (Obj.magic q5) (Obj.magic q6)
+                                      &&& add (Obj.magic q1) (Obj.magic q2) (Obj.magic q19)
+                                      &&& ___createState (Obj.magic q21) (Obj.magic q19) ) ) ) ) ) )
+              &&& checkAnswer_ y42 y43 (Obj.magic q14) (Obj.magic q21) ) ) )
+  in
+  checkAnswer x0 x1 x2
 
 
 
@@ -1837,4 +2220,4 @@ let topLevel x0 x1 x2 =
     and __createState y78 y79 = y78 === Std.Pair.pair (o ()) y79
     and __addGreaterAdd y80 y81 y83 y84 = fresh (q1) (add y80 y81 q1 &&& _greater q1 y84 &&& add y80 y81 y83)
     and ___createState y85 y86 = y85 === Std.Pair.pair y86 (o ()) in
-    checkAnswer x0 x1 x2 *)
+    checkAnswer x0 x1 x2 *) *)

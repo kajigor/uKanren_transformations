@@ -183,42 +183,42 @@ postEval as goal =
     go _ g = g
 
 closeFresh :: [X] -> G X -> G X
-closeFresh as goal =
-    let goalNoFresh = stripFresh goal in
-    trace (printf "\n========================================\nCloseFresh\nBefore\n%s\nAfter\n%s\n" (show goal) (show goalNoFresh)) $
-    -- let (f, xs) = go as goal in
-    let (f, xs) = go as goalNoFresh in
-    let res = f [] in
-    trace (printf "\nResult:\n%s\n" (show res)) $
-    res
-  where
-    go as (g :/\: h) =
-      let (f1, uv1) = go as g in
-      let (f2, uv2) = go as h in
-      let uv = union uv1 uv2 in
-      let func = (\dv ->
-                      let udv = uv \\ dv in
-                      trace (printf "In conj\n%s\nudv: %s\n" (show goal) (show udv)) $
-                      let goal = (f1 (udv ++ dv) :/\: f2 (udv ++ dv)) in
-                      surrFresh goal udv) in
-      (func, uv)
-    go as (g :\/: h) =
-      let (f1, uv1) = go as g in
-      let (f2, uv2) = go as h in
-      let func = (\dv -> f1 dv :\/: f2 dv) in
-      (func, [])
-    go as g = -- @(_ :=: _) = or @(Invoke _ _)
-      let fresh = getFresh g as in
-      let func = (\dv -> let fs = fresh \\ dv in surrFresh g fs) in
-      (func, fresh)
+closeFresh as goal = goal
+  --   let goalNoFresh = stripFresh goal in
+  --   trace (printf "\n========================================\nCloseFresh\nBefore\n%s\nAfter\n%s\n" (show goal) (show goalNoFresh)) $
+  --   -- let (f, xs) = go as goal in
+  --   let (f, xs) = go as goalNoFresh in
+  --   let res = f [] in
+  --   trace (printf "\nResult:\n%s\n" (show res)) $
+  --   res
+  -- where
+  --   go as (g :/\: h) =
+  --     let (f1, uv1) = go as g in
+  --     let (f2, uv2) = go as h in
+  --     let uv = union uv1 uv2 in
+  --     let func = (\dv ->
+  --                     let udv = uv \\ dv in
+  --                     trace (printf "In conj\n%s\nudv: %s\n" (show goal) (show udv)) $
+  --                     let goal = (f1 (udv ++ dv) :/\: f2 (udv ++ dv)) in
+  --                     surrFresh goal udv) in
+  --     (func, uv)
+  --   go as (g :\/: h) =
+  --     let (f1, uv1) = go as g in
+  --     let (f2, uv2) = go as h in
+  --     let func = (\dv -> f1 dv :\/: f2 dv) in
+  --     (func, [])
+  --   go as g = -- @(_ :=: _) = or @(Invoke _ _)
+  --     let fresh = getFresh g as in
+  --     let func = (\dv -> let fs = fresh \\ dv in surrFresh g fs) in
+  --     (func, fresh)
 
-    stripFresh (Fresh _ g) = stripFresh g
-    stripFresh g = g
+  --   stripFresh (Fresh _ g) = stripFresh g
+  --   stripFresh g = g
 
-    surrFresh goal [] = goal
-    surrFresh goal vs = foldr Fresh goal vs
+  --   surrFresh goal [] = goal
+  --   surrFresh goal vs = foldr Fresh goal vs
 
-    getFresh goal as = fvg goal \\ as
+  --   getFresh goal as = fvg goal \\ as
 
 
 
