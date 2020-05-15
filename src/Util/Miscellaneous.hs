@@ -11,6 +11,9 @@ snd3 (_, x, _) = x
 trd3 :: (a, b, c) -> c
 trd3 (_, _, x) = x
 
+fst4 :: (a, b, c, d) -> a
+fst4 (x, _, _, _) = x
+
 snd4 :: (a, b, c, d) -> b
 snd4 (_, x, _, _) = x
 

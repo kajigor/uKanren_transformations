@@ -191,70 +191,70 @@ generateGoalFromTree definitions invocations tree args =
 
 
 renameAmbigousVars :: NCTree -> NCTree
-renameAmbigousVars tree =
-    go (getVars (fromJust $ nodeContent tree) []) tree
-  where
-    go seen (Or ch d@(LC.Descend gs _) s) =
-      let vs = getNewVars seen gs s in
-      (Or (map (go (seen ++ vs)) ch) d s)
-    go seen t@(Split ch gs s) =
-      let vs = getNewVars seen gs s in
-      let m = maxVar t + 1 in
-      let renamed = map (\(n, t) -> renameTree (n*m) seen t) (zip [1..] ch) in
-      (Split (map (go (seen ++ vs)) renamed) gs s)
-    go seen (Conj _ _ _) = error "Failed to rename: Conj node in tree "
-    go seen (Gen _ _ _) = error "Failed to rename: Gen node in tree"
-    go seen (Prune _ _) = error "Failed to rename: Prune node in tree"
-    go _ g = g
+renameAmbigousVars tree = tree
+  --   go (getVars (fromJust $ nodeContent tree) []) tree
+  -- where
+  --   go seen (Or ch d@(LC.Descend gs _) s) =
+  --     let vs = getNewVars seen gs s in
+  --     (Or (map (go (seen ++ vs)) ch) d s)
+  --   go seen t@(Split ch gs s) =
+  --     let vs = getNewVars seen gs s in
+  --     let m = maxVar t + 1 in
+  --     let renamed = map (\(n, t) -> renameTree (n*m) seen t) (zip [1..] ch) in
+  --     (Split (map (go (seen ++ vs)) renamed) gs s)
+  --   go seen (Conj _ _ _) = error "Failed to rename: Conj node in tree "
+  --   go seen (Gen _ _ _) = error "Failed to rename: Gen node in tree"
+  --   go seen (Prune _ _) = error "Failed to rename: Prune node in tree"
+  --   go _ g = g
 
-    getNewVars seen goal subst =
-      let vars = getVars goal subst in
-      -- trace (printf "\n\nNewVars\nGoal\n%s\nVars\n%s\n" (show goal) (show $  vars \\ seen)) $
-      (vars \\ seen)
+  --   getNewVars seen goal subst =
+  --     let vars = getVars goal subst in
+  --     -- trace (printf "\n\nNewVars\nGoal\n%s\nVars\n%s\n" (show goal) (show $  vars \\ seen)) $
+  --     (vars \\ seen)
 
-    getVars goal subst =
-      let vg = concatMap fvgs goal in
-      let vs = map fst subst ++ concatMap (fv . snd) subst in
-      nub $ union vg vs
+  --   getVars goal subst =
+  --     let vg = concatMap fvgs goal in
+  --     let vs = map fst subst ++ concatMap (fv . snd) subst in
+  --     nub $ union vg vs
 
-    maxVar :: NCTree -> Int
-    maxVar = maximum . getVarsTree
+  --   maxVar :: NCTree -> Int
+  --   maxVar = maximum . getVarsTree
 
-    getVarsTree (Success s _) = getVars [] s
-    getVarsTree (Or ch (LC.Descend gs y) s) = nub $ (concatMap getVarsTree ch) ++ getVars gs s
-    getVarsTree (Split ch gs s) = nub $ (concatMap getVarsTree ch) ++ getVars gs s
-    getVarsTree (Leaf gs s _ _) = getVars gs s
-    getVarsTree _ = []
+  --   getVarsTree (Success s _) = getVars [] s
+  --   getVarsTree (Or ch (LC.Descend gs y) s) = nub $ (concatMap getVarsTree ch) ++ getVars gs s
+  --   getVarsTree (Split ch gs s) = nub $ (concatMap getVarsTree ch) ++ getVars gs s
+  --   getVarsTree (Leaf gs s _ _) = getVars gs s
+  --   getVarsTree _ = []
 
-    renameTree :: Int -> [S] -> NCTree -> NCTree
-    renameTree n seen =
-        go
-      where
-        f = renameVars n seen
+  --   renameTree :: Int -> [S] -> NCTree -> NCTree
+  --   renameTree n seen =
+  --       go
+  --     where
+  --       f = renameVars n seen
 
-        go Fail = Fail
-        go (Success s g) = Success (renameSubst s) g
-        go (Or ch (LC.Descend x y) s) = Or (map go ch) (LC.Descend (renameGoals x) y) (renameSubst s)
-        go (Split ch gs s) = Split (map go ch) (renameGoals gs) (renameSubst s)
-        go (Leaf gs s g v) = Leaf (renameGoals gs) (renameSubst s) g v
-        go g = g
+  --       go Fail = Fail
+  --       go (Success s g) = Success (renameSubst s) g
+  --       go (Or ch (LC.Descend x y) s) = Or (map go ch) (LC.Descend (renameGoals x) y) (renameSubst s)
+  --       go (Split ch gs s) = Split (map go ch) (renameGoals gs) (renameSubst s)
+  --       go (Leaf gs s g v) = Leaf (renameGoals gs) (renameSubst s) g v
+  --       go g = g
 
-        renameGoals = ((f <$>) <$>)
+  --       renameGoals = ((f <$>) <$>)
 
-        renameSubst = map (\(v,t) -> (f v, f <$> t))
+  --       renameSubst = map (\(v,t) -> (f v, f <$> t))
 
-        renameVars :: Int -> [S] -> (S -> S)
-        renameVars n seen =
-            rename
-          where
-            rename v | v `elem` seen = v
-            rename v = v + n
+  --       renameVars :: Int -> [S] -> (S -> S)
+  --       renameVars n seen =
+  --           rename
+  --         where
+  --           rename v | v `elem` seen = v
+  --           rename v = v + n
 
-    disj :: [G S] -> (G S)
-    disj xs = foldl1 (:\/:) xs
+  --   disj :: [G S] -> (G S)
+  --   disj xs = foldl1 (:\/:) xs
 
-    conj :: [G S] -> (G S)
-    conj xs = foldl1 (:/\:) xs
+  --   conj :: [G S] -> (G S)
+  --   conj xs = foldl1 (:/\:) xs
 
 -- data NCTree = Fail
 --             | Success E.Sigma E.Gamma

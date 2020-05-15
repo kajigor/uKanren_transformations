@@ -17,7 +17,7 @@ instance OCanren String where
   ocanren = id
 
 instance {- OCanren v => -} OCanren (Term X) where
-  ocanren (V v@('q':_)) = printf "(Obj.magic %s)" (ocanren v)
+  -- ocanren (V v@('q':_)) = printf "(Obj.magic %s)" (ocanren v)
   ocanren (V v)        = ocanren v
   ocanren (C nil _) | map toLower nil == "nil"  = "Std.List.nil ()"
   -- ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "(%s %% %s)" (ocanren h) (ocanren t)

@@ -39,19 +39,21 @@ let run_time n text r =
   fx
 
 let _ =
-  run_exn myshow 1 q qh ("orig", fun q ->
+  (* run_exn myshow 5 q qh ("orig", fun q ->
     checkAnswer q capacities1 (int2nat 7) !!true
   )
   ;
 
-  run_exn myshow 1 q qh ("trans", fun q ->
+  run_exn myshow 5 q qh ("trans", fun q ->
     topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7)
   )
-
-(*
-  (* run_time 1 "orig" @@
-  run q (fun q -> checkAnswer q capacities1 (int2nat 7) !!true); *)
-  run_time 10 "trans" @@
-  run q (fun q -> topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))
   ; *)
+
+
+  run_time 20 "orig" @@
+  run q (fun q -> checkAnswer q capacities1 (int2nat 7) !!true);
+
+  run_time 20 "trans" @@
+  run q (fun q -> topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))
+
 

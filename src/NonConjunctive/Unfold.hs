@@ -18,7 +18,7 @@ import           Text.Printf        (printf)
 import           Unfold             (findBestByComplexity, notMaximumBranches,
                                      oneStep, oneStepUnfold, unfoldComplexity)
 import           Util.Check         (checkConj)
-import           Util.Miscellaneous (fst3, show', snd3)
+import           Util.Miscellaneous (fst3, fst4, show', snd3)
 
 data NCTree = Fail
             | Success E.Sigma E.Gamma
@@ -169,9 +169,9 @@ nonConjunctive limit (Program defs goal) =
     let nodes = [] in
     let failed = [] in
     let descend = LC.Descend (conjToList logicGoal) [] in
-    (fst3 $ go descend gamma' nodes E.s0 failed, logicGoal, names)
+    (fst4 $ go descend gamma' nodes E.s0 failed, logicGoal, names)
   where
-    go :: LC.Descend [G S] -> E.Gamma -> [[G S]] -> E.Sigma -> [[G S]] -> (NCTree, [[G S]], [[G S]])
+    go :: LC.Descend [G S] -> E.Gamma -> [[G S]] -> E.Sigma -> [[G S]] -> (NCTree, [[G S]], [[G S]], E.Gamma)
     go (LC.Descend goal' ancs') env@(x,y,z) seen state failed =
      let goal = E.substitute state goal' in
      let seen' = goal : seen in
@@ -179,17 +179,17 @@ nonConjunctive limit (Program defs goal) =
     --  if goal `elem` failed
      if variantCheck goal failed
      then
-       (Fail, seen, failed)
+       (Fail, seen, failed, env)
      else
       if limit > 0 && head z > limit
       then
-        (Prune goal state, seen, failed)
+        (Prune goal state, seen, failed, env)
       else
         -- (\(x, y, z) -> (simplify x, y, z)) $
           case if isGround goal then Nothing else findVariant goal seen of
             Just v ->
               -- trace (printf "go\nGoal:\n%s\nSeen:\n%s\n" (show goal) (show' seen)) $
-              (Leaf goal state env v, seen, failed)
+              (Leaf goal state env v, seen, failed, env)
             _ ->
               -- A test for accumulating parameter
               -- f (x, y) /\ f (z, y) -> f (m, n) /\ f (z, C (n))
@@ -198,17 +198,17 @@ nonConjunctive limit (Program defs goal) =
                 if length goal == 1
                 then
                   case findInstance goal seen of
-                    Just v -> (Leaf goal state env v, seen, failed)
-                    Nothing -> (Prune goal state, seen, failed)
+                    Just v -> (Leaf goal state env v, seen, failed, env)
+                    Nothing -> (Prune goal state, seen, failed, env)
                 else
-                  let (children, allSeenGoals, failed') = unfoldSequentially failed seen' (zip (map (:[]) goal) (repeat state)) env addAnc in
-                  split children goal state allSeenGoals failed'
+                  let (children, allSeenGoals, failed', env') = unfoldSequentially failed seen' (zip (map (:[]) goal) (repeat state)) env addAnc in
+                  split children goal state allSeenGoals failed' env'
               else
                 if length goal == 1
                 then
                   let (unified, env') = oneStep (head goal) env state in
-                  let (ch, allSeenGoals, failed') = unfoldSequentially failed seen' unified env' addAnc in
-                  (or ch (addAnc goal) state allSeenGoals failed')
+                  let (ch, allSeenGoals, failed', env'') = unfoldSequentially failed seen' unified env' addAnc in
+                  or ch (addAnc goal) state allSeenGoals failed' env''
                 else
                   case findBestByComplexity env state goal of
                     -- Either ls or rs is not empty!
@@ -217,74 +217,75 @@ nonConjunctive limit (Program defs goal) =
                         Just v ->
                           -- let x' = Conj [Leaf [x] state env v] [x] state in
                           let x' = Leaf [x] state env v in
-                          let (ls', seen'', failed'')  = unfoldNotNull failed ls seen'  state env addAnc in
-                          let (rs', seen''', failed''') = unfoldNotNull failed'' rs seen'' state env addAnc in
-                          split (catMaybes [ls', Just x', rs']) goal state seen''' failed'''
+                          let (ls', seen'', failed'', env')  = unfoldNotNull failed ls seen'  state env addAnc in
+                          let (rs', seen''', failed''', env'') = unfoldNotNull failed'' rs seen'' state env' addAnc in
+                          split (catMaybes [ls', Just x', rs']) goal state seen''' failed''' env''
                         Nothing ->
                           let (unified, env') = oneStep x env state in
-                          let (ch, allSeenGoals', failed_') = unfoldSequentially failed seen' unified env' addAnc in
-                          let (x', allSeenGoals, failed') = or ch (addAnc [x]) state allSeenGoals' failed_' in
+                          let (ch, allSeenGoals', failed_', env'') = unfoldSequentially failed seen' unified env' addAnc in
+                          let (x', allSeenGoals, failed', env''') = or ch (addAnc [x]) state allSeenGoals' failed_' env'' in
                           case computedAnswers x' of
                             Just xs ->
                               if all (\(gs, _, _) -> null gs || instanceCheck gs seen) xs
                               then
                                 -- WHAT IF IT RENAMES WITHIN THIS SUBTREE???
-                                let (children, allSeenGoals, failed'') =
-                                      foldl (\(ys, seenGoals, failedGoals) (goals, subst, newEnv) ->
+                                let (children, allSeenGoals, failed'', updatedEnv) =
+                                      foldl (\(ys, seenGoals, failedGoals, actualEnv) (goals, subst, newEnv) ->
                                                 let toUnfold = wrap ls rs goals in
-                                                let (node, newSeen, newFailed) =
+                                                let (node, newSeen, newFailed, eNv) =
                                                       if null toUnfold
-                                                      then (leaf subst newEnv, seenGoals, failedGoals)
+                                                      then (leaf subst newEnv, seenGoals, failedGoals, newEnv)
                                                       else
-                                                        go (addAnc toUnfold) newEnv seenGoals subst failedGoals in
-                                                (nullGoals toUnfold subst newEnv node : ys, newSeen, newFailed)
+                                                        go (addAnc toUnfold) (merge actualEnv newEnv) seenGoals subst failedGoals in
+                                                (nullGoals toUnfold subst newEnv node : ys, newSeen, newFailed, eNv)
                                             )
-                                            ([], seen', failed')
+                                            ([], seen', failed', env''')
                                             xs in
-                                (or (reverse children) (addAnc $ wrap ls rs [x]) state allSeenGoals failed'')
+                                or (reverse children) (addAnc $ wrap ls rs [x]) state allSeenGoals failed'' updatedEnv
                               else
-                                let (ls', seen'', failed'')  = unfoldNotNull failed' ls allSeenGoals state env addAnc in
-                                let (rs', seen''', failed''') = unfoldNotNull failed'' rs seen'' state env addAnc in
-                                split (catMaybes [ls', Just x', rs']) goal state seen''' failed'''
+                                let (ls', seen'', failed'', env4)  = unfoldNotNull failed' ls allSeenGoals state env''' addAnc in
+                                let (rs', seen''', failed''', env5) = unfoldNotNull failed'' rs seen'' state env4 addAnc in
+                                split (catMaybes [ls', Just x', rs']) goal state seen''' failed''' env5
                             Nothing ->
-                              let (ls', seen'', failed'')  = unfoldNotNull failed' ls allSeenGoals state env addAnc in
-                              let (rs', seen''', failed''') = unfoldNotNull failed'' rs seen'' state env addAnc in
-                              split (catMaybes [ls', Just x', rs']) goal state seen''' failed'''
+                              let (ls', seen'', failed'', env4)  = unfoldNotNull failed' ls allSeenGoals state env''' addAnc in
+                              let (rs', seen''', failed''', env5) = unfoldNotNull failed'' rs seen'' state env4 addAnc in
+                              split (catMaybes [ls', Just x', rs']) goal state seen''' failed''' env5
                     Nothing ->
-                      let (children, allSeenGoals, failed'') = unfoldSequentially failed seen' (zip (map (:[]) goal) (repeat state)) env addAnc in
-                      split children goal state allSeenGoals failed''
+                      let (children, allSeenGoals, failed'', env') = unfoldSequentially failed seen' (zip (map (:[]) goal) (repeat state)) env addAnc in
+                      split children goal state allSeenGoals failed'' env'
     wrap left right x = left ++ x ++ right
     nullGoals goals subst env v = if null goals then leaf subst env else v
 
     unfoldNotNull failed xs seen state env addAnc =
       if null xs
-      then (Nothing, seen, failed)
+      then (Nothing, seen, failed, env)
       else
-        let (children, seen', failed') = unfoldSequentially failed seen (zip (map (:[]) xs) (repeat state)) env addAnc in
-        let (n, x, y) = split children xs state seen' failed' in
-        (Just n, x, y)
+        let (children, seen', failed', env') = unfoldSequentially failed seen (zip (map (:[]) xs) (repeat state)) env addAnc in
+        let (n, x, y, z) = split children xs state seen' failed' env' in
+        (Just n, x, y, z)
         -- (Just $ Split children xs state, seen', failed')
 
     goNotNull xs seen state env addAnc failed =
       if null xs
-      then (Nothing, seen, failed)
+      then (Nothing, seen, failed, env)
       else
-        let (node, seen', failed') = go (addAnc xs) env seen state failed in
-        (Just node, seen', failed')
+        let (node, seen', failed', env') = go (addAnc xs) env seen state failed in
+        (Just node, seen', failed', env')
 
     unfoldSequentially failed seen unified env addAnc =
-      let (ch, allSeenGoals, actualFailed) =
-                      foldl (\(xs, seenGoals, failedGoals) (goals, subst) ->
-                                let (node, newSeen, newFailed) =
+      let (ch, allSeenGoals, actualFailed, actualEnv) =
+                      foldl (\(xs, seenGoals, failedGoals, env') (goals, subst) ->
+                                let (node, newSeen, newFailed, newEnv) =
                                       if null goals
-                                      then (leaf subst env, seenGoals, failedGoals)
-                                      else go (addAnc goals) env seenGoals subst failedGoals in
-                                (nullGoals goals subst env node : xs, newSeen, newFailed)
+                                      then (leaf subst env, seenGoals, failedGoals, env')
+                                      else go (addAnc goals) env' seenGoals subst failedGoals in
+                                (nullGoals goals subst env node : xs, newSeen, newFailed, newEnv)
                             )
-                            ([], seen, failed)
+                            ([], seen, failed, env)
                             unified in
-      (reverse ch, allSeenGoals, actualFailed)
+      (reverse ch, allSeenGoals, actualFailed, actualEnv)
 
+    merge (_, _, d) newEnv@(x, y, z) = if head d > head z then (x, y, d) else newEnv
 
 computedAnswers :: NCTree -> Maybe ([([G S], E.Sigma, E.Gamma)])
 computedAnswers (Success s e) = Just [([], s, e)]
@@ -325,18 +326,18 @@ doStep goal env state =
       (oneStep goal env state)
       (incrDeepOneStep globalLimit 0 goal env state)
 
-or :: [NCTree] -> LC.Descend [G S] -> E.Sigma -> [[G S]] -> [[G S]] -> (NCTree, [[G S]], [[G S]])
-or ch d@(LC.Descend gs _) state seen failed =
+or :: [NCTree] -> LC.Descend [G S] -> E.Sigma -> [[G S]] -> [[G S]] -> E.Gamma -> (NCTree, [[G S]], [[G S]], E.Gamma)
+or ch d@(LC.Descend gs _) state seen failed env =
   if null ch || all (\x -> case x of Fail -> True; _ -> False) ch
-  then (Fail, (delete gs seen), (gs:failed))
-  else (Or ch d state, seen, failed)
+  then (Fail, (delete gs seen), (gs:failed), env)
+  else (Or ch d state, seen, failed, env)
     -- case ch of
     --   [x] -> (x, seen, failed)
     --   _ -> (Or ch d state, seen, failed)
 
-split :: [NCTree] -> [G S] -> E.Sigma -> [[G S]] -> [[G S]] -> (NCTree, [[G S]], [[G S]])
-split [x] goal state seen failed = (x, seen, failed)
-split ch goal state seen failed = (Split ch goal state, seen, failed)
+split :: [NCTree] -> [G S] -> E.Sigma -> [[G S]] -> [[G S]] -> E.Gamma -> (NCTree, [[G S]], [[G S]], E.Gamma)
+split [x] goal state seen failed env = (x, seen, failed, env)
+split ch goal state seen failed env = (Split ch goal state, seen, failed, env)
 
 checkConflicts :: [E.Sigma] -> Bool
 checkConflicts sigmas =
