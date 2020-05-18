@@ -1,1 +1,1 @@
-rm -f *.cmi *.cmo peval
+rm -f *.cmi *.cmo run

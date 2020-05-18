@@ -1,0 +1,10 @@
+ecce: 0.472850s
+original: 1.214879s
+original: fresh: 1.148746s
+transformed original: 0.243742s
+transformed: close fresh auto: 2.050742s
+transformed: bottle: 0.272698s
+transformed: close fresh, no purification: 2.085741s
+transformed: close fresh, extra unifs removed by hand: 2.199518s
+global: 0.267623s
+defer: 0.308739s

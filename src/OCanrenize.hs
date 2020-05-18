@@ -23,7 +23,7 @@ instance {- OCanren v => -} OCanren (Term X) where
   -- ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "(%s %% %s)" (ocanren h) (ocanren t)
   -- ocanren (C "%"    [h,t]) = printf "(%s %% %s)" (ocanren h) (ocanren t)
   ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "Std.(%%) %s %s" (ocanren h) (ocanren t)
-  ocanren (C "%" [h, t]) = printf "Std.(%%) %s %s" (ocanren h) (ocanren t)
+  ocanren (C "%" [h, t]) = printf "Std.(%%) (%s) (%s)" (ocanren h) (ocanren t)
   ocanren (C "O" []) = "Std.Nat.zero"
   ocanren (C "S" [x]) = printf "Std.Nat.succ (%s)" (ocanren x)
 
@@ -65,6 +65,17 @@ instance {-OCanren v =>-} OCanren (G X) where
 --ocanren (Invoke f ts) = printf "(print_string \"%s\\n\";%s)" (f ++ concat [' ' : ocanren t | t <- ts]) (f ++ concat [' ' : ocanren t | t <- ts])
   ocanren (Invoke f ts) = printf "(%s %s)" f (printArgs $ map ocanren ts)
   ocanren (Let (Def n as b) g) = printf "let rec %s %s = %s in %s" n (printArgs as) (ocanren b) (ocanren g)
+
+
+-- instance {-OCanren v =>-} OCanren (G X) where
+-- --ocanren (t1 :=:  t2)  = printf "(print_string \"%s === %s\\n\"; %s === %s)" (ocanren t1) (ocanren t2) (ocanren t1) (ocanren t2)
+--   ocanren (t1 :=:  t2)  = printf "(%s === %s)" (ocanren t1) (ocanren t2)
+--   ocanren (g1 :/\: g2)  = printf "defer (%s &&& %s)" (ocanren g1) (ocanren g2)
+--   ocanren (g1 :\/: g2)  = printf "defer (%s ||| %s)" (ocanren g1) (ocanren g2)
+--   ocanren (Fresh x g )  = let (names, goal) = freshVars [x] g in printf "(fresh ((%s)) (%s))" (printArgs names) (ocanren goal)
+-- --ocanren (Invoke f ts) = printf "(print_string \"%s\\n\";%s)" (f ++ concat [' ' : ocanren t | t <- ts]) (f ++ concat [' ' : ocanren t | t <- ts])
+--   ocanren (Invoke f ts) = printf "defer (%s %s)" f (printArgs $ map ocanren ts)
+--   ocanren (Let (Def n as b) g) = printf "let rec %s %s = %s in %s" n (printArgs as) (ocanren b) (ocanren g)
 
 -- printArgs [] = "()"
 printArgs args = unwords $ map (\x -> if ' ' `elem` x then printf "(%s)" x else x ) args

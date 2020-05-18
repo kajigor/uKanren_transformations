@@ -51,7 +51,7 @@ runProp = do
     runNc (-1) "prop__" prop''
     -- runNc (-1) "prop1___" prop1'''
     -- runNc (-1) "prop2___" prop2'''
-    -- runNc (-1) "propPlain" propPlain
+    runNc (-1) "propPlain" propPlain
     -- runNc (-1) "propPlain_" propPlain'
     -- runNc (-1) "prop__1" prop''1
     -- runNc (-1) "prop__2" prop''2
@@ -97,7 +97,7 @@ runPath = do
     runNc (-1) "path" Program.Path.query1
 
 unit_nonConjunctiveTest = do
-  -- runUnify
+  runUnify
   -- runPath
   runProp
   runBottles

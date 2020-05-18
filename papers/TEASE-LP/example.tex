@@ -39,7 +39,7 @@ Saint Petersburg, Russia}
 % It is capable to determine the order in which names within a program are bound and can be used to facilitate specialization and as a step of conversion into a functional language.
 % \end{abstract}
 
-\miniKanren{}\footnote{\miniKanren{} language web site: \url{http://minikanren.org}} is a family of domain-specific languages for pure \emph{relational} programming the core of which can be implemented in a few lines of the host language~\cite{hemann2013ukanren}.
+\miniKanren{}\footnote{\miniKanren{} language web site: \url{http://minikanren.org}} is a family of domain-specific languages for pure \emph{relational} programming, the core of which can be implemented in a few lines of the host language~\cite{hemann2013ukanren}.
 A program in \miniKanren{} can be run in different directions: given some of its arguments, it computes all the possible values of the rest of the arguments.
 When the relation is run with only the last argument unknown, we say it is run in the \emph{forward direction}, otherwise we call it running in the \emph{backward direction}.
 A single relational specification creates a multitude of directions, each solving a distinctive problem.
@@ -47,16 +47,17 @@ A single relational specification creates a multitude of directions, each solvin
 The search employed in \miniKanren{} is complete, so all possible answers will be computed eventually, albeit it may take a long time.
 In fact, the running time depends on the direction and is highly unpredictable.
 This is where the promise of \miniKanren{} falls short: one has to write the relational specification with the specific direction in mind for it to be efficient.
-There are several attempts to tackle this problem in an automatic fashion: one way is to use a \emph{divergence test} to stop execution of definitely diverging computations~\cite{rozplokhas2018improving}, the other is to employ \emph{specialization}~\cite{lozov2019relational}, while the one we have been working on recently is to converse a relational specification into a function which runs fast in the given direction.
+There are several attempts to tackle this problem in an automatic fashion: one way is to use a \emph{divergence test} to stop execution of definitely diverging computations~\cite{rozplokhas2018improving}, the other is to employ \emph{specialization}~\cite{lozov2019relational}, while the one we have been working on recently is to convert a relational specification into a function that runs fast in the given direction.
 
-Given a relational specification equipped with a certain direction, the \emph{functional conversion} constructs a function in which unifications are mapped either into a pattern matching or are used in let-bindings to compute the intermediate results.
-Disjunctions give rise to branches in pattern matchings within a function definition, while conjunctions mean sequential computations.
-The nondeterministic computations are modeled with lists.
+Given a relational specification equipped with a certain direction, \emph{functional conversion} constructs a function in which unifications are mapped either into pattern matching or are used in let-bindings to compute the intermediate results.
+Disjunctions give rise to branches in pattern matchings within a function definition, while conjunctions represent sequential computations.
+% The nondeterministic computations are modeled with lists.
+Lists are used to model multitude of possible answers which are available by the use of disjunctions.
 The most nontrivial part of the functional conversion is to determine the order in which to bind each variable within the function body.
 
-\emph{Binding-time analysis}, or bta, is used in compilation and specialization to determine at what time the values of the variables can be computed.
-Typically, bta divides all computations into two stages: \emph{compile-time}, or \emph{static}, and \emph{execution time}, or \emph{dynamic}.
-One approach to bta is to explicitly annotate program variables and computations by equipping them with their \emph{binding times}.
+\emph{Binding-time analysis}, or BTA, is used in compilation and specialization to determine at what time the values of the variables can be computed.
+Typically, BTA divides all computations into two stages: \emph{compile-time}, or \emph{static}, and \emph{execution time}, or \emph{dynamic}.
+One approach to BTA is to explicitly annotate program variables and computations by equipping them with their \emph{binding times}.
 In relational programming there is no predefined execution direction --- no order in which conjunctions should be considered ---
 which complicates the problem of identifying variables binding times.
 It has been shown~\cite{lozov2019relational} that online conjunctive partial deduction may improve program running time in a given direction.
@@ -65,18 +66,6 @@ Offline approaches are known~\cite{jones1993partial} to be safe, helpful in the 
 The existing binding-time analyses for pure \prolog{}~\cite{craig2004fully} and \mercury{}~\cite{vanhoof2004binding} only distinguish between static and dynamic variables, which does not help to work out the order.
 Natural numbers serve as annotations in~\cite{Thiemann1997AUF} and are better suited to our problem.
 
-% It has been shown in~\cite{lozov2019relational} that an online conjunctive partial deduction is capable of improving running time of a program in a given direction, but we believe that offline specialization may provide even better results in the context of relational interpreters.
-% Offline specializers employ a static analysis before the specialization step.
-% The most prominent of them is \emph{binding-time analysis}.
-% It is used to determine which data is available statically, and which~--- dynamically.
-% Having these annotations, a specialization algorithm can ignore dynamic data and only symbolically execute a program with respect to the static data.
-% This usually leads to a more precise and powerful specialization.
-
-% We believe that a variation of a binding-time analysis can serve as a solution to figuring out the order of variable bindings necessary for functional conversion as well as be a part of an offline specializer.
-% The goal of binding-time analysis is to identify at which step of a computation each variable gets its value.
-% This process is called annotation: each variable gets an annotation from the domain of \emph{binding-time}.
-% Existing binding-time analyses for pure \prolog{}~\cite{craig2004fully} and \mercury{}~\cite{vanhoof2004binding} only distinguish between static and dynamic variables, which does not help to work out the order.
-% Natural numbers serve as annotations in~\cite{Thiemann1997AUF} and are better suited to our problem.
 
 The binding-time analysis for \miniKanren{} should annotate a given goal as well as determine suitable directions for all relation calls involved in the result computation.
 We start by annotating some free variables within the goal with $0$ which means they are the \emph{input} or \emph{static} variables, while all others are annotated with $\undef{}$.
@@ -86,9 +75,10 @@ We assume that all goals are in \emph{canonical normal form}: a goal is a disjun
 Relation calls ($R^k$) and constructors can only have variables ($V$) as their arguments. Unification should have a single variable on the left-hand side and a term ($T$) on the right-hand side, with the exception of unifying two constructors of arity $0$.
 We leave out unifications of the zero-arity constructors, since they can either evaluate to a failure or to a success without extending the substitution which can be determined statically.
 Any core \miniKanren{} program can be converted to this form.
-$$Goal = \underline{\fresh{}} \ V_1 \dots V_n \bigvee \bigwedge (\underline{call} \ R^k \ V_1 \dots V_k \mid V \equiv T)$$
+We use the following representation of the goal in canonical form:
+$$Goal = \underline{\fresh{}} \ V_1 \dots V_n \bigvee \bigwedge (\underline{call} \ R^k \ V_1 \dots V_k \mid V \equiv T)$$.
 
-The bta algorithm is to execute the following steps until a fixpoint is reached.
+The BTA algorithm executes the following steps until a fixpoint is reached.
 Since disjuncts do not influence each other, we treat every disjunct in isolation.
 At each step, a unification suitable for annotation is selected within the conjunction.
 If there are no unifications to annotate, then we select a relation call.
@@ -100,8 +90,6 @@ We write annotations in superscripts; $t[x_0, \dots, x_k]$ denotes a term with f
 \begin{itemize}
   \item The unification of a variable annotated with $\undef{}$ with a term in which all free variables are annotated with numbers: $x^{\undef{}} \equiv t[y_0^{i_0},\dots, y_k^{i_k}]$. In this case we annotate $x$ with $1+max\{i_0,\dots,i_k\}$.
   \item The unification of a variable annotated with a number with a term, some variables of which are annotated with $\undef{}$: $x^{n} \equiv t[y_0^{i_0},\dots, y_k^{i_k}]$. Here all $\undef{}$ variables are to be annotated with $1+n$.
-  % \item The unification of two constructors with the same name and the same number of arguments: $\underline{cons} \ C^k \ [t_0, \dots, t_k] \equiv \underline{cons} \ C^k \ [s_0, \dots, s_k]$. This is equivalent to the conjunction of the unifications $\bigwedge_{i=0}^{k} t_i \equiv s_i$ and is treated accordingly.
-  % \item Two cases symmetrical to the first two, in which a term is unified with a variable.
 \end{itemize}
 
 If a unification does not conform to any of these cases, it should not be annotated at the current step.
@@ -109,14 +97,27 @@ Relation calls are only annotated when all unifications have been considered.
 A relation call in which all variables are annotated with $\undef{}$ as well as those with numerical annotations do not need to be considered.
 Thus relation calls in which only some of the variables are annotated with numbers should be examined further.
 
-We say that two calls to the same relation have a \emph{consistent} direction if the annotations order free variables in the same way.
-For example, relation calls $R^3 \ x^{\undef{}} \ y^{0} \ z^{0}$, $R^3 \ x^{\undef{}} \ y^{1} \ z^{2}$ and $R^3 x^{\undef{}} y^{\undef{}} z^{3}$ all have consistent directions, while the direction of $R^3 \ x^{1} \ y^{2} \ z^{\undef{}}$ is not consistent with the direction of $R^3 \ x^{\undef{}} \ y^{1} \ z^{2}$.
+Let us define what it means for two calls to the same relation to have  \emph{consistent} direction.
+We~start by mapping all numerical annotations to $0$.
+Considering $\undef{}$ annotation to be less than $0$, we then compare the annotations of variables of one relation call to the annotations of the respective variable of the other.
+If~all variable pairs are ordered in the same way, then they have consistent direction.
+For~example, the relation calls $R^3 \ x^{\undef{}} \ y^{0} \ z^{0}$ and $R^3 \ x^{\undef{}} \ y^{1} \ z^{2}$ have consistent direction, since they become equal after mapping annotations to $0$.
+The relation call $R^3 x^{\undef{}} y^{\undef{}} z^{3}$ also have consistent direction with the call $R^3 \ x^{\undef{}} \ y^{0} \ z^{0}$ since after mapping to $0$, the first call becomes $R^3 x^{\undef{}} y^{\undef{}} z^{0}$, and annotations of all variables but one are the same.
+Whereas the direction of $R^3 \ x^{0} \ y^{0} \ z^{\undef{}}$ is not consistent with the direction of $R^3 \ x^{\undef{}} \ y^{0} \ z^{0}$: annotation of $x$ in the first call is greater than in the second ($0 > \undef{}$) while the opposite holds for the variable $z$.
 
 If at the current step the conjunct under consideration has a consistent direction with some relation call annotated before, then there is no need to explore this direction again.
 We use the previous call to annotate the current one.
 Only a relation call with the direction which has not been encountered before should be annotated.
 It is done by considering its body: variables annotated within the call keep their annotations in the body, which is annotated by the described algorithm.
 All annotated relation definitions are memoized while algorithm runs, so they can be reused if necessary.
+
+If all variables of the input relation call are specified as dynamic, our algorithm is unable to apply any of the rules described.
+The same issue arises when there are dynamic variables which unify only with $\undef{}$ fresh variables or constructors over them.
+Considering the way functional conversion should behave in this circumstance helps to accommodate it in the BTA algorithm.
+Whenever a fresh variable is part of the answer, \miniKanren{} reifies it as a symbolic variable which stands for all possible values.
+It is reasonable to reperesent this with a lazy generator when doing functional conversion.
+When dealing with this direction, BTA first attempts annotation as described and if there are $\undef{}$ variables left, they are treated as if they were unified with a generator available statically.
+
 
 We presented a binding-time analysis algorithm for \miniKanren{} that determines the order in which variables are bound.
 The algorithm terminates since there are finitely many different relation calls to consider, and each relation call has finitely many possible annotations.
