@@ -57,14 +57,15 @@ let _ =
   )
   ; *)
 
-  run_time 5 "orig" @@
-  run q (fun q -> checkAnswer q capacities1 (int2nat 7) !!true);
 
   run_time 5 "trans" @@
   run q (fun q -> Bottles_trans.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7));
 
   run_time 5 "defer" @@
   run q (fun q -> Bottles_defer.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7));
+
+  run_time 5 "orig" @@
+  run q (fun q -> checkAnswer q capacities1 (int2nat 7) !!true);
 
   run_time 5 "calls" @@
   run q (fun q -> Bottles_fun.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))

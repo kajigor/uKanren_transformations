@@ -1,0 +1,9 @@
+5 paths of length 5 in the graph from last year's submission
+original: path: 23.017480s
+spec: path: 0.821438s
+trans: path: 3.441954s
+
+paths in a complete graph of any length 
+original: path: 38.360523s
+spec: path: 38.446899s
+trans: path: 34.751273s

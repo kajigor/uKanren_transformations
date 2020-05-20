@@ -86,7 +86,7 @@ findNode :: [G S] -> NCTree -> ([G S], NCTree)
 findNode v tree =
     let nodes = go tree in
     case find nontrivial nodes of
-      Just n -> {- trace (printf "\nNontrivialTreeFor\nGs:\n%s\n\nTree:\n%s\n" (show v) (show n)) $ -} (v, simplify $ renameAmbigousVars n)
+      Just n -> (v, simplify $ renameAmbigousVars n)
       Nothing -> error $ printf "Residualization error: no node for\n%s" (show v)
   where
     go node@(Or _ (LC.Descend goal _) _) | goal == v = return node
@@ -138,14 +138,12 @@ generateGoalFromTree definitions invocations tree args =
     go seen r Fail           = Just fail
     go seen r (Success ss _) = residualizeState ss
     go seen r (Or ch (LC.Descend gs _) s) = do
-      let vs = getNewVars seen gs s
-      -- traceM (printf "\nOr\nNew vars for goal\n%s\nAre\n%s\n\n" (show' gs) (show' vs))
+      -- let vs = getNewVars seen gs s
       let unifs = residualizeState s
       let rest = getInvocation r gs <|> (disj $ catMaybes $ map (go seen False) ch)
       mkGoal unifs rest (:/\:)
     go seen r (Split ch gs s)  = do
-      let vs = getNewVars seen gs s
-      -- traceM (printf "\nSplit\nNew vars for goal\n%s\nAre\n%s\n\n" (show' gs) (show' vs))
+      -- let vs = getNewVars seen gs s
       let unifs = residualizeState s
       let rest = getInvocation r gs <|> (conj $ catMaybes $ map (go seen False) ch)
       mkGoal unifs rest (:/\:)
@@ -165,11 +163,10 @@ generateGoalFromTree definitions invocations tree args =
     mkGoal Nothing (Just r) _ = Just r
     mkGoal _ _ _ = Nothing
 
-    getNewVars seen goal subst =
-      let vg = concatMap fvgs goal in
-      let vs = map fst subst ++ concatMap (fv . snd) subst in
-      -- trace (printf "SeenVars\n%s\nVg:\n%s\nVs:\n%s\nUnion\n%s\n" (show' seen) (show' vg) (show' vs) (show' $ union vg vs)) $
-      (nub $ union vg vs) \\ seen
+    -- getNewVars seen goal subst =
+    --   let vg = concatMap fvgs goal in
+    --   let vs = map fst subst ++ concatMap (fv . snd) subst in
+    --   (nub $ union vg vs) \\ seen
 
     getInvocation True _ = Nothing
     getInvocation _   gs =
@@ -275,10 +272,10 @@ collectLeaves (Or    ch _ _)   = concatMap collectLeaves ch
 collectLeaves (Conj  ch _ _)   = concatMap collectLeaves ch
 collectLeaves (Split [x] _ _)  = collectLeaves x
 collectLeaves (Split ch _ _)   =
-  let children = []
-        -- catMaybes $ map (\x -> do y <- nodeContent x
-        --                           return (y,y))
-        --                 ch
+  let children =
+        catMaybes $ map (\x -> do y <- nodeContent x
+                                  return (y,y))
+                        ch
   in
   let deeperLeaves = concatMap collectLeaves ch in
   children ++ deeperLeaves

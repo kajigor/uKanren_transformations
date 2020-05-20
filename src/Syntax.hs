@@ -164,7 +164,7 @@ instance Dot a => Dot (Term a) where
   dot (C name []) | isNil name = "[]"
   dot (C name [h, C t []]) | isCons name && isNil t = printf "[%s]" (dot h)
   dot (C name [h, t]) | isCons name = printf "%s : %s" (dot h) (dot t)
-  dot c | isSucc c || isZero c = pretifyNum 0 c dot dotVar
+  dot c | isSucc c || isZero c = pretifyNum' 0 c dot dotVar
   dot (C name [x, y]) | isPair name = printf "(%s, %s)" (dot x) (dot y)
   dot (C name ts) =
           case ts of
@@ -173,7 +173,7 @@ instance Dot a => Dot (Term a) where
 
 isNil s = map toLower s == "nil" || s == "[]"
 isCons s = map toLower s == "cons" || s == "%"
-isZero (C o []) = map toLower o == "o"
+isZero (C o []) = let l = map toLower o in l == "o" || l == "z"
 isZero _ = False
 isSucc (C s [n]) = map toLower s == "s"
 isSucc _ = False
@@ -189,10 +189,17 @@ predec :: Term a -> Term a
 predec c@(C _ [a]) | isSucc c = a
 predec c = error $ printf "Failed to get predecessor"
 
-pretifyNum :: Int -> Term a -> (Int->String) -> (a -> String) -> String
+pretifyNum :: Show a => Int -> Term a -> (Int->String) -> (a -> String) -> String
 pretifyNum acc (V v) intPrint varPrint = printf "(%s + %s)" (intPrint acc) (varPrint v)
 pretifyNum acc c intPrint varPrint | isSucc c = pretifyNum (1 + acc) (predec c ) intPrint varPrint
 pretifyNum acc c intPrint _ | isZero c = intPrint acc
+pretifyNum acc c intPrint varPrint = error (printf "Failed to pretifyNum: %s" (show c))
+
+pretifyNum' :: Dot a => Int -> Term a -> (Int->String) -> (a -> String) -> String
+pretifyNum' acc (V v) intPrint varPrint = printf "(%s + %s)" (intPrint acc) (varPrint v)
+pretifyNum' acc c intPrint varPrint | isSucc c = pretifyNum' (1 + acc) (predec c ) intPrint varPrint
+pretifyNum' acc c intPrint _ | isZero c = intPrint acc
+pretifyNum' acc c intPrint varPrint = error (printf "Failed to pretifyNum': %s" (dot c))
 
 instance Dot a => Dot (G a) where
   dot (t1 :=:  t2)               = printf "%s = %s" (dot t1) (dot t2)

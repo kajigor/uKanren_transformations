@@ -3,6 +3,10 @@ module Program.Path where
 import Syntax
 import Prelude hiding (elem)
 
+querylength = Program pathTree $ fresh ["g", "a1", "a2", "a3", "a4", "a5"] (call "isPath" [C "%" [V "a1", C "%" [V "a2", C "%" [V "a3", C "%" [V "a4", C "%" [V "a5", C "nil" []]]]]], V "g", C "true" []])
+
+-- querylength = Program pathTree $ fresh ["c", "g", "q", "a1", "a2", "a3", "a4", "a5"] (V "c" === C "%" [V "a1", C "%" [V "a2", C "%" [V "a3", C "%" [V "a4", C "%" [V "a5", C "nil" []]]]]] &&& call "isPath" [V "c", V "g", V "q"])
+
 query = Program pathTree $ fresh ["c", "g", "q"] (call "isPath" [V "c", V "g", V "q"])
 
 query1 = Program pathTree $ fresh ["c", "g"] (call "isPath" [V "c", V "g", C "true" []])
@@ -22,8 +26,8 @@ queryQueer = Program pathTree $ fresh ["x", "y", "z"] (call "eqPair" [V "x", V "
 eqNat :: [Def]
 eqNat = [eqNatDef]
 
-eqNatDef :: Def 
-eqNatDef = 
+eqNatDef :: Def
+eqNatDef =
     Def "eqNat" ["a", "b", "q24"] (
       fresh ["q25"] (
         (V "q25" === C "pair" [V "a", V "b"]) &&&
@@ -43,8 +47,8 @@ eqNatDef =
 eqPair :: [Def]
 eqPair = eqPairDef : eqNat
 
-eqPairDef :: Def 
-eqPairDef = 
+eqPairDef :: Def
+eqPairDef =
     Def "eqPair" ["a", "b", "q15"] (
       fresh ["q16", "a1", "a2", "b1", "b2", "q17", "q18"] (
         (V "q16" === C "pair" [V "a", V "b"]) &&&
@@ -60,8 +64,8 @@ eqPairDef =
 elem :: [Def]
 elem = elemDef : eqPair
 
-elemDef :: Def 
-elemDef = 
+elemDef :: Def
+elemDef =
     Def "elem" ["x", "g", "q10"] (
       ((V "g" === C "nil" []) &&&
       (V "q10" === C "false" [])) |||
@@ -75,10 +79,10 @@ elemDef =
     )
 
 isPath :: [Def]
-isPath = isPathDef : elem ++ isPath 
+isPath = isPathDef : elem ++ isPath
 
-isPathDef :: Def 
-isPathDef = 
+isPathDef :: Def
+isPathDef =
     Def "isPath" ["c", "g", "q0"] (
       ((V "c" === C "nil" []) &&&
       (V "q0" === C "true" [])) |||
@@ -98,6 +102,6 @@ isPathDef =
 pathTree :: [Def]
 pathTree = [eqNatDef, eqPairDef, elemDef, isPathDef]
 
-env :: String 
-env = 
+env :: String
+env =
   "open GT\nopen OCanren\nopen OCanren.Std\ntype 'a0 gnat =\n  | Z \n  | S of 'a0 \nlet rec fmap fa0 = function | Z -> Z | S a0 -> S (fa0 a0)\nmodule For_gnat =\n  (Fmap)(struct\n           let rec fmap fa0 = function | Z -> Z | S a0 -> S (fa0 a0)\n           type 'a0 t = 'a0 gnat\n         end)\nlet rec z () = inj (For_gnat.distrib Z)\nand s x__0 = inj (For_gnat.distrib (S x__0))"

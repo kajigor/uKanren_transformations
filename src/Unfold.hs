@@ -92,10 +92,12 @@ findBestByComplexity gamma sigma goals =
     let estimated = map (\g -> (g, unfoldComplexity gamma sigma g)) goals in
     pinpoint (\(Invoke name _) -> static gamma name) goals
     <|> throwAwayComplexity (onlySubsts estimated
+                             <|> deterministic estimated
                              <|> maxBranch estimated
                              <|> partialSubst estimated)
   where
     onlySubsts xs = pinpoint (\(g, compl) -> curBranches compl == substs compl) xs
+    deterministic = pinpoint (\(g, compl) -> curBranches compl == 1)
     maxBranch  xs = pinpoint (\(g, compl) -> maxBranches compl > curBranches compl) xs
     partialSubst xs = pinpoint (\(g, compl) -> substs compl > 0) xs
     throwAwayComplexity input = do

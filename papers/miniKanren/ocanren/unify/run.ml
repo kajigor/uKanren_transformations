@@ -104,3 +104,28 @@ let _ =
 
   run_time 3 "trans3" @@
   run q (fun q -> Trans.topLevel q t3 t3')
+
+  let _ =
+    (* run_formula 5 "spec" @@
+    run qrs (fun q r s -> Spec.topLevel q r s) *)
+    run_subst 1 "transUnf1" @@
+    run q (fun q -> Trans_unf.topLevel q t1 t1')
+    ;
+
+    run_subst 3 "transUnf2" @@
+    run q (fun q -> Trans_unf.topLevel q t2 t2')
+    ;
+
+    run_subst 3 "transUnf3" @@
+    run q (fun q -> Trans_unf.topLevel q t3 t3');
+
+    run_time 1 "transUnf1" @@
+    run q (fun q -> Trans_unf.topLevel q t1 t1')
+    ;
+
+    run_time 3 "transUnf2" @@
+    run q (fun q -> Trans_unf.topLevel q t2 t2')
+    ;
+
+    run_time 3 "transUnf3" @@
+    run q (fun q -> Trans_unf.topLevel q t3 t3')

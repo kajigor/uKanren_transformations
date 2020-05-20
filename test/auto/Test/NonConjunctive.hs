@@ -95,12 +95,14 @@ runUnify = do
 
 runPath = do
     runNc (-1) "path" Program.Path.query1
+    runNc (-1) "pathlen" Program.Path.querylength
 
 unit_nonConjunctiveTest = do
   runUnify
-  -- runPath
+  runPath
   runProp
-  runBottles
+  -- runBottles
+
   -- -- runBridge
   -- -- runDesert
   -- runNc (-1) "da" dA
@@ -131,9 +133,9 @@ runTest env function filename goal = (do
   let ocamlCodeFileName = printf "%s/%s.before.ml" path filename
   OC.topLevel ocamlCodeFileName "topLevel" env beforePur
 
-  let pur@(goal, xs, defs) = purification (prog, vident <$> reverse names)
+  let pur@(goal', xs, defs') = purification (prog, vident <$> reverse names)
   -- let pur = (goal, xs, map (\(Def n as b) -> Def n as (E.closeFresh as b)) defs)
-  let prog = Program defs goal
+  let prog = Program defs' goal'
   writeFile (printf "%s/%s.pur" path filename) (show prog)
   let ocamlCodeFileName = printf "%s/%s.ml" path filename
   OC.topLevel ocamlCodeFileName "topLevel" env pur
