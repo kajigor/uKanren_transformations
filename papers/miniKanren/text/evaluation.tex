@@ -1,3 +1,24 @@
 \section{Evaluation}
 
-Is going to be here.
+In the evaluation we compared the performance of our CPD, Ecce and the new non-conjunctive partial evaluator.
+We have also implemented the branching heuristic instead of the deterministic one in the CPD, just to be sure, it is not a cureall.
+
+We used the following 4 programs to test our specializers on.
+\begin{itemize}
+  \item propositional evaluator
+  \begin{itemize}
+    \item Compicated bool expression in the last conjunctive
+    \item Table implementation of the boolean operation, placed as a first conjunct
+  \end{itemize}
+  \item searching for a unifier of two terms
+  \item searching for paths of a specific length in a graph
+\end{itemize}
+
+The first one demonstrates the drawback of the approach implemented in ECCE: left-to-right deterministic unfolding.
+The boolean expression which narrows the first conjunts is the last, so ECCE does not unfold it until too late.
+
+The second one should be easier for this approach.
+
+The unification is a difficult problem, specialization of which is of importance.
+
+
