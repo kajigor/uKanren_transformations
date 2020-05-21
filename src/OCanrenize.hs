@@ -33,11 +33,11 @@ instance {- OCanren v => -} OCanren (Term X) where
 
   -- ocanren (C "o" []) = "Std.Nat.zero"
   -- ocanren (C "s" [x]) = printf "Std.Nat.succ (%s)" (ocanren x)
-  ocanren (C "z" []) = "Std.Nat.zero"
+  ocanren (C "z" []) = "Nat.zero"
 
-  ocanren (C "pair" [x,y]) = printf "Std.Pair.pair (%s) (%s)" (ocanren x) (ocanren y)
-  ocanren (C "none" []) = "Std.Option.none ()"
-  ocanren (C "some" [x]) = printf "Std.Option.some (%s)" (ocanren x)
+  ocanren (C "pair" [x,y]) = printf "Pair.pair (%s) (%s)" (ocanren x) (ocanren y)
+  ocanren (C "none" []) = "Option.none ()"
+  ocanren (C "some" [x]) = printf "Option.some (%s)" (ocanren x)
 
 
   ocanren (C "fst" []) = "(fst_ ())"

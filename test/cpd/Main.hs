@@ -146,7 +146,17 @@ printStuff = do
       printTree (printf "%s/local.dot" path) $ topLevel goal
 
 doOcanrenize = do
-  -- ocanren "unify" Program.Unify.query $ Just Program.Unify.env
+  ocanren "unify" Program.Unify.query $ Just Program.Unify.env
+
+  -- ocanren "isPath" Program.Path.query1 $ Just Program.Path.env
+
+
+  ocanren "prop__" Program.Prop.query'' $ Nothing
+  ocanren "propPalin__" Program.Prop.plainQuery Nothing
+
+  ocanren "bottles" Program.Bottles.query $ Nothing
+
+  ocanren "doubleAppendo" (Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])) Nothing
 
 
   -- ocanren "specialProp" Program.SpecialProp.logintoQuery Nothing
@@ -155,7 +165,6 @@ doOcanrenize = do
 
   -- ocanren "doubleRev" (Program doubleReverso $ fresh ["xs"] (call "doubleReverso" [V "xs"])) Nothing
 
-  ocanren "doubleAppendo" (Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])) Nothing
 
   -- ocanren "fun" (fun $ fresh ["n", "x", "r"] (call "fun" $ map V ["n", "x", "r"])) Nothing
 
@@ -196,7 +205,6 @@ doOcanrenize = do
   -- ocanren "pathElem" Path.queryElem $ Just Path.env
   -- ocanren "pathElem1" Path.queryElem1 $ Just Path.env
 
-  -- ocanren "isPath" Path.query1 $ Just Path.env
   -- ocanren "unify" Unify.query $ Just Unify.env
   -- ocanren "bigBridge"       (topLevelBigBridge $ fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"])) $ Just Bridge.env
 
@@ -254,7 +262,7 @@ doOcanrenize = do
         for_
           nodes
           (\(goal, tree) ->
-            printTree (printf "%s/%s.dot" pathLocal (show goal)) tree
+            printTree (printf "%s/%s.dot" pathLocal (filter (/=' ') $ show goal)) tree
           )
         system (printf "dot -O -Tpdf %s/*.dot" path)
         system (printf "dot -O -Tpdf %s/*.dot" pathLocal)

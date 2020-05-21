@@ -41,6 +41,17 @@ let _ =
   run_time 5 "len: path" @@
   run q (fun q -> fresh (a1 a2 a3 a4 a5) ((q === (ocanren ([a1;a2;a3;a4;a5]))) &&& (Len.topLevel graph a1 a2 a3 a4 a5)))
 
+let _ =
+  run_time 5 "cpd: path" @@
+  run q (fun q -> fresh (a1 a2 a3 a4 a5) ((q === (ocanren ([a1;a2;a3;a4;a5]))) &&& (Cpd.topLevel q graph)))
+
+let _ =
+  run_path 5 "cpd: path" @@
+  run q (fun q -> fresh (a1 a2 a3 a4 a5) ((q === (ocanren ([a1;a2;a3;a4;a5]))) &&& (Cpd.topLevel q graph)))
+
+let _ =
+  run_graph 3 "cpd" @@
+  run q (fun q -> Cpd.topLevel (ocanren ([0;1;2])) q)
 
   (*
 let _ =

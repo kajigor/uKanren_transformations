@@ -2,7 +2,7 @@ open GT
 open OCanren
 open OCanren.Std
 
-open General
+open Helper
 
 let rec add a b q5 = fresh (q1) (a q1) (((q1 === (o ())) &&& (b q5)) ||| (fresh (x) (q1 === (s x)) (add (fun q4 -> x === q4) (fun q3 -> fresh (q2) (q3 === (s q2)) (b q2)) q5)))
 let rec greater a b q14 =

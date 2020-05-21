@@ -17,3 +17,19 @@ transUnf1: 0.001265s
 transUnf2: 0.207129s
 transUnf3: 15.190867s
 
+
+spec1: 0.000733s
+spec2: 0.086287s
+spec3: 9.549526s
+trans1: 0.000754s
+trans2: 0.145468s
+trans3: 16.256843s
+transUnf1: 0.001261s
+transUnf2: 0.200778s
+transUnf3: 14.900446s
+cpd1: 0.000747s
+cpd2: 0.099508s
+cpd3: 2.350065s
+
+
+

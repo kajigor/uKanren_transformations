@@ -2,7 +2,7 @@
 open GT
 open OCanren
 open OCanren.Std
-open General
+open Helper
 
 let topLevel x0 x1 x2 =
   let rec checkAnswer y0 y1 y2 =

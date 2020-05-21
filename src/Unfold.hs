@@ -59,6 +59,12 @@ maximumBranches def@(Def _ args body) =
 
     success = C "" [] :=: C "" []
 
+getMaximumBranches :: E.Gamma -> G S -> Int
+getMaximumBranches (p,_,_) (Invoke name _) =
+    let def = p name in
+    maximumBranches def
+
+
 notMaximumBranches :: E.Gamma -> E.Sigma -> G S -> Bool
 notMaximumBranches gamma@(p, _, _) state goal@(Invoke name args) =
     let maxBranches = maximumBranches (p name) in

@@ -4,7 +4,7 @@ open OCanren
 open OCanren.Std
 open Tester
 
-open General
+open Helper
 open Bottles
 
 (******************************************)
@@ -37,7 +37,7 @@ let run_time n text r =
   fx
 
 let _ =
-  (* run_exn myshow 1 q qh ("orig", fun q ->
+ (* run_exn myshow 1 q qh ("orig", fun q ->
     checkAnswer q capacities1 (int2nat 7) !!true
   )
   ;
@@ -68,6 +68,20 @@ let _ =
   run q (fun q -> checkAnswer q capacities1 (int2nat 7) !!true);
 
   run_time 5 "calls" @@
-  run q (fun q -> Bottles_fun.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))
+  run q (fun q -> Bottles_fun.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7));
 
+(*
+  run_exn myshow 2 q qh ("cpd", fun q ->
+    Cpd.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7)); *)
+
+  (* run_time 5 "cpd" @@
+  run q (fun q -> Cpd.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7)) *)
+
+
+
+  run_exn myshow 2 q qh ("branches", fun q ->
+    Branches.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7));
+
+  run_time 5 "branches" @@
+  run q (fun q -> Branches.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))
 

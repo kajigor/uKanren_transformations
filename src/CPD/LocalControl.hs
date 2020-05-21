@@ -15,7 +15,7 @@ import           Generalization
 import           Prelude            hiding (lookup, showList)
 import           Syntax
 import           Text.Printf
-import           Unfold             (oneStepUnfold, normalize, unifyStuff)
+import           Unfold             (oneStepUnfold, normalize, unifyStuff, getMaximumBranches)
 import           Util.Miscellaneous
 
 -- trace :: String -> a -> a
@@ -113,8 +113,8 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
           case unified of
             [] ->
               Fail
-            ns | length ns == 1 || isFirstTime -> -- unfold only if it's deterministic or hasn't been unfolded before
-            -- ns ->
+            -- ns | length ns == 1 || isFirstTime -> -- unfold only if it's deterministic or hasn't been unfolded before
+            ns | getMaximumBranches env' g > length ns || isFirstTime ->
               Or (map step ns) (Just g) s
               where
                 step (xs, s') =
