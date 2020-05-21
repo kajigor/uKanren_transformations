@@ -1,0 +1,32 @@
+\section{Non-conjunctive Partial Deduction}
+
+We came up with the idea.
+
+Here we'll briefly describe it.
+
+First we build a tree, than we generate a residual program from it. Residualization is more or less trivial, once the tree is built.
+
+Building the tree is... Well... Complicated.
+
+There are issues with when to unfold, when to stop.
+
+There are a bunch of heuristics for it.
+
+
+\subsection{Unfolding}
+
+Unfolding is when a call to a relation is substituted by its body.
+
+The most important question is when to unfold.
+
+To much unfolding is sometimes is even worse than not enough unfolding.
+
+\subsection{Heuristic}
+
+First we unfold those conjuncts which are static.
+
+Then --- deterministic.
+
+Then those which are less branching.
+
+The last to be unfolded are those calls, which unfold to a substitution.
