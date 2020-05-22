@@ -1,0 +1,9 @@
+\section{Related Works}
+
+
+While the aim of all meta-computation techniques is residual program efficiency, they rarely consider the residual program efficiency from the target language evaluator point of view.
+The main optimization source is precomputing all possible intermediate and statically-known semantics steps at transformation-time while other criteria like residual program size or possible optimizations and execution cost of different language constructions by target language evaluator are usually out of consideration~\cite{jonesbook}.
+It is known that supercompilation may adversely affect GHC optimizations yielding standalone compilation more powerful~\cite{SCBE,TCES} and cause code explosion~\cite{SCHC}.
+Moreover, caused by transformer complexity it may be hard to predict real program speedup in each case on a bunch of examples even disregarding problems above.
+Wherein, for example, for partial evaluation, an apogee of useless is the use of all static variables in a dynamic context only while it is known to be usefull for some specific form of language processors~\cite{jonesbook,bulyonkov84}.
+Anyway, the formalization problem of cases for useful transformers application is poorly studied.
