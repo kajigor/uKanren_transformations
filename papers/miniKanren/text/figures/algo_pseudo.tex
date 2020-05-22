@@ -14,7 +14,7 @@
       {:=}{$\leftarrow{}$}{1}
       {==}{$={}$}{1},
     numbers=left,
-    morekeywords={ifd,calld,calls,define,where,let,in,error,case,of,while,do,otherwise,
+    morekeywords={ifd,define,where,let,in,error,case,of,while,do,otherwise,
       read,goto,return,build-cons,build-cst,build-if,if,then,else,do,switch,of},
     morestring=[b]",
     morestring=[s][]{\#\{}{\}},
@@ -44,7 +44,7 @@ drive     = drive@*\_@*disj @*$\cup$@* drive@*\_@*conj
 
 drive@*\_@*disj :: Disjunction @*$\to$@* Process@*\_@*Tree
 drive@*\_@*disj D@(c@*$_1$@*, @*$\dots$@*, c@*$_n$@*) =
-  create@*\_@*or@*\_@*node [c@*$_i$@* @*$\leftarrow$@* drive@*\_@*conj c@*$_i$@*]
+  create@*\_@*or@*\_@*node ([c@*$_i$@* @*$\leftarrow$@* drive@*\_@*conj (c@*$_i$@*)])
 
 drive@*\_@*conj :: (Conjunction, Substitution) @*$\to$@* Process@*\_@*Tree
 drive@*\_@*conj (C@(r@*$_1$@*, @*$\dots$@*, r@*$_n$@*), subst) =
@@ -53,14 +53,14 @@ drive@*\_@*conj (C@(r@*$_1$@*, @*$\dots$@*, r@*$_n$@*), subst) =
     instance (C', subst')      @*$\to$@* create@*\_@*fold@*\_@*node (C', subst')
     embedded@*\_@*but@*\_@*not@*\_@*instance @*$\to$@* create@*\_@*stop@*\_@*node (C , subst )
     otherwise @*$\to$@*
-      r  @*$\leftarrow$@* select@*\_@*a@*\_@*call (r@*$_1$@*, @*$\dots$@*, r@*$_n$@*)
-      r' @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r)
-      if trivial @*$\circ$@* leafs (r')
+      r @*$\leftarrow$@* select@*\_@*a@*\_@*call (r@*$_1$@*, @*$\dots$@*, r@*$_n$@*)
+      t @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r)
+      if trivial @*$\circ$@* leafs (t)
       then
-        C' @*$\leftarrow$@* propagate@*\_@*subst (C @*$\setminus$@* r, extract@*\_@*subst r')
-        drive C'[r @*$\mapsto$@* r']
+        C' @*$\leftarrow$@* propagate@*\_@*subst (C @*$\setminus$@* r, extract@*\_@*subst (t))
+        drive C'[r @*$\mapsto$@* extract@*\_@*calls (t)]
       else
-        (r', subst') @*$\bigwedge$@* drive (C @*$\setminus$@* r, subst)
+        t @*$\bigwedge$@* drive (C @*$\setminus$@* r, subst)
 \end{PseudoCode}
 \end{figure}
 
