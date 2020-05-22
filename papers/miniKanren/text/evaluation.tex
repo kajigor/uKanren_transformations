@@ -35,14 +35,19 @@ One possible implementation of the evaluator in the syntax of \oc{} is presented
 In this implementation the relation \lstinline{elem$^o$ subst v res} unifies \lstinline{res} with the value of the variable \lstinline{v} in the list \lstinline{subst}.
 The relations \lstinline{and$^o$}, \lstinline{or$^o$}, and \lstinline{not$^o$} encode corresponding boolean operations.
 
-\begin{lstlisting}[label={eval:last}, caption={Evaluator of formulas with boolean operation last}, captionpos=b]
+\begin{figure*}[!h]
+  \centering
+  \begin{minipage}{0.8\textwidth}
+    \begin{lstlisting}[label={eval:last}, caption={Evaluator of formulas with boolean operation last}, captionpos=b, frame=tb]
   let rec eval$^o$ subst fm res = conde [
     fresh (x y z v w) (
       (fm === var v /\ elem$^o$ subst v res);
       (fm === conj x y /\ eval$^o$ st x v /\ eval$^o$ st y w /\ and$^o$ v w res);
       (fm === disj x y /\ eval$^o$ st x v /\ eval$^o$ st y w /\ or$^o$ v w res);
       (fm === neg x /\ eval$^o$ st x v /\ not$^o$ v res))]
-\end{lstlisting}
+    \end{lstlisting}
+  \end{minipage}
+\end{figure*}
 
 Note, that the calls to boolean relations \lstinline{and$^o$}, \lstinline{or$^o$}, and \lstinline{not$^o$} are placed last within each conjunction.
 This poses a challenge to the CPD-based specializers.
@@ -58,14 +63,19 @@ Since exploring boolean operations makes more sense, they are unfolded before re
 The way non-conjunctive partial deduction treats this program is the same as it treats the other implementation in which boolean operations are moved to the left, as shown in listing~\ref{eval:fst}.
 This program is easier for CPD to transform which demonstrates how unequal is the behavior of CPD for the similar programs.
 
-\begin{lstlisting}[label={eval:fst}, caption={Evaluator of formulas with boolean operation second}, captionpos=b]
+\begin{figure*}[!h]
+  \centering
+  \begin{minipage}{0.85\textwidth}
+    \begin{lstlisting}[label={eval:fst}, caption={Evaluator of formulas with boolean operation second}, captionpos=b, frame=tb]
   let rec eval$^o$ subst fm res = conde [
     fresh (x y z v w) (
       (fm === var v /\ elem$^o$ subst v res);
       (fm === conj x y /\ and$^o$_table v w res /\ eval$^o$ st x v /\ eval$^o$ st y w);
       (fm === disj x y /\ or$^o$_table v w res /\ eval$^o$ st x v /\ eval$^o$ st y w);
       (fm === neg x /\ not$^o$_table v res /\ eval$^o$ st x v))]
-  \end{lstlisting}
+    \end{lstlisting}
+  \end{minipage}
+\end{figure*}
 
 \subsubsection{Unfolding of Complex Relations}
 
@@ -76,17 +86,25 @@ But depending on the way they are implemented, different number of driving steps
 The simplest way to implement these relations is with a table as demonstrated with the implementation of \lstinline{not$^o$} in listing~\ref{not:table}.
 It is enough to unfold such relation calls once to derive useful information about variables.
 
-\begin{lstlisting}[label={not:table}, caption={Implementation of boolean \lstinline{not} as a table}, captionpos=b]
+\begin{figure*}[!h]
+  \centering
+  \begin{minipage}{0.45\textwidth}
+    \begin{lstlisting}[label={not:table}, caption={Implementation of boolean \lstinline{not} as a table}, captionpos=b, frame=tb]
   let not$^o$_table x y = conde [
      (x === ^true /\ y === ^false;
       x === ^false /\ y === ^true)]
-\end{lstlisting}
+    \end{lstlisting}
+  \end{minipage}
+\end{figure*}
 
 The other way to implement boolean operations is via one basic boolean relation such as \lstinline{nand$^o$} which is in turn has a table-based implementation (see listing~\ref{not:nando}).
 It will take several sequential unfoldings to derive that variables \lstinline{v} and \lstinline{w} should be \lstinline{^true} when considering a call \lstinline{and$^o$ v w ^true} implemented via a basic relation.
 Non-conjunctive partial deduction drives the selected call until it derives useful substitutions for the variables involved while CPD with deterministic unfolding may fail to do so.
 
-\begin{lstlisting}[label={not:nando}, caption={Implementation of boolean operation via \lstinline{nand}}, captionpos=b]
+\begin{figure*}[!h]
+  \centering
+  \begin{minipage}{0.7\textwidth}
+    \begin{lstlisting}[label={not:nando}, caption={Implementation of boolean operation via \lstinline{nand}}, captionpos=b, frame=tb]
   let not$^o$ x y = nand$^o$ x x y
 
   let or$^o$ x y z = nand$^o$ x x xx /\ nand$^o$ y y yy /\ nand$^o$ xx yy z
@@ -98,7 +116,9 @@ Non-conjunctive partial deduction drives the selected call until it derives usef
     ( a === ^false /\ b === ^true /\ c === ^true );
     ( a === ^true /\ b === ^false /\ c === ^true );
     ( a === ^true /\ b === ^true /\ c === ^false )]
-\end{lstlisting}
+    \end{lstlisting}
+  \end{minipage}
+\end{figure*}
 
 \subsection{Evaluation Results}
 
