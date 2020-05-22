@@ -49,3 +49,5 @@ uKanren-transformation.cabal
 test/ocamlTest/peval/peval
 
 papers/miniKanren/ocanren/last/peval
+
+papers/miniKanren/text/main.log
