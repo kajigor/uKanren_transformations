@@ -47,11 +47,11 @@ drive@*\_@*disj D@(c@*$_1$@*, @*$\dots$@*, c@*$_n$@*) =
   create@*\_@*or@*\_@*node ([c@*$_i$@* @*$\leftarrow$@* drive@*\_@*conj (c@*$_i$@*)])
 
 drive@*\_@*conj :: (Conjunction, Substitution) @*$\to$@* Process@*\_@*Tree
-drive@*\_@*conj (C@(r@*$_1$@*, @*$\dots$@*, r@*$_n$@*), subst) =
-  r@*$_1$@*, @*$\dots$@*, r@*$_n$@* @*$\leftarrow$@* propogate substitution subst on r@*$_1$@*, @*$\dots$@*, r@*$_n$@*
+drive@*\_@*conj ((r@*$_1$@*, @*$\dots$@*, r@*$_n$@*), subst) =
+  C@(r@*$_1$@*, @*$\dots$@*, r@*$_n$@*) @*$\leftarrow$@* propogate substitution subst on r@*$_1$@*, @*$\dots$@*, r@*$_n$@*
   switch whistle (C) of
     instance (C', subst')      @*$\to$@* create@*\_@*fold@*\_@*node (C', subst')
-    embedded@*\_@*but@*\_@*not@*\_@*instance @*$\to$@* create@*\_@*stop@*\_@*node (C , subst )
+    embedded@*\_@*but@*\_@*not@*\_@*instance @*$\to$@* create@*\_@*stop@*\_@*node (C, subst)
     otherwise @*$\to$@*
       r @*$\leftarrow$@* select@*\_@*a@*\_@*call (r@*$_1$@*, @*$\dots$@*, r@*$_n$@*)
       t @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r)
