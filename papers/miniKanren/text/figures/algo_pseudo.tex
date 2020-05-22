@@ -1,0 +1,99 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[lmargin=3.81cm,tmargin=2.54cm,rmargin=2.54cm,bmargin=2.52cm]{geometry}
+\usepackage{multirow}
+\usepackage{color,xcolor}
+\definecolor{darkblue}{rgb}{0,0,.75}
+\usepackage{listings} %iclude code in your document
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+
+\lstloadlanguages{Matlab} %use listings with Matlab for Pseudocode
+\lstnewenvironment{PseudoCode}[1][]
+{\lstset{basicstyle=\scriptsize,
+    keywordstyle=\bfseries\underbar,
+    literate=
+      {:=}{$\leftarrow{}$}{1}
+      {==}{$={}$}{1},
+    numbers=left,
+    morekeywords={ifd,calld,calls,define,where,let,in,error,case,of,while,do,otherwise,
+      read,goto,return,build-cons,build-cst,build-if,if,then,else,do,switch,of},
+    morestring=[b]",
+    morestring=[s][]{\#\{}{\}},
+    deletestring=[b]{"},
+    alsoletter={-},
+    frame=l,
+    keywordstyle = [2]{\textit},
+    morekeywords = [2]{lookup,initial_code,extend,reduce,eval,rest,first_command,first_instruction,new_tail,first_symbol},
+    showspaces=false,
+    showstringspaces=false, 
+    stringstyle=\color{blue},
+    identifierstyle=,
+    escapechar=@*,
+    xleftmargin=.04\textwidth,#1}}
+{}
+
+\usepackage{stmaryrd}
+\begin{document}
+
+\thispagestyle{empty}
+\begin{figure}[h]
+\begin{PseudoCode}[moredelim={[is][stringstyle]{@@}{@@}},
+  moredelim={[is][\color{dkgreen}\bfseries]{@!}{@!}},
+  moredelim={[is][\color{red}\bfseries]{!!}{!!}}]
+ncpd goal = residualize @*$\circ$@* drive @*$\circ$@* normalize (goal)
+drive     = drive@*\_@*disj @*$\cup$@* drive@*\_@*conj
+
+drive@*\_@*disj :: Disjunction @*$\to$@* Process@*\_@*Tree
+drive@*\_@*disj D@(c@*$_1$@*, @*$\dots$@*, c@*$_n$@*) =
+  create@*\_@*or@*\_@*node [c@*$_i$@* @*$\leftarrow$@* drive@*\_@*conj c@*$_i$@*]
+
+drive@*\_@*conj :: (Conjunction, Substitution) @*$\to$@* Process@*\_@*Tree
+drive@*\_@*conj (C@(r@*$_1$@*, @*$\dots$@*, r@*$_n$@*), subst) =
+  r@*$_1$@*, @*$\dots$@*, r@*$_n$@* @*$\leftarrow$@* propogate substitution subst on r@*$_1$@*, @*$\dots$@*, r@*$_n$@*
+  switch whistle (C) of
+    instance (C', subst')      @*$\to$@* create@*\_@*fold@*\_@*node (C', subst')
+    embedded@*\_@*but@*\_@*not@*\_@*instance @*$\to$@* create@*\_@*stop@*\_@*node (C , subst )
+    otherwise @*$\to$@*
+      r  @*$\leftarrow$@* select@*\_@*a@*\_@*call (r@*$_1$@*, @*$\dots$@*, r@*$_n$@*)
+      r' @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r)
+      if trivial @*$\circ$@* leafs (r')
+      then
+        C' @*$\leftarrow$@* propagate@*\_@*subst (C @*$\setminus$@* r, extract@*\_@*subst r')
+        drive C'[r @*$\mapsto$@* r']
+      else
+        (r', subst') @*$\bigwedge$@* drive (C @*$\setminus$@* r, subst)
+\end{PseudoCode}
+\end{figure}
+
+\end{document}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
+
+
+%% drive :: Configuration -> Process\_Tree
+%% drive Conf@(term, subst)
+%%   switch term:
+%%     conjuction C = c_1 \and \dots \and c_n:
+%%       (subst', C') <- already\_exemind? (C)
+%%       if (subst', C')
+%%       then create\_fold\_node (subst', C')
+%%       else
+%%         while True
+%%           r <- select\_relation\_call (c_1, \dots, c_n)
+%%           (subst', r')  <- drive \circle unfold (r, subst)
+%%           if promising (subst, r')
+%%           then return propogate (subst', C \setminus r)
+%%     disjunction D = d_1 \or \dots \or d_n:
+%%       for i in [1..n] do
+%%         d_i <- drive (d_i)
+%%       return create\_disjuction\_node (d_1, \dots, d_n)
+%%     unification U:
+%%       return extract\_substitution (U)
+
+
+%% where
+%% select\_relation\_call ...
+%% alrealready\_exemind? (C) ...
+%% extract\_substitution (U) ...
+%% residualize ...
