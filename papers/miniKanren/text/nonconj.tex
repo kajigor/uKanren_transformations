@@ -11,7 +11,8 @@ In this section we will describe a novel approach to specialization of relationa
 This approach draws inspiration from both conjunctive partial deduction and supercompilation.
 The aim was to create a specialization algorithm which is simpler than conjunctive partial deduction and uses properties of \mk{} to improve performance of the input programs.
 \db{The algorithm pseudocode is shown on Fig.~\ref{fig:ncpd-pseudo}\footnote{
-    \db{For the sake of breavity and clarity, we provide functions \texttt{drive\_disj} and \texttt{drive\_conj} describing driving processes for disjunction and conjunction correspondly. Driving itself if a trivial combination of presented functions (line 2)}}}.
+    \db{For the sake of brevity and clarity, we provide functions \texttt{drive\_disj} and \texttt{drive\_conj} describing driving processes for disjunction and conjunction correspondingly.
+      Driving itself is a trivial combination of presented functions (line 2)}}}.
 
 The high-level idea behind the algorithm is to select a relation call to unfold by using a heuristic which decides if the call can narrow down the answer set \db{(line 15)}.
 A driving tree is constructed for the selected call in isolation \db{(line 16)}.
@@ -25,12 +26,12 @@ In our case configuration is a conjunction of relation calls.
 The substitution computed at each step is also stored in the tree node, although it is not included into the configuration.
 
 Each time we examine a conjunction of calls, we \emph{split} them into separate nodes which are driven independently from each other.
-Among the relation calls we select one which is according to the heuristic is likely to narrow down the answer set.
-If the selected call does not suit the criteria, the results of its unfolding is not propagated onto other relation calls withing the conjunction and the next suitable call is selected.
+Among the relation calls we select one which is according to the heuristic is likely to narrow down the answer set \db{(line 15)}.
+If the selected call does not suit the criteria, the results of its unfolding is not propagated onto other relation calls withing the conjunction and the next suitable call is selected \db{(line 22)}.
 
-This process does create branchings whenever a disjunction is examined.
+This process does create branchings whenever a disjunction is examined \db{(lines 4--6)}.
 At each step we make sure that we do not start driving a conjunction which we have already examined.
-To do this, we check if the current conjunction is renaming of any other configuration in the tree.
+To do this, we check if the current conjunction is renaming of any other configuration in the tree \db{(line 12)}.
 If it is, then we create a special node which then is residualized into a call to the suitable relation.
 
 We decided not to do generalization in this approach.
@@ -43,7 +44,7 @@ For the subconjunctions selected a most-specific generalization is computed.
 
 In our approach we only do splitting of a conjunction into individual relation calls.
 This makes any program with an accumulating parameter to be a problem.
-Sometimes when there is a need to do a proper generalization, it is in reality just an instance of some other goal within the tree and we can simply create a call there.
+Sometimes when there is a need to do a proper generalization, it is in reality just an instance of some other goal within the tree and we can simply create a call there \db{(line 13)}.
 Otherwise we are unable to meaningfully specialize such goal, but we can always just include the initial program in the residual program and call the corresponding relation.
 
 
