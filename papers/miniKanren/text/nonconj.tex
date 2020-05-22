@@ -1,5 +1,12 @@
 \section{Non-conjunctive Partial Deduction}
 
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.7\textwidth]{algo_pseudo-crop.pdf}
+  \caption{\db{Non-conjunctive Partial Deduction Pseudo Code}}
+  \label{fig:ncpd-pseudo}
+\end{figure}
+
 In this section we will describe a novel approach to specialization of relational programs.
 This approach draws inspiration from both conjunctive partial deduction and supercompilation.
 The aim was to create a specialization algorithm which is simpler than conjunctive partial deduction and uses properties of \mk{} to improve performance of the input programs.
@@ -9,6 +16,7 @@ A driving tree is constructed for the selected call in isolation.
 The leaves of the computed tree are examined.
 If all leaves are either computed substitutions or are calls to some relations accompanied with non-empty substitutions, then the leaves are collected and are put back into the root conjunction instead of the examined call.
 According to denotational semantics of \mk{} it is safe to compute individual conjuncts in any order, thus it is ok to drive any call and then propagate its results onto the other calls.
+\db{The algorithm pseudocode is shown on Fig.~\ref{fig:ncpd-pseudo}.}
 
 A driving process creates a process tree, from which a residual program is later created.
 The nodes of process tree include a \emph{configuraion} which describes the state of program evaluation at some point.
