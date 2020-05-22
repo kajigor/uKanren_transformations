@@ -1,3 +1,5 @@
+\newcommand{\code}[1]{\texttt{#1}}
+
 \section{Non-conjunctive Partial Deduction}
 
 \begin{figure}[!t]
@@ -11,8 +13,18 @@ In this section we will describe a novel approach to specialization of relationa
 This approach draws inspiration from both conjunctive partial deduction and supercompilation.
 The aim was to create a specialization algorithm which is simpler than conjunctive partial deduction and uses properties of \mk{} to improve performance of the input programs.
 \db{The algorithm pseudocode is shown on Fig.~\ref{fig:ncpd-pseudo}\footnote{
-    \db{For the sake of brevity and clarity, we provide functions \texttt{drive\_disj} and \texttt{drive\_conj} describing driving processes for disjunction and conjunction correspondingly.
-      Driving itself is a trivial combination of presented functions (line 2)}}}.
+    \db{For the sake of brevity and clarity, we provide functions \code{drive\_disj} and \code{drive\_conj} describing driving processes for disjunction and conjunction correspondingly.
+      Driving itself is a trivial combination of presented functions (line 2).}}}.
+
+\db{
+Hereafter, we consider all goals and relation bodies to be in \emph{canonical normal form}~---~a disjunction of conjunctions of either calls or unifications.
+Moreover, we assume all fresh variables to be instantiated and all unifications to be computed on each step.
+Those disjuncts in which unifications fails are removed.
+Other disjuncts take form of a conjunction of relation calls accompanied with a substitution.
+Any miniKanren term can be trivially transformed to the described form\footnote{
+  \db{On Fig.~\ref{fig:ncpd-pseudo} function \code{normalize} is assumed to perform term normalization;
+    The code is ommited for brevity.}
+}.}
 
 The high-level idea behind the algorithm is to select a relation call to unfold by using a heuristic which decides if the call can narrow down the answer set \db{(line 15)}.
 A driving tree is constructed for the selected call in isolation \db{(line 16)}.
@@ -52,6 +64,7 @@ Otherwise we are unable to meaningfully specialize such goal, but we can always 
 
 Unfolding is a process of substitution of some relation call by its body with simultaneous computation of unifications.
 To unfold a relation call we do the following steps.
+\db{TODO: the following has alredy mentioned above.}
 First, the formal arguments of a relation are substituted for the actual arguments of the call in the body.
 All fresh variables get instantiated.
 The body is transformed into a canonical form (disjunction of conjunctions of either calls or unifications).
