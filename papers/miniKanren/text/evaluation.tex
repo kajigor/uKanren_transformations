@@ -1,24 +1,163 @@
 \section{Evaluation}
 
-In the evaluation we compared the performance of our CPD, Ecce and the new non-conjunctive partial evaluator.
-We have also implemented the branching heuristic instead of the deterministic one in the CPD, just to be sure, it is not a cureall.
+In our study we compared the performance of our implementation of CPD, ECCE and the new non-conjunctive partial evaluator.
+We have also implemented the branching heuristic instead of the deterministic one in the CPD, just to ensure, it is not a cureall.
 
-We used the following 4 programs to test our specializers on.
+We used the following 4 programs to test the specializers on.
 \begin{itemize}
-  \item propositional evaluator
-  \begin{itemize}
-    \item Compicated bool expression in the last conjunctive
-    \item Table implementation of the boolean operation, placed as a first conjunct
-  \end{itemize}
-  \item searching for a unifier of two terms
-  \item searching for paths of a specific length in a graph
+  \item Two implementations of an evaluator of logic formulas.
+  \item A program to compute a unifier of two terms.
+  \item A program to search for paths of a specific length in a graph
 \end{itemize}
 
-The first one demonstrates the drawback of the approach implemented in ECCE: left-to-right deterministic unfolding.
-The boolean expression which narrows the first conjunts is the last, so ECCE does not unfold it until too late.
+All these relations are relational interpreters.
+Their last argument is a boolean value which is $true$ if the other arguments are in relation and $false$ otherwise.
 
-The second one should be easier for this approach.
+\subsection{Evaluator of Logic Formulas}
 
-The unification is a difficult problem, specialization of which is of importance.
+The relation $eval^o$ describes evaluation of a subset of first-order logic formulas in a given substitution.
+$eval^o$ has 3 arguments.
+The first argument is a list of boolean values which serves as a substitution.
+The $i$-th value of the list is the value of the $i$-th variable.
 
+The second argument is a formula with the following abstract syntax.
+A formula is either a \emph{variable} represented with a Peano number, a \emph{negation} of a formula, a \emph{conjunction} of two formulas or a \emph{disjunction} of two formulas.
+
+The third argument is a boolean value which is $true$ if the given formula in the given substition is true and $false$ otherwise.
+
+One possible implementation of the evaluator in the syntax of \oc{} is presented in listing~\ref{eval:last}.
+Here the relation \lstinline{elem$^o subst v res$} unifies \lstinline{res} with the value of the variable \lstinline{v} in the list \lstinline{subst}.
+The relations \lstinline{and$^o$}, \lstinline{or$^o$}, and \lstinline{not$^o$} encode corresponding boolean operations.
+
+\begin{lstlisting}[label={eval:last}, caption={Evaluator of formulas with boolean operation last}, captionpos=b]
+  let rec eval$^o$_last subst fm res = conde [
+    fresh (x y z v w) (
+      (fm === var v /\ elem$^o$ subst v res);
+      (fm === conj x y /\ eval$^o$_last st x v /\ eval$^o$_last st y w /\ and$^o$ v w res);
+      (fm === disj x y /\ eval$^o$_last st x v /\ eval$^o$_last st y w /\ or$^o$ v w res);
+      (fm === neg x /\ eval$^o$_last st x v /\ not$^o$ v res))]
+\end{lstlisting}
+
+Note, that the calls to boolean relations \lstinline{and$^o$}, \lstinline{or$^o$}, and \lstinline{not$^o$} are placed last within each conjunction.
+This poses a challenge to the CPD-based specializers.
+Conjunctive partial deduction unfolds relation calls from left to right, so when specializing this relation for running backwards (i.e. considering the goal \lstinline{eval$^o$ subst fm ^true}), it fails to propagate the direction data onto recursive calls of \lstinline{eval$^o$}.
+It leads to over-unfolding, big residual programs and less than optimal performance.
+
+Moving boolean operations to the left, as shown in listing~\ref{eval:fst}, we get a program which is easier for CPD to specialize.
+
+
+\begin{lstlisting}[label={eval:fst}, caption={Evaluator of formulas with boolean operation second}, captionpos=b]
+  let rec eval$^o$_plain subst fm res = conde [
+    fresh (x y z v w) (
+      (fm === var v /\ elem$^o$ subst v res);
+      (fm === conj x y /\ and$^o$_table v w res /\ eval$^o$_plain st x v /\ eval$^o$_plain st y w);
+      (fm === disj x y /\ or$^o$_table v w res /\ eval$^o$_plain st x v /\ eval$^o$_plain st y w);
+      (fm === neg x /\ not$^o$_table v res /\ eval$^o$_plain st x v))]
+  \end{lstlisting}
+
+The next complication for partial deduction is how much sequential unfoldings should be performed to  restrict other calls in a conjunction in a meaningful way.
+In this example the way in which boolean relations are implemented affect the specialization result.
+The simplest way to implement these relations is with a table as shown in listing~\ref{not:table}
+
+\begin{lstlisting}[label={not:table}, caption={Implementation of boolean \lstinline{not} as a table}, captionpos=b]
+  let not$^o$_table x y = conde [
+     (x === ^true /\ y === ^false;
+      x === ^false /\ y === ^true)]
+\end{lstlisting}
+
+The other way to implement boolean operations is via one base boolean relation such as \lstinline{nand$^o$} which is in turn has a table-based implementation.
+
+\begin{lstlisting}[label={not:table}, caption={Implementation of boolean operation via \lstinline{nand}}, captionpos=b]
+  let not$^o$ x y = nand$^o$ x x y
+
+  let or$^o$ x y z = nand$^o$ x x xx /\ nand$^o$ y y yy /\ nand$^o$ xx yy z
+
+  let and$^o$ x y z = nand$^o$ x y xy /\ nand$^o$ xy xy z
+
+  let nand$^o$ a b c = conde [
+    ( a === ^false /\ b === ^false /\ c === ^true );
+    ( a === ^false /\ b === ^true /\ c === ^true );
+    ( a === ^true /\ b === ^false /\ c === ^true );
+    ( a === ^true /\ b === ^true /\ c === ^false )]
+\end{lstlisting}
+
+We considered two implementations of \lstinline{eval$^o$}: \lstinline{eval$^o$_plain} and \lstinline{eval$^o$_last} and studied how specializers behave on them.
+The first one uses table-based boolean operations and places them at the second place in each conjunction.
+The relation \lstinline{eval$^o$_last} employs boolean operations implemented via \lstinline{nand$^o$} and place them at the end of each conjunction.
+These two programs are complete opposites from the standpoint of CPD which the time measurements in table~\ref{tbl:eval} confirmed.
+
+We measured time necessary to generate $10000$ formulas over two variables which evaluate to \lstinline{^true}.
+We compared the result of specialization of the goal \lstinline{eval$^o$ subst fm ^true} by our implementation of CPD, done by ECCE system and the new non-conjunctive partial deduction.
+Since ECCE cannot work directly on \mk{} programs, we first translated them to \pro{} and then back: this translation is purely syntactical.
+
+\begin{table}
+  \centering
+  \begin{tabular}{c|c|c}
+                   & last & plain \\
+  \hline\hline
+  Original         & >60.00s & >60.00s \\
+  \hline
+  Ecce             & 7.12s  & 9.22s \\
+  \hline
+  CPD              & 31.31s & 5.46s \\
+  \hline
+  Non-CPD          & 4.99s  & 5.05s \\
+  \hline
+  Branches         & 17.21s  & 6.17s \\
+  \hline
+  \end{tabular}
+
+  \caption{Searching for 10000 true logic formulas}
+  \label{tbl:eval}
+\end{table}
+
+\subsection{Search for a Unifier}
+
+\begin{table}
+  \centering
+  \begin{tabular}{c|c}
+
+    & running time \\
+  \hline\hline
+  Original         & >300.00s \\
+  \hline
+  CPD              & 2.35s \\
+  \hline
+  Non-CPD          & 14.90s \\
+  \hline
+  Branches         & >300.00s \\
+  \hline
+  \end{tabular}
+
+  \caption{Searching for a unifier for terms f(X, X, g(Z, t)) and f(g(p, L), Y, Y)}
+  \label{tbl:unify}
+\end{table}
+
+The unification of two terms $t$ and $u$ is searching for a substitution $\theta$ such that $t \theta = u \theta$, $\theta$ is called a unifier.
+We search for any unifier, not necessarily most specific.
+The details on this benchmark can be found in the earlier paper CITE.
+This example demonstrates how too much unfolding can be introduced with the non-conjunctive partial deduction.
+
+\subsection{Search for Paths in a Graph}
+
+Here we search for 5 paths in a graph.
+The details on this benchmark can be found in the earlier paper CITE.
+
+\begin{table}
+  \centering
+  \begin{tabular}{c|c}
+
+    & running time \\
+  \hline\hline
+  Original         & 19.86s \\
+  \hline
+  CPD              & 4.66s \\
+  \hline
+  Non-CPD          & 3.00s \\
+  \hline
+  \end{tabular}
+
+  \caption{Searching for paths in a graph}
+  \label{tbl:unify}
+\end{table}
 
