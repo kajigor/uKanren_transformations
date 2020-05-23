@@ -12,7 +12,7 @@ When the tree is constructed, the resulting, or \emph{residual}, program can be 
 Of course, process tree can contain infinite branches.
 \emph{Whistles} --- heuristics to identify possibly infinite branches --- are used to ensure termination in supercompilation.
 If the whistle signalled during the construction of some branch, then something should be done to ensure termination.
-The most common approaches include either stopping driving the infinite branch completely (no specialization is done in this case and the source code is blindly copied into the residual program) or folding the process tree to fold in a \emph{process graph}.
+The most common approaches include either stopping driving the infinite branch completely (no specialization is done in this case and the source code is blindly copied into the residual program) or folding the process tree to a \emph{process graph}.
 The main instrument to perform such a folding is \emph{generalization}, i.e. abstracting away some computed data about the current term which makes folding possible.
 One source of infinite branches is consecutive recursive calls to the same function with an accumulating parameter: by unfolding such a call further one can only increase the term size which leads to nontermination.
 The accumulating parameter can be removed by replacing the call with its generalization.
