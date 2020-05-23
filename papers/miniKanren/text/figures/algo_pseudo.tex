@@ -51,16 +51,20 @@ drive@*\_@*conj ((r@*$_1$@*, @*$\dots$@*, r@*$_n$@*), subst) =
   C@(r@*$_1$@*, @*$\dots$@*, r@*$_n$@*) @*$\leftarrow$@* propogate substitution subst on r@*$_1$@*, @*$\dots$@*, r@*$_n$@*
   switch whistle (C) of
     instance (C', subst')      @*$\to$@* create@*\_@*fold@*\_@*node (C', subst')
-    embedded@*\_@*but@*\_@*not@*\_@*instance @*$\to$@* create@*\_@*stop@*\_@*node (C, subst)
+    embedded@*\_@*but@*\_@*not@*\_@*instance @*$\to$@* create@*\_@*stop@*\_@*node (C , subst )
     otherwise @*$\to$@*
-      r @*$\leftarrow$@* select@*\_@*a@*\_@*call (r@*$_1$@*, @*$\dots$@*, r@*$_n$@*)
-      t @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r)
-      if trivial @*$\circ$@* leafs (t)
-      then
-        C' @*$\leftarrow$@* propagate@*\_@*subst (C @*$\setminus$@* r, extract@*\_@*subst (t))
-        drive C'[r @*$\mapsto$@* extract@*\_@*calls (t)]
-      else
-        t @*$\bigwedge$@* drive (C @*$\setminus$@* r, subst)
+    | r @*$\leftarrow$@* heuristically@*\_@*select@*\_@*a@*\_@*call (r@*$_1$@*, @*$\dots$@*, r@*$_n$@*)
+    | if r
+    | then
+    | | t @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r)
+    | | if trivial @*$\circ$@* leafs (t)
+    | | then
+    | | | C' @*$\leftarrow$@* propagate@*\_@*subst (C @*$\setminus$@* r, extract@*\_@*subst (t))
+    | | | drive C'[r @*$\mapsto$@* extract@*\_@*calls (t)]
+    | | else
+    | | | t @*$\bigwedge$@* drive (C @*$\setminus$@* r, subst)
+    | else
+    | | @*$\bigwedge_{i=1}^n$@* t@*$_i$@* @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r@*$_i$@*)
 \end{PseudoCode}
 \end{figure}
 
