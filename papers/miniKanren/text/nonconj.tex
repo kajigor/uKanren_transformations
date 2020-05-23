@@ -99,26 +99,47 @@ We believe that the following heuristic provides a reasonable approach to contro
 
 \subsection{Heuristic}
 
-The intuition behind the heuristic is to find those calls which are safe to unfold.
+This heuristic is aimed at selecting the relation call within a conjunction which is both safe to unfold and may lead to discovering contradictions within the conjunction.
+The unsafe unfolding leads to uncontrollable increase in the number of relation calls in a conjunction.
+It is best to first unfold those relation calls which can be fully computed up to substitutions.
+
 We deem every static conjunct (non-recursive) to be safe because they never lead to growth in the number of conjunctions.
 Those calls which unfold deterministically, meaning there is only one disjunct in the unfolded relation, are also considered to be safe.
 
-The other more complicated case is when there are less disjuncts than there can possibly be.
-This signifies that at least one branch of computations is gotten rid of.
+The other part of heuristic is less trivial, we call it the branching heuristic.
+It considers the case when the unfolded relation contains less disjuncts than it could possibly have.
+This means that we found some contradiction, some computations were gotten rid of, and thus the answer set was restricted, which is desirable when unfolding.
+To compute this heuristic we precompute the maximum possible number of disjuncts in each relation and compare this number with the number of disjuncts when unfolding a concrete relation call.
+Maximum number of disjuncts is computed by unfolding the body of the relation in which all relation calls were replaced by a unification which always succeeds.
 
-The final heuristic selects the first conjunct which suites either of the following cases.
-First we unfold those conjuncts which are static.
-Then --- deterministic.
-Then those which are less branching.
-The last to be unfolded are those calls, which unfold to a substitution with not conjunction.
 
-\subsection{Residualization}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.65\textwidth]{heuristic-crop.pdf}
+  \caption{Heuristic selection pseudocode}
+  \label{fig:heu-pseudo}
+\end{figure}
 
-Residualization is quite straightforward.
-A branching in the process tree becomes a disjunction.
-A split node becomes a conjunction.
-Computed substitution is residualized as a conjunction of unifications.
-A renaming node is just a call to a relation.
-Relations are created for configurations on which leaf nodes are renamed.
+%  more complicated case is when there are less disjuncts than there can possibly be.
+% This signifies that at least one branch of computations is gotten rid of.
 
-One other thing is that when some configuration is occurred within the tree which is an instance of a configuration for which a new relation is created, then we just create a call.
+The pseudocode describing heuristic is shown in fig.~\ref{fig:heu-pseudo}.
+Selecting a good relation call can fail (line 1).
+The implementation works such that we first select those relation calls which are static, and only if there are none, we proceed to look at deterministic unfoldings and then we search for those which are less branching.
+This heuristic provides a good balance in unfolding.
+% The final heuristic selects the first conjunct which suites either of the following cases.
+% First we unfold those conjuncts which are static.
+% Then --- deterministic.
+% Then those which are less branching.
+% The last to be unfolded are those calls, which unfold to a substitution with not conjunction.
+
+% \subsection{Residualization}
+
+% Residualization is quite straightforward.
+% A branching in the process tree becomes a disjunction.
+% A split node becomes a conjunction.
+% Computed substitution is residualized as a conjunction of unifications.
+% A renaming node is just a call to a relation.
+% Relations are created for configurations on which leaf nodes are renamed.
+
+% One other thing is that when some configuration is occurred within the tree which is an instance of a configuration for which a new relation is created, then we just create a call.

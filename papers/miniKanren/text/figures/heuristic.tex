@@ -1,0 +1,52 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[lmargin=3.81cm,tmargin=2.54cm,rmargin=2.54cm,bmargin=2.52cm]{geometry}
+\usepackage{multirow}
+\usepackage{color,xcolor}
+\definecolor{darkblue}{rgb}{0,0,.75}
+\usepackage{listings} %iclude code in your document
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+
+\lstloadlanguages{Matlab} %use listings with Matlab for Pseudocode
+\lstnewenvironment{PseudoCode}[1][]
+{\lstset{basicstyle=\scriptsize,
+    keywordstyle=\bfseries\underbar,
+    literate=
+      {:=}{$\leftarrow{}$}{1}
+      {==}{$={}$}{1},
+    numbers=left,
+    morekeywords={ifd,define,where,let,in,error,case,of,while,do,otherwise,
+      read,goto,return,build-cons,build-cst,build-if,if,then,else,do,switch,of},
+    morestring=[b]",
+    morestring=[s][]{\#\{}{\}},
+    deletestring=[b]{"},
+    alsoletter={-},
+    frame=l,
+    keywordstyle = [2]{\textit},
+    morekeywords = [2]{lookup,initial_code,extend,reduce,eval,rest,first_command,first_instruction,new_tail,first_symbol},
+    showspaces=false,
+    showstringspaces=false,
+    stringstyle=\color{blue},
+    identifierstyle=,
+    escapechar=@*,
+    xleftmargin=.04\textwidth,#1}}
+{}
+
+\usepackage{stmaryrd}
+\begin{document}
+
+\thispagestyle{empty}
+\begin{figure}[h]
+\begin{PseudoCode}[moredelim={[is][stringstyle]{@@}{@@}},
+  moredelim={[is][\color{dkgreen}\bfseries]{@!}{@!}},
+  moredelim={[is][\color{red}\bfseries]{!!}{!!}}]
+heuristically_select_a_call :: Conjunction @*$\to$@* Maybe Call
+heuristically_select_a_call C =
+  find heuristic C
+
+heuristic :: Call -> Bool
+heuristic r =
+  isStatic r || isDeterministic r || isLessBranching r
+\end{PseudoCode}
+\end{figure}
+
+\end{document}
