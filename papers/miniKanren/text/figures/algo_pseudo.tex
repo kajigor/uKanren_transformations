@@ -43,16 +43,15 @@ ncpd goal = residualize @*$\circ$@* drive @*$\circ$@* normalize (goal)
 drive     = drive_disj @*$\cup$@* drive_conj
 
 drive_disj :: Disjunction @*$\to$@* Process_Tree
-drive_disj D@(c@*$_1$@*, @*$\dots$@*, c@*$_n$@*) =
-  @*$\bigvee_{i=1}^n$@* t@*$_i$@* @*$\leftarrow$@* drive_conj (c@*$_i$@*)
+drive_disj D@(c@*$_1$@*, @*$\dots$@*, c@*$_n$@*) = @*$\bigvee_{i=1}^n$@* t@*$_i$@* @*$\leftarrow$@* drive_conj (c@*$_i$@*)
 
 drive_conj :: (Conjunction, Substitution) @*$\to$@* Process_Tree
 drive_conj ((r@*$_1$@*, @*$\dots$@*, r@*$_n$@*), subst) =
   C@(r@*$_1$@*, @*$\dots$@*, r@*$_n$@*) @*$\leftarrow$@* propagate_substitution subst on r@*$_1$@*, @*$\dots$@*, r@*$_n$@*
   switch whistle (C) of
-  | instance (C', subst')      @*$\to$@* create_fold_node (C', subst')
-  | embedded_but_not_instance @*$\to$@* create_stop_node (C , subst )
-  | otherwise @*$\to$@*
+  | instance (C', subst')     @*$\Rightarrow$@* create_fold_node (C', subst')
+  | embedded_but_not_instance @*$\Rightarrow$@* create_stop_node (C , subst )
+  | otherwise @*$\Rightarrow$@*
   | | r @*$\leftarrow$@* heuristically_select_a_call (r@*$_1$@*, @*$\dots$@*, r@*$_n$@*)
   | | if r
   | | then
