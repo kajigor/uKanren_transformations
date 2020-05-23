@@ -2,13 +2,6 @@
 
 \section{Non-conjunctive Partial Deduction}
 
-\begin{figure}[!t]
-  \centering
-  \includegraphics[width=0.85\textwidth]{algo_pseudo-crop.pdf}
-  \caption{\db{Non-conjunctive Partial Deduction Pseudo Code}}
-  \label{fig:ncpd-pseudo}
-\end{figure}
-
 In this section we describe a novel approach to specialization of relational programs.
 This approach draws inspiration from both conjunctive partial deduction and supercompilation.
 The aim was to create a specialization algorithm which is simpler than conjunctive partial deduction and uses properties of \mk{} to improve performance of the input programs.
@@ -31,19 +24,25 @@ Any miniKanren term can be trivially transformed to the described form.
 In Fig.~\ref{fig:ncpd-pseudo} function \code{normalize} is assumed to perform term normalization.
 The code is omitted for brevity.
 
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.85\textwidth]{algo_pseudo-crop.pdf}
+  \caption{\db{Non-conjunctive Partial Deduction Pseudo Code}}
+  \label{fig:ncpd-pseudo}
+\end{figure}
 
 % The very first step of driving a conjunction is to apply a substitution to the variables in relation calls (line 10).
 
 There are several core ideas behind this algorithm.
 The first is to select an arbitrary relation to unfold, not necessarily the leftmost which is safe.
 The second idea is to use a heuristic which decides if unfolding a relation call can lead to discovery of contradictions between conjuncts which in turn leads to restriction of the answer set at specialization-time \db{(line 14; \code{heuristically\_select\_a\_call} stands for heurictics combination, see section~\ref{sec:heurictic} for details)}.
-If those contradictions are found, then they are exposed by considering the conjunction as a whole and substituting the result of the call unfolding back into the conjunction the call was selected from thus \emph{joining} the conjunction back together instead of using \emph{split} as in CPD \db{(lines 15--23)}.
-Finally, if the heuristic fails to select a potentially good call, then the conjunction is splitted into individual calls which are driven in isolation and are never joined \db{(line 25)}.
+If those contradictions are found, then they are exposed by considering the conjunction as a whole and substituting the result of the call unfolding back into the conjunction the call was selected from thus \emph{joining} the conjunction back together instead of using \emph{split} as in CPD \db{(lines 15--22)}.
+Finally, if the heuristic fails to select a potentially good call, then the conjunction is splitted into individual calls which are driven in isolation and are never joined \db{(line 23)}.
 
-When the heuristic selects a call to unfold (lines 14--15), a process tree is constructed for the selected call \emph{in isolation} (line 17).
+When the heuristic selects a call to unfold (line \db{15}), a process tree is constructed for the selected call \emph{in isolation} (line \db{16}).
 The leaves of the computed tree are examined.
-If all leaves are either computed substitutions or are renamings of some relations accompanied with non-empty substitutions, then the leaves are collected and replace the considered call in the root conjunction (lines \db{20--21}).
-If the selected call does not suit the criteria, the results of its unfolding is not propagated onto other relation calls withing the conjunction and the next suitable call is selected (line \db{23}).
+If all leaves are either computed substitutions or are renamings of some relations accompanied with non-empty substitutions, then the leaves are collected and replace the considered call in the root conjunction (lines \db{19--20}).
+If the selected call does not suit the criteria, the results of its unfolding is not propagated onto other relation calls withing the conjunction and the next suitable call is selected (line \db{22}).
 According to the denotational semantics of \mk{} it is safe to compute individual conjuncts in any order, thus it is ok to drive any call and then propagate its results onto the other calls.
 
 % Each time we examine a conjunction of calls, we \emph{split} them into separate nodes which are driven independently from each other.
@@ -113,10 +112,9 @@ This means that we found some contradiction, some computations were gotten rid o
 To compute this heuristic we precompute the maximum possible number of disjuncts in each relation and compare this number with the number of disjuncts when unfolding a concrete relation call.
 Maximum number of disjuncts is computed by unfolding the body of the relation in which all relation calls were replaced by a unification which always succeeds.
 
-
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=0.65\textwidth]{heuristic-crop.pdf}
+  \includegraphics[width=0.75\textwidth]{heuristic-crop.pdf}
   \caption{Heuristic selection pseudocode}
   \label{fig:heu-pseudo}
 \end{figure}

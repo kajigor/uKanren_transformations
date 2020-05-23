@@ -40,12 +40,10 @@
   moredelim={[is][\color{dkgreen}\bfseries]{@!}{@!}},
   moredelim={[is][\color{red}\bfseries]{!!}{!!}}]
 heuristically_select_a_call :: Conjunction @*$\to$@* Maybe Call
-heuristically_select_a_call C =
-  find heuristic C
+heuristically_select_a_call C = find heuristic C
 
 heuristic :: Call -> Bool
-heuristic r =
-  isStatic r || isDeterministic r || isLessBranching r
+heuristic r = isStatic r || isDeterministic r || isLessBranching r
 \end{PseudoCode}
 \end{figure}
 
