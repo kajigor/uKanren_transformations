@@ -42,7 +42,7 @@
 heuristically_select_a_call :: Conjunction @*$\to$@* Maybe Call
 heuristically_select_a_call C = find heuristic C
 
-heuristic :: Call -> Bool
+heuristic :: Call @*$\to$@* Bool
 heuristic r = isStatic r || isDeterministic r || isLessBranching r
 \end{PseudoCode}
 \end{figure}
