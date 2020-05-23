@@ -12,7 +12,7 @@ When the tree is constructed, the resulting, or \emph{residual}, program can be 
 Of course, process tree can contain infinite branches.
 \emph{Whistles} --- heuristics to identify possibly infinite branches --- are used to ensure termination in supercompilation.
 If the whistle signalled during the construction of some branch, then something should be done to ensure termination.
-The most common approaches include either stopping driving the infinite branch completely (no specialization is done in this case and the source code is blindly copied into the residual program) or folding the process tree to fold in a \emph{process graph}.
+The most common approaches include either stopping driving the infinite branch completely (no specialization is done in this case and the source code is blindly copied into the residual program) or folding the process tree to a \emph{process graph}.
 The main instrument to perform such a folding is \emph{generalization}, i.e. abstracting away some computed data about the current term which makes folding possible.
 One source of infinite branches is consecutive recursive calls to the same function with an accumulating parameter: by unfolding such a call further one can only increase the term size which leads to nontermination.
 The accumulating parameter can be removed by replacing the call with its generalization.
@@ -20,13 +20,13 @@ There are several ways to ensure process correctness and termination, the most c
 % When two dangerously similar nodes are encountered,
 % For example, two consecutive recursive calls of a function with accumulating parameter, and the first is not an instance of the second, then one may construct a new, generalized, node such that both of original nodes are instances of the last one, then one of the initial nodes is replaced with the generalized one.
 
-While supercompilation generally improves the behavior of input programs and distillation can even provide superlinear speedup, there are no ways to predict the effect of specialization on a given program in general case.
-What is worse, they rarely consider the residual program efficiency from the point of view of the target language evaluator.
-The main optimization source is computing in advance all possible intermediate and statically-known semantics steps at transformation-time.
-Other criteria like the size of the generated program or possible optimizations and execution cost of different language constructions by the target language evaluator are usually out of consideration~\cite{jonesbook}.
+While supercompilation generally improves the behaviour of input programs and distillation can even provide superlinear speedup, there are no ways to predict the effect of specialization on a given program in the general.
+What is worse, they rarely consider the residual program efficiency from the target language evaluator point of view.
+The main optimization source is computing in advance all possible intermediate and statically-known semantics steps at program transformation-time.
+Other criteria, like the size of the generated program or possible optimizations and execution cost of different language constructions by the target language evaluator, are usually out of consideration~\cite{jonesbook}.
 It is known that supercompilation may adversely affect GHC optimizations yielding standalone compilation more powerful~\cite{SCBE,TCES} and cause code explosion~\cite{SCHC}.
 Moreover, it may be hard to predict the real speedup of any given program on concrete examples even disregarding problems above because of the complexity of the transformation algorithm.
-The worst case for partial evaluation is when all static variables are used in a dynamic context, and there is some advice on how to implement a partial evaluator as well as a target program so that specialization really improved its performance~\cite{jonesbook,bulyonkov84}.
+The worst-case for partial evaluation is when all static variables are used in a dynamic context, and there is some advice on how to implement a partial evaluator as well as a target program so that specialization indeed improved its performance~\cite{jonesbook,bulyonkov84}.
 There is lack of research in determining the classes of programs which transformers would definitely speed up.
 
 Conjunctive partial deduction~\cite{de1999conjunctive} makes an effort to provide reasonable control for left-to-right evaluation strategy of \pro{}.
@@ -36,15 +36,15 @@ The specialization is done in two levels of control: the local control determine
 The leaves of local control trees become nodes of the global control tree.
 CPD analyses these nodes at the global level and runs local control for all those which are new.
 
-At the local level CPD examines a conjunction of atoms by considering each atom one-by-one from left to right.
+At the local level, CPD examines a conjunction of atoms by considering each atom one-by-one from left to right.
 An atom is \emph{unfolded} if it is deemed safe, i.e. a whistle based on homeomorphic does not signal for the atom.
 When an atom is unfolded, a clause whose head can be unified with the atom is found, and a new node is added into the tree where the atom in the conjunction is replaced with the body of that clause.
-If there are more than one suitable head, then several branches are added into the tree which correspond to the disjunction in the residualized program.
+If there is more than one suitable head, then several branches are added into the tree which corresponds to the disjunction in the residualized program.
 An adaptation of CPD for the \mk{} programming language is described in~\cite{lozov2019relational}.
 
 The most well-behaved strategy of local control in CPD for \pro{} is \emph{deterministic unfolding}~\cite{leuschel1997advanced}.
-An atom is unfolded only if only one suitable clause head exist for it with the one exception: it is allowed to unfold an atom non-deterministically once for one local control tree.
-This means that if a non-deterministic atom is the leftmost within a conjunction, it is most likely to be unfoldled and introduce many new relation calls within the conjunction.
+An atom is unfolded only if only one suitable clause head exists for it with the one exception: it is allowed to unfold an atom non-deterministically once for one local control tree.
+This means that if a non-deterministic atom is the leftmost within conjunction, it is most likely to be unfolded and introduce many new relation calls within the conjunction.
 We believe this is the core problem with CPD which limits its power when applied to \mk{}.
 The strategy of unfolding atoms from left to right is reasonable in the context of \pro{} because it mimics the way programs in \pro{} execute.
 But it often leads to larger global control trees and, as a result, bigger, less efficient programs.
