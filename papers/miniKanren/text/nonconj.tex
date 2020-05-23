@@ -1,10 +1,10 @@
-\newcommand{\code}[1]{\texttt{#1}}
+./\newcommand{\code}[1]{\texttt{#1}}
 
 \section{Non-conjunctive Partial Deduction}
 
 \begin{figure}[!t]
   \centering
-  \includegraphics[width=0.7\textwidth]{algo_pseudo-crop.pdf}
+  \includegraphics[width=0.85\textwidth]{algo_pseudo-crop.pdf}
   \caption{\db{Non-conjunctive Partial Deduction Pseudo Code}}
   \label{fig:ncpd-pseudo}
 \end{figure}
@@ -36,29 +36,29 @@ The code is omitted for brevity.
 
 There are several core ideas behind this algorithm.
 The first is to select an arbitrary relation to unfold, not necessarily the leftmost which is safe.
-The second idea is to use a heuristic which decides if unfolding a relation call can lead to discovery of contradictions between conjuncts which in turn leads to restriction of the answer set at specialization-time.
-If those contradictions are found, then they are exposed by considering the conjunction as a whole and substituting the result of the call unfolding back into the conjunction the call was selected from thus \emph{joining} the conjunction back together instead of using \emph{split} as in CPD.
-Finally, if the heuristic fails to select a potentially good call, then the conjunction is splitted into individual calls which are driven in isolation and are never joined.
+The second idea is to use a heuristic which decides if unfolding a relation call can lead to discovery of contradictions between conjuncts which in turn leads to restriction of the answer set at specialization-time \db{(line 14; \code{heuristically\_select\_a\_call} stands for heurictics combination, the exact code is omitted)}.
+If those contradictions are found, then they are exposed by considering the conjunction as a whole and substituting the result of the call unfolding back into the conjunction the call was selected from thus \emph{joining} the conjunction back together instead of using \emph{split} as in CPD \db{(lines 15--23)}.
+Finally, if the heuristic fails to select a potentially good call, then the conjunction is splitted into individual calls which are driven in isolation and are never joined \db{(line 25)}.
 
-When the heuristic selects a call to unfold (line 15), a process tree is constructed for the selected call \emph{in isolation} (line 16).
+When the heuristic selects a call to unfold (lines 14--15), a process tree is constructed for the selected call \emph{in isolation} (line 17).
 The leaves of the computed tree are examined.
-If all leaves are either computed substitutions or are renamings of some relations accompanied with non-empty substitutions, then the leaves are collected and replace the considered call in the root conjunction (lines 19,20).
-If the selected call does not suit the criteria, the results of its unfolding is not propagated onto other relation calls withing the conjunction and the next suitable call is selected (line 22).
+If all leaves are either computed substitutions or are renamings of some relations accompanied with non-empty substitutions, then the leaves are collected and replace the considered call in the root conjunction (lines \db{20--21}).
+If the selected call does not suit the criteria, the results of its unfolding is not propagated onto other relation calls withing the conjunction and the next suitable call is selected (line \db{23}).
 According to the denotational semantics of \mk{} it is safe to compute individual conjuncts in any order, thus it is ok to drive any call and then propagate its results onto the other calls.
 
 % Each time we examine a conjunction of calls, we \emph{split} them into separate nodes which are driven independently from each other.
 % Among the relation calls we select one which is according to the heuristic is likely to narrow down the answer set \db{(line 15)}.
 % If the selected call does not suit the criteria, the results of its unfolding is not propagated onto other relation calls withing the conjunction and the next suitable call is selected \db{(line 22)}.
 
-This process creates branchings whenever a disjunction is examined lines 4--6).
+This process creates branchings whenever a disjunction is examined lines 4--\db{5}).
 At each step we make sure that we do not start driving a conjunction which we have already examined.
-To do this, we check if the current conjunction is renaming of any other configuration in the tree (line 12).
+To do this, we check if the current conjunction is renaming of any other configuration in the tree (line \db{11}).
 If it is, then we create a special node which then is residualized into a call to the corresponding relation.
 This is known as \emph{folding} in supercompilation.
 
 We decided not to perform generalization in this approach in the same fashion as CPD or supercompilation does.
 Our conjunctions are always splitted into individual calls and are joined back together if it is sensible.
-If the need for generalization arises, i.e. embedding is detected, then we immediately stop driving this conjunction (line 13).
+If the need for generalization arises, i.e. embedding is detected, then we immediately stop driving this conjunction (line \db{12}).
 When redisualizatin such conjunction, we just generate a conjunction of calls to the input program before specialization.
 
 % The generalization is used in supercompilation and partial deduction to ensure termination at the same time as some degree of specialization.
