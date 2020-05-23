@@ -2,8 +2,22 @@
 
 Specialization is an attractive technique aimed to improve the performance of a program if some of its arguments are known statically.
 It is studied for functional, imperative and logic programing and comes in different forms: partial evaluation~\cite{jonesbook} and partial deduction~\cite{lloyd1991partial}, supercompilation~\cite{soerensen1996positive}, distillation~\cite{hamilton2007distillation} and many more.
-While supercompilation generally improves the behavior of input programs and distillation can even provide superlinear speedup, there are no ways to predict the effect of specialization on a given program in general case.
 
+\db{
+  The heart of supercompilation-based techniques is \emph{driving}~---~a symbolic execution of a program through all possible execution paths.
+  The result of driving is so-called \emph{process tree} where nodes correspond to \emph{configurations} presenting computation state, for example, a term in case of pure functional programming languages and each path in the tree~--~to some concrete program execution.
+  The two main sources for supercompilation optimizations are aggressive information propagation about variable values, equalities, and disabilities and precomputing of all deterministic semantic evaluation steps, i.e. combining of consecutive process tree nodes with no branching, aka. \emph{deforestation}~\cite{TODO}.
+  When the tree is constructed, the resulting program can be extracted from the process tree, this process is called \emph{residualization} and resulting program is called \emph{residual}.
+  Of cause, process tree is possibly infinite.
+  In order to ensure termination in supercompilation \emph{whistles}, heuristics to identify possibly infinite branches, are used.
+  If the whistle signalled during some branch construction, the process is forced to be stoped.
+  Then iether required source code will be copied to the residual program or process tree will be forced to fold in a \emph{process graph}.
+  The main instrument ro perform such a folding is generalization.
+  When two dangerously similar nodes are met, for example, two consecutive recursive calls of a function with accumulating parameter, and the first is not an instance of the second, then one may construct a new, generalized, node such that both of original nodes are instances of the last one, then one of the initial nodes is replaced with the generalized one.
+  There are several ways to ensure process correctness and termination, the most familiar and popular one is \emph{homeomorphic embedding}~\cite{TODO}.
+}
+
+While supercompilation generally improves the behavior of input programs and distillation can even provide superlinear speedup, there are no ways to predict the effect of specialization on a given program in general case.
 What is worse they rarely consider the residual program efficiency from the point of view of the target language evaluator.
 The main optimization source is computing in advance all possible intermediate and statically-known semantics steps at transformation-time.
 Other criteria like the size of the generated program or possible optimizations and execution cost of different language constructions by the target language evaluator are usually out of consideration~\cite{jonesbook}.
