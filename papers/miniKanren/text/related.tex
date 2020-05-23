@@ -7,7 +7,7 @@ It is studied for functional, imperative and logic programing and comes in diffe
 The heart of supercompilation-based techniques is \emph{driving}~---~a symbolic execution of a program through all possible execution paths.
 The result of driving is so-called \emph{process tree} where nodes correspond to \emph{configurations} which present computation state, for example, a term in case of pure functional programming languages.
 Each path in the tree corresponds to some concrete program execution.
-The two main sources for supercompilation optimizations are aggressive information propagation about variable values, equalities, and disequalities and precomputing of all deterministic semantic evaluation steps, i.e. combining of consecutive process tree nodes with no branching, also known as \emph{deforestation}~\cite{TODO}.
+The two main sources for supercompilation optimizations are aggressive information propagation about variable values, equalities, and disequalities and precomputing of all deterministic semantic evaluation steps, i.e. combining of consecutive process tree nodes with no branching, also known as \emph{deforestation}~\cite{deforestation}.
 When the tree is constructed, the resulting, or \emph{residual}, program can be extracted from the process tree by the process called \emph{residualization}.
 Of course, process tree can contain infinite branches.
 \emph{Whistles} --- heuristics to identify possibly infinite branches --- are used to ensure termination in supercompilation.
@@ -16,7 +16,7 @@ The most common approaches include either stopping driving the infinite branch c
 The main instrument to perform such a folding is \emph{generalization}, i.e. abstracting away some computed data about the current term which makes folding possible.
 One source of infinite branches is consecutive recursive calls to the same function with an accumulating parameter: by unfolding such a call further one can only increase the term size which leads to nontermination.
 The accumulating parameter can be removed by replacing the call with its generalization.
-There are several ways to ensure process correctness and termination, the most common being \emph{homeomorphic embedding}~\cite{TODO} used as a whistle and most-specific generalization of terms.
+There are several ways to ensure process correctness and termination, the most common being \emph{homeomorphic embedding}~\cite{Higman52,Kruskal60} used as a whistle and most-specific generalization of terms.
 % When two dangerously similar nodes are encountered,
 % For example, two consecutive recursive calls of a function with accumulating parameter, and the first is not an instance of the second, then one may construct a new, generalized, node such that both of original nodes are instances of the last one, then one of the initial nodes is replaced with the generalized one.
 
