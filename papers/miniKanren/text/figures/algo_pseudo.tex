@@ -14,8 +14,8 @@
       {:=}{$\leftarrow{}$}{1}
       {==}{$={}$}{1},
     numbers=left,
-    morekeywords={ifd,define,where,let,in,error,case,of,while,do,otherwise,
-      read,goto,return,build-cons,build-cst,build-if,if,then,else,do,switch,of},
+    morekeywords={ifd,define,where,let,in,error,case,of,Just,Nothing,while,do,otherwise,
+      read,goto,return,build-cons,build-cst,build-if,if,then,else,do,switch},
     morestring=[b]",
     morestring=[s][]{\#\{}{\}},
     deletestring=[b]{"},
@@ -48,22 +48,20 @@ drive_disj D@(c@*$_1$@*, @*$\dots$@*, c@*$_n$@*) = @*$\bigvee_{i=1}^n$@* t@*$_i$
 drive_conj :: (Conjunction, Substitution) @*$\to$@* Process_Tree
 drive_conj ((r@*$_1$@*, @*$\dots$@*, r@*$_n$@*), subst) =
   C@(r@*$_1$@*, @*$\dots$@*, r@*$_n$@*) @*$\leftarrow$@* propagate_substitution subst on r@*$_1$@*, @*$\dots$@*, r@*$_n$@*
-  switch whistle (C) of
+  case whistle (C) of
   | instance (C', subst')     @*$\Rightarrow$@* create_fold_node (C', subst')
   | embedded_but_not_instance @*$\Rightarrow$@* create_stop_node (C , subst )
   | otherwise @*$\Rightarrow$@*
-  | | r @*$\leftarrow$@* heuristically_select_a_call (r@*$_1$@*, @*$\dots$@*, r@*$_n$@*)
-  | | if r
-  | | then
-  | | | t @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r)
-  | | | if trivial @*$\circ$@* leafs (t)
-  | | | then
-  | | | | C' @*$\leftarrow$@* propagate_substitution (C @*$\setminus$@* r, extract_substitution (t))
-  | | | | drive C'[r @*$\mapsto$@* extract_calls (t)]
-  | | | else
-  | | | | t @*$\bigwedge$@* drive (C @*$\setminus$@* r, subst)
-  | | else
-  | | | @*$\bigwedge_{i=1}^n$@* t@*$_i$@* @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r@*$_i$@*)
+  | | case heuristically_select_a_call (r@*$_1$@*, @*$\dots$@*, r@*$_n$@*) of
+  | | | Just r @*$\Rightarrow$@*
+  | | | | t @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r)
+  | | | | if trivial @*$\circ$@* leafs (t)
+  | | | | then
+  | | | | | C' @*$\leftarrow$@* propagate_substitution (C @*$\setminus$@* r, extract_substitution (t))
+  | | | | | drive C'[r @*$\mapsto$@* extract_calls (t)]
+  | | | | else
+  | | | | | t @*$\bigwedge$@* drive (C @*$\setminus$@* r, subst)
+  | | | Nothing @*$\Rightarrow$@* @*$\bigwedge_{i=1}^n$@* t@*$_i$@* @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r@*$_i$@*)
 \end{PseudoCode}
 \end{figure}
 
