@@ -2,25 +2,25 @@
 
 \section{Non-conjunctive Partial Deduction}
 
-In this section we describe a novel approach to specialization of relational programs.
+In this section, we describe a novel approach to relational programs specialization.
 This approach draws inspiration from both conjunctive partial deduction and supercompilation.
-The aim was to create a specialization algorithm which is simpler than conjunctive partial deduction and uses properties of \mk{} to improve performance of the input programs.
+The aim was to create a specialization algorithm which is simpler than conjunctive partial deduction and uses properties of \mk{} to improve the performance of the input programs.
 
-The algorithm pseudocode is shown on Fig.~\ref{fig:ncpd-pseudo}.
+The algorithm pseudocode is shown in Fig.~\ref{fig:ncpd-pseudo}.
 For the sake of brevity and clarity, we provide functions \code{drive\_disj} and \code{drive\_conj} which describe how to process disjunctions and conjunctions respectively.
 Driving itself is a trivial combination of presented functions (line 2).
 
 A driving process creates a process tree, from which a residual program is later created.
 The process tree is meant to mimic the execution of the input program.
-The nodes of process tree include a \emph{configuraion} which describes the state of program evaluation at some point.
+The nodes of the process tree include a \emph{configuration} which describes the state of program evaluation at some point.
 In our case configuration is a conjunction of relation calls.
-The substitution computed at each step is also stored in the tree node, although it is not included into the configuration.
+The substitution computed at each step is also stored in the tree node, although it is not included in the configuration.
 
 Hereafter, we consider all goals and relation bodies to be in \emph{canonical normal form}~---~a disjunction of conjunctions of either calls or unifications.
-Moreover, we assume all fresh variables to be introduced into scope and all unifications to be computed at each step.
+Moreover, we assume all fresh variables to be introduced into the scope and all unifications to be computed at each step.
 Those disjuncts in which unifications fail are removed.
-Other disjuncts take form of a possibly empty conjunction of relation calls accompanied with a substitution computed from unificaitons.
-Any \mk{} term can be trivially transformed to the described form.
+Other disjuncts take the form of possibly empty conjunction of relation calls accompanied with a substitution computed from unifications.
+Any \mk{} term can be trivially transformed into the described form.
 In Fig.~\ref{fig:ncpd-pseudo} function \code{normalize} is assumed to perform term normalization.
 The code is omitted for brevity.
 
@@ -35,15 +35,15 @@ The code is omitted for brevity.
 
 There are several core ideas behind this algorithm.
 The first is to select an arbitrary relation to unfold, not necessarily the leftmost which is safe.
-The second idea is to use a heuristic which decides if unfolding a relation call can lead to discovery of contradictions between conjuncts which in turn leads to restriction of the answer set at specialization-time (line 14; \code{heuristically\_select\_a\_call} stands for heurictics combination, see section~\ref{sec:heurictic} for details).
+The second idea is to use a heuristic which decides if unfolding a relation call can lead to discovery of contradictions between conjuncts which in turn leads to restriction of the answer set at specialization-time (line 14; \code{heuristically\_select\_a\_call} stands for heuristics combination, see section~\ref{sec:heurictic} for details).
 If those contradictions are found, then they are exposed by considering the conjunction as a whole and replacing the selected relation call with the result of its unfolding thus \emph{joining} the conjunction back together instead of using \emph{split} as in CPD (lines 15--22).
 Joining instead of splitting is why we call our transformer \emph{non-conjunctive} partial deduction.
-Finally, if the heuristic fails to select a potentially good call, then the conjunction is splitted into individual calls which are driven in isolation and are never joined (line 23).
+Finally, if the heuristic fails to select a potentially good call, then the conjunction is split into individual calls which are driven in isolation and are never joined (line 23).
 
 When the heuristic selects a call to unfold (line 15), a process tree is constructed for the selected call \emph{in isolation} (line 16).
 The leaves of the computed tree are examined.
-If all leaves are either computed substitutions or are instances of some relations accompanied with non-empty substitutions, then the leaves are collected and each of them replace the considered call in the root conjunction (lines 19--20).
-If the selected call does not suit the criteria, the results of its unfolding is not propagated onto other relation calls within the conjunction, instead the next suitable call is selected (line 22).
+If all leaves are either computed substitutions or are instances of some relations accompanied with non-empty substitutions, then the leaves are collected and each of them replaces the considered call in the root conjunction (lines 19--20).
+If the selected call does not suit the criteria, the results of its unfolding are not propagated onto other relation calls within the conjunction, instead, the next suitable call is selected (line 22).
 According to the denotational semantics of \mk{} it is safe to compute individual conjuncts in any order, thus it is ok to drive any call and then propagate its results onto the other calls.
 
 % Each time we examine a conjunction of calls, we \emph{split} them into separate nodes which are driven independently from each other.
@@ -51,14 +51,14 @@ According to the denotational semantics of \mk{} it is safe to compute individua
 % If the selected call does not suit the criteria, the results of its unfolding is not propagated onto other relation calls withing the conjunction and the next suitable call is selected \db{(line 22)}.
 
 This process creates branchings whenever a disjunction is examined (lines 4--5).
-At each step we make sure that we do not start driving a conjunction which we have already examined.
+At each step, we make sure that we do not start driving conjunction which we have already examined.
 To do this, we check if the current conjunction is a renaming of any other configuration in the tree (line 11).
 If it is, then we fold the tree by creating a special node which then is residualized into a call to the corresponding relation.
 
 We decided not to perform generalization in this approach in the same fashion as CPD or supercompilation does.
-Our conjunctions are always splitted into individual calls and are joined back together only if it is sensible.
+Our conjunctions are always split into individual calls and are joined back together only if it is sensible.
 If the need for generalization arises, i.e. homeomorphic embedding of conjunctions~\cite{de1999conjunctive} is detected, then we immediately stop driving this conjunction (line 12).
-When redisualizating such conjunction, we just generate a conjunction of calls to the input program before specialization.
+When residualizing such conjunction, we just generate a conjunction of calls to the input program before specialization.
 
 % The generalization is used in supercompilation and partial deduction to ensure termination at the same time as some degree of specialization.
 % The generalization of two terms is usually a \emph{most-specific generalization}.
@@ -85,32 +85,32 @@ Unfolding in our case is done by substitution of some relation call by its body 
 % Those disjuncts in which unifications fails are removed.
 % Other disjuncts take form of a conjunction of relation calls accompanied with a substitution.
 The unfolding itself is straightforward however it is not always clear what to unfold and when to \emph{stop} unfolding.
-Unfolding in functional programming languages specialization, as well as inlining in imperative one, is usually considered to be safe from the point of view of residual program efficiency.
+Unfolding in functional programming languages specialization, as well as inlining in imperative one, is usually considered to be safe from the residual program efficiency point of view.
 It may only lead to code explosion or code duplication which is mostly left to a target program compiler optimization or even is out of consideration at all if a specializer is considered as a standalone tool~\cite{jonesbook}.
 
 Unfortunately, this is not the case for the specialization of relational programming language.
 Unlike functional and imperative, in logic and relational programming language unfolding may easily affect the target program efficiency~\cite{leuschel2002logic}.
-Unfolding too much may create extra unifications, which is by itself a costly operation, or even introduce duplicated computations by propagating the unfolding results onto neighboring conjuncts.
+Unfolding too much may create extra unifications, which is by itself a costly operation, or even introduce duplicated computations by propagating the unfolding results onto neighbouring conjuncts.
 
 There is a fine edge between too much unfolding and not enough unfolding.
-The former may be even worse than the latter.
+The former is maybe even worse than the latter.
 We believe that the following heuristic provides a reasonable approach to unfolding control.
 
 \subsection{Heuristic}
 \label{sec:heurictic}
 
 This heuristic is aimed at selecting the relation call within a conjunction which is both safe to unfold and may lead to discovering contradictions within the conjunction.
-The unsafe unfolding leads to uncontrollable increase in the number of relation calls in a conjunction.
+The unsafe unfolding leads to an uncontrollable increase in the number of relation calls in a conjunction.
 It is best to first unfold those relation calls which can be fully computed up to substitutions.
 
 We deem every static (non-recursive) conjunct to be safe because they never lead to growth in the number of conjunctions.
 Those calls which unfold deterministically, meaning there is only one disjunct in the unfolded relation, are also considered to be safe.
 
 Those relation calls which are neither static nor deterministic are examined with what we call the \emph{less-branching} heuristic.
-It identifies the case when the unfolded relation contains less disjuncts than it could possibly have.
+It identifies the case when the unfolded relation contains fewer disjuncts than it could possibly have.
 This means that we found some contradiction, some computations were gotten rid of, and thus the answer set was restricted, which is desirable when unfolding.
 To compute this heuristic we precompute the maximum possible number of disjuncts in each relation and compare this number with the number of disjuncts when unfolding a concrete relation call.
-Maximum number of disjuncts is computed by unfolding the body of the relation in which all relation calls were replaced by a unification which always succeeds.
+The maximum number of disjuncts is computed by unfolding the body of the relation in which all relation calls were replaced by a unification which always succeeds.
 
 \begin{figure}[h!]
   \centering
