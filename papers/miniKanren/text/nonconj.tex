@@ -36,7 +36,7 @@ The code is omitted for brevity.
 
 There are several core ideas behind this algorithm.
 The first is to select an arbitrary relation to unfold, not necessarily the leftmost which is safe.
-The second idea is to use a heuristic which decides if unfolding a relation call can lead to discovery of contradictions between conjuncts which in turn leads to restriction of the answer set at specialization-time \db{(line 14; \code{heuristically\_select\_a\_call} stands for heurictics combination, the exact code is omitted)}.
+The second idea is to use a heuristic which decides if unfolding a relation call can lead to discovery of contradictions between conjuncts which in turn leads to restriction of the answer set at specialization-time \db{(line 14; \code{heuristically\_select\_a\_call} stands for heurictics combination, see section~\ref{sec:heurictic} for details)}.
 If those contradictions are found, then they are exposed by considering the conjunction as a whole and substituting the result of the call unfolding back into the conjunction the call was selected from thus \emph{joining} the conjunction back together instead of using \emph{split} as in CPD \db{(lines 15--23)}.
 Finally, if the heuristic fails to select a potentially good call, then the conjunction is splitted into individual calls which are driven in isolation and are never joined \db{(line 25)}.
 
@@ -98,6 +98,7 @@ The former may be even worse than the latter.
 We believe that the following heuristic provides a reasonable approach to controling unfolding.
 
 \subsection{Heuristic}
+\label{sec:heurictic}
 
 This heuristic is aimed at selecting the relation call within a conjunction which is both safe to unfold and may lead to discovering contradictions within the conjunction.
 The unsafe unfolding leads to uncontrollable increase in the number of relation calls in a conjunction.
