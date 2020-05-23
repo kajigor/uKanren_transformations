@@ -40,31 +40,31 @@
   moredelim={[is][\color{dkgreen}\bfseries]{@!}{@!}},
   moredelim={[is][\color{red}\bfseries]{!!}{!!}}]
 ncpd goal = residualize @*$\circ$@* drive @*$\circ$@* normalize (goal)
-drive     = drive@*\_@*disj @*$\cup$@* drive@*\_@*conj
+drive     = drive_disj @*$\cup$@* drive_conj
 
-drive@*\_@*disj :: Disjunction @*$\to$@* Process@*\_@*Tree
-drive@*\_@*disj D@(c@*$_1$@*, @*$\dots$@*, c@*$_n$@*) =
-  create@*\_@*or@*\_@*node ([c@*$_i$@* @*$\leftarrow$@* drive@*\_@*conj (c@*$_i$@*)])
+drive_disj :: Disjunction @*$\to$@* Process_Tree
+drive_disj D@(c@*$_1$@*, @*$\dots$@*, c@*$_n$@*) =
+  @*$\bigvee_{i=1}^n$@* t@*$_i$@* @*$\leftarrow$@* drive_conj (c@*$_i$@*)
 
-drive@*\_@*conj :: (Conjunction, Substitution) @*$\to$@* Process@*\_@*Tree
-drive@*\_@*conj ((r@*$_1$@*, @*$\dots$@*, r@*$_n$@*), subst) =
-  C@(r@*$_1$@*, @*$\dots$@*, r@*$_n$@*) @*$\leftarrow$@* propogate substitution subst on r@*$_1$@*, @*$\dots$@*, r@*$_n$@*
+drive_conj :: (Conjunction, Substitution) @*$\to$@* Process_Tree
+drive_conj ((r@*$_1$@*, @*$\dots$@*, r@*$_n$@*), subst) =
+  C@(r@*$_1$@*, @*$\dots$@*, r@*$_n$@*) @*$\leftarrow$@* propagate_substitution subst on r@*$_1$@*, @*$\dots$@*, r@*$_n$@*
   switch whistle (C) of
-    instance (C', subst')      @*$\to$@* create@*\_@*fold@*\_@*node (C', subst')
-    embedded@*\_@*but@*\_@*not@*\_@*instance @*$\to$@* create@*\_@*stop@*\_@*node (C , subst )
-    otherwise @*$\to$@*
-    | r @*$\leftarrow$@* heuristically@*\_@*select@*\_@*a@*\_@*call (r@*$_1$@*, @*$\dots$@*, r@*$_n$@*)
-    | if r
-    | then
-    | | t @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r)
-    | | if trivial @*$\circ$@* leafs (t)
-    | | then
-    | | | C' @*$\leftarrow$@* propagate@*\_@*subst (C @*$\setminus$@* r, extract@*\_@*subst (t))
-    | | | drive C'[r @*$\mapsto$@* extract@*\_@*calls (t)]
-    | | else
-    | | | t @*$\bigwedge$@* drive (C @*$\setminus$@* r, subst)
-    | else
-    | | @*$\bigwedge_{i=1}^n$@* t@*$_i$@* @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r@*$_i$@*)
+  | instance (C', subst')      @*$\to$@* create_fold_node (C', subst')
+  | embedded_but_not_instance @*$\to$@* create_stop_node (C , subst )
+  | otherwise @*$\to$@*
+  | | r @*$\leftarrow$@* heuristically_select_a_call (r@*$_1$@*, @*$\dots$@*, r@*$_n$@*)
+  | | if r
+  | | then
+  | | | t @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r)
+  | | | if trivial @*$\circ$@* leafs (t)
+  | | | then
+  | | | | C' @*$\leftarrow$@* propagate_substitution (C @*$\setminus$@* r, extract_substitution (t))
+  | | | | drive C'[r @*$\mapsto$@* extract_calls (t)]
+  | | | else
+  | | | | t @*$\bigwedge$@* drive (C @*$\setminus$@* r, subst)
+  | | else
+  | | | @*$\bigwedge_{i=1}^n$@* t@*$_i$@* @*$\leftarrow$@* drive @*$\circ$@* normalize @*$\circ$@* unfold (r@*$_i$@*)
 \end{PseudoCode}
 \end{figure}
 
