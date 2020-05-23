@@ -9,55 +9,69 @@
   \label{fig:ncpd-pseudo}
 \end{figure}
 
-In this section we will describe a novel approach to specialization of relational programs.
+In this section we describe a novel approach to specialization of relational programs.
 This approach draws inspiration from both conjunctive partial deduction and supercompilation.
 The aim was to create a specialization algorithm which is simpler than conjunctive partial deduction and uses properties of \mk{} to improve performance of the input programs.
-\db{The algorithm pseudocode is shown on Fig.~\ref{fig:ncpd-pseudo}\footnote{
-    \db{For the sake of brevity and clarity, we provide functions \code{drive\_disj} and \code{drive\_conj} describing driving processes for disjunction and conjunction correspondingly.
-      Driving itself is a trivial combination of presented functions (line 2).}}}.
 
-\db{
-Hereafter, we consider all goals and relation bodies to be in \emph{canonical normal form}~---~a disjunction of conjunctions of either calls or unifications.
-Moreover, we assume all fresh variables to be instantiated and all unifications to be computed on each step.
-Those disjuncts in which unifications fails are removed.
-Other disjuncts take form of a conjunction of relation calls accompanied with a substitution.
-Any miniKanren term can be trivially transformed to the described form\footnote{
-  \db{On Fig.~\ref{fig:ncpd-pseudo} function \code{normalize} is assumed to perform term normalization;
-    The code is ommited for brevity.}
-}.}
-
-The high-level idea behind the algorithm is to select a relation call to unfold by using a heuristic which decides if the call can narrow down the answer set \db{(line 15)}.
-A driving tree is constructed for the selected call in isolation \db{(line 16)}.
-The leaves of the computed tree are examined.
-If all leaves are either computed substitutions or are calls to some relations accompanied with non-empty substitutions, then the leaves are collected and are put back into the root conjunction instead of the examined call \db{(lines 19,20)}.
-According to denotational semantics of \mk{} it is safe to compute individual conjuncts in any order, thus it is ok to drive any call and then propagate its results onto the other calls.
+The algorithm pseudocode is shown on Fig.~\ref{fig:ncpd-pseudo}.
+For the sake of brevity and clarity, we provide functions \code{drive\_disj} and \code{drive\_conj} which describe how to process disjunctions and conjunctions respectively.
+Driving itself is a trivial combination of presented functions (line 2).
 
 A driving process creates a process tree, from which a residual program is later created.
+The process tree is meant to mimic the execution of the input program.
 The nodes of process tree include a \emph{configuraion} which describes the state of program evaluation at some point.
 In our case configuration is a conjunction of relation calls.
 The substitution computed at each step is also stored in the tree node, although it is not included into the configuration.
 
-Each time we examine a conjunction of calls, we \emph{split} them into separate nodes which are driven independently from each other.
-Among the relation calls we select one which is according to the heuristic is likely to narrow down the answer set \db{(line 15)}.
-If the selected call does not suit the criteria, the results of its unfolding is not propagated onto other relation calls withing the conjunction and the next suitable call is selected \db{(line 22)}.
+Hereafter, we consider all goals and relation bodies to be in \emph{canonical normal form}~---~a disjunction of conjunctions of either calls or unifications.
+Moreover, we assume all fresh variables to be introduced into scope and all unifications to be computed at each step.
+Those disjuncts in which unifications fail are removed.
+Other disjuncts take form of a conjunction of relation calls accompanied with a substitution computed from unificaitons.
+Any miniKanren term can be trivially transformed to the described form.
+In Fig.~\ref{fig:ncpd-pseudo} function \code{normalize} is assumed to perform term normalization.
+The code is omitted for brevity.
 
-This process does create branchings whenever a disjunction is examined \db{(lines 4--6)}.
+
+% The very first step of driving a conjunction is to apply a substitution to the variables in relation calls (line 10).
+
+There are several core ideas behind this algorithm.
+The first is to select an arbitrary relation to unfold, not necessarily the leftmost which is safe.
+The second idea is to use a heuristic which decides if unfolding a relation call can lead to discovery of contradictions between conjuncts which in turn leads to restriction of the answer set at specialization-time.
+If those contradictions are found, then they are exposed by considering the conjunction as a whole and substituting the result of the call unfolding back into the conjunction the call was selected from thus \emph{joining} the conjunction back together instead of using \emph{split} as in CPD.
+Finally, if the heuristic fails to select a potentially good call, then the conjunction is splitted into individual calls which are driven in isolation and are never joined.
+
+When the heuristic selects a call to unfold (line 15), a process tree is constructed for the selected call \emph{in isolation} (line 16).
+The leaves of the computed tree are examined.
+If all leaves are either computed substitutions or are renamings of some relations accompanied with non-empty substitutions, then the leaves are collected and replace the considered call in the root conjunction (lines 19,20).
+If the selected call does not suit the criteria, the results of its unfolding is not propagated onto other relation calls withing the conjunction and the next suitable call is selected (line 22).
+According to the denotational semantics of \mk{} it is safe to compute individual conjuncts in any order, thus it is ok to drive any call and then propagate its results onto the other calls.
+
+% Each time we examine a conjunction of calls, we \emph{split} them into separate nodes which are driven independently from each other.
+% Among the relation calls we select one which is according to the heuristic is likely to narrow down the answer set \db{(line 15)}.
+% If the selected call does not suit the criteria, the results of its unfolding is not propagated onto other relation calls withing the conjunction and the next suitable call is selected \db{(line 22)}.
+
+This process creates branchings whenever a disjunction is examined lines 4--6).
 At each step we make sure that we do not start driving a conjunction which we have already examined.
-To do this, we check if the current conjunction is renaming of any other configuration in the tree \db{(line 12)}.
-If it is, then we create a special node which then is residualized into a call to the suitable relation.
+To do this, we check if the current conjunction is renaming of any other configuration in the tree (line 12).
+If it is, then we create a special node which then is residualized into a call to the corresponding relation.
+This is known as \emph{folding} in supercompilation.
 
-We decided not to do generalization in this approach.
-The generalization is used in supercompilation and partial deduction to ensure termination at the same time as some degree of specialization.
-The generalization of two terms is usually a \emph{most-specific generalization}.
-Generalization is used to abstract away some information computed during driving.
-In conjunctive partial deduction generalization is modified to support treating of conjunctions.
-The generalization selects subconjuctions of two conjuncts which are similar (call to the same relation and their arguments have similar shape and distribution).
-For the subconjunctions selected a most-specific generalization is computed.
+We decided not to perform generalization in this approach in the same fashion as CPD or supercompilation does.
+Our conjunctions are always splitted into individual calls and are joined back together if it is sensible.
+If the need for generalization arises, i.e. embedding is detected, then we immediately stop driving this conjunction (line 13).
+When redisualizatin such conjunction, we just generate a conjunction of calls to the input program before specialization.
 
-In our approach we only do splitting of a conjunction into individual relation calls.
-This makes any program with an accumulating parameter to be a problem.
-Sometimes when there is a need to do a proper generalization, it is in reality just an instance of some other goal within the tree and we can simply create a call there \db{(line 13)}.
-Otherwise we are unable to meaningfully specialize such goal, but we can always just include the initial program in the residual program and call the corresponding relation.
+% The generalization is used in supercompilation and partial deduction to ensure termination at the same time as some degree of specialization.
+% The generalization of two terms is usually a \emph{most-specific generalization}.
+% Generalization is used to abstract away some information computed during driving.
+% In conjunctive partial deduction generalization is modified to support treating of conjunctions.
+% The generalization selects subconjuctions of two conjuncts which are similar (call to the same relation and their arguments have similar shape and distribution).
+% For the subconjunctions selected a most-specific generalization is computed.
+
+% In our approach we only do splitting of a conjunction into individual relation calls.
+% This makes any program with an accumulating parameter to be a problem.
+% Sometimes when there is a need to do a proper generalization, it is in reality just an instance of some other goal within the tree and we can simply create a call there \db{(line 13)}.
+% Otherwise we are unable to meaningfully specialize such goal, but we can always just include the initial program in the residual program and call the corresponding relation.
 
 
 \subsection{Unfolding}

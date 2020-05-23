@@ -12,7 +12,7 @@ Moreover, it may be hard to predict the real speedup of any given program on con
 The worst case for partial evaluation is when all static variables are used in a dynamic context, and there is a lot of advice on how to implement a partial evaluator as well as a target program so that specialization really improved its performance~\cite{jonesbook,bulyonkov84}.
 There is lack of research in determining the classes of programs which transformers would definitely speed up.
 
-Conjunctive partial deduction makes an effort to provide reasonable control for left-to-right evaluation strategy of \pro{}.
+Conjunctive partial deduction~\cite{de1999conjunctive} makes an effort to provide reasonable control for left-to-right evaluation strategy of \pro{}.
 CPD constructs a tree which models goal evaluation and resembles SLD-NF tree.
 After the tree is constructed, a residual program is generated from it.
 The specialization is done in two levels of control: the local control determines the shape of the residual programs, while the global control ensures that every relation which can be called in the residual program is indeed defined.
