@@ -162,6 +162,27 @@ conj (a:as) = foldl (:/\:) a as
 globalLimit :: Int
 globalLimit = 8
 
+justUnfold :: Int -> Program -> (NCTree, G S, [S])
+justUnfold limit (Program defs goal) =
+    let gamma = E.updateDefsInGamma E.env0 defs in
+    let (logicGoal, gamma', names) = E.preEval gamma goal in
+    (go 0 (LC.Descend (conjToList logicGoal) []) gamma' E.s0, logicGoal, names)
+  where
+    go n (LC.Descend gs ancs) gamma subst | n > limit || length gs > 1 =
+      case findVariant gs ancs of
+        Nothing -> Prune gs subst
+        Just v -> Leaf gs subst gamma v
+    go n d@(LC.Descend gs ancs) gamma subst =
+      let [goal] = E.substitute subst gs in
+      let addDescend g = LC.Descend g ([goal] : ancs) in
+      let (unified, gamma') = oneStep goal gamma subst in
+      let children = map (\(gs, s) -> if null gs
+                                      then Success s gamma'
+                                      else go (n+1) (addDescend gs) gamma' s
+                         ) unified in
+      Or children d subst
+
+
 nonConjunctive :: Int -> Program -> (NCTree, G S, [S])
 nonConjunctive limit (Program defs goal) =
     let gamma = E.updateDefsInGamma E.env0 defs in

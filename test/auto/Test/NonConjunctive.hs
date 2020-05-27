@@ -18,7 +18,7 @@ import qualified Program.Desert
 import           Program.List                   (maxLengtho, nil, revAcco,
                                                  reverso, (%))
 import           Program.Path
-import           Program.Programs               (doubleAppendo)
+import           Program.Programs               (doubleAppendo, rep)
 import qualified Program.Prop
 import           Program.Stlc                   (evalo)
 import qualified Program.Unify
@@ -39,7 +39,14 @@ rev = Program reverso $ fresh ["x", "y"] (call "reverso" [V "x", V "y"])
 maxLen = Program maxLengtho $ fresh ["xs", "m", "l"] (call "maxLengtho" [V "xs", V "m", V "l"])
 lambda = Program evalo $ fresh ["m", "n"] (call "evalo" [V "m", V "n"])
 
+runJu l = runTest Nothing (NC.justUnfold l)
+
 runNc l = runTest Nothing (NC.nonConjunctive l)
+
+runRep = do
+    runJu 20 "rep" rep
+  where
+    rep = Program Program.Programs.rep $ fresh ["n", "x"] (call "rep" [V "n", V "x"])
 
 runProp = do
     -- runNc (-1) "prop"  prop
@@ -98,9 +105,10 @@ runPath = do
     runNc (-1) "pathlen" Program.Path.querylength
 
 unit_nonConjunctiveTest = do
-  runUnify
-  runPath
-  runProp
+  runRep
+  -- runUnify
+  -- runPath
+  -- runProp
   -- runBottles
 
   -- -- runBridge
