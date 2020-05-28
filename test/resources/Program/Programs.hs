@@ -311,7 +311,7 @@ repDef =
         (n === zero &&& x === nil) |||
         (fresh ["n'", "x'"]
           (
-            n === succ n' &&& x === (C "a" []) % x' &&& call "rep" [n', x']
+            n === succ n' &&& x === zero % x' &&& call "rep" [n', x']
           )
         )
       )

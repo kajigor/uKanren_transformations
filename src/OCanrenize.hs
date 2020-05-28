@@ -19,13 +19,13 @@ instance OCanren String where
 instance {- OCanren v => -} OCanren (Term X) where
   -- ocanren (V v@('q':_)) = printf "(Obj.magic %s)" (ocanren v)
   ocanren (V v)        = ocanren v
-  ocanren (C nil _) | map toLower nil == "nil"  = "Std.List.nil ()"
+  ocanren (C nil _) | map toLower nil == "nil"  = "(Std.List.nil ())"
   -- ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "(%s %% %s)" (ocanren h) (ocanren t)
   -- ocanren (C "%"    [h,t]) = printf "(%s %% %s)" (ocanren h) (ocanren t)
-  ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "Std.(%%) %s %s" (ocanren h) (ocanren t)
-  ocanren (C "%" [h, t]) = printf "Std.(%%) (%s) (%s)" (ocanren h) (ocanren t)
+  ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "(Std.(%%) %s %s)" (ocanren h) (ocanren t)
+  ocanren (C "%" [h, t]) = printf "(Std.(%%) (%s) (%s))" (ocanren h) (ocanren t)
   ocanren (C "O" []) = "Std.Nat.zero"
-  ocanren (C "S" [x]) = printf "Std.Nat.succ (%s)" (ocanren x)
+  ocanren (C "S" [x]) = printf "(Std.Nat.succ (%s))" (ocanren x)
 
   ocanren (C "o" []) = "(o ())"
   ocanren (C "s" [x]) = printf "(s (%s))" (ocanren x)
@@ -35,9 +35,9 @@ instance {- OCanren v => -} OCanren (Term X) where
   -- ocanren (C "s" [x]) = printf "Std.Nat.succ (%s)" (ocanren x)
   ocanren (C "z" []) = "Nat.zero"
 
-  ocanren (C "pair" [x,y]) = printf "Pair.pair (%s) (%s)" (ocanren x) (ocanren y)
-  ocanren (C "none" []) = "Option.none ()"
-  ocanren (C "some" [x]) = printf "Option.some (%s)" (ocanren x)
+  ocanren (C "pair" [x,y]) = printf "(Pair.pair (%s) (%s))" (ocanren x) (ocanren y)
+  ocanren (C "none" []) = "(Option.none ())"
+  ocanren (C "some" [x]) = printf "(Option.some (%s))" (ocanren x)
 
 
   ocanren (C "fst" []) = "(fst_ ())"

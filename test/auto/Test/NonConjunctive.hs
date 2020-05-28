@@ -44,7 +44,7 @@ runJu l = runTest Nothing (NC.justUnfold l)
 runNc l = runTest Nothing (NC.nonConjunctive l)
 
 runRep = do
-    runJu 20 "rep" rep
+    runJu 100 "rep" rep
   where
     rep = Program Program.Programs.rep $ fresh ["n", "x"] (call "rep" [V "n", V "x"])
 

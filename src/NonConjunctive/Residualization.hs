@@ -2,9 +2,11 @@
 
 module NonConjunctive.Residualization where
 
+import           Control.Applicative   ((<|>))
 import qualified CPD.LocalControl      as LC
 import qualified CPD.Residualization   as CpdR
-import           Data.List             (sort, (\\), nub, find, intercalate, union)
+import           Data.List             (find, intercalate, nub, sort, union,
+                                        (\\))
 import           Data.Maybe            (catMaybes, fromJust, fromMaybe)
 import           Debug.Trace           (trace, traceM)
 import           Embed                 (isInst)
@@ -13,8 +15,8 @@ import           NonConjunctive.Unfold
 import qualified Residualize           as Res
 import           Syntax
 import           Text.Printf           (printf)
-import           Util.Miscellaneous    (fst3, snd3, trd3, show')
-import Control.Applicative ((<|>))
+import           Unfold                (normalize)
+import           Util.Miscellaneous    (fst3, show', snd3, trd3)
 
 topLevel :: Program -> Program
 topLevel input =
@@ -99,7 +101,7 @@ findNode v tree =
 
 nontrivial :: NCTree -> Bool
 nontrivial (Leaf _ _ _ _) = False
-nontrivial _ = True
+nontrivial _              = True
 
 nodeContent (Or _ (LC.Descend goal _) _) = Just goal
 nodeContent (Conj _ goal _)              = Just goal
@@ -116,7 +118,9 @@ generateDef defs invocations ((gs, n, args), tree) =
 generateGoalFromTree :: CpdR.Definitions -> [([G S], G S)] -> NCTree -> [S] -> G X
 generateGoalFromTree definitions invocations tree args =
     case go args True tree of
-      Just goal -> Res.vident <$> goal
+      Just goal ->
+        let normalized = goal in --  NonConjunctive.Unfold.disj $ map NonConjunctive.Unfold.conj $ normalize goal in
+        Res.vident <$> normalized
       Nothing -> error $ printf "Failed to generate relation body for %s" (show $ nodeContent tree)
     -- Res.vident <$> (disj (map conj $ filter (not . null) $ go tree))
   where
@@ -159,9 +163,9 @@ generateGoalFromTree definitions invocations tree args =
     go seen r (Prune _ _)     = error "Failed to residualize: Prune node in tree"
 
     mkGoal (Just u) (Just r) f = Just (f u r)
-    mkGoal (Just u) Nothing _ = Just u
-    mkGoal Nothing (Just r) _ = Just r
-    mkGoal _ _ _ = Nothing
+    mkGoal (Just u) Nothing _  = Just u
+    mkGoal Nothing (Just r) _  = Just r
+    mkGoal _ _ _               = Nothing
 
     -- getNewVars seen goal subst =
     --   let vg = concatMap fvgs goal in
@@ -253,15 +257,6 @@ renameAmbigousVars tree = tree
   --   conj :: [G S] -> (G S)
   --   conj xs = foldl1 (:/\:) xs
 
--- data NCTree = Fail
---             | Success E.Sigma E.Gamma
---             | Or [NCTree] (LC.Descend [G S]) E.Sigma
---             | Conj [NCTree] [G S] E.Sigma
---             | Gen NCTree [G S] Generalizer
---             | Leaf [G S] E.Sigma E.Gamma [G S] -- last argument is a goal renaming of which current node is
---             | Split [NCTree] [G S] E.Sigma
---             | Prune [G S] E.Sigma
---             -- deriving (Show, Eq)
 
 generateGoal :: G S -> [S] -> G X
 generateGoal g ns = (Res.vident <$> g)

@@ -159,6 +159,9 @@ conjToList x          = [x]
 conj :: [G a] -> G a
 conj (a:as) = foldl (:/\:) a as
 
+disj :: [G a] -> G a
+disj (a:as) = foldl (:\/:) a as
+
 globalLimit :: Int
 globalLimit = 8
 
