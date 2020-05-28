@@ -76,7 +76,7 @@ Relation calls ($R^k$) and constructors can only have variables ($V$) as their a
 We leave out unifications of the zero-arity constructors, since they can either evaluate to a failure or to a success without extending the substitution which can be determined statically.
 Any core \miniKanren{} program can be converted to this form.
 We use the following representation of the goal in canonical form:
-$$Goal = \underline{\fresh{}} \ V_1 \dots V_n \bigvee \bigwedge (\underline{call} \ R^k \ V_1 \dots V_k \mid V \equiv T)$$.
+$$Goal = \underline{\fresh{}} \ V_1 \dots V_n \bigvee \bigwedge (\underline{call} \ R^k \ V_1 \dots V_k \mid V \equiv T)$$
 
 The BTA algorithm executes the following steps until a fixpoint is reached.
 Since disjuncts do not influence each other, we treat every disjunct in isolation.
