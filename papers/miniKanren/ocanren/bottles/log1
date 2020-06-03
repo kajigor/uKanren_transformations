@@ -1,0 +1,11 @@
+Latencies for 5 iterations of "trans", "defer", "calls", "orig ":
+trans: 45.28 WALL (44.58 usr +  0.69 sys = 45.28 CPU) @  0.11/s (n=5)
+defer: 79.48 WALL (79.27 usr +  0.20 sys = 79.47 CPU) @  0.06/s (n=5)
+calls: 46.62 WALL (46.29 usr +  0.33 sys = 46.62 CPU) @  0.11/s (n=5)
+orig : 26.86 WALL (26.86 usr +  0.00 sys = 26.86 CPU) @  0.19/s (n=5)
+      s/iter defer calls trans orig 
+defer   15.9    --  -41%  -43%  -66%
+calls   9.32   70%    --   -3%  -42%
+trans   9.06   76%    3%    --  -41%
+orig    5.37  196%   74%   69%    --
+

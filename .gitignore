@@ -51,3 +51,9 @@ test/ocamlTest/peval/peval
 papers/miniKanren/ocanren/last/peval
 
 papers/miniKanren/text/main.log
+
+*.cmx
+
+papers/miniKanren/ocanren/bottles/bottles
+
+papers/miniKanren/ocanren/*/run

@@ -30,13 +30,7 @@ let rec int2nat n = if n = 0 then o () else s @@ int2nat @@ n - 1
 (** For high order conversion **)
 let checkAnswer q c n r = checkAnswer ((===) q) c ((===) n) r
 
-let run_time n text r =
-  let t = Sys.time() in
-  let fx = RStream.take ~n:n @@ r (fun _ _ fm -> fm) in
-  Printf.printf "%s: %fs\n" text (Sys.time() -. t);
-  fx
-
-let _ =
+(* let _ =
  (* run_exn myshow 1 q qh ("orig", fun q ->
     checkAnswer q capacities1 (int2nat 7) !!true
   )
@@ -57,6 +51,24 @@ let _ =
   )
   ; *)
 
+(*
+  run_exn myshow 2 q qh ("cpd", fun q ->
+    Cpd.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7)); *)
+
+  (* run_time 5 "cpd" @@
+  run q (fun q -> Cpd.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7)) *)
+
+
+
+  (* run_exn myshow 2 q qh ("branches", fun q ->
+    Branches.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7));
+
+  run_time 5 "branches" @@
+  run q (fun q -> Branches.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7)) *)
+
+
+
+
 
   run_time 5 "trans" @@
   run q (fun q -> Bottles_trans.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7));
@@ -68,20 +80,16 @@ let _ =
   run q (fun q -> checkAnswer q capacities1 (int2nat 7) !!true);
 
   run_time 5 "calls" @@
-  run q (fun q -> Bottles_fun.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7));
-
-(*
-  run_exn myshow 2 q qh ("cpd", fun q ->
-    Cpd.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7)); *)
-
-  (* run_time 5 "cpd" @@
-  run q (fun q -> Cpd.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7)) *)
+  run q (fun q -> Bottles_fun.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7)) *)
 
 
 
-  run_exn myshow 2 q qh ("branches", fun q ->
-    Branches.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7));
+let inputs = [ "trans", Bottles_trans.topLevel
+             ; "defer", Bottles_defer.topLevel
+             ; "calls", Bottles_fun.topLevel
+             ; "orig ", (fun q _ _ -> checkAnswer q capacities1 (int2nat 7) !!true)
+             ]
 
-  run_time 5 "branches" @@
-  run q (fun q -> Branches.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))
+let _ =
+  do_tables 2 (fun rel -> run q (fun q -> rel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))) inputs
 

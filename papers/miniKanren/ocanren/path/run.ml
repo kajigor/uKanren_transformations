@@ -21,7 +21,7 @@ let graph = ocanren ([(0, 1);  (1, 2);  (2, 3);  (3, 4);  (4, 5);  (5, 6);  (6, 
 
 let l = ocanren (7)
 
-let _ =
+(* let _ =
   run_time 5 "original: path" @@
   run q (fun q -> fresh (a1 a2 a3 a4 a5) (q === (ocanren ([a1;a2;a3;a4;a5])) &&& Original.isPath q graph !!true))
 
@@ -51,9 +51,14 @@ let _ =
 
 let _ =
   run_graph 3 "cpd" @@
-  run q (fun q -> Cpd.topLevel (ocanren ([0;1;2])) q)
+  run q (fun q -> Cpd.topLevel (ocanren ([0;1;2])) q) *)
 
-  (*
+let inputs = [ "spec    ", Spec.topLevel
+             ; "trans   ", Trans.topLevel
+             ; "length  ", Len.topLevel
+             ; "cpd     ", Cpd.topLevel
+             ; "original", (fun q graph -> Original.isPath q graph !!true)
+             ]
+
 let _ =
-  run_time 1 "trans: path" @@
-  run q (fun q -> Std.List.lengtho q l &&& Trans.topLevel q graph) *)
+  do_tables 3 (fun rel -> run q (fun q -> fresh (a1 a2 a3 a4 a5 a6 a7) (q === (ocanren ([a1;a2;a3;a4;a5])) &&& rel q graph))) inputs

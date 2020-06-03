@@ -1,0 +1,1 @@
+camlp5o -I `ocamlfind -query GT.syntax.all` -I `ocamlfind -query ocanren.syntax` rep100Norm.ml

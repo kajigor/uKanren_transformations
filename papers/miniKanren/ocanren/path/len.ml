@@ -3,7 +3,7 @@ open OCanren
 open OCanren.Std
 open Helper
 
-let topLevel x0 x2 x3 x4 x5 x6 =
+let topLevel x1 x0 =
   let rec isPath y0 y1 y2 y3 y4 y5 = elem y0 y1 y2 &&& _isPath y0 y3 y4 y5 y2
   and _isPath y6 y7 y8 y9 y10 = elem y6 y10 y7 &&& __isPath y6 y8 y9 y7
   and elem y11 y12 y13 =
@@ -42,4 +42,4 @@ let topLevel x0 x2 x3 x4 x5 x6 =
     fresh (q1 q2 q3 q4)
       (y33 === Nat.succ q1 &&& (y34 === Nat.zero) ||| (y33 === Nat.zero &&& (y34 === Nat.succ q2)) ||| (y33 === Nat.succ q3 &&& (y34 === Nat.succ q4) &&& ____eqNat q3 q4))
   in
-  isPath x0 x2 x3 x4 x5 x6
+  fresh (x2 x3 x4 x5 x6) ((x1 === (ocanren ([x2; x3; x4; x5; x6]))) &&& isPath x0 x2 x3 x4 x5 x6)

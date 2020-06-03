@@ -1,0 +1,21 @@
+Latencies for 20000 iterations of "original rep", "rep 20,  not", "rep 50,  not", "rep 75,  not", "rep 100, not", "rep 50,  all", "rep 75,  all", "rep 100, all", "rep 50, vars":
+original rep:  0.45 WALL ( 0.45 usr +  0.00 sys =  0.45 CPU) @ 44395.90/s (n=20000)
+rep 20,  not:  0.50 WALL ( 0.50 usr +  0.00 sys =  0.50 CPU) @ 40173.63/s (n=20000)
+rep 50,  not:  0.66 WALL ( 0.66 usr +  0.00 sys =  0.66 CPU) @ 30483.44/s (n=20000)
+rep 75,  not:  0.85 WALL ( 0.85 usr +  0.00 sys =  0.85 CPU) @ 23403.28/s (n=20000)
+rep 100, not:  1.05 WALL ( 1.05 usr +  0.00 sys =  1.05 CPU) @ 19076.02/s (n=20000)
+rep 50,  all:  1.41 WALL ( 1.41 usr +  0.00 sys =  1.41 CPU) @ 14232.55/s (n=20000)
+rep 75,  all:  2.92 WALL ( 2.92 usr +  0.00 sys =  2.92 CPU) @ 6857.93/s (n=20000)
+rep 100, all:  4.96 WALL ( 4.96 usr +  0.00 sys =  4.96 CPU) @ 4030.42/s (n=20000)
+rep 50, vars: 19.37 WALL (19.37 usr +  0.00 sys = 19.37 CPU) @ 1032.61/s (n=20000)
+                Rate rep 50, vars rep 100, all rep 75,  all rep 50,  all rep 100, not rep 75,  not rep 50,  not rep 20,  not original rep
+rep 50, vars  1033/s           --         -74%         -85%         -93%         -95%         -96%         -97%         -97%         -98%
+rep 100, all  4030/s         290%           --         -41%         -72%         -79%         -83%         -87%         -90%         -91%
+rep 75,  all  6858/s         564%          70%           --         -52%         -64%         -71%         -78%         -83%         -85%
+rep 50,  all 14233/s        1278%         253%         108%           --         -25%         -39%         -53%         -65%         -68%
+rep 100, not 19076/s        1747%         373%         178%          34%           --         -18%         -37%         -53%         -57%
+rep 75,  not 23403/s        2166%         481%         241%          64%          23%           --         -23%         -42%         -47%
+rep 50,  not 30483/s        2852%         656%         344%         114%          60%          30%           --         -24%         -31%
+rep 20,  not 40174/s        3790%         897%         486%         182%         111%          72%          32%           --         -10%
+original rep 44396/s        4199%        1002%         547%         212%         133%          90%          46%          11%           --
+

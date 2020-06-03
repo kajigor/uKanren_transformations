@@ -82,5 +82,5 @@ let inputs = [ "original rep",  Rep1.topLevel
               ]
 
 let _ =
-  do_tables 10 (fun rel -> run q (fun q -> rel (ocanren (10)) q)) inputs
+  do_tables 1 (fun rel -> run q (fun q -> rel (ocanren (10)) q)) inputs
 

@@ -32,3 +32,9 @@ let run_time n text r =
   let fx = RStream.take ~n:n @@ r (fun _ _ fm -> fm) in
   Printf.printf "%s: %fs\n" text (Sys.time() -. t);
   fx
+
+let take n fn = fun goal -> RStream.take ~n:n @@ (fn goal) (fun fm -> fm)
+
+let do_tables n fn lst =
+  let samples = Benchmark.latencyN 10000L (List.map (fun (name, goal) -> (name, take n fn, goal)) lst) in
+  Benchmark.tabulate samples

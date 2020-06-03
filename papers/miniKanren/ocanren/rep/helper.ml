@@ -22,9 +22,10 @@ let run_time n text r =
 let take n fn = fun goal -> RStream.take ~n:n @@ (fn goal) (fun fm -> fm)
 
 let run_latency n text goal =
-  Benchmark.latency1 10000L ~name:text take goal
+  Benchmark.latency1 15000L ~name:text take goal
+
 
 let do_tables n fn lst =
-  let samples = Benchmark.latencyN 10000L (List.map (fun (name, goal) -> (name, take n fn, goal)) lst) in
+  let samples = Benchmark.latencyN 20000L (List.map (fun (name, goal) -> (name, take n fn, goal)) lst) in
   Benchmark.tabulate samples
 

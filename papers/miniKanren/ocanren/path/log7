@@ -1,0 +1,13 @@
+paths of length 7
+
+Latencies for 10 iterations of "spec    ", "trans   ", "cpd     ", "original":
+spec    :  7.21 WALL ( 7.20 usr +  0.00 sys =  7.21 CPU) @  1.39/s (n=10)
+trans   : 22.62 WALL (22.57 usr +  0.05 sys = 22.61 CPU) @  0.44/s (n=10)
+cpd     : 35.13 WALL (35.08 usr +  0.04 sys = 35.12 CPU) @  0.28/s (n=10)
+original: 266.47 WALL (266.15 usr +  0.30 sys = 266.46 CPU) @  0.04/s (n=10)
+         s/iter original cpd      trans    spec    
+original   26.6       --     -87%     -92%     -97%
+cpd        3.51     659%       --     -36%     -79%
+trans      2.26    1078%      55%       --     -68%
+spec      0.721    3598%     387%     214%       --
+
