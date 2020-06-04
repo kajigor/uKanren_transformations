@@ -105,11 +105,11 @@ runPath = do
     runNc (-1) "pathlen" Program.Path.querylength
 
 unit_nonConjunctiveTest = do
-  runRep
+  -- runRep
   -- runUnify
   -- runPath
   -- runProp
-  -- runBottles
+  runBottles
 
   -- -- runBridge
   -- -- runDesert
@@ -123,7 +123,9 @@ unit_nonConjunctiveTest = do
 runTest env function filename goal = (do
   traceM filename
   let transformed@(tree, logicGoal, names) = function goal
-  let tree' = renameAmbigousVars tree
+  let tree' = NC.simplify tree
+  traceM (printf "\n========================================\nBefore:\n%s\n\nAfter:\n%s\n========================================\n" (show tree) (show $ NC.simplify tree))
+
   let path = printf "test/out/nc/%s" filename
   exists <- doesDirectoryExist path
   if exists

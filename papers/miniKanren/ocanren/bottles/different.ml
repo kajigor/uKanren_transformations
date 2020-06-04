@@ -1,7 +1,7 @@
-
 open GT
 open OCanren
 open OCanren.Std
+
 open Helper
 
 let topLevel x0 x1 x2 =
@@ -9,15 +9,17 @@ let topLevel x0 x1 x2 =
     fresh (q1 q2) (y0 === Std.List.nil () &&& (y2 === o ()) ||| (y0 === Std.( % ) q1 q2 &&& (checkStep y1 q1 &&& doStepCheckAnswer_ y1 y2 q1 q2)))
   and checkStep y3 y4 =
     fresh (q1 q2 q3)
-      ( y4 === Pair.pair (fill ()) (fst_ ())
+      ( y4
+      === Pair.pair (fill ()) (fst_ ())
       ||| (y4 === Pair.pair (fill ()) (snd_ ()))
       ||| (y4 === Pair.pair (empty ()) (fst_ ()) &&& (y3 === Pair.pair (o ()) q1))
       ||| (y4 === Pair.pair (empty ()) (snd_ ()) &&& (y3 === Pair.pair q2 q3 &&& fancyEq q3)) )
   and doStepCheckAnswer_ y5 y6 y7 y8 = fresh (q1) (doStep y5 y7 q1 &&& checkAnswer_ y5 y6 y8 q1)
   and fancyEq y10 = y10 === o ()
   and doStep y11 y12 y13 =
-    fresh (q1 q2 q3 q4 q5 q6)
-      ( y12 === Pair.pair (fill ()) (fst_ ())
+    fresh (q1 q2 q3 q4 q5 q6 q7 q8)
+      ( y12
+      === Pair.pair (fill ()) (fst_ ())
       &&& (y11 === Pair.pair q1 q2 &&& (y13 === Pair.pair q1 (o ())))
       ||| (y12 === Pair.pair (fill ()) (snd_ ()) &&& (y11 === Pair.pair q3 q1 &&& (y13 === Pair.pair (o ()) q1)))
       ||| (y12 === Pair.pair (empty ()) (fst_ ()) &&& (y13 === Pair.pair (o ()) (o ())))
@@ -25,10 +27,10 @@ let topLevel x0 x1 x2 =
       ||| ( y12
           === Pair.pair (pour ()) q4
           &&& ( q4 === fst_ ()
-              &&& (y11 === Pair.pair q3 q5 &&& (y13 === Pair.pair (o ()) (o ())))
-              ||| (q4 === snd_ () &&& (y11 === Pair.pair q5 q2 &&& (y13 === Pair.pair q6 (o ()) &&& addGreaterAdd q6 q5))) ) ) )
+              &&& (y11 === Pair.pair q5 q6 &&& (y13 === Pair.pair (o ()) (o ())))
+              ||| (q4 === snd_ () &&& (y11 === Pair.pair q6 q7 &&& (y13 === Pair.pair q8 (o ())) &&& addGreaterAdd q8 q6)) ) ) )
   and checkAnswer_ y14 y15 y16 y17 =
-    fresh (q1 q2 q3 q4 q5 q6 q7 q8 q9 q10 q11)
+    fresh (q1 q2 q3 q4 q5 q6 q7 q8 q9 q10 q11 q12 q13)
       ( y16 === Std.List.nil ()
       &&& ( y17 === Pair.pair q1 q2
           &&& (_fancyEq y15 q1 &&& __fancyEq y15 q2)
@@ -38,9 +40,9 @@ let topLevel x0 x1 x2 =
                   &&& (q2 === s q4 &&& ___fancyEq q4 q3)
                   ||| (q1 === s q5 &&& (y15 === o ()) &&& (q2 === o ()))
                   ||| (q1 === s (o ()) &&& (y15 === s (s q6)) &&& (q2 === s q7 &&& ____fancyEq q7 q6))
-                  ||| (q1 === s (s q4) &&& (y15 === s (o ())) &&& (q2 === s q7 &&& _____fancyEq q7))
-                  ||| (q1 === s (s q4) &&& (y15 === s (s q8)) &&& (______fancyEq q4 q8 &&& _______fancyEq q2 q8)) ) ) )
-      ||| (y16 === Std.( % ) q9 q10 &&& (_checkStep y14 y17 q9 &&& _doStep y14 y17 q9 q11 &&& checkAnswer_ y14 y15 q10 q11)) )
+                  ||| (q1 === s (s q8) &&& (y15 === s (o ())) &&& (q2 === s q9 &&& _____fancyEq q9))
+                  ||| (q1 === s (s q8) &&& (y15 === s (s q10)) &&& (______fancyEq q8 q10 &&& _______fancyEq q2 q10)) ) ) )
+      ||| (y16 === Std.( % ) q11 q12 &&& (_checkStep y14 y17 q11 &&& _doStep y14 y17 q11 q13 &&& checkAnswer_ y14 y15 q12 q13)) )
   and addGreaterAdd y19 y20 = y19 === o ()
   and _fancyEq y21 y22 =
     fresh (q1 q2 q3 q4)
@@ -61,17 +63,17 @@ let topLevel x0 x1 x2 =
     fresh (q1 q2 q3) (y31 === o () &&& (y32 === s q1) ||| (y31 === s q2 &&& (y32 === o ())) ||| (y31 === s q2 &&& (y32 === s q3) &&& ______fancyEq q2 q3))
   and _______fancyEq y33 y34 = fresh (q1) (y33 === s q1 &&& ____fancyEq q1 y34)
   and _checkStep y35 y36 y37 =
-    fresh (q1 q2 q3 q4 q5 q6 q7)
+    fresh (q1 q2 q3 q4 q5 q6 q7 q8 q9)
       ( y36 === Pair.pair q1 q2
       &&& (y37 === Pair.pair (fill ()) (fst_ ()))
       &&& _____fancyEq q1
       ||| (y36 === Pair.pair q1 q2 &&& (y37 === Pair.pair (fill ()) (snd_ ())) &&& _____fancyEq q2)
       ||| (y36 === Pair.pair q1 q2 &&& (y37 === Pair.pair (empty ()) (fst_ ())) &&& (y35 === Pair.pair q3 q4 &&& ___fancyEq q1 q3))
       ||| (y36 === Pair.pair q1 q2 &&& (y37 === Pair.pair (empty ()) (snd_ ())) &&& (y35 === Pair.pair q5 q3 &&& ___fancyEq q2 q3))
-      ||| (y36 === Pair.pair (s q6) q2 &&& (y37 === Pair.pair (pour ()) (fst_ ())) &&& (y35 === Pair.pair q5 q7 &&& ______fancyEq q2 q7))
-      ||| (y36 === Pair.pair q1 q2 &&& (y37 === Pair.pair (pour ()) (snd_ ())) &&& (y35 === Pair.pair q7 q4 &&& fancyEqFancyEq q2 q1 q7)) )
+      ||| (y36 === Pair.pair (s q6) q2 &&& (y37 === Pair.pair (pour ()) (fst_ ())) &&& (y35 === Pair.pair q7 q8 &&& ______fancyEq q2 q8))
+      ||| (y36 === Pair.pair q1 q2 &&& (y37 === Pair.pair (pour ()) (snd_ ())) &&& (y35 === Pair.pair q8 q9 &&& fancyEqFancyEq q2 q1 q8)) )
   and _doStep y38 y39 y40 y41 =
-    fresh (q1 q2 q3 q4 q5 q6 q7 q8 q9 q10)
+    fresh (q1 q2 q3 q4 q5 q6 q7 q8 q9 q10 q11 q12 q13 q14)
       ( y39 === Pair.pair q1 q2
       &&& (y40 === Pair.pair (fill ()) (fst_ ()))
       &&& (y38 === Pair.pair q3 q4 &&& (y41 === Pair.pair q3 q2))
@@ -81,13 +83,13 @@ let topLevel x0 x1 x2 =
       ||| ( y39 === Pair.pair q1 q2
           &&& (y40 === Pair.pair (pour ()) q6)
           &&& ( q6 === fst_ ()
-              &&& (y38 === Pair.pair q5 q7 &&& (addGreaterAddSub q1 q2 q8 q7 &&& createState y41 q7 q8))
-              ||| (q6 === snd_ () &&& (y38 === Pair.pair q7 q4 &&& (_addGreaterAddSub q1 q2 q8 q7 &&& _createState y41 q7 q8))) ) )
+              &&& (y38 === Pair.pair q7 q8 &&& (addGreaterAddSub q1 q2 q9 q8 &&& createState y41 q8 q9))
+              ||| (q6 === snd_ () &&& (y38 === Pair.pair q8 q10 &&& (_addGreaterAddSub q1 q2 q9 q8 &&& _createState y41 q8 q9))) ) )
       ||| ( y39 === Pair.pair q1 q2
           &&& (y40 === Pair.pair (pour ()) q6)
           &&& ( q6 === fst_ ()
-              &&& (y38 === Pair.pair q5 q9 &&& (_addGreaterAdd q1 q2 q10 q9 &&& __createState y41 q10))
-              ||| (q6 === snd_ () &&& (y38 === Pair.pair q9 q4 &&& (__addGreaterAdd q1 q2 q10 q9 &&& ___createState y41 q10))) ) ) )
+              &&& (y38 === Pair.pair q11 q12 &&& (_addGreaterAdd q1 q2 q13 q12 &&& __createState y41 q13))
+              ||| (q6 === snd_ () &&& (y38 === Pair.pair q12 q14 &&& (__addGreaterAdd q1 q2 q13 q12 &&& ___createState y41 q13))) ) ) )
   and fancyEqFancyEq y42 y43 y44 = fresh (q1) (y42 === s q1 &&& ______fancyEq y43 y44)
   and addGreaterAddSub y45 y46 y48 y50 = fresh (q1 q2) (add y45 y46 q1 &&& greater q1 y50 &&& add y45 y46 q2 &&& sub y48 q2 y50)
   and add y51 y52 y53 = fresh (q1 q2) (y51 === o () &&& (y52 === y53) ||| (y51 === s q1 &&& (y53 === s q2) &&& add q1 y52 q2))

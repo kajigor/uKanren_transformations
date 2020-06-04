@@ -26,7 +26,8 @@ topLevel input =
 residualize :: (NCTree, G S, [S]) -> Program
 residualize (Fail, goal, names) = Program [] (generateGoal goal names)
 residualize (tree, goal, names) =
-  let restricted = restrictSubsts tree in
+  -- let restricted = restrictSubsts tree in
+  let restricted = tree in
   let (defs, newGoal) = generateDefs restricted in
   Program defs newGoal
 
@@ -35,7 +36,7 @@ generateDefs tree =
   let toplevel = fromJust $ nodeContent tree in
   let leaves = collectLeaves tree in
   let distinct = nub $ map snd leaves in
-  let simplified = simplify $ renameAmbigousVars $ tree in
+  let simplified = restrictSubsts $ simplify $ renameAmbigousVars $ tree in
   let nodes = (toplevel, simplified) : map (flip findNode tree) distinct in
   let definitions = foldl (\defs gs -> fst3 (CpdR.renameGoals gs defs) ) [] $ map fst nodes in
   trace (printf "\nDefs:\n%s\n" (showDefinitions definitions)) $
@@ -56,7 +57,7 @@ generateInvocation defs (gs, v) =
     let name = n in
     let args = generateArgs as in
     let res = call name args in
-    trace (printf "\nGenerating Invocations\nGs:\n%s\nV:\n%s\nRes:\n%s\n" (show gs) (show v) (show res)) $
+    -- trace (printf "\nGenerating Invocations\nGs:\n%s\nV:\n%s\nRes:\n%s\n" (show gs) (show v) (show res)) $
     (gs, call name args)
   where
     generateArgs xs =
@@ -72,7 +73,7 @@ generateInvocation' defs gs v =
     let name = n in
     let args = generateArgs as in
     let res = call name args in
-    trace (printf "\nGenerating Invocations\nGs:\n%s\nV:\n%s\nRes:\n%s\n" (show gs) (show v) (show res)) $
+    -- trace (printf "\nGenerating Invocations\nGs:\n%s\nV:\n%s\nRes:\n%s\n" (show gs) (show v) (show res)) $
     (call name args)
   where
     generateArgs xs =
@@ -88,7 +89,7 @@ findNode :: [G S] -> NCTree -> ([G S], NCTree)
 findNode v tree =
     let nodes = go tree in
     case find nontrivial nodes of
-      Just n -> (v, simplify $ renameAmbigousVars n)
+      Just n -> (v, restrictSubsts $ simplify $ renameAmbigousVars n)
       Nothing -> error $ printf "Residualization error: no node for\n%s" (show v)
   where
     go node@(Or _ (LC.Descend goal _) _) | goal == v = return node
@@ -136,7 +137,9 @@ generateGoalFromTree definitions invocations tree args =
     success = call "success" []
 
     residualizeState :: E.Sigma -> Maybe (G S)
-    residualizeState xs = (conj $ map (\(s, ts) -> (V s) === ts) $ reverse xs) <|> return success
+    residualizeState xs =
+      -- trace (printf "\nResidualizing State\n%s" (show' xs)) $
+      (conj $ map (\(s, ts) -> (V s) === ts) $ reverse xs) <|> return success
 
     go :: [S] -> Bool -> NCTree -> Maybe (G S)
     go seen r Fail           = Just fail

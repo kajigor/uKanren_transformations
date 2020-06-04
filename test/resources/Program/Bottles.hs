@@ -14,6 +14,7 @@ query = Program bottles $ fresh ["a", "b", "c"] (call "checkAnswer" [V "a", V "b
 query' =
     Program definition $ fresh ["q", "res"] (call "query" [V "q", V "res"])
 
+queryEq = Program fancyEq $ fresh ["x", "y"] (call "fancyEq" [V "x", V "y"])
 
 definition :: [Def]
 definition = definitionDef : bottles

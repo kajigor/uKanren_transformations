@@ -88,8 +88,12 @@ let inputs = [ "trans", Bottles_trans.topLevel
              ; "defer", Bottles_defer.topLevel
              ; "calls", Bottles_fun.topLevel
              ; "orig ", (fun q _ _ -> checkAnswer q capacities1 (int2nat 7) !!true)
+             ; "different", Different.topLevel
              ]
 
 let _ =
-  do_tables 2 (fun rel -> run q (fun q -> rel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))) inputs
+  run_exn myshow 1 q qh ("diff", fun q ->
+    Different.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))
 
+let _ =
+  do_tables 2 (fun rel -> run q (fun q -> rel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))) inputs

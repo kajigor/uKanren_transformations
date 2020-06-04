@@ -4,7 +4,7 @@ module NonConjunctive.Unfold where
 
 import qualified CPD.LocalControl   as LC
 import           Data.Foldable      (foldlM)
-import           Data.List          (find, intersect, partition, sortBy, (\\), delete)
+import           Data.List          (find, intersect, partition, sortBy, (\\), delete, nub)
 import qualified Data.Map.Strict    as M
 import           Data.Maybe         (catMaybes, fromJust, fromMaybe, isJust,
                                      isNothing, mapMaybe)
@@ -232,7 +232,16 @@ nonConjunctive limit (Program defs goal) =
                 then
                   let (unified, env') = oneStep (head goal) env state in
                   let (ch, allSeenGoals, failed', env'') = unfoldSequentially failed seen' unified env' addAnc in
-                  or ch (addAnc goal) state allSeenGoals failed' env''
+                  let res@(xs',_,_,_) = or ch (addAnc goal) state allSeenGoals failed' env'' in
+                  -- case computedAnswers xs' of
+                  --   Just xs ->
+                  --     let ch = map (createLeafNode allSeenGoals) xs in
+                  --     -- trace (printf "\n==============\nComputedAnswers\nGoal:\n%s\nAnswers:\n%s\n" (show goal) (show' (map (\(g,s,_) -> (g,s)) xs))) $
+                  --     res
+                  --     -- or ch (addAnc goal) state allSeenGoals failed' env''
+                  --   Nothing ->
+                  --     -- trace (printf "ComputedAnswers\nGoal:\n%s\nNothing" (show goal))
+                      res
                 else
                   case findBestByComplexity env state goal of
                     -- Either ls or rs is not empty!
@@ -310,6 +319,24 @@ nonConjunctive limit (Program defs goal) =
       (reverse ch, allSeenGoals, actualFailed, actualEnv)
 
     merge (_, _, d) newEnv@(x, y, z) = if head d > head z then (x, y, d) else newEnv
+
+createLeafNode :: [[G S]] -> ([G S], E.Sigma, E.Gamma) -> NCTree
+createLeafNode seen = go
+  where
+    go ([], state, env) = leaf state env
+    go (gs, state, env) =
+      case findVariant gs seen of
+        Just v -> Leaf  gs state env v
+        Nothing -> Prune gs state
+-- limitSubsts :: [([G S], E.Sigma, E.Gamma)] -> E.Sigma -> [([G S], E.Sigma, E.Gamma)]
+-- limitSubsts xs state =
+--     let varsToLeave = nub $ map fst state ++ concatMap (fv . snd) state in
+--     map (\(gs, st, env) -> (gs, go varsToLeave gs st, env)) xs
+--   where
+--     go vars gs st =
+--       let varsToLeave = nub $ vars ++ concatMap fvgs gs in
+--       filter (\(v,t) -> any (`elem` varsToLeave) (v : fv t)) st
+
 
 computedAnswers :: NCTree -> Maybe ([([G S], E.Sigma, E.Gamma)])
 computedAnswers (Success s e) = Just [([], s, e)]
@@ -406,7 +433,10 @@ findConflicting (x:xs) =
       go (xs ++ conf') (x : conf) unConf'
 
 simplify :: NCTree -> NCTree
-simplify tree = go tree
+simplify tree =
+    let res = removeTransient $ go tree in
+    trace (printf "\n=================================\nSimplify\n%s\n" (show res)) $
+    res
   where
   --   -- trace (printf "simplifying\n%s\n" (show tree)) $
   --   keepRoot tree
@@ -424,6 +454,51 @@ simplify tree = go tree
   --       Fail -> Split [Fail] g s
   --       x -> x
   --   keepRoot x = go x
+
+    removeTransient tree =
+        replaceChildren (go <$> getChildren tree) tree
+      where
+        go (Or [Or ch g' s'] g s) = go $ Or ch g s
+        go (Or ch g s) = Or (go <$> ch) g s
+        go (Split ch g s) = Split (go <$> ch) g s
+        go (Conj ch g s) = Conj (go <$> ch) g s
+        go x = x
+
+    -- removeTransient tree =
+    --     replaceChildren (go <$> getChildren tree) tree
+    --   where
+    --     go tree =
+    --       let children = untilMany tree in
+    --       -- trace (printf "\nBefore: %s\nChildren:\n%s\n" (show $ getGs tree) (show' $ getGs <$> children)) $
+    --       if length children == 1
+    --       then head children
+    --       else replaceChildren (go <$> children) tree
+
+    untilMany :: NCTree -> [NCTree]
+    untilMany tree =
+      let children = getChildren tree in
+      case length children of
+        0 -> [tree]
+        1 -> untilMany $ head children
+        n -> children
+
+    getChildren :: NCTree -> [NCTree]
+    getChildren (Or    ch g s) = ch
+    getChildren (Conj  ch g s) = ch
+    getChildren (Split ch g s) = ch
+    getChildren x = []
+
+
+    getGs :: NCTree -> [G S]
+    getGs (Or    ch (LC.Descend g _) s) = g
+    getGs (Conj  ch g s) = g
+    getGs (Split ch g s) = g
+    getGs x = []
+
+    replaceChildren new (Or    ch g s) = Or new g s
+    replaceChildren new (Conj  ch g s) = Conj new g s
+    replaceChildren new (Split ch g s) = Split new g s
+    replaceChildren new x = x
 
     go (Or    ch g s)   = failOr ch (\x -> Or x g s)
     go (Conj  ch g s)   = failConj ch (\x -> Conj x g s)
