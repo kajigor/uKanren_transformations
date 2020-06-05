@@ -5,16 +5,19 @@ import Syntax
 true = C "true" []
 
 six = ofInt 6
-  where
-    ofInt 0 = C "zero" []
-    ofInt n = C "succ" [ofInt $ n - 1]
+four = ofInt 4
+nine = ofInt 9
+seven = ofInt 7
+
+ofInt 0 = C "o" []
+ofInt n = C "s" [ofInt $ n - 1]
 
 query = Program bottles $ fresh ["a", "b", "c"] (call "checkAnswer" [V "a", V "b", V "c", true])
 
 query' =
     Program definition $ fresh ["q", "res"] (call "query" [V "q", V "res"])
 
-queryEq = Program fancyEq $ fresh ["x", "y"] (call "fancyEq" [V "x", V "y"])
+queryEq = Program fancyEq $ fresh ["x", "y"] (call "fancyEq" [V "x", V "y", true])
 
 definition :: [Def]
 definition = definitionDef : bottles
@@ -22,7 +25,7 @@ definition = definitionDef : bottles
 definitionDef :: Def
 definitionDef =
     Def "query" ["q", "res"] (
-      call "capacities1" [V "1"] &&& call "checkAnswer" [V "res", V "q", six, true])
+      call "capacities1" [V "q"] &&& call "checkAnswer" [V "res", V "q", seven, true])
 
 
 add :: [Def]
@@ -322,7 +325,7 @@ capacities1 = [capacities1Def]
 capacities1Def :: Def
 capacities1Def =
     Def "capacities1" ["q0"] (
-      V "q0" === C "pair" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]], C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]
+      V "q0" === C "pair" [four, nine]
     )
 
 bottles :: [Def]

@@ -85,6 +85,8 @@ runProp = do
 
 runBottles = do
     runNc (-1) "bottles" Program.Bottles.query
+    -- runNc(-1) "bottlesQuery" Program.Bottles.query'
+    -- runNc(-1) "fancyEq" Program.Bottles.queryEq
 
 runBridge = do
     runNc (-1) "bridge" Program.Bridge.query
@@ -132,6 +134,7 @@ runTest env function filename goal = (do
   then removeDirectoryRecursive path
   else return ()
   createDirectoryIfMissing True path
+  toOcanren (printf "%s/original.ml" path) goal (vident <$> names)
   printTree (printf "%s/tree.dot" path) tree
   printTree (printf "%s/tree.after.dot" path) tree'
   system (printf "dot -O -Tpdf %s/*.dot" (escapeTick path))
@@ -152,6 +155,9 @@ runTest env function filename goal = (do
   ) <|>
   return ()
 
+toOcanren fileName (Program defs goal) names =
+  OC.topLevel fileName "topLevel" Nothing (goal, names, defs)
+
 unit_ecce = do
     test "ecce_prop_last.txt"
     test "ecce_plain.txt"
@@ -164,6 +170,11 @@ unit_ecce = do
       let env = Nothing
       OC.topLevel ocamlCodeFileName "topLevel" env g
 
+unit_printBottles = do
+    test "bottles.pl" Program.Bottles.bottles
+  where
+    test filename program = do
+      writeFile filename (defsToProlog program)
 
 unit_isConflicting = do
   test2 NC.isConflicting [] [] False

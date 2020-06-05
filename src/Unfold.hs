@@ -130,3 +130,8 @@ static (p, _, _) name =
 
     getBody name =
       let Def _ _ body = p name in body
+
+isGoalStatic :: E.Gamma -> G S -> Bool
+isGoalStatic gamma (Invoke name _) =
+  static gamma name
+isGoalStatic _ _ = False

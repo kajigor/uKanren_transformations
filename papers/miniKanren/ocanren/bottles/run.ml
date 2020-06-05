@@ -7,26 +7,6 @@ open Tester
 open Helper
 open Bottles
 
-(******************************************)
-
-let show_bottle = function
- | Fst -> "1"
- | Snd -> "2"
-
-let show_stepType = function
- | Fill  -> "F"
- | Empty -> "E"
- | Pour  -> "P"
-
-let show_step = function
- | (s, b) -> Printf.sprintf "%s%s" (show_bottle b) (show_stepType s)
-
-let myshow x = show List.ground show_step x
-
-(******************************************)
-
-let rec int2nat n = if n = 0 then o () else s @@ int2nat @@ n - 1
-
 (** For high order conversion **)
 let checkAnswer q c n r = checkAnswer ((===) q) c ((===) n) r
 
@@ -88,12 +68,13 @@ let inputs = [ "trans", Bottles_trans.topLevel
              ; "defer", Bottles_defer.topLevel
              ; "calls", Bottles_fun.topLevel
              ; "orig ", (fun q _ _ -> checkAnswer q capacities1 (int2nat 7) !!true)
+             ; "noHO" , Original_no_ho.topLevel
              ; "different", Different.topLevel
              ]
 
 let _ =
-  run_exn myshow 1 q qh ("diff", fun q ->
-    Different.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))
+  run_exn myshow 1 q qh ("original", fun q ->
+    Original_no_ho.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))
 
 let _ =
   do_tables 2 (fun rel -> run q (fun q -> rel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))) inputs

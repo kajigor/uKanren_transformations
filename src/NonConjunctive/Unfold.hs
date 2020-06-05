@@ -16,7 +16,7 @@ import           Prelude            hiding (or)
 import           Syntax
 import           Text.Printf        (printf)
 import           Unfold             (findBestByComplexity, notMaximumBranches,
-                                     oneStep, oneStepUnfold, unfoldComplexity)
+                                     oneStep, oneStepUnfold, unfoldComplexity, isGoalStatic)
 import           Util.Check         (checkConj)
 import           Util.Miscellaneous (fst3, fst4, show', snd3)
 
@@ -232,21 +232,12 @@ nonConjunctive limit (Program defs goal) =
                 then
                   let (unified, env') = oneStep (head goal) env state in
                   let (ch, allSeenGoals, failed', env'') = unfoldSequentially failed seen' unified env' addAnc in
-                  let res@(xs',_,_,_) = or ch (addAnc goal) state allSeenGoals failed' env'' in
-                  -- case computedAnswers xs' of
-                  --   Just xs ->
-                  --     let ch = map (createLeafNode allSeenGoals) xs in
-                  --     -- trace (printf "\n==============\nComputedAnswers\nGoal:\n%s\nAnswers:\n%s\n" (show goal) (show' (map (\(g,s,_) -> (g,s)) xs))) $
-                  --     res
-                  --     -- or ch (addAnc goal) state allSeenGoals failed' env''
-                  --   Nothing ->
-                  --     -- trace (printf "ComputedAnswers\nGoal:\n%s\nNothing" (show goal))
-                      res
+                  or ch (addAnc goal) state allSeenGoals failed' env''
                 else
                   case findBestByComplexity env state goal of
                     -- Either ls or rs is not empty!
                     Just (ls, x, rs) ->
-                      case findVariant [x] seen' of
+                      case if isGoalStatic env x then Nothing else findVariant [x] seen' of
                         Just v ->
                           -- let x' = Conj [Leaf [x] state env v] [x] state in
                           let x' = Leaf [x] state env v in
@@ -255,7 +246,7 @@ nonConjunctive limit (Program defs goal) =
                           split (catMaybes [ls', Just x', rs']) goal state seen''' failed''' env''
                         Nothing ->
                           let (unified, env') = oneStep x env state in
-                          let (ch, allSeenGoals', failed_', env'') = unfoldSequentially failed seen' unified env' addAnc in
+                          let (ch, allSeenGoals', failed_', env'') = unfoldSequentially failed ([x]:seen') unified env' addAnc in
                           let (x', allSeenGoals, failed', env''') = or ch (addAnc [x]) state allSeenGoals' failed_' env'' in
                           case computedAnswers x' of
                             Just xs ->

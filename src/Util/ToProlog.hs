@@ -69,6 +69,11 @@ toProlog g = let (g', defs) = takeOutLets g in
              let goals = goalToProlog g' in
              (rules, goals)
 
+defsToProlog :: [Def] -> String
+defsToProlog defs =
+  let rules = concatMap defToProlog defs in
+  printRules rules
+
 {-------------------------------------------}
 {-------------------------------------------}
 {-------------------------------------------}
