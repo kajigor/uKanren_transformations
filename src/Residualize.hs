@@ -13,7 +13,7 @@ toX :: Term S -> Term X
 toX = (vident <$>)
 
 residualizeSubst :: E.Sigma -> E.Sigma -> G X
-residualizeSubst g s = conj $ map (\ (s', ts) -> toX (V s') :=: toX (E.substitute g ts)) $ reverse s
+residualizeSubst g s = unsafeConj $ map (\ (s', ts) -> toX (V s') :=: toX (E.substitute g ts)) $ reverse s
 
 substCon :: E.Sigma -> [(S, Ts)] -> [(S, Ts)] -> G X -> G X
 substCon gen s ubst g =
@@ -44,16 +44,10 @@ simpl t = t
 
 simplConj :: [G a] -> G a
 simplConj conj' =
-  let noSuccess = filter (\x -> case x of (Invoke "success" []) -> False; _ -> True) conj'
+  let noSuccess = filter (not . isSuccess) conj'
   in  if   not $ null noSuccess
       then foldl1 (&&&) noSuccess
-      else Invoke success []
-
-success :: String
-success = "success"
-
-failure :: String
-failure = "failure"
+      else success
 
 vident = ('x' :) . show
 
@@ -61,11 +55,11 @@ residualize :: (TreeContext, Tree, [Id]) -> (G X, [String])
 residualize (tc, t, args) =
   (E.postEval (vident <$> args) $ residualizeGen [] tc (simpl t) [], vident <$> args)
   where
-    residualizeGen _ _ Fail         _ = Invoke failure []
+    residualizeGen _ _ Fail         _ = failure
     residualizeGen g _ (Success s ) ubst =
       let delta = s \\ ubst in
       if null delta
-      then Invoke success []
+      then success
       else residualizeSubst g delta
     residualizeGen g tc (Rename id _ s r s' )  ubst = substCon g s' ubst $ simplConj [residualizeGen g tc (Success s) s', Invoke (fident id) (reverse [V $ vident $ snd x | x <- r])]
     residualizeGen g tc (Or     l r _    s' )  ubst = substCon g s' ubst $ residualizeGen g tc l s' ||| residualizeGen g tc r s'

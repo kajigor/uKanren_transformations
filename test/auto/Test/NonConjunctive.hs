@@ -1,37 +1,24 @@
 module Test.NonConjunctive  where
 
-import           Test.Helper                    (Assertion, manyAssert, test,
-                                                 test2)
+import           Test.Helper            (test, test2)
 
-import           Control.Applicative            ((<|>))
-import           Control.Monad                  (guard)
-import           Debug.Trace                    (traceM)
-import           NonConjunctive.Residualization
-import qualified NonConjunctive.Unfold          as NC
-import qualified OCanrenize                     as OC
-import           Printer.Dot
-import           Printer.NCTree                 ()
+import qualified NonConjunctive.Unfold  as NC
+import           Printer.NCTree         ()
 import qualified Program.Bottles
 import qualified Program.Bridge
 import qualified Program.Bridge2
 import qualified Program.Desert
-import           Program.List                   (maxLengtho, nil, revAcco,
-                                                 reverso, (%))
+import           Program.List           (appendo, maxLengtho, nil, revAcco,
+                                         reverso, (%))
 import           Program.Path
-import           Program.Programs               (doubleAppendo, rep)
+import           Program.Programs       (doubleAppendo, rep)
 import qualified Program.Prop
-import           Program.Stlc                   (evalo)
+import           Program.Stlc           (evalo)
 import qualified Program.Unify
-import           Purification
-import           Residualize                    (vident)
 import           Syntax
-import           System.Directory
-import           System.IO
-import           System.Process                 (system)
-import           Text.Printf
-import           Util.Miscellaneous             (escapeTick)
-import           Util.ToProlog
-import qualified Eval as E
+import qualified Transformer.MkToProlog as Mk2Pl
+import qualified Transformer.NonConj    as NonConj
+import qualified Transformer.PrologToMk as Pl2Mk
 
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
 revAcco' = Program revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])
@@ -39,14 +26,20 @@ rev = Program reverso $ fresh ["x", "y"] (call "reverso" [V "x", V "y"])
 maxLen = Program maxLengtho $ fresh ["xs", "m", "l"] (call "maxLengtho" [V "xs", V "m", V "l"])
 lambda = Program evalo $ fresh ["m", "n"] (call "evalo" [V "m", V "n"])
 
-runJu l = runTest Nothing (NC.justUnfold l)
+runJu l = NonConj.transform Nothing (NC.justUnfold l)
 
-runNc l = runTest Nothing (NC.nonConjunctive l)
+runNc l = NonConj.transform Nothing (NC.nonConjunctive l)
 
 runRep = do
     runJu 100 "rep" rep
   where
     rep = Program Program.Programs.rep $ fresh ["n", "x"] (call "rep" [V "n", V "x"])
+
+runAppendo = do
+    mapM (\d -> runJu d ("app" ++ show d) app) [1..15]
+    return ()
+  where
+    app = Program Program.List.appendo $ fresh ["x", "y", "z"] (call "appendo" [V "x", V "y", V "z"])
 
 runProp = do
     -- runNc (-1) "prop"  prop
@@ -108,10 +101,11 @@ runPath = do
 
 unit_nonConjunctiveTest = do
   -- runRep
+  runAppendo
   -- runUnify
   -- runPath
   -- runProp
-  runBottles
+  -- runBottles
 
   -- -- runBridge
   -- -- runDesert
@@ -122,59 +116,12 @@ unit_nonConjunctiveTest = do
   -- runNc (-1) "maxLen" maxLen
   -- -- runNc (55) "lambda" lambda
 
-runTest env function filename goal = (do
-  traceM filename
-  let transformed@(tree, logicGoal, names) = function goal
-  let tree' = NC.simplify tree
-  traceM (printf "\n========================================\nBefore:\n%s\n\nAfter:\n%s\n========================================\n" (show tree) (show $ NC.simplify tree))
-
-  let path = printf "test/out/nc/%s" filename
-  exists <- doesDirectoryExist path
-  if exists
-  then removeDirectoryRecursive path
-  else return ()
-  createDirectoryIfMissing True path
-  toOcanren (printf "%s/original.ml" path) goal (vident <$> names)
-  printTree (printf "%s/tree.dot" path) tree
-  printTree (printf "%s/tree.after.dot" path) tree'
-  system (printf "dot -O -Tpdf %s/*.dot" (escapeTick path))
-  guard (NC.noPrune tree)
-  let prog = residualize transformed
-  writeFile (printf "%s/%s.before.pur" path filename) (show prog)
-
-  let beforePur = justTakeOutLetsProgram prog (vident <$> reverse names)
-  let ocamlCodeFileName = printf "%s/%s.before.ml" path filename
-  OC.topLevel ocamlCodeFileName "topLevel" env beforePur
-
-  let pur@(goal', xs, defs') = purification (prog, vident <$> reverse names)
-  -- let pur = (goal, xs, map (\(Def n as b) -> Def n as (E.closeFresh as b)) defs)
-  let prog = Program defs' goal'
-  writeFile (printf "%s/%s.pur" path filename) (show prog)
-  let ocamlCodeFileName = printf "%s/%s.ml" path filename
-  OC.topLevel ocamlCodeFileName "topLevel" env pur
-  ) <|>
-  return ()
-
-toOcanren fileName (Program defs goal) names =
-  OC.topLevel fileName "topLevel" Nothing (goal, names, defs)
-
 unit_ecce = do
-    test "ecce_prop_last.txt"
-    test "ecce_plain.txt"
-  where
-    test fileName = do
-      handle <- openFile fileName ReadMode
-      contents <- hGetContents handle
-      let ocamlCodeFileName = printf "%s.ml" fileName
-      let g = prologToG contents
-      let env = Nothing
-      OC.topLevel ocamlCodeFileName "topLevel" env g
+    Pl2Mk.transform "ecce_prop_last.txt"
+    Pl2Mk.transform "ecce_plain.txt"
 
 unit_printBottles = do
-    test "bottles.pl" Program.Bottles.bottles
-  where
-    test filename program = do
-      writeFile filename (defsToProlog program)
+    Mk2Pl.transform "bottles.pl" Program.Bottles.bottles
 
 unit_isConflicting = do
   test2 NC.isConflicting [] [] False

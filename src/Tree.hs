@@ -20,14 +20,11 @@ data Tree =
 -- Renaming
 type Renaming = [(S, S)]
 
--- TODO remove
-conj :: [G a] -> G a
-conj [] = error "Empty conjunction"
-conj (a:as) = foldl (:/\:) a as
-
-
 instance Dot Tree where
-  dot (Prune gs) = trace (case gs of [x] -> show x ; _ -> "") $ printf "Prune <BR/> %s" (dot $ conj gs)
+  dot (Prune gs) =
+    case conj gs of
+      Nothing -> "Prune"
+      Just goal -> printf "Prune <BR/> %s" (dot goal)
   dot Fail = "_|_"
   dot (Success s)           = printf "S" -- <BR/> %s" (E.showSigma s)
   dot (Rename id' g s ts _) = printf "R" -- %s <BR/> %s <BR/> %s <BR/> %s" (show id') (E.showSigma s) (dot g) (dot $ reverse ts)

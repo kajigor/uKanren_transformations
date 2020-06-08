@@ -46,11 +46,11 @@ rename g1 g2 = rename' (Just []) (g1, g2) where
   renameGoals           = renames rename'
   renames     f r ms ns = foldl f r $ zip ms ns
 
--- conj [] = error "Empty conjunction"
--- conj (a:as) = foldl (:/\:) a as
-
 renameGoals :: [G S] -> [G S] -> Maybe Renaming
-renameGoals as bs = rename (conj as) (conj bs)
+renameGoals as bs = do
+  a <- conj as
+  b <- conj bs
+  rename a b
 
 {-embed :: G S -> G S -> Bool
 embed g@(g1 :/\: g2) (h1 :/\: h2) = embed g1 h1 && embed g2 h2 || embed g h1 || embed g h2
@@ -164,7 +164,7 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
   -- let qqq = map (\(a, b, g) -> (a, b, substitute s g)) conjs in
   -- let qqq_conjs = map trd' qqq in
   let p = snd3 $ head conjs in
-  let g = conj qqq_conjs in
+  let g = unsafeConj qqq_conjs in
   let id:ids' = ids in
   case find (\ (_, conjs') -> isJust $ renameGoals conjs' qqq_conjs) cs of
     Just (di, conjs') ->
@@ -180,7 +180,7 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
           if length qqq == length conjs'
           then
                let (msg_, s1, s2, d') = generalizeGoals d qqq_conjs conjs' in -- ADD GENERALIZER
-               let msg = conj msg_ in
+               let msg = unsafeConj msg_ in
                let (tc', node, d'') = eval (sr, args, ids') ((id, qqq_conjs):cs) d' s s1 [] (fst3 $ head conjs, p, msg) [] in
                (tc', Gen id s1 node msg s, d'')
           else if length conjs' < length qqq
@@ -212,7 +212,7 @@ eval tc cs d s gen prev g@(i, p, t1 :=: t2) conjs =
 eval tc cs d s gen prev g@(i, p, g1 :\/: g2) conjs =
   let (tc',  node' , d' ) = eval tc  cs d  s gen prev (i, p, g1) conjs in
   let (tc'', node'', d'') = eval tc' cs d' s gen prev (i, p, g2) conjs in
-  (tc'', Or node' node'' (conj $ map trd3 $ (reverse prev) ++ g:conjs) s, d'')
+  (tc'', Or node' node'' (unsafeConj $ map trd3 $ (reverse prev) ++ g:conjs) s, d'')
 eval tc cs d s gen prev (i, p, g1 :/\: g2) conjs = eval tc cs d s gen prev (i, p, g1) ((i, p, g2):conjs)
 --eval tc cs d s gen prev (i,p,Zzz g) conjs = eval tc cs d s gen prev (i,p,g) conjs
 eval tc cs d s gen prev g@(_, _, Invoke _ _) (g':conjs') = eval tc cs d s gen (g:prev) g' conjs'
@@ -232,7 +232,7 @@ unfold (sr, args, ids) cs e s gen conjs =
   let id:ids'      = ids    in
   let h:t          = reverse conjs' in
   let (tc', node, d')  = eval (sr, args, ids') ((id, cs_conjs):cs) e' s gen [] h t in
-  (tc', Call id node ( conj $ {- (Invoke (show s) [] ) : -} map trd3 conjs) s, d')
+  (tc', Call id node ( unsafeConj $ {- (Invoke (show s) [] ) : -} map trd3 conjs) s, d')
 
 drive :: G X -> (TreeContext, Tree, [Id])
 drive goal =

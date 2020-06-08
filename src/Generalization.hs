@@ -52,7 +52,6 @@ generalizeGoals _ as bs = error $ printf "Cannot generalize: different lengths o
 generalizeSplit :: [S] -> [G S] -> [G S] -> ([G S], [G S], Generalizer, Generalizer, [S])
 generalizeSplit s gs hs =
     let (ok, notOk) = go gs hs in
-    -- trace (printf "\n\nIn genearlizeSplit\n\ngs:\n%s\n\nhs:\n%s\n\nok:\n%s\n\nnotOk:\n%s\n\n" (show' gs) (show' hs) (show' ok) (show' notOk) ) $
     let (res, gen1, gen2, d) = generalizeGoals s gs ok in
     (res, notOk, gen1, gen2, d)
   where

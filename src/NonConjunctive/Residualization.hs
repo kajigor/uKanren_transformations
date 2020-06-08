@@ -125,24 +125,13 @@ generateGoalFromTree definitions invocations tree args =
       Nothing -> error $ printf "Failed to generate relation body for %s" (show $ nodeContent tree)
     -- Res.vident <$> (disj (map conj $ filter (not . null) $ go tree))
   where
-    disj :: [G S] -> Maybe (G S)
-    disj [] = Nothing
-    disj xs = Just $ foldl1 (:\/:) xs
-
-    conj :: [G S] -> Maybe (G S)
-    conj [] = Nothing
-    conj xs = Just $ foldl1 (:/\:) xs
-
-    fail = call "fail" []
-    success = call "success" []
-
     residualizeState :: E.Sigma -> Maybe (G S)
     residualizeState xs =
       -- trace (printf "\nResidualizing State\n%s" (show' xs)) $
       (conj $ map (\(s, ts) -> (V s) === ts) $ reverse xs) <|> return success
 
     go :: [S] -> Bool -> NCTree -> Maybe (G S)
-    go seen r Fail           = Just fail
+    go seen r Fail           = Just failure
     go seen r (Success ss _) = residualizeState ss
     go seen r (Or ch (LC.Descend gs _) s) = do
       -- let vs = getNewVars seen gs s

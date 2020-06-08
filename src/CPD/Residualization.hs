@@ -58,10 +58,10 @@ unifyInvocationLists xs@(Invoke name args : gs) ys@(Invoke name' args' : gs') st
 unifyInvocationLists _ _ _ = Nothing
 
 generateInvocation :: [G S] -> Definitions -> G X
-generateInvocation goals defs =
+generateInvocation goals defs = do
   fromMaybe
     (error "Residualization failed: invocation of the undefined relation.")
-    (conj <$> conjInvocation goals defs)
+    (conj =<< conjInvocation goals defs)
   where
     generate args subst = map (\a -> Res.toX $ fromMaybe (V a) (lookup a subst)) args
     findDef goals defs =
@@ -148,21 +148,19 @@ residualizeSldTree rootGoals tree definitions = do
   then fail (printf "No resultants in the sld tree for %s" (show rootGoals))
   else return $ Def defName defArgs body
   where
-    go [] [] defs    = Invoke "success" []
+    go [] [] defs    = success
     go [] gs defs    = residualizeGoals gs defs
     go subst [] defs = residualizeSubst subst
     go subst gs defs =
       let goal = residualizeGoals gs defs in
       residualizeSubst subst &&& goal
 
-conj = foldl1 (&&&)
-
 residualizeGoals :: [G S] -> Definitions -> G X
 residualizeGoals = generateInvocation
 
 residualizeSubst :: Eval.Sigma -> G X
 residualizeSubst subst =
-  conj $ map (\(s, ts) -> Res.toX (V s) === Res.toX ts) $ reverse subst
+  unsafeConj $ map (\(s, ts) -> Res.toX (V s) === Res.toX ts) $ reverse subst
 
 class Ord b => UniqueVars a b | a -> b where
   getVars :: a -> Set b

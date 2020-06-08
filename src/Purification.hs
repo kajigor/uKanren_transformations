@@ -44,13 +44,9 @@ justTakeOutLetsProgram program args =
     initialFvs = [0..]
     (Program defs goalWithoutLets) = evalState state initialFvs
     state = do
-      -- traceM ("Before " ++ show program )
       renamed <- renameProgram program
       traceM $ "\n===============================\nESCAPE\n===============================\n" ++ show renamed
-
-      -- traceM "In the middle"
       escaped <- escapeFreeVarsProgram renamed
-      -- traceM "After"
       return escaped
       -- evalState (renameProgram program >>= escapeFreeVarsProgram) initialFvs
 
@@ -186,7 +182,6 @@ purificationWithErasure x = (g''', args', defs''') where
 {-------------------------------------------}
 conservativePurificationWithErasure :: Program -> [String] -> (G X, [String], [Def])
 conservativePurificationWithErasure program@(Program defs goal) arguments =
-    -- trace (printf "\npurification!\nGoalAfterPurification\n%s\n\nDefsAfterPurification\n%s\n\n" (show goalAfterPurification) (show' defsAfterPurification)) $
     (goalAfterPurification, args, defsAfterPurification)
   where
 
@@ -215,24 +210,22 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
                                                       else (map (subst_in_goal y l) conjs, success)
       purifyU constrV conjs g@(V x :=: t)           = if Set.member x constrV then (conjs, g)
                                                       else (map (subst_in_goal x t) conjs, success)
-      purifyU constrV conjs g@(g1 :\/: g2)          = -- trace (printf "\npurifyUDisj\n%s" (show g)) $
-                                                      let constrV' = foldl (\s -> Set.union s . Set.fromList . fvg) constrV conjs in
+      purifyU constrV conjs g@(g1 :\/: g2)          = let constrV' = foldl (\s -> Set.union s . Set.fromList . fvg) constrV conjs in
                                                       let ([], g1') = purifyU constrV' [] g1 in
                                                       let ([], g2') = purifyU constrV' [] g2 in
                                                       case (g1', g2') of
-                                                        (Invoke "success" [], Invoke "success" []) -> (conjs, success)
-                                                        (_                  , Invoke "success" []) -> (conjs, g1')
-                                                        (Invoke "success" [], _                  ) -> (conjs, g2')
-                                                        _                                          -> (conjs, g1' ||| g2')
+                                                        _ | isSuccess g1' && isSuccess g2' -> (conjs, success)
+                                                        _ | isSuccess g2' -> (conjs, g1')
+                                                        _ | isSuccess g1' -> (conjs, g2')
+                                                        _ -> (conjs, g1' ||| g2')
                                                       -- (conjs, g1' ||| g2')
-      purifyU constrV conjs g@(g1 :/\: g2)          = -- trace (printf "\npurifyUConj\n%s" (show g)) $
-                                                      let (g2' :conjs' , g1' ) = purifyU constrV (g2 :conjs ) g1  in
+      purifyU constrV conjs g@(g1 :/\: g2)          = let (g2' :conjs' , g1' ) = purifyU constrV (g2 :conjs ) g1  in
                                                       let (g1'':conjs'', g2'') = purifyU constrV (g1':conjs') g2' in
                                                       case (g1'', g2'') of
-                                                        (Invoke "success" [], Invoke "success" []) -> (conjs'', success      )
-                                                        (Invoke "success" [], _                  ) -> (conjs'', g2''         )
-                                                        (_                  , Invoke "success" []) -> (conjs'', g1''         )
-                                                        _                                          -> (conjs'', g1'' &&& g2'')
+                                                        _ | isSuccess g1'' && isSuccess g2'' -> (conjs'', success      )
+                                                        _ | isSuccess g1'' -> (conjs'', g2''         )
+                                                        _ | isSuccess g2'' -> (conjs'', g1''         )
+                                                        _ -> (conjs'', g1'' &&& g2'')
       purifyU constrV conjs g                       = (conjs, g)
 
 {-------------------------------------------}
@@ -340,10 +333,6 @@ defToRules (Def n a g) = map (\(s, f) -> (applyInFunc s (n, ta), map (applyInFun
 
 closeByFresh :: [X] -> G X -> G X
 closeByFresh a g = fresh (fvg g \\ a) g
-
-{-------------------------------------------}
-success :: G a
-success = call "success" []
 
 {-------------------------------------------}
 takeOutLets :: G X -> (G X, [Def])
@@ -501,8 +490,6 @@ escapeFreeVars fvs (Let (Def n a g1) g2)
                                          (Let (Def n (nvs' ++ a) g1''') g2'', fvs''')
 escapeFreeVars fvs x                   = (x, fvs)
 
--- Let (Def "f" ["x", "a"] (V "x" :=: V "a" :/\: V "x" :=: V "b")) (invoke "f" [12, 12])
-
 {-------------------------------------------}
 addArgsInCall :: Name -> [Term X] -> G X -> G X
 addArgsInCall n na   (g1 :/\: g2)         = addArgsInCall n na g1 &&& addArgsInCall n na g2
@@ -560,10 +547,10 @@ removeUnifications :: (Term X -> Term X -> Bool) -> G X -> G X
 removeUnifications p g@(t1 :=:  t2) = if p t1 t2 then success else g
 removeUnifications p   (g1 :\/: g2) = removeUnifications p g1 :\/: removeUnifications p g2
 removeUnifications p   (g1 :/\: g2) = case (removeUnifications p g1, removeUnifications p g2) of
-                                        (Invoke "success" [], Invoke "success" []) -> success
-                                        (g,                   Invoke "success" []) -> g
-                                        (Invoke "success" [], g                  ) -> g
-                                        (g1,                  g2                 ) -> g1 :/\: g2
+                                        (x, y) | isSuccess x && isSuccess y -> success
+                                        (g, y) | isSuccess y -> g
+                                        (x, g) | isSuccess x -> g
+                                        (g1, g2) -> g1 :/\: g2
 removeUnifications p   (Fresh v g)  = Fresh v $ removeUnifications p g
 removeUnifications p   (Let def g)  = Let def $ removeUnifications p g
 removeUnifications _ g              = g
@@ -572,7 +559,6 @@ removeUnifications _ g              = g
 renameFreshVars g =
   let (vars, g') = freshVars [] g in
   let vars' = reverse $ map (toV "q") [1..length vars] in
-  -- trace (printf "\n==================================\nRenamed vars\n%s\n" (show' (zip vars' vars))) $
   let g'' = foldr (\(v, v') -> subst_in_goal v (V v')) g' $ zip vars vars' in
   fresh vars'   g''
 
@@ -602,5 +588,5 @@ trace_pur (g1, _) result@(g2, _, defs) =
       calc (Fresh _ g)           = (1, 0, 0, 0, 0, 0) <+> calc g
       calc (Let (Def _ a g1) g2) = (0, 0, length a, 0, 0, 0) <+> calc g1 <+> calc g2
       calc (t1 :=: t2)           = (0, 1, 0, constrs t1 + constrs t2, vars t1 + vars t2, 0)
-      calc (Invoke "success" []) = (0, 0, 0, 0, 0, 0)
+      calc g | isSuccess g       = (0, 0, 0, 0, 0, 0)
       calc (Invoke _ a)          = (0, 0, 0, sum $ map constrs a, sum $ map vars a, 1)

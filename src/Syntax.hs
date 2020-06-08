@@ -85,6 +85,37 @@ fresh xs g = foldr Fresh g xs
 call :: Name -> [Term a] -> G a
 call = Invoke
 
+disj :: [G a] -> Maybe (G a)
+disj [] = Nothing
+disj xs = Just $ foldl1 (:\/:) xs
+
+conj :: [G a] -> Maybe (G a)
+conj [] = Nothing
+conj xs = Just $ foldl1 (:/\:) xs
+
+unsafeConj :: [G a] -> G a
+unsafeConj = foldl1 (:/\:)
+
+successName :: String
+successName = "success"
+
+success :: G a
+success = Invoke successName []
+
+isSuccess :: G a -> Bool
+isSuccess (Invoke successName []) = True
+isSuccess _ = False
+
+failureName :: String
+failureName = "fail"
+
+failure :: G a
+failure = Invoke failureName []
+
+isFailure :: G a -> Bool
+isFailure (Invoke failureName []) = True
+isFailure _ = False
+
 -- Free variables
 fv :: Eq v => Term v -> [v]
 fv t = nub $ go t where

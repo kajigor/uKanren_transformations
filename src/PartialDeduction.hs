@@ -1,19 +1,13 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module PartialDeduction where
 
 import qualified CPD.LocalControl   as LC
-import           Data.Foldable      (foldlM)
-import           Data.List          (find, intersect, partition, (\\))
-import qualified Data.Map.Strict    as M
-import           Data.Maybe         (fromMaybe, mapMaybe)
-import           Debug.Trace        (trace)
+import           Data.List          (find)
+import           Data.Maybe         (mapMaybe)
 import           Embed
 import qualified Eval               as E
-import           Generalization     (generalizeGoals, generalizeSplit)
+import           Generalization     (generalizeGoals)
 import           Prelude            hiding (or)
 import           Syntax
-import           Text.Printf        (printf)
 import           Unfold             (oneStepUnfold, unifyStuff, normalize)
 import           Util.Miscellaneous (fst3)
 

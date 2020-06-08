@@ -1,7 +1,6 @@
 module Util.ToProlog where
 
 import Syntax
-import Eval hiding (Subst (..))
 import Purification
 
 import Data.Char
@@ -9,8 +8,6 @@ import Data.List
 
 import Text.ParserCombinators.Parsec
 
-
---takeOutLets :: G X -> (G X, [Def])
 
 {-------------------------------------------}
 {-------------------------------------------}
@@ -283,7 +280,7 @@ ruleToG v ((name, a ), b ) =
   let conjs1 = map (\(v,t) -> V v === t) $ zip v a in
   let conjs2 = map (\(n,a) -> Invoke n a) b in
   let conjs  = conjs1 ++ conjs2 in
-  let g      = if null conjs then Invoke "success" [] else foldl1 (&&&) conjs in
+  let g      = if null conjs then success else foldl1 (&&&) conjs in
   fresh (fvg g \\ v) g
 
 {-------------------------------------------}
