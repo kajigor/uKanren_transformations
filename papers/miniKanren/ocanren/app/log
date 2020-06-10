@@ -1,0 +1,12 @@
+Latencies for 20000 iterations of "app1 ", "app15":
+app1 :  0.93 WALL ( 0.93 usr +  0.00 sys =  0.93 CPU) @ 21467.13/s (n=20000)
+app15:  1.09 WALL ( 1.09 usr +  0.00 sys =  1.09 CPU) @ 18403.46/s (n=20000)
+         Rate app15 app1 
+app15 18403/s    --  -14%
+app1  21467/s   17%    --
+Latencies for 20000 iterations of "app1 ", "app15":
+app1 :  0.85 WALL ( 0.84 usr +  0.01 sys =  0.85 CPU) @ 23444.52/s (n=20000)
+app15:  0.91 WALL ( 0.91 usr +  0.00 sys =  0.91 CPU) @ 22046.92/s (n=20000)
+         Rate app15 app1 
+app15 22047/s    --   -6%
+app1  23445/s    6%    --
