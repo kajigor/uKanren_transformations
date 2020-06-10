@@ -54,6 +54,12 @@ executables:
     source-dirs:
     - test/cpd/
     dependencies: uKanren-transformation
+  main:
+    main: Main.hs
+    source-dirs:
+    - app/
+    - test/resources/
+    dependencies: uKanren-transformation
 
 
 tests:

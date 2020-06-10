@@ -3,6 +3,7 @@ module Test.NonConjunctive  where
 import           Test.Helper            (test, test2)
 
 import qualified NonConjunctive.Unfold  as NC
+import qualified OCanrenize             as OC
 import           Printer.NCTree         ()
 import qualified Program.Bottles
 import qualified Program.Bridge
@@ -19,6 +20,7 @@ import           Syntax
 import qualified Transformer.MkToProlog as Mk2Pl
 import qualified Transformer.NonConj    as NonConj
 import qualified Transformer.PrologToMk as Pl2Mk
+import qualified Transformed.JustUnfold as JU
 
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
 revAcco' = Program revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])
@@ -26,7 +28,7 @@ rev = Program reverso $ fresh ["x", "y"] (call "reverso" [V "x", V "y"])
 maxLen = Program maxLengtho $ fresh ["xs", "m", "l"] (call "maxLengtho" [V "xs", V "m", V "l"])
 lambda = Program evalo $ fresh ["m", "n"] (call "evalo" [V "m", V "n"])
 
-runJu l = NonConj.transform Nothing (NC.justUnfold l)
+runJu = JU.transform
 
 runNc l = NonConj.transform Nothing (NC.nonConjunctive l)
 

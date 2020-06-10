@@ -15,7 +15,14 @@ import           Syntax
 import           System.Directory
 import           System.Process                 (system)
 import           Text.Printf
+import qualified Transformer.MkToProlog
 import           Util.Miscellaneous             (escapeTick)
+
+
+toOcanren fileName (Program defs goal) names =
+  OC.topLevel fileName "topLevel" Nothing (goal, names, defs)
+
+runNc l = Transformer.NonConj.transform Nothing (NC.nonConjunctive l)
 
 transform env function filename goal = (do
   traceM filename
@@ -29,7 +36,7 @@ transform env function filename goal = (do
   then removeDirectoryRecursive path
   else return ()
   createDirectoryIfMissing True path
-  -- toOcanren (printf "%s/original.ml" path) goal (vident <$> names)
+  toOcanren (printf "%s/original.ml" path) goal (vident <$> names)
   printTree (printf "%s/tree.dot" path) tree
   printTree (printf "%s/tree.after.dot" path) tree'
   system (printf "dot -O -Tpdf %s/*.dot" (escapeTick path))
@@ -44,6 +51,7 @@ transform env function filename goal = (do
   let pur@(goal', xs, defs') = purification (prog, vident <$> reverse names)
   -- let pur = (goal, xs, map (\(Def n as b) -> Def n as (E.closeFresh as b)) defs)
   let prog = Program defs' goal'
+  Transformer.MkToProlog.transform (printf "%s/%s.pl" path filename) defs'
   writeFile (printf "%s/%s.pur" path filename) (show prog)
   let ocamlCodeFileName = printf "%s/%s.ml" path filename
   OC.topLevel ocamlCodeFileName "topLevel" env pur
