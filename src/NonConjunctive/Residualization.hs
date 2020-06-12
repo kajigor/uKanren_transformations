@@ -39,7 +39,7 @@ generateDefs tree =
   let simplified = restrictSubsts $ simplify $ renameAmbigousVars $ tree in
   let nodes = (toplevel, simplified) : map (flip findNode tree) distinct in
   let definitions = foldl (\defs gs -> fst3 (CpdR.renameGoals gs defs) ) [] $ map fst nodes in
-  trace (printf "\nDefs:\n%s\n" (showDefinitions definitions)) $
+  -- trace (printf "\nDefs:\n%s\n" (showDefinitions definitions)) $
   let defWithTree = zip (reverse definitions) (map snd nodes) in
   let invocations = map (generateInvocation definitions) leaves in
   let defs = map (generateDef definitions invocations) defWithTree in
@@ -47,6 +47,7 @@ generateDefs tree =
   let (_, newGoal) = generateInvocation definitions (toplevel, toplevel) in
   (defs, Res.vident <$> newGoal)
 
+showDefinitions :: CpdR.Definitions -> String
 showDefinitions = intercalate "\n\n" . map go
   where
     go (gs, n, args) = printf "%s %s: %s" n (show args) (show gs)

@@ -25,7 +25,6 @@ toOcanren fileName (Program defs goal) names =
 runNc l = Transformer.NonConj.transform Nothing (NC.nonConjunctive l)
 
 transform env function filename goal = (do
-  traceM filename
   let transformed@(tree, logicGoal, names) = function goal
   let tree' = NC.simplify tree
   -- traceM (printf "\n========================================\nBefore:\n%s\n\nAfter:\n%s\n========================================\n" (show tree) (show $ NC.simplify tree))

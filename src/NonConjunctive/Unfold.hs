@@ -419,9 +419,7 @@ findConflicting (x:xs) =
 
 simplify :: NCTree -> NCTree
 simplify tree =
-    let res = removeTransient $ go tree in
-    trace (printf "\n=================================\nSimplify\n%s\n" (show res)) $
-    res
+    removeTransient $ go tree
   where
   --   -- trace (printf "simplifying\n%s\n" (show tree)) $
   --   keepRoot tree

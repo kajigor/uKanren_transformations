@@ -3,7 +3,6 @@ module Test.NonConjunctive  where
 import           Test.Helper            (test, test2)
 
 import qualified NonConjunctive.Unfold  as NC
-import qualified OCanrenize             as OC
 import           Printer.NCTree         ()
 import qualified Program.Bottles
 import qualified Program.Bridge
@@ -20,7 +19,7 @@ import           Syntax
 import qualified Transformer.MkToProlog as Mk2Pl
 import qualified Transformer.NonConj    as NonConj
 import qualified Transformer.PrologToMk as Pl2Mk
-import qualified Transformed.JustUnfold as JU
+import qualified Transformer.JustUnfold as JU
 
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
 revAcco' = Program revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])
