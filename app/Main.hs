@@ -15,6 +15,7 @@ import qualified Program.Unify
 import           Syntax
 import qualified Transformer.JustUnfold
 import qualified Transformer.NonConj
+import qualified Transformer.PrologToMk
 
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
 revAcco' = Program revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])
@@ -97,6 +98,8 @@ runAppendo = do
 
 main :: IO ()
 main = do
-  runAppendo
-  runBottles
+    runNc (-1) "maxlen" maxLen
+    -- Transformer.PrologToMk.transform "papers/miniKanren/ocanren/bottles/ecce.pl"
+--   runAppendo
+--   runBottles
 

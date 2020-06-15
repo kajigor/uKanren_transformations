@@ -70,11 +70,12 @@ let inputs = [ "trans", Bottles_trans.topLevel
              ; "orig ", (fun q _ _ -> checkAnswer q capacities1 (int2nat 7) !!true)
              ; "noHO" , Original_no_ho.topLevel
              ; "different", Different.topLevel
+             ; "ecce" , Ecce.topLevel
              ]
 
 let _ =
   run_exn myshow 1 q qh ("original", fun q ->
-    Original_no_ho.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))
+    Ecce.topLevel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))
 
 let _ =
   do_tables 2 (fun rel -> run q (fun q -> rel q (Std.Pair.pair (int2nat 4) (int2nat 9)) (int2nat 7))) inputs

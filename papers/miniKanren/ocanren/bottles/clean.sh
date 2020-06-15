@@ -1,1 +1,1 @@
-rm -f *.cmi *.cmo run
+rm -f *.cmi *.cmx *.o *.cmo run

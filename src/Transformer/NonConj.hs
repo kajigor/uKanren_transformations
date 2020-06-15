@@ -24,7 +24,7 @@ toOcanren fileName (Program defs goal) names =
 
 runNc l = Transformer.NonConj.transform Nothing (NC.nonConjunctive l)
 
-transform env function filename goal = (do
+transform env function filename goal@(Program definitions _) = (do
   let transformed@(tree, logicGoal, names) = function goal
   let tree' = NC.simplify tree
   -- traceM (printf "\n========================================\nBefore:\n%s\n\nAfter:\n%s\n========================================\n" (show tree) (show $ NC.simplify tree))
@@ -35,7 +35,8 @@ transform env function filename goal = (do
   then removeDirectoryRecursive path
   else return ()
   createDirectoryIfMissing True path
-  toOcanren (printf "%s/original.ml" path) goal (vident <$> names)
+  toOcanren (printf "%s/original.ml" path) goal (vident <$> reverse names)
+  Transformer.MkToProlog.transform (printf "%s/original.pl" path) definitions
   printTree (printf "%s/tree.dot" path) tree
   printTree (printf "%s/tree.after.dot" path) tree'
   system (printf "dot -O -Tpdf %s/*.dot" (escapeTick path))
