@@ -10,7 +10,10 @@ import           Program.List           (appendo, maxLengtho, nil, revAcco,
 import           Program.Path
 import           Program.Programs       (doubleAppendo, rep)
 import qualified Program.Prop
+import qualified Program.Sort
 import           Program.Stlc           (evalo)
+import qualified Program.Typing
+import qualified Program.L
 import qualified Program.Unify
 import           Syntax
 import qualified Transformer.JustUnfold
@@ -74,13 +77,13 @@ runBottles = do
 
 runBridge = do
     runNc (-1) "bridge" Program.Bridge.query
-    runNc (-1) "bridge2" Program.Bridge2.query
+    -- runNc (-1) "bridge2" Program.Bridge2.query
 
 runDesert = do
-    runNc (-1) "desert"    Program.Desert.query
-    runNc (-1) "desert_"   Program.Desert.query'
-    runNc (-1) "desert__"  Program.Desert.query''
-    runNc (-1) "desert___" Program.Desert.query'''
+    -- runNc (-1) "desert"    Program.Desert.query
+    -- runNc (-1) "desert_"   Program.Desert.query'
+    -- runNc (-1) "desert__"  Program.Desert.query''
+    -- runNc (-1) "desert___" Program.Desert.query'''
     runNc (-1) "desert1" Program.Desert.query1
 
 runUnify = do
@@ -96,10 +99,26 @@ runAppendo = do
   where
     app = Program Program.List.appendo $ fresh ["x", "y", "z"] (call "appendo" [V "x", V "y", V "z"])
 
+runSort = do
+    runNc (-1) "sort" Program.Sort.query
+
+runTyping = do
+    runNc (-1) "type" Program.Typing.query
+
+runL = do
+    runNc (-1) "llang" Program.L.query
+
+
 main :: IO ()
 main = do
-    runNc (-1) "maxlen" maxLen
-    -- Transformer.PrologToMk.transform "papers/miniKanren/ocanren/bottles/ecce.pl"
+    runL
+    -- runTyping
+    -- runSort
+    -- Transformer.PrologToMk.transform "test/out/nc/llang/ecce.pl"
+
+    -- runBridge
+    -- runDesert
+    -- runNc (-1) "maxlen" maxLen
 --   runAppendo
 --   runBottles
 

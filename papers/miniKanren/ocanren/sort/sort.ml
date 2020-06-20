@@ -1,0 +1,6 @@
+open GT
+open OCanren
+open OCanren.Std
+open Helper
+
+let topLevel x0 x1 = let rec smallesto y2 y3 y4 = (fresh (q1 q2 q3 q4 q5) ((((y2 === (Std.(%) y3 (Std.List.nil ()))) &&& (y4 === (Std.List.nil ()))) ||| (((y4 === (Std.(%) q1 q2)) &&& (y2 === (Std.(%) q3 q4))) &&& ((minmaxo y3 q3 q5 q1) &&& (smallesto q4 q5 q2)))))) and _sorto y5 y6 = (fresh (q1 q2 q3) ((((y5 === (Std.List.nil ())) &&& (y6 === (Std.List.nil ()))) ||| ((y6 === (Std.(%) q1 q2)) &&& ((_sorto q3 q2) &&& (smallesto y5 q1 q3)))))) and minmaxo y7 y8 y9 y10 = (fresh (q1 q2 q3 q4 q5) (((((y7 === y8) &&& (y9 === y10)) &&& ((y8 === Std.Nat.zero) ||| (((y8 === (Std.Nat.succ (q1))) &&& (y10 === (Std.Nat.succ (q2)))) &&& (leo q1 q2)))) ||| (((y8 === y10) &&& (y7 === y9)) &&& (((y10 === (Std.Nat.succ (q3))) &&& (y9 === Std.Nat.zero)) ||| (((y10 === (Std.Nat.succ (q4))) &&& (y9 === (Std.Nat.succ (q5)))) &&& (gto q5 q4))))))) and leo y11 y12 = (fresh (q1 q2) (((y11 === Std.Nat.zero) ||| (((y11 === (Std.Nat.succ (q1))) &&& (y12 === (Std.Nat.succ (q2)))) &&& (leo q1 q2))))) and gto y13 y14 = (fresh (q1 q2 q3) ((((y14 === (Std.Nat.succ (q1))) &&& (y13 === Std.Nat.zero)) ||| (((y14 === (Std.Nat.succ (q2))) &&& (y13 === (Std.Nat.succ (q3)))) &&& (gto q3 q2))))) in      (_sorto x0 x1)

@@ -1,0 +1,6 @@
+open GT
+open OCanren
+open OCanren.Std
+open Helper
+
+let topLevel x0 x1 = let rec ttype term gamma ttype = (fresh (els thn cond btype body bound var t r l n m v y x) ((((term === bConst x) &&& (ttype === boolean ())) ||| (((term === iConst y) &&& (ttype === integer ())) ||| (((term === var_ v) &&& (assoco v gamma ttype)) ||| (((term === plus m n) &&& ((ttype m gamma (integer ())) &&& ((ttype n gamma (integer ())) &&& (ttype === integer ())))) ||| (((term === mult m n) &&& ((ttype m gamma (integer ())) &&& ((ttype n gamma (integer ())) &&& (ttype === integer ())))) ||| (((term === eq l r) &&& ((ttype l gamma t) &&& ((ttype r gamma t) &&& (ttype === boolean ())))) ||| (((term === lt l r) &&& ((ttype l gamma t) &&& ((ttype r gamma t) &&& (ttype === boolean ())))) ||| (((term === let_ var bound body) &&& ((ttype bound gamma btype) &&& (ttype body ((Std.(%) (Pair.pair (var) (btype)) gamma)) ttype))) ||| ((term === if_ cond thn els) &&& ((ttype cond gamma (boolean ())) &&& ((ttype thn gamma ttype) &&& (ttype els gamma ttype)))))))))))))) and assoco x xs v = (fresh (tl b a) (((xs === (Std.(%) (Pair.pair (a) (b)) tl)) &&& (((a === x) &&& (b === v)) ||| (assoco x tl v))))) in   (fresh (gamma t) ((ttype t gamma (integer ()))))
