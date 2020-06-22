@@ -111,10 +111,10 @@ runL = do
 
 main :: IO ()
 main = do
-    runL
+    -- runL
+    Transformer.PrologToMk.transform "test/out/nc/llang/ecce.pl"
     -- runTyping
     -- runSort
-    -- Transformer.PrologToMk.transform "test/out/nc/llang/ecce.pl"
 
     -- runBridge
     -- runDesert

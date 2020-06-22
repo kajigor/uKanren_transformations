@@ -6,33 +6,66 @@ import Program.Pair
 import Program.List
 import Program.Num
 
-query = Program typo $ fresh ["t", "gamma"] (call "type" [V "t", V "gamma", int])
+query = Program typo $ fresh ["t", "gamma"] (call "type_" [V "t", V "gamma", just int])
 
 typo :: [Def]
-typo = typeDef : assoco
+typo = typeDef : idx
+
+-- De Bruijn encoding for L lang
+-- data L = Iconst_ Int
+--        | Bconst_ Bool
+--        | Var_ Int
+--        | Plus_ L L
+--        | Mult_ L L
+--        | Equal_ L L
+--        | Less_ L L
+--        | If_ L L L
+--        | Let_ L L
+
+
+just x = C "some" [x]
+none = C "none" []
 
 typeDef :: Def
 typeDef =
-    ( Def "type" ["term", "gamma", "ttype"]
+    ( Def "type_" ["term", "gamma", "ttype"]
       (
-        fresh ["x", "y", "v", "m", "n", "l", "r", "t", "var", "bound", "body", "btype", "cond", "thn", "els"]
+        fresh ["x", "y", "v", "m", "n", "l", "r", "t", "t1", "bound", "body", "btype", "btype1", "cond", "thn", "els"]
         (
-          (term === C "bConst" [x] &&& ttype === bool) |||
-          (term === C "iConst" [y] &&& ttype === int) |||
-          (term === C "var_" [v] &&& call "assoco" [v, gamma, ttype]) |||
-          (term === C "plus" [m, n] &&& call "type" [m, gamma, int] &&& call "type" [n, gamma, int] &&& ttype === int) |||
-          (term === C "mult" [m, n] &&& call "type" [m, gamma, int] &&& call "type" [n, gamma, int] &&& ttype === int) |||
-          (term === C "eq" [l, r] &&& call "type" [l, gamma, t] &&& call "type" [r, gamma, t] &&& ttype === bool) |||
-          (term === C "lt" [l, r] &&& call "type" [l, gamma, t] &&& call "type" [r, gamma, t] &&& ttype === bool) |||
-          (term === C "let_" [var, bound, body] &&& call "type" [bound, gamma, btype] &&& call "type" [body, pair var btype % gamma, ttype]) |||
-          (term === C "if_" [cond, thn, els] &&& call "type" [cond, gamma, bool] &&& call "type" [thn, gamma, ttype] &&& call "type" [els, gamma, ttype])
+          (term === C "bConst_" [x] &&& ttype === just bool) |||
+          (term === C "iConst_" [y] &&& ttype === just int) |||
+          (term === C "var_" [v] &&& call "idx" [v, gamma, ttype]) |||
+          (term === C "plus_" [m, n] &&& call "type_" [m, gamma, just int] &&& call "type_" [n, gamma, just int] &&& ttype === just int) |||
+          (term === C "mult_" [m, n] &&& call "type_" [m, gamma, just int] &&& call "type_" [n, gamma, just int] &&& ttype === just int) |||
+          (term === C "equal_" [l, r] &&& call "type_" [l, gamma, t] &&& call "type_" [r, gamma, t] &&& ttype === just bool &&& t === just t1) |||
+          (term === C "less_" [l, r] &&& call "type_" [l, gamma, just int] &&& call "type_" [r, gamma, just int] &&& ttype === just bool) |||
+          (term === C "let_" [bound, body] &&& call "type_" [bound, gamma, btype] &&& btype === just btype1 &&& call "type_" [body, btype1 % gamma, ttype]) |||
+          (term === C "if_" [cond, thn, els] &&& call "type_" [cond, gamma, just bool] &&& call "type_" [thn, gamma, ttype] &&& call "type_" [els, gamma, ttype])
         )
       )
     )
   where
-    [term, gamma, ttype, x, y, v, m, n, l, r, t, var, bound, body, btype, cond, thn, els] =
-      map V ["term", "gamma", "ttype", "x", "y", "v", "m", "n", "l", "r", "t", "var", "bound", "body", "btype", "cond", "thn", "els"]
+    [term, gamma, ttype, x, y, v, m, n, l, r, t, t1, bound, body, btype, btype1, cond, thn, els] =
+      map V ["term", "gamma", "ttype", "x", "y", "v", "m", "n", "l", "r", "t", "t1", "bound", "body", "btype", "btype1", "cond", "thn", "els"]
 
+
+idx :: [Def]
+idx = [idxDef]
+
+idxDef :: Def
+idxDef =
+    ( Def "idx" ["k", "xs", "v"]
+      (
+        fresh ["h", "t", "k1"]
+        (
+          k === zero &&& xs === nil &&& v === none |||
+          k === zero &&& xs === h%t &&& v === just h |||
+          k === succ k1 &&& xs === h%t &&& call "idx" [k1, t, v]
+        )
+      )
+    )
+  where
+    [k, xs, v, h, t, k1] = map V ["k", "xs", "v", "h", "t", "k1"]
 
 -- (term === C "let_" [var, bound, body] &&& call "type" [bound, gamma, btype] &&& call "addToGamma" [var, btype, gamma, newGamma] &&& call "type" [body, newGamma, ttype]) |||
 
@@ -65,7 +98,7 @@ elemoDef =
 -- type(mult(X,Y), Gamma, integer) :- type(X,Gamma,integer), type(Y,Gamma,integer).
 
 -- type(eq(X,Y), Gamma, boolean) :- type(X,Gamma,T), type(Y,Gamma,T).
--- type(gt(X,Y), Gamma, boolean) :- type(X,Gamma,T), type(Y,Gamma,T).
+-- type(lt(X,Y), Gamma, boolean) :- type(X,Gamma,integer), type(Y,Gamma,integer).
 
 -- type(let(X,T,B), Gamma, Type) :- type(T,Gamma,Ttype), add(X,Ttype, Gamma, NewGamma), type(B, NewGamma, Type).
 
