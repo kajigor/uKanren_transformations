@@ -35,13 +35,16 @@ generateDefs :: NCTree -> ([Def], G X)
 generateDefs tree =
   let toplevel = fromJust $ nodeContent tree in
   let leaves = collectLeaves tree in
+  let gens = collectGens tree in
+  trace (printf "\nGen\n%s\n" (show' gens)) $
   let distinct = nub $ map snd leaves in
   let simplified = restrictSubsts $ simplify $ renameAmbigousVars $ tree in
-  let nodes = (toplevel, simplified) : map (flip findNode tree) distinct in
+  let nodes = (toplevel, simplified) : (map (\(_,x) -> findNode x tree) gens) ++ map (flip findNode tree) distinct in
   let definitions = foldl (\defs gs -> fst3 (CpdR.renameGoals gs defs) ) [] $ map fst nodes in
   -- trace (printf "\nDefs:\n%s\n" (showDefinitions definitions)) $
   let defWithTree = zip (reverse definitions) (map snd nodes) in
   let invocations = map (generateInvocation definitions) leaves in
+  trace (printf "\n\nInvocations\n%s\n" (show' invocations) ) $
   let defs = map (generateDef definitions invocations) defWithTree in
   -- let defs = map (generateDef invocations) defWithTree in
   let (_, newGoal) = generateInvocation definitions (toplevel, toplevel) in
@@ -88,6 +91,7 @@ generateInvocation' defs gs v =
 
 findNode :: [G S] -> NCTree -> ([G S], NCTree)
 findNode v tree =
+    trace (printf "\nSearching for\n%s\n" (show v)) $
     let nodes = go tree in
     case find nontrivial nodes of
       Just n -> (v, restrictSubsts $ simplify $ renameAmbigousVars n)
@@ -96,18 +100,22 @@ findNode v tree =
     go node@(Or _ (LC.Descend goal _) _) | goal == v = return node
     go node@(Conj _ goal _)              | goal == v = return node
     go node@(Split _ goal _)             | goal == v = return node
+    go node@(Gen ch _ goal _ _)          | goal == v = [node, ch]
     go (Or ch _ _)                       = concatMap go ch
     go (Conj ch _ _)                     = concatMap go ch
     go (Split ch _ _)                    = concatMap go ch
+    go (Gen ch _ _ _ _)                  = go ch
     go _                                 = []
 
 nontrivial :: NCTree -> Bool
 nontrivial (Leaf _ _ _ _) = False
+-- nontrivial (Gen _ _ _ _ _) = False
 nontrivial _              = True
 
 nodeContent (Or _ (LC.Descend goal _) _) = Just goal
 nodeContent (Conj _ goal _)              = Just goal
 nodeContent (Split _ goal _)             = Just goal
+-- nodeContent (Gen _ goal _ _ _)           = Just goal
 nodeContent x                            = Nothing -- error "Failed to get node content: unsupported node type"
 
 generateDef :: CpdR.Definitions -> [([G S], G S)] -> (([G S], Name, [S]), NCTree) -> Def
@@ -152,7 +160,10 @@ generateGoalFromTree definitions invocations tree args =
       let unifs = residualizeState s
       let rest = getInvocation r gs <|> (conj $ catMaybes $ map (go seen False) ch)
       mkGoal unifs rest (:/\:)
-    go seen r (Gen _ _ _)     = error "Failed to residualize: Gen node in tree"
+    go seen r (Gen ch gs gs' gen s) = do
+      let unifs = residualizeState s
+      let rest = getInvocation r gs
+      mkGoal unifs rest (:/\:)
     go seen r (Prune _ _)     = error "Failed to residualize: Prune node in tree"
 
     mkGoal (Just u) (Just r) f = Just (f u r)
@@ -258,6 +269,7 @@ collectLeaves :: NCTree -> [([G S], [G S])]
 collectLeaves (Leaf  gs _ _ v) = [(gs, v)]
 collectLeaves (Or    ch _ _)   = concatMap collectLeaves ch
 collectLeaves (Conj  ch _ _)   = concatMap collectLeaves ch
+collectLeaves (Gen ch gs gs' _ _) = collectLeaves ch
 collectLeaves (Split [x] _ _)  = collectLeaves x
 collectLeaves (Split ch _ _)   =
   let children =
@@ -268,5 +280,13 @@ collectLeaves (Split ch _ _)   =
   let deeperLeaves = concatMap collectLeaves ch in
   children ++ deeperLeaves
 collectLeaves (Prune _ _)      = error "Cannot residualize a tree with Prune nodes"
-collectLeaves (Gen _ _ _)      = error "This method was not supposed to create Gen nodes"
 collectLeaves g = []
+
+collectGens :: NCTree -> [([G S], [G S])]
+collectGens (Leaf  gs _ _ v) = []
+collectGens (Or    ch _ _)   = concatMap collectGens ch
+collectGens (Conj  ch _ _)   = concatMap collectGens ch
+collectGens (Split ch _ _)  = concatMap collectGens ch
+collectGens (Gen ch gs gs' _ _) = (gs, gs') : collectGens ch
+collectGens (Prune _ _)      = error "Cannot residualize a tree with Prune nodes"
+collectGens g = []

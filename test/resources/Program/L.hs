@@ -7,6 +7,8 @@ import Program.List
 import Program.Num
 
 query = Program typo $ fresh ["t", "gamma"] (call "type_" [V "t", V "gamma", just int])
+query1 = Program typo $ fresh ["t"] (call "type_" [V "t", nil, just int])
+
 
 typo :: [Def]
 typo = typeDef : idx

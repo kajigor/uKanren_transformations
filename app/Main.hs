@@ -106,13 +106,14 @@ runTyping = do
     runNc (-1) "type" Program.Typing.query
 
 runL = do
-    runNc (-1) "llang" Program.L.query
+    -- runNc (-1) "llang" Program.L.query
+    runNc (-1) "llang1" Program.L.query1
 
 
 main :: IO ()
 main = do
     -- runL
-    Transformer.PrologToMk.transform "test/out/nc/llang/ecce.pl"
+    Transformer.PrologToMk.transform "test/out/nc/llang1/ecce.pl"
     -- runTyping
     -- runSort
 

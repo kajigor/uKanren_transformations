@@ -11,7 +11,7 @@ import           Data.Maybe         (catMaybes, fromJust, fromMaybe, isJust,
 import           Debug.Trace        (trace)
 import           Embed
 import qualified Eval               as E
-import           Generalization     (Generalizer, generalizeSplit)
+import           Generalization     (Generalizer, generalizeSplit, generalizeAllVarsToFree)
 import           Prelude            hiding (or)
 import           Syntax
 import           Text.Printf        (printf)
@@ -24,7 +24,7 @@ data NCTree = Fail
             | Success E.Sigma E.Gamma
             | Or [NCTree] (LC.Descend [G S]) E.Sigma
             | Conj [NCTree] [G S] E.Sigma
-            | Gen NCTree [G S] Generalizer
+            | Gen NCTree [G S] [G S] Generalizer E.Sigma
             | Leaf [G S] E.Sigma E.Gamma [G S] -- last argument is a goal renaming of which current node is
             | Split [NCTree] [G S] E.Sigma
             | Prune [G S] E.Sigma
@@ -39,7 +39,7 @@ instance Show NCTree where
   show (Leaf gs _ _ _) = printf "Leaf %s" (show gs)
   show (Split ch gs _) = printf "Split %s %s" (show gs) (show ch)
   show (Prune gs _) = printf "Prune %s" (show gs)
-  show (Gen _ _ _) = "Gen"
+  show (Gen _ _ _ _ _) = "Gen"
 
 
 instance Eq NCTree where
@@ -92,7 +92,7 @@ restrictSubsts =
   where
     go subst (Conj ch gs s)  = Conj (map (go s) ch) gs (s \\ subst)
     go subst (Or ch gs s)    = Or (map (go s) ch) gs (s \\ subst)
-    go subst (Gen ch gs gen) = Gen (go subst ch) gs gen
+    go subst (Gen ch gs gs' gen s) = Gen (go subst ch) gs gs' gen (s \\ subst)
     go subst (Leaf gs s e v) = Leaf gs (s \\ subst) e v
     go subst (Split ch gs s) = Split (map (go s) ch) gs (s \\ subst)
     go subst (Prune gs s)    = Prune gs (s \\ subst)
@@ -217,7 +217,11 @@ nonConjunctive limit (Program defs goal) =
                 then
                   case findInstance goal seen of
                     Just v -> (Leaf goal state env v, seen, failed, env)
-                    Nothing -> (Prune goal state, seen, failed, env)
+                    Nothing ->
+                      -- (Prune goal state, seen, failed, env)
+                      let (allFree, generalizer, env') = generalizeAllVarsToFree goal env in
+                      let (ch, newSeen, newFailed, newEnv) = go (addAnc allFree) env' seen' state failed in
+                      (Gen ch goal allFree generalizer state, newSeen, newFailed, newEnv)
                 else
                   let (children, allSeenGoals, failed', env') = unfoldSequentially failed seen' (zip (map (:[]) goal) (repeat state)) env addAnc in
                   split children goal state allSeenGoals failed' env'
@@ -384,12 +388,12 @@ collectSubsts :: NCTree -> [E.Sigma]
 collectSubsts (Or ch _ _) =
     mapMaybe go ch
   where
-    go Fail           = Nothing
-    go (Success s _)  = Just s
-    go (Or _ _ s)     = Just s
-    go (Conj _ _ s)   = Just s
-    go (Gen _ _ _)    = Nothing
-    go (Leaf _ s _ _) = Just s
+    go Fail            = Nothing
+    go (Success s _)   = Just s
+    go (Or _ _ s)      = Just s
+    go (Conj _ _ s)    = Just s
+    go (Gen _ _ _ _ s) = Just s
+    go (Leaf _ s _ _)  = Just s
 collectSubsts (Leaf _ s _ _) = [s]
 collectSubsts x = []
 
@@ -486,7 +490,7 @@ simplify tree =
     go (Or    ch g s)   = failOr ch (\x -> Or x g s)
     go (Conj  ch g s)   = failConj ch (\x -> Conj x g s)
     go (Split ch g s)   = failConj ch (\x -> Split x g s)
-    go (Gen   ch g gen) = failOr [ch] (\[x] -> Gen x g gen)
+    go (Gen   ch g g' gen s) = failOr [ch] (\[x] -> Gen x g g' gen s)
     go x                = x
     failOr ch f =
       let simplified = filter (/= Fail) $ map go ch in

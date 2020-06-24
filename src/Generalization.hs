@@ -66,18 +66,29 @@ generalizeSplit s gs hs =
 
 refine :: ([G S], Generalizer, Generalizer, [S]) ->  ([G S], Generalizer, Generalizer, [S])
 refine msg@(g, s1, s2, d) =
-  let similar1 = filter ((>1) . length) $ groupBy group s1 [] in
-  let similar2 = filter ((>1) . length) $ groupBy group s2 [] in
-  let sim1 = map (map fst) similar1 in
-  let sim2 = map (map fst) similar2 in
-  let toSwap = concatMap (\(x:xs) -> map (, V x) xs) (sim1 `intersect` sim2) in
-  let newGoal = E.substitute toSwap g in
-  let s2' = filter (\(x,_) -> x `notElem` map fst toSwap) s2 in
-  let s1' = filter (\(x,_) -> x `notElem` map fst toSwap) s1 in
-  (newGoal, s1', s2', d)
+    let similar1 = filter ((>1) . length) $ groupBy group s1 [] in
+    let similar2 = filter ((>1) . length) $ groupBy group s2 [] in
+    let sim1 = map (map fst) similar1 in
+    let sim2 = map (map fst) similar2 in
+    let toSwap = concatMap (\(x:xs) -> map (, V x) xs) (sim1 `intersect` sim2) in
+    let newGoal = E.substitute toSwap g in
+    let s2' = filter (\(x,_) -> x `notElem` map fst toSwap) s2 in
+    let s1' = filter (\(x,_) -> x `notElem` map fst toSwap) s1 in
+    (newGoal, s1', s2', d)
   where
     groupBy _ [] acc = acc
     groupBy p xs acc =
       let (similar, rest) = partition (p (head xs)) xs in
       assert (similar /= []) $ groupBy p rest (similar : acc)
     group x y = snd x == snd y
+
+generalizeAllVarsToFree :: [G S] -> E.Gamma -> ([G S], Generalizer, E.Gamma)
+generalizeAllVarsToFree goals env@(p,i,d) =
+    let (gs, gens, d') = foldl go ([], [], d) goals in
+    (reverse gs, concat $ reverse gens, (p,i,d'))
+  where
+    go :: ([G S], [Generalizer], [S]) -> G S -> ([G S], [Generalizer], [S])
+    go (acc, gens, vars) (Invoke n args) =
+      let (vs, newVars) = splitAt (length args) vars in
+      let gen = zip vs args in
+      (Invoke n (map V vs) : acc, gen : gens, newVars)
