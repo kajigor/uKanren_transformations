@@ -1,0 +1,30 @@
+len len1 len2
+% 102 inferences, 0.000 CPU in 0.000 seconds (90% CPU, 4818139 Lips)
+% 101 inferences, 0.000 CPU in 0.000 seconds (98% CPU, 4033546 Lips)
+% 101 inferences, 0.000 CPU in 0.000 seconds (98% CPU, 4426136 Lips)
+
+len len2 len1
+% 101 inferences, 0.000 CPU in 0.000 seconds (98% CPU, 4765949 Lips)
+% 101 inferences, 0.000 CPU in 0.000 seconds (98% CPU, 4744680 Lips)
+% 101 inferences, 0.000 CPU in 0.000 seconds (99% CPU, 4623272 Lips)
+
+len1 len len2
+% 101 inferences, 0.000 CPU in 0.000 seconds (97% CPU, 4435856 Lips)
+% 101 inferences, 0.000 CPU in 0.000 seconds (98% CPU, 5002724 Lips)
+% 101 inferences, 0.000 CPU in 0.000 seconds (99% CPU, 4916995 Lips)
+
+len1 len2 len
+% 101 inferences, 0.000 CPU in 0.000 seconds (148% CPU, 4618832 Lips)
+% 101 inferences, 0.000 CPU in 0.000 seconds (98% CPU, 7331059 Lips)
+% 101 inferences, 0.000 CPU in 0.000 seconds (99% CPU, 5113147 Lips)
+
+len2 len len1
+% 101 inferences, 0.000 CPU in 0.000 seconds (98% CPU, 4708625 Lips)
+% 101 inferences, 0.000 CPU in 0.000 seconds (178% CPU, 4411829 Lips)
+% 101 inferences, 0.000 CPU in 0.000 seconds (100% CPU, 492044 Lips)
+
+len2 len1 len
+% 101 inferences, 0.000 CPU in 0.000 seconds (97% CPU, 7177374 Lips)
+% 101 inferences, 0.000 CPU in 0.000 seconds (68% CPU, 6824324 Lips)
+% 101 inferences, 0.000 CPU in 0.000 seconds (98% CPU, 5085599 Lips)
+

@@ -1,0 +1,33 @@
+-- run with unify_with_occurs_check
+
+len len1 len2
+% 10,002 inferences, 0.001 CPU in 0.001 seconds (100% CPU, 8884949 Lips)
+% 20,001 inferences, 0.004 CPU in 0.004 seconds (100% CPU, 4707465 Lips)
+% 20,001 inferences, 0.002 CPU in 0.002 seconds (100% CPU, 8622961 Lips)
+
+len len2 len1
+% 10,001 inferences, 0.001 CPU in 0.001 seconds (99% CPU, 16431852 Lips)
+% 20,001 inferences, 0.003 CPU in 0.003 seconds (100% CPU, 7562184 Lips)
+% 20,001 inferences, 0.001 CPU in 0.001 seconds (100% CPU, 14521279 Lips)
+
+len1 len len2
+% 20,001 inferences, 0.002 CPU in 0.002 seconds (100% CPU, 13065350 Lips)
+% 10,001 inferences, 0.001 CPU in 0.001 seconds (100% CPU, 13859114 Lips)
+% 20,001 inferences, 0.005 CPU in 0.005 seconds (100% CPU, 4011378 Lips)
+
+len1 len2 len
+% 20,001 inferences, 0.002 CPU in 0.002 seconds (100% CPU, 12117441 Lips)
+% 20,001 inferences, 0.003 CPU in 0.003 seconds (101% CPU, 5837634 Lips)
+% 10,001 inferences, 0.001 CPU in 0.001 seconds (100% CPU, 10741094 Lips)
+
+len2 len len1
+% 20,001 inferences, 0.002 CPU in 0.002 seconds (100% CPU, 12232107 Lips)
+% 10,001 inferences, 0.001 CPU in 0.001 seconds (100% CPU, 12818442 Lips)
+% 20,001 inferences, 0.001 CPU in 0.001 seconds (100% CPU, 14483560 Lips)
+
+len2 len1 len
+% 20,001 inferences, 0.005 CPU in 0.005 seconds (100% CPU, 4078258 Lips)
+% 20,001 inferences, 0.001 CPU in 0.001 seconds (100% CPU, 14525487 Lips)
+% 10,001 inferences, 0.001 CPU in 0.001 seconds (101% CPU, 11134318 Lips)
+true.
+
