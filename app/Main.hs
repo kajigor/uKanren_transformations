@@ -14,6 +14,7 @@ import qualified Program.Sort
 import           Program.Stlc           (evalo)
 import qualified Program.Typing
 import qualified Program.L
+import qualified Program.LLangType
 import qualified Program.Unify
 import           Syntax
 import qualified Transformer.JustUnfold
@@ -109,11 +110,13 @@ runL = do
     -- runNc (-1) "llang" Program.L.query
     runNc (-1) "llang1" Program.L.query1
 
+runL' = do
+    runNc (-1) "llangPeter" Program.LLangType.query1
 
 main :: IO ()
 main = do
-    -- runL
-    Transformer.PrologToMk.transform "test/out/nc/llang1/ecce.pl"
+    -- runL'
+    Transformer.PrologToMk.transform "test/out/nc/llangPeter/ecce.pl"
     -- runTyping
     -- runSort
 

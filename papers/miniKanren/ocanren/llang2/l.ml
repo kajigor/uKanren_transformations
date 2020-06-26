@@ -10,14 +10,14 @@ type ldb = Iconst_ of int
          | If_ of ldb * ldb * ldb
          | Let_ of ldb * ldb
 
-type type_ = Int | Bool
+type type_ = Integer | Boolean
 
 let type_eq x y =
   match (x, y) with
-  | (Int, Int) -> true
-  | (Bool, Bool) -> true
-  | (Int, Bool) -> false
-  | (Bool, Int) -> false
+  | (Integer, Integer) -> true
+  | (Boolean, Boolean) -> true
+  | (Integer, Boolean) -> false
+  | (Boolean, Integer) -> false
 
 let rec nth_opt xs n =
   match xs with
@@ -29,8 +29,8 @@ let rec nth_opt xs n =
 
 let rec typecheck_ gamma term =
   match term with
-  | Iconst_ _ -> Some Int
-  | Bconst_ _ -> Some Bool
+  | Iconst_ _ -> Some Integer
+  | Bconst_ _ -> Some Boolean
   | Var_ v -> nth_opt gamma v
   | Plus_ (x, y) -> (
       match typecheck_ gamma x with
@@ -39,8 +39,8 @@ let rec typecheck_ gamma term =
         match typecheck_ gamma y with
         | None -> None
         | Some y' ->
-          if type_eq x' Int && type_eq y' Int
-          then Some Int
+          if type_eq x' Integer && type_eq y' Integer
+          then Some Integer
           else None
       )
   | Mult_ (x, y) -> (
@@ -50,8 +50,8 @@ let rec typecheck_ gamma term =
         match typecheck_ gamma y with
         | None -> None
         | Some y' ->
-          if type_eq x' Int && type_eq y' Int
-          then Some Int
+          if type_eq x' Integer && type_eq y' Integer
+          then Some Integer
           else None
       )
   | Equal_ (x, y) -> (
@@ -62,7 +62,7 @@ let rec typecheck_ gamma term =
         | None -> None
         | Some y' ->
           if type_eq x' y'
-          then Some Bool
+          then Some Boolean
           else None
       )
   | Less_ (x, y) -> (
@@ -72,15 +72,15 @@ let rec typecheck_ gamma term =
         match typecheck_ gamma y with
         | None -> None
         | Some y' ->
-          if type_eq x' Int && type_eq y' Int
-          then Some Bool
+          if type_eq x' Integer && type_eq y' Integer
+          then Some Boolean
           else None
       )
   | If_ (c, t, e) -> (
       match typecheck_ gamma c with
       | None -> None
       | Some c' ->
-        if type_eq c' Bool
+        if type_eq c' Boolean
         then
           match typecheck_ gamma t with
           | None -> None

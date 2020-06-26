@@ -5,6 +5,7 @@ import Program.Num
 import Program.Bool
 import Prelude hiding (succ)
 import Text.Printf
+import Program.Option
 
 -- Tests
 infixr 9 %
@@ -39,19 +40,19 @@ list x = show x
 
 listoDef :: Def
 listoDef =
-    ( Def "listo" ["x"] 
+    ( Def "listo" ["x"]
       (
-        ( x === nil ) ||| 
+        ( x === nil ) |||
         (
-          fresh ["h", "t"] 
+          fresh ["h", "t"]
             (
-              x === h % t &&& 
+              x === h % t &&&
               call "listo" [t]
             )
         )
       )
     )
-  where 
+  where
     [x, h, t] = map V ["x", "h", "t"]
 
 listo :: [Def]
@@ -68,7 +69,7 @@ memberoDef =
                           )
       )
     )
-  where 
+  where
     [x, list, h, t] = map V ["x", "list", "h", "t"]
 
 membero :: [Def]
@@ -76,22 +77,22 @@ membero = [memberoDef]
 
 inBothoDef :: Def
 inBothoDef =
-    ( Def "inBotho" ["x", "ys", "zs"] 
-      ( 
-        call "membero" [x, ys] &&& 
+    ( Def "inBotho" ["x", "ys", "zs"]
+      (
+        call "membero" [x, ys] &&&
         call "membero" [x, zs]
       )
     )
-  where 
+  where
     [x, ys, zs] = map V ["x", "ys", "zs"]
 
-inBotho :: [Def] 
+inBotho :: [Def]
 inBotho = inBothoDef : membero
 
 niloDef :: Def
 niloDef =
-    ( Def "nilo" ["l"] 
-      ( 
+    ( Def "nilo" ["l"]
+      (
         l === nil
       )
     )
@@ -103,29 +104,29 @@ nilo = [niloDef]
 
 singletonoDef :: Def
 singletonoDef =
-    ( Def "singletono" ["l", "x"] 
-      ( 
+    ( Def "singletono" ["l", "x"]
+      (
         l === x % nil
       )
     )
-  where 
+  where
     [l, x] = map V ["l", "x"]
 
-singletono :: [Def] 
+singletono :: [Def]
 singletono = [singletonoDef]
 
 maxLengthoDef :: Def
 maxLengthoDef =
-    ( Def "maxLengtho" ["x", "m", "l"] 
+    ( Def "maxLengtho" ["x", "m", "l"]
       (
-        call "maxo" [x, m] &&& 
+        call "maxo" [x, m] &&&
         call "lengtho" [x, l]
       )
     )
-  where 
+  where
     [x, m, l] = map V ["x", "m", "l"]
 
-maxLengtho :: [Def] 
+maxLengtho :: [Def]
 maxLengtho = maxLengthoDef : maxo ++ lengtho
 
 copyDef :: Def
@@ -136,14 +137,14 @@ copyDef =
           (
             fresh ["h", "t", "t'"]
             (
-              l === h % t &&& 
-              c === h % t' &&& 
+              l === h % t &&&
+              c === h % t' &&&
               call "copy" [t, t']
             )
           )
         )
       )
-  where 
+  where
     [l, c, h, t, t'] = map V ["l", "c", "h", "t", "t'"]
 
 copy :: [Def]
@@ -155,36 +156,36 @@ copy2Def =
         (
           (l === nil &&& c === nil) |||
           (
-            fresh ["h"] 
+            fresh ["h"]
             (
-              l === h % nil &&& 
+              l === h % nil &&&
               c === h % nil)
           ) |||
           (
             fresh ["h1", "h2", "t", "t'"]
             (
-              l === h1 % (h2 % t) &&& 
-              c === h1 % t' &&& 
+              l === h1 % (h2 % t) &&&
+              c === h1 % t' &&&
               call "copy2" [t, t']
             )
           )
         )
-      ) 
-  where 
+      )
+  where
     [l, c, h, h1, h2, t, t'] = map V ["l", "c", "h", "h1", "h2", "t", "t'"]
 
-copycopyDef :: Def 
+copycopyDef :: Def
 copycopyDef =
     ( Def "copycopy" ["l", "l1", "l2"]
       (
-        call "copy" [l, l1] &&& 
+        call "copy" [l, l1] &&&
         call "copy2" [l, l2]
       )
     )
-  where 
+  where
     [l, l1, l2] = map V ["l", "l1", "l2"]
 
-copycopy :: [Def] 
+copycopy :: [Def]
 copycopy = [copycopyDef, copyDef, copy2Def]
 
 lengthoDef :: Def
@@ -194,21 +195,21 @@ lengthoDef =
         (x === nil &&& l === zero) |||
         fresh ["h", "t", "z"]
           (
-            x === h % t &&& 
-            l === succ z &&& 
+            x === h % t &&&
+            l === succ z &&&
             call "lengtho" [t, z]
           )
       )
     )
-  where 
+  where
     [x, l, h, t, z] = map V ["x", "l", "h", "t", "z"]
 
-lengtho :: [Def] 
+lengtho :: [Def]
 lengtho = [lengthoDef]
 
 maxoDef :: Def
 maxoDef =
-    ( Def "maxo" ["x", "m"] (call "maxo1" [x, zero, m])) 
+    ( Def "maxo" ["x", "m"] (call "maxo1" [x, zero, m]))
   where
     [x, m] = map V ["x", "m"]
 
@@ -217,44 +218,44 @@ maxo1Def =
     ( Def "maxo1" ["x", "n", "m" ]
       (
         (x === nil &&& m === n) |||
-        fresh ["h", "t", "z"] 
+        fresh ["h", "t", "z"]
           (
-            x === h % t &&& 
-            call "leo" [h, n, trueo]  &&& 
+            x === h % t &&&
+            call "leo" [h, n, trueo]  &&&
             call "maxo1" [t, n, m]
           ) |||
-        fresh ["h", "t", "z"] 
+        fresh ["h", "t", "z"]
           (
-            x === h % t &&& 
-            call "gto" [h, n, trueo] &&& 
+            x === h % t &&&
+            call "gto" [h, n, trueo] &&&
             call "maxo1" [t, h, m]
           )
       )
-    ) 
-  where 
+    )
+  where
     [x, m, n, h, t, z] = map V ["x", "m", "n", "h", "t", "z"]
 
 maxo1 :: [Def]
 maxo1 = maxo1Def : leo ++ gto
 
-maxo :: [Def] 
+maxo :: [Def]
 maxo = maxoDef : maxo1
 
 appLengthoDef :: Def
-appLengthoDef = 
-    ( Def "appLengtho" [] 
+appLengthoDef =
+    ( Def "appLengtho" []
       (
-        fresh ["xs", "ys", "zs", "m", "n", "s"] 
+        fresh ["xs", "ys", "zs", "m", "n", "s"]
           (
-            call "appendo" [xs, ys, zs] &&& 
-            call "lengtho" [xs, m] &&& 
-            call "lengtho" [ys, n] &&& 
-            call "lengtho" [zs, s] &&& 
+            call "appendo" [xs, ys, zs] &&&
+            call "lengtho" [xs, m] &&&
+            call "lengtho" [ys, n] &&&
+            call "lengtho" [zs, s] &&&
             call "addo" [m, n, s]
-          ) 
+          )
       )
     )
-  where 
+  where
     [xs, ys, zs, m, n, s] = map V ["xs", "ys", "zs", "m", "n", "s"]
 
 appLengtho :: [Def]
@@ -267,13 +268,13 @@ appendoDef =
         (x === nil &&& xy === y) |||
         fresh ["h", "t", "ty"]
           (
-            x === h % t &&& 
-            xy === h % ty &&& 
+            x === h % t &&&
+            xy === h % ty &&&
             call "appendo" [t, y, ty]
           )
       )
     )
-  where 
+  where
     [x, y, xy, h, t, ty] = map V ["x", "y", "xy", "h", "t", "ty"]
 
 appendo :: [Def]
@@ -286,16 +287,16 @@ appendo'Def =
         (x === nil ||| xy === y) |||
         fresh ["h", "t", "ty"]
           (
-            x === h % t ||| 
-            xy === h % ty ||| 
+            x === h % t |||
+            xy === h % ty |||
             call "appendo'" [t, y, ty]
           )
       )
-    ) 
-  where 
+    )
+  where
     [x, y, xy, h, t, ty] = map V ["x", "y", "xy", "h", "t", "ty"]
 
-appendo' :: [Def] 
+appendo' :: [Def]
 appendo' = [appendo'Def]
 
 reversoDef :: Def
@@ -306,32 +307,32 @@ reversoDef =
         fresh ["h", "t", "rt"]
           (
             x === h % t &&&
-            call "reverso" [t, rt] &&& 
+            call "reverso" [t, rt] &&&
             call "appendo" [rt, h % nil, y]
           )
       )
     )
-  where 
+  where
     [x, y, h, t, rt] = map V ["x", "y", "h", "t", "rt"]
 
 reverso :: [Def]
-reverso = reversoDef : appendo 
+reverso = reversoDef : appendo
 
-doubleReversoDef :: Def 
-doubleReversoDef = 
+doubleReversoDef :: Def
+doubleReversoDef =
     ( Def "doubleReverso" ["xs"]
       (
-        fresh ["sx"] 
+        fresh ["sx"]
         (
           call "reverso" [xs, sx] &&& call "reverso" [sx, xs]
         )
       )
-    )  
-  where 
+    )
+  where
     [xs, sx] = map V ["xs", "sx"]
 
-doubleReverso :: [Def] 
-doubleReverso = doubleReversoDef : reverso 
+doubleReverso :: [Def]
+doubleReverso = doubleReversoDef : reverso
 
 revAccoDef :: Def
 revAccoDef =
@@ -344,22 +345,22 @@ revAccoDef =
             call "revacco" [t, h % acc, sx]
         )
       )
-    ) 
-  where 
+    )
+  where
     [xs, acc, sx, h, t] = map V ["xs", "acc", "sx", "h", "t"]
 
-revAcco :: [Def] 
+revAcco :: [Def]
 revAcco = [revAccoDef]
 
-assocoDef :: Def 
-assocoDef = 
-    ( Def "assoco" ["x", "xs", "v"] 
+assocoDef :: Def
+assocoDef =
+    ( Def "assoco" ["x", "xs", "v"]
       (
         fresh ["a", "b", "tl"]
           (
-            xs === (C "pair" [a, b]) % tl &&& 
+            xs === (C "pair" [a, b]) % tl &&&
             (
-              a === x &&& b === v ||| 
+              a === x &&& b === v |||
               call "assoco" [x, tl, v] -- &&& a =/= x
             )
           )
@@ -369,6 +370,26 @@ assocoDef =
 
 assoco :: [Def]
 assoco = [assocoDef]
+
+nthOptDef :: Def
+nthOptDef =
+    ( Def "nthOpt" ["xs", "n", "r"]
+      (
+        fresh ["h", "t", "x"]
+        (
+          xs === nil &&& r === none |||
+          xs === h % t &&&
+            (n === zero &&& r === some h |||
+             n === succ x &&& call "nthOpt" [t, n, r]
+            )
+        )
+      )
+    )
+  where
+    [xs, n, r, h, t, x] = map V ["xs", "n", "r", "h", "t", "x"]
+
+nthOpt :: [Def]
+nthOpt = [nthOptDef]
 
   -- let rec assoco x xs v =
   --   Fresh.three (fun a b tl ->
