@@ -58,9 +58,12 @@ papers/miniKanren/ocanren/bottles/bottles
 
 papers/miniKanren/ocanren/*/run
 
+
 papers/miniKanren/prolog/len/len
 
 papers/miniKanren/prolog/len/bench.pl
 
 .*.swo 
 .*.swp
+
+mk

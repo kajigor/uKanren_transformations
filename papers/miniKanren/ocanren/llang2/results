@@ -1,0 +1,18 @@
+Generate 100 formulas which typecheck to int 
+
+Latencies for 10 iterations of "original", "trans", "ecce", "peter", "eccePeter", "transPeter":
+  original:  0.57 WALL ( 0.57 usr +  0.00 sys =  0.57 CPU) @ 17.67/s (n=10)
+            (warning: too few iterations for a reliable count)
+     trans:  1.54 WALL ( 1.52 usr +  0.02 sys =  1.54 CPU) @  6.48/s (n=10)
+      ecce: 25.43 WALL (25.23 usr +  0.20 sys = 25.43 CPU) @  0.39/s (n=10)
+     peter:  4.64 WALL ( 4.62 usr +  0.01 sys =  4.64 CPU) @  2.16/s (n=10)
+ eccePeter: 15.18 WALL (15.13 usr +  0.05 sys = 15.18 CPU) @  0.66/s (n=10)
+transPeter:  4.48 WALL ( 4.48 usr +  0.00 sys =  4.48 CPU) @  2.23/s (n=10)
+              Rate      ecce eccePeter      peter transPeter     trans  original
+      ecce 0.393/s        --      -40%       -82%       -82%      -94%      -98%
+ eccePeter 0.659/s       68%        --       -69%       -70%      -90%      -96%
+     peter  2.16/s      448%      227%         --        -3%      -67%      -88%
+transPeter  2.23/s      467%      238%         3%         --      -66%      -87%
+     trans  6.48/s     1548%      884%       201%       191%        --      -63%
+  original  17.7/s     4393%     2582%       719%       692%      173%        --
+

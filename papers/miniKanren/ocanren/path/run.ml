@@ -61,4 +61,4 @@ let inputs = [ "spec    ", Spec.topLevel
              ]
 
 let _ =
-  do_tables 3 (fun rel -> run q (fun q -> fresh (a1 a2 a3 a4 a5 a6 a7) (q === (ocanren ([a1;a2;a3;a4;a5])) &&& rel q graph))) inputs
+  do_tables 3 (fun rel -> run q (fun q -> fresh (a1 a2 a3 a4 a5 a6 a7) (q === (ocanren ([a1;a2;a3;a4;a5;a6;a7])) &&& rel q graph))) inputs

@@ -22,4 +22,4 @@ let topLevel x0 x1 =
   and _elemo y16 y17 =
     fresh (q1 q2 q3) (y17 === Nat.zero &&& (y16 === ( % ) !!true q1) ||| (y17 === Nat.succ q2 &&& (y16 === ( % ) q3 q1) &&& _elemo q1 q2))
   in
-  evalo x0 x1
+  evalo x1 x0

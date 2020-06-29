@@ -1,3 +1,5 @@
+module L = List
+
 open OCanren
 open OCanren.Std
 open GT
@@ -39,7 +41,21 @@ let t3, t3' =
   f x x (g z t),
   f (g p l) y y
 
+let inputs =
+  [ " original", (fun q t t' -> Original.check_uni q t t' !!true)
+  ; " branches", Branches.topLevel
+  ; "     spec", Spec.topLevel
+  ; "    trans", Trans.topLevel
+  ; "trans-unf", Trans_unf.topLevel
+  ; "      cpd", Cpd.topLevel
+  ]
 
+let _ =
+  do_tables 10000L 1 (fun unifier -> run q (fun q -> unifier q t1 t1')) inputs ;
+  do_tables 100L 3 (fun unifier -> run q (fun q -> unifier q t2 t2')) (L.tl inputs) ;
+  do_tables 10L 3 (fun unifier -> run q (fun q -> unifier q t3 t3')) (L.tl @@ L.tl inputs)
+
+(*
 let _ =
   (* run_formula 5 "original" @@
   run qrs (fun q r s -> Original.check_uni q r s !!true) *)
@@ -179,4 +195,4 @@ let _ =
   ;
 (*
   run_time 1 "branches3: 1 formula, not 3" @@
-  run q (fun q -> Branches.topLevel q t3 t3') *)
+  run q (fun q -> Branches.topLevel q t3 t3') *) *)
