@@ -1,0 +1,51 @@
+\documentclass[runningheads]{llncs}
+
+\input{packages.tex}
+\input{defs.tex}
+
+\sloppy
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following line
+% to display URLs in blue roman font according to Springer's eBook style:
+% \renewcommand\UrlFont{\color{blue}\rmfamily}
+
+\graphicspath{{figures/}}
+
+\begin{document}
+
+\title{An Empirical Study of Partial Deduction for \mk{}}
+
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Ekaterina Verbitskaia\inst{1}\orcidID{0000-1111-2222-3333} \and
+Daniil Berezun\inst{1}\orcidID{1111-2222-3333-4444} \and
+Dmitry Boulytchev\inst{1,2}\orcidID{2222--3333-4444-5555}}
+
+\authorrunning{E. Verbitskaia, et al.}
+
+\institute{JetBrains Research, Saint-Petersburg 197374, Russia \and
+\email{\{ekaterina.verbitskaya,daniil.berezun,db\}@jetbrains.com}\\
+\url{https://research.jetbrains.org/} \and
+Saint Petersburg State University, \emph{!!!!}, Saint Petersurg, Russia\\
+\email{dboulytchev@math.spbu.ru}}
+
+\maketitle
+
+\input{abstract}
+
+
+\input{intro.tex}
+\input{related.tex}
+\input{nonconj.tex}
+\input{evaluation.tex}
+\input{conclusion.tex}
+
+\bibliographystyle{splncs04.bst}
+\bibliography{bibl.bib}
+
+\end{document}

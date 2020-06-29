@@ -1,0 +1,1 @@
+rm -f comment.cut *.pdf *.aux *.out *.log *synctex* *.fdb_latexmk *.fls
