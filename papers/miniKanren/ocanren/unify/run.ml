@@ -48,7 +48,33 @@ let inputs =
   ; "    trans", Trans.topLevel
   ; "trans-unf", Trans_unf.topLevel
   ; "      cpd", Cpd.topLevel
+  ; "     ecce", Ecce.topLevel
   ]
+
+let _ =
+  run_subst 1 "trans1" @@
+  run q (fun q -> Trans.topLevel q t1 t1')
+  ;
+
+  run_subst 3 "trans2" @@
+  run q (fun q -> Trans.topLevel q t2 t2')
+  ;
+
+  run_subst 3 "trans3" @@
+  run q (fun q -> Trans.topLevel q t3 t3')
+
+let _ =
+  run_subst 1 "ecce" @@
+  run q (fun q -> Ecce.topLevel q t1 t1')
+  ;
+
+  run_subst 3 "ecce2" @@
+  run q (fun q -> Ecce.topLevel q t2 t2')
+  ;
+
+  run_subst 3 "ecce3" @@
+  run q (fun q -> Ecce.topLevel q t3 t3')
+
 
 let _ =
   do_tables 10000L 1 (fun unifier -> run q (fun q -> unifier q t1 t1')) inputs ;

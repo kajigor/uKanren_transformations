@@ -67,3 +67,5 @@ papers/miniKanren/prolog/len/bench.pl
 .*.swp
 
 mk
+
+papers/aplas/main.log

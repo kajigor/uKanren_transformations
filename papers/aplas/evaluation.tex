@@ -178,16 +178,20 @@ The row marked ``Original'' contains the running time of the original \mk{} rela
 
 \begin{table}
   \centering
-  \begin{tabular}{c||c||c}
-                   & unify   & isPath \\
+  \begin{tabular}{c||c|c|c||c}
+                   & \multicolumn{3}{c}{unify} & isPath \\
+  \hline
+                   & first  & second & third   &        \\
   \hline\hline
-  Original         & >30.00s & 21.548s \\
+  Original         & $0.247*10^{-4}s$ & $>30s$ (oum?) & $>30s$ (oum?) & $23.743s$ \\
   \hline
-  CPD              & 0.352s  & 3.133s \\
+  CPD              & $0.081*10^{-4}s$ & $0.017s$ & $0.343s$  & $2.999s$  \\
   \hline
-  Non-CPD          & 1.947s  & 1.958s \\
+  Non-CPD          & $0.084*10^{-4}s$ & $0.021s$ & $2.198s$  & $1.786s$  \\
   \hline
-  Branching        & >30.00s & N/A \\
+  Ecce             & $0.128*10^{-4}s$ & $0.026s$ & $1.340s$  & $1.292s$ \\
+  \hline
+  Branching        & $0.205*10^{-4}s$ & $0.101s$ & $>30s$ (oum?) & N/A \\
   \hline
   \end{tabular}
 

@@ -1,13 +1,12 @@
-Searching a path of length 7 in the graph  
-
-Latencies for 10 iterations of "spec    ", "trans   ", "length  ", "cpd     ", "original":
-spec    :  7.49 WALL ( 7.42 usr +  0.04 sys =  7.46 CPU) @  1.34/s (n=10)
-trans   : 19.58 WALL (19.52 usr +  0.05 sys = 19.57 CPU) @  0.51/s (n=10)
-cpd     : 31.33 WALL (31.26 usr +  0.06 sys = 31.33 CPU) @  0.32/s (n=10)
-original: 215.48 WALL (215.24 usr +  0.23 sys = 215.47 CPU) @  0.05/s (n=10)
-          s/iter   original   cpd        trans      spec       
-original    21.5         --       -85%       -91%       -97%  
-cpd         3.13       588%         --       -38%       -76% 
-trans       1.96      1001%        60%         --       -62% 
-spec       0.746      2787%       320%       162%         --
-
+Latencies for 10 iterations of "    spec", "   trans", "     cpd", "original", "    ecce":
+    spec:  6.70 WALL ( 6.69 usr +  0.02 sys =  6.70 CPU) @  1.49/s (n=10)
+   trans: 17.86 WALL (17.79 usr +  0.07 sys = 17.86 CPU) @  0.56/s (n=10)
+     cpd: 29.99 WALL (29.88 usr +  0.10 sys = 29.98 CPU) @  0.33/s (n=10)
+original: 237.43 WALL (237.14 usr +  0.28 sys = 237.43 CPU) @  0.04/s (n=10)
+    ecce: 12.92 WALL (12.92 usr +  0.00 sys = 12.92 CPU) @  0.77/s (n=10)
+          s/iter   original       cpd      trans       ecce      spec    
+original    23.7         --      -87%       -92%       -95%      -97%     
+     cpd    3.00       692%        --       -40%       -57%      -78%    
+   trans    1.79      1229%       68%         --       -28%      -62%   
+    ecce    1.29      1737%      132%        38%         --      -48%  
+    spec   0.670      3442%      347%       166%        93%        -- 

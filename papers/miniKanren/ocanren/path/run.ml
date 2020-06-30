@@ -53,11 +53,12 @@ let _ =
   run_graph 3 "cpd" @@
   run q (fun q -> Cpd.topLevel (ocanren ([0;1;2])) q) *)
 
-let inputs = [ "spec    ", Spec.topLevel
-             ; "trans   ", Trans.topLevel
-             ; "length  ", Len.topLevel
-             ; "cpd     ", Cpd.topLevel
+let inputs = [ "    spec", Spec.topLevel
+             ; "   trans", Trans.topLevel
+             ; "  length", Len.topLevel
+             ; "     cpd", Cpd.topLevel
              ; "original", (fun q graph -> Original.isPath q graph !!true)
+             ; "    ecce", Ecce.topLevel
              ]
 
 let _ =
