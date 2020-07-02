@@ -1,0 +1,20 @@
+Latencies for 10 iterations of "original", "trans", "ecce", "peter", "eccePeter", "transPeter", "cpdPeterDeterm", "cpdDeterm":
+      original:  0.68 WALL ( 0.67 usr +  0.00 sys =  0.68 CPU) @ 14.78/s (n=10)
+                (warning: too few iterations for a reliable count)
+         trans:  1.82 WALL ( 1.79 usr +  0.02 sys =  1.82 CPU) @  5.51/s (n=10)
+          ecce: 26.01 WALL (25.87 usr +  0.14 sys = 26.01 CPU) @  0.38/s (n=10)
+         peter:  5.34 WALL ( 5.34 usr +  0.01 sys =  5.34 CPU) @  1.87/s (n=10)
+     eccePeter: 15.72 WALL (15.65 usr +  0.06 sys = 15.72 CPU) @  0.64/s (n=10)
+    transPeter:  4.67 WALL ( 4.67 usr +  0.00 sys =  4.67 CPU) @  2.14/s (n=10)
+cpdPeterDeterm: 43.78 WALL (43.44 usr +  0.34 sys = 43.78 CPU) @  0.23/s (n=10)
+     cpdDeterm: 35.43 WALL (35.17 usr +  0.25 sys = 35.42 CPU) @  0.28/s (n=10)
+                  Rate cpdPeterDeterm cpdDeterm  ecce eccePeter peter transPeter trans original
+cpdPeterDeterm 0.228/s             --      -19%  -41%      -64%  -88%       -89%  -96%     -98%
+     cpdDeterm 0.282/s            24%        --  -27%      -56%  -85%       -87%  -95%     -98%
+          ecce 0.384/s            68%       36%    --      -40%  -79%       -82%  -93%     -97%
+     eccePeter 0.636/s           179%      125%   65%        --  -66%       -70%  -88%     -96%
+         peter  1.87/s           719%      563%  387%      194%    --       -13%  -66%     -87%
+    transPeter  2.14/s           838%      659%  457%      237%   14%         --  -61%     -86%
+         trans  5.51/s          2311%     1851% 1332%      765%  194%       157%    --     -63%
+      original  14.8/s          6372%     5137% 3745%     2224%  690%       590%  168%       --
+

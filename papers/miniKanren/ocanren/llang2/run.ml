@@ -78,6 +78,10 @@ module Time = struct
                ; ("peter", L_ocanren.topLevel)
                ; ("eccePeter", EccePeter.topLevel)
                ; ("transPeter", LlangPeter.topLevel)
+               (* ; ("cpdPeterBranch", CpdPeterBranch.topLevel) *)
+               ; ("cpdPeterDeterm", CpdPeterDeterm.topLevel)
+               (* ; ("cpdBranch", CpdBranch.topLevel) *)
+               ; ("cpdDeterm", CpdDeterm.topLevel)
                ]
 
   let _ =
