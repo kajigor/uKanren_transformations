@@ -21,6 +21,8 @@ import           Util.Miscellaneous
 -- trace :: String -> a -> a
 -- trace _ x = x
 
+data Heuristic = Deterministic | Branching
+
 data Descend a = Descend { getCurr :: a, getAncs :: [a] } deriving (Eq)
 
 instance (Show a) => Show (Descend a) where
@@ -60,17 +62,17 @@ instance E.Subst [Descend (G S)] where
   substitute s =
     map $ \(Descend g ancs) -> Descend (E.substitute s g) ancs
 
-sldResolution :: [G S] -> E.Gamma -> E.Sigma -> [[G S]] -> SldTree
-sldResolution goal gamma subst seen  =
+sldResolution :: [G S] -> E.Gamma -> E.Sigma -> [[G S]] -> Heuristic -> SldTree
+sldResolution goal gamma subst seen heuristic =
   -- sldResolutionStep (map (\x -> Descend x Set.empty) goal) gamma subst Set.empty True
   -- trace "\n\nSLDRESOLUTION \n\n" $
-  sldResolutionStep (map (\x -> Descend x []) goal) gamma subst seen True
+  sldResolutionStep (map (\x -> Descend x []) goal) gamma subst seen True heuristic
 
 showList :: Show a => [a] -> String
 showList = unlines . map show
 
-sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> [[G S]] -> Bool -> SldTree
-sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
+sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> [[G S]] -> Bool -> Heuristic -> SldTree
+sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime heuristic =
   let curs = map getCurr gs in
   let prettySeen = showList seen  in
   -- if variantCheck curs seen
@@ -114,14 +116,14 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
             [] ->
               Fail
             -- ns | length ns == 1 || isFirstTime -> -- unfold only if it's deterministic or hasn't been unfolded before
-            ns | getMaximumBranches env' g > length ns || isFirstTime ->
+            ns | needsUnfolding heuristic env' g ns isFirstTime -> -- getMaximumBranches env' g > length ns || isFirstTime ->
               Or (map step ns) (Just g) s
               where
                 step (xs, s') =
                   if null xs && null rs && null ls
                   then Success s'
                   else let newDescends = addDescends xs s' in
-                       Conj (sldResolutionStep newDescends env' s' (map getCurr gs : seen) (isFirstTime && length ns == 1)) newDescends s'
+                       Conj (sldResolutionStep newDescends env' s' (map getCurr gs : seen) (isFirstTime && length ns == 1) heuristic) newDescends s'
                        -- Conj (sldResolutionStep newDescends env' s' (Set.insert (map getCurr gs) seen) False newDescends s'
             ns | not $ null rs ->
               maybe (Leaf gs s env)
@@ -132,6 +134,9 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime =
                     (selectNext rs)
             ns ->
               Leaf gs s env
+
+        needsUnfolding Branching env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
+        needsUnfolding Deterministic _ _ ns isFirstTime = length ns == 1 || isFirstTime
 
 bodies :: SldTree -> [[G S]]
 bodies = leaves
@@ -149,12 +154,12 @@ resultants (Conj ch _ _)   = resultants ch
 resultants (Leaf ds s env) = [(s, map getCurr ds, Just env)]
 resultants Fail            = []
 
-topLevel :: Program -> SldTree
-topLevel (Program defs goal) =
+topLevel :: Program -> Heuristic -> SldTree
+topLevel (Program defs goal) heuristic =
   -- let (goal', _, defs) = justTakeOutLets (goal, []) in
   let gamma = E.updateDefsInGamma E.env0 defs in
   let (logicGoal, gamma', names) = E.preEval gamma goal in
-  sldResolutionStep [Descend logicGoal []] gamma' E.s0 [] True
+  sldResolutionStep [Descend logicGoal []] gamma' E.s0 [] True heuristic
 
 mcs :: (Eq a, Show a) => [G a] -> [[G a]]
 mcs []     = []

@@ -21,7 +21,7 @@ instance {- OCanren v => -} OCanren (Term X) where
   ocanren (C nil _) | map toLower nil == "nil"  = "(Std.List.nil ())"
   -- ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "(%s %% %s)" (ocanren h) (ocanren t)
   -- ocanren (C "%"    [h,t]) = printf "(%s %% %s)" (ocanren h) (ocanren t)
-  ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "(Std.(%%) %s %s)" (ocanren h) (ocanren t)
+  ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "(Std.(%%) (%s) (%s))" (ocanren h) (ocanren t)
   ocanren (C "%" [h, t]) = printf "(Std.(%%) (%s) (%s))" (ocanren h) (ocanren t)
   ocanren (C "O" []) = "Std.Nat.zero"
   ocanren (C "S" [x]) = printf "(Std.Nat.succ (%s))" (ocanren x)
@@ -62,6 +62,8 @@ instance {-OCanren v =>-} OCanren (G X) where
   ocanren (g1 :\/: g2)  = printf "(%s ||| %s)" (ocanren g1) (ocanren g2)
   ocanren (Fresh x g )  = let (names, goal) = freshVars [x] g in printf "(fresh (%s) (%s))" (printArgs names) (ocanren goal)
 --ocanren (Invoke f ts) = printf "(print_string \"%s\\n\";%s)" (f ++ concat [' ' : ocanren t | t <- ts]) (f ++ concat [' ' : ocanren t | t <- ts])
+  ocanren (Invoke "success" []) = "success"
+  ocanren (Invoke "fail" []) = "fail"
   ocanren (Invoke f ts) = printf "(%s %s)" f (printArgs $ map ocanren ts)
   ocanren (Let (Def n as b) g) = printf "let rec %s %s = %s in %s" n (printArgs as) (ocanren b) (ocanren g)
 

@@ -85,9 +85,8 @@ conjToList (g :/\: h)     = conjToList g ++ conjToList h
 conjToList x@(Invoke _ _) = [x]
 conjToList _              = error "This conjunction is not a list of calls"
 
-
-topLevel :: Program -> (GlobalTree, G S, [S])
-topLevel (Program defs goal) =
+topLevel :: Program -> LC.Heuristic -> (GlobalTree, G S, [S])
+topLevel (Program defs goal) heuristic =
   -- let (goal', defs) = takeOutLets goal in
   let gamma = E.updateDefsInGamma E.env0 defs in
   let (logicGoal, gamma', names) = E.preEval gamma goal in
@@ -102,7 +101,7 @@ topLevel (Program defs goal) =
         -- let newNodes = (delete goal nodes) in
         let newNodes = filter (not . Embed.isVariant goal) nodes in
 
-        let sldTree = LC.sldResolution goal gamma subst newNodes in
+        let sldTree = LC.sldResolution goal gamma subst newNodes heuristic in
         let (substs, bodies) = partition (null . snd3) $ LC.resultants sldTree in
 
         if null bodies

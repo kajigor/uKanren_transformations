@@ -1,22 +1,24 @@
 module Main where
 
+import           CPD.LocalControl       (Heuristic (..))
 import           NonConjunctive.Unfold
 import qualified Program.Bottles
 import qualified Program.Bridge
 import qualified Program.Bridge2
 import qualified Program.Desert
+import qualified Program.L
 import           Program.List           (appendo, maxLengtho, nil, revAcco,
                                          reverso, (%))
+import qualified Program.LLangType
 import           Program.Path
 import           Program.Programs       (doubleAppendo, rep)
 import qualified Program.Prop
 import qualified Program.Sort
 import           Program.Stlc           (evalo)
 import qualified Program.Typing
-import qualified Program.L
-import qualified Program.LLangType
 import qualified Program.Unify
 import           Syntax
+import qualified Transformer.CPD
 import qualified Transformer.JustUnfold
 import qualified Transformer.NonConj
 import qualified Transformer.PrologToMk
@@ -108,15 +110,32 @@ runTyping = do
 
 runL = do
     -- runNc (-1) "llang" Program.L.query
-    runNc (-1) "llang1" Program.L.query1
+    -- runNc (-1) "llang1" Program.L.query1
+    Transformer.CPD.transform "llangBranch" Program.L.query1 Nothing Branching
+    putStrLn "llangBranch done"
+    Transformer.CPD.transform "llangDeterm" Program.L.query1 Nothing Deterministic
+    putStrLn "llangDeterm done"
+
 
 runL' = do
-    runNc (-1) "llangPeter" Program.LLangType.query1
+    -- runNc (-1) "llangPeter" Program.LLangType.query1
+    Transformer.CPD.transform "llangPeterBranch" Program.LLangType.query1 Nothing Branching
+    putStrLn "llangPeterBranch done"
+    Transformer.CPD.transform "llangPeterDeterm" Program.LLangType.query1 Nothing Deterministic
+    putStrLn "llangPeterDeterm done"
+
+runDoubleApp = do
+    runNc (-1) "da" dA
+
 
 main :: IO ()
 main = do
+    -- runDoubleApp
+    -- runL
     -- runL'
-    Transformer.PrologToMk.transform "test/out/nc/llangPeter/ecce.pl"
+    -- runPath
+    -- runL'
+    Transformer.PrologToMk.transform "test/out/nc/da/ideal.pl"
     -- runTyping
     -- runSort
 
