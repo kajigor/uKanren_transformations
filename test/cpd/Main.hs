@@ -143,7 +143,7 @@ printStuff = do
     test filename goal = do
       let path = "test/out/" ++ filename
       createDirectoryIfMissing True path
-      printTree (printf "%s/local.dot" path) $ topLevel goal
+      printTree (printf "%s/local.dot" path) $ topLevel goal Deterministic
 
 doOcanrenize = do
   ocanren "unify" Program.Unify.query $ Just Program.Unify.env
@@ -247,7 +247,7 @@ doOcanrenize = do
   -}
     where
       ocanren filename goal env = do
-        let (tree, logicGoal, names) = GC.topLevel goal
+        let (tree, logicGoal, names) = GC.topLevel goal Deterministic
         traceM ("\n\n NAMES \n\n" ++ show (vident <$> reverse names) )
         let path = printf "test/out/%s" filename
         exists <- doesDirectoryExist path
@@ -386,7 +386,7 @@ printGlobalStuff = do
       --   intercalate "\n\n" $ map show lst
 
       test fileName goal = do
-        let tree =  GC.topLevel goal
+        let tree =  GC.topLevel goal Deterministic
         writeFile (printf "%s.log" fileName) $ showConj $ globalTreeRetrieve $ fst3 tree
         printTree (printf "%s.dot" fileName) $ fst3 tree
 

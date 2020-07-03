@@ -135,7 +135,7 @@ main = do
     -- runL'
     -- runPath
     -- runL'
-    Transformer.PrologToMk.transform "test/out/nc/da/ideal.pl"
+    Transformer.PrologToMk.transform  "test/out/nc/maxlen/ecce.pl"
     -- runTyping
     -- runSort
 

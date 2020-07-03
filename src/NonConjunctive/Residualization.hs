@@ -36,15 +36,12 @@ generateDefs tree =
   let toplevel = fromJust $ nodeContent tree in
   let leaves = collectLeaves tree in
   let gens = collectGens tree in
-  trace (printf "\nGen\n%s\n" (show' gens)) $
   let distinct = nub $ map snd leaves in
   let simplified = restrictSubsts $ simplify $ renameAmbigousVars $ tree in
   let nodes = (toplevel, simplified) : (map (\(_,x) -> findNode x tree) gens) ++ map (flip findNode tree) distinct in
   let definitions = foldl (\defs gs -> fst3 (CpdR.renameGoals gs defs) ) [] $ map fst nodes in
-  -- trace (printf "\nDefs:\n%s\n" (showDefinitions definitions)) $
   let defWithTree = zip (reverse definitions) (map snd nodes) in
   let invocations = map (generateInvocation definitions) leaves in
-  trace (printf "\n\nInvocations\n%s\n" (show' invocations) ) $
   let defs = map (generateDef definitions invocations) defWithTree in
   -- let defs = map (generateDef invocations) defWithTree in
   let (_, newGoal) = generateInvocation definitions (toplevel, toplevel) in
@@ -61,7 +58,6 @@ generateInvocation defs (gs, v) =
     let name = n in
     let args = generateArgs as in
     let res = call name args in
-    -- trace (printf "\nGenerating Invocations\nGs:\n%s\nV:\n%s\nRes:\n%s\n" (show gs) (show v) (show res)) $
     (gs, call name args)
   where
     generateArgs xs =
@@ -77,7 +73,6 @@ generateInvocation' defs gs v =
     let name = n in
     let args = generateArgs as in
     let res = call name args in
-    -- trace (printf "\nGenerating Invocations\nGs:\n%s\nV:\n%s\nRes:\n%s\n" (show gs) (show v) (show res)) $
     (call name args)
   where
     generateArgs xs =
@@ -91,7 +86,6 @@ generateInvocation' defs gs v =
 
 findNode :: [G S] -> NCTree -> ([G S], NCTree)
 findNode v tree =
-    trace (printf "\nSearching for\n%s\n" (show v)) $
     let nodes = go tree in
     case find nontrivial nodes of
       Just n -> (v, restrictSubsts $ simplify $ renameAmbigousVars n)
@@ -109,13 +103,11 @@ findNode v tree =
 
 nontrivial :: NCTree -> Bool
 nontrivial (Leaf _ _ _ _) = False
--- nontrivial (Gen _ _ _ _ _) = False
 nontrivial _              = True
 
 nodeContent (Or _ (LC.Descend goal _) _) = Just goal
 nodeContent (Conj _ goal _)              = Just goal
 nodeContent (Split _ goal _)             = Just goal
--- nodeContent (Gen _ goal _ _ _)           = Just goal
 nodeContent x                            = Nothing -- error "Failed to get node content: unsupported node type"
 
 generateDef :: CpdR.Definitions -> [([G S], G S)] -> (([G S], Name, [S]), NCTree) -> Def
@@ -136,7 +128,6 @@ generateGoalFromTree definitions invocations tree args =
   where
     residualizeState :: E.Sigma -> Maybe (G S)
     residualizeState xs =
-      -- trace (printf "\nResidualizing State\n%s" (show' xs)) $
       (conj $ map (\(s, ts) -> (V s) === ts) $ reverse xs) <|> return success
 
     go :: [S] -> Bool -> NCTree -> Maybe (G S)
