@@ -16,6 +16,17 @@ We used the following programs to test the specializers on.
 The last two relations are described in~\cite{lozov2019relational} thus we will only briefly describe them in this paper.
 
 We focused on these particular examples because they are examples of relational interpreters which are natural and observable.
+In this study we only measured the execution time for sample queries.
+The measured time was averaged over multiple runs for every query.
+The queries were run on a laptop running Ubuntu 18.04 with quad core Intel Core i5 2.30GHz CPU and 8 GB of RAM.
+
+\todo{intro sentence.}
+Row Original contains the execution time of the original version of the program before any transformations.
+Row Ecce corresponds to the result of the transformation with Ecce conjunctive partial deduction system.
+Row Non-CPD --- translation by our implementation of nonconjunctive partial deduction.
+Etalon --- the etalon implementation of the same program.
+CPD --- the earlier implementation of the conjunctive partial deduction for \mk{}.
+Brancing --- the earlier implemenctation of CPD for \mk{} with the branching heuristic.
 
 \subsection{Concatenation of Three Lists}
 
