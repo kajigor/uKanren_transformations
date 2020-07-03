@@ -17,7 +17,7 @@ The last two relations are described in~\cite{lozov2019relational} thus we will 
 
 We focused on these particular examples because they are examples of relational interpreters which are natural and observable.
 
-\subsection{Concatenation of Three lists}
+\subsection{Concatenation of Three Lists}
 
 The relation \lstinline{doubleAppend$^o$} concatenates three lists by a conjunction of two calls of the \lstinline{append$^o$} relation (see fig.~\ref{doubleApp}).
 These two calls share a variable --- an intermediate list \lstinline{ts} --- which should be treated with care during specialization.
@@ -85,6 +85,89 @@ However the execution time in the backward direction differs: the program genera
   \label{tbl:doubleApp}
 \end{table}
 
+\subsection{Maximum Element and Length of a List}
+
+The relation \lstinline{maxLenght$^o$} computes both the length of the list and its maximum element (see fig.~\ref{cpd:maxandlength}) by concatenation of two relation calls.
+This relation traverses the list \lstinline{xs} twice: first to compute the maximum and then to compute the length of the list.
+It can be transformed in such a way that the list is only traversed once while computing both components of the result simultaneously.
+This transformation is called \emph{tupling} and can be achieved with conjunctive partial deduction.
+
+\begin{figure*}[!h]
+  \centering
+  \begin{minipage}{0.8\textwidth}
+\begin{lstlisting}[label={cpd:maxandlength}, caption={Maximum element and length of the list}, captionpos=b, frame=tb]
+  let maxLength$^o$ xs m l = max$^o$ xs m /\ length$^o$ xs l
+  let rec length$^o$ xs l = conde [
+    (xs === [] /\ l === zero);
+    (fresh (h t m) (
+      xs === h % t /\ l === succ m /\ length$^o$ t m))]
+  let max$^o$ xs m = max$_1^o$ xs zero m
+  let rec max$_1^o$ xs n m = conde [
+    (xs === [] /\ m === n);
+    (fresh (h t) (
+      (xs === h % t) /\
+      (conde [
+        (le$^o$ h n ^true /\ max$_1^o$ t n m);
+        (gt$^o$ h n ^true /\ max$_1^o$ t h m)])))]
+  let rec le$^o$ x y b = conde [
+    (x === zero /\ b === ^true);
+    (fresh (x$_1$) (
+      x === succ x$_1$ /\ y === zero /\ b === ^false));
+    (fresh (x$_1$ y$_1$) (
+      x === succ x$_1$ /\ y === succ y$_1$ /\ le$^o$ x$_1$ y$_1$ b))]
+  let rec gt$^o$ x y b = conde [
+    (x === zero /\ b === ^false);
+    (fresh (x$_1$) (
+      x === succ x$_1$ /\ y === zero /\ b === ^false));
+    (fresh (x$_1$ y$_1$) (
+      x === succ x$_1$ /\ y === succ y$_1$ /\ gt$^o$ x$_1$ y$_1$ b))]
+  \end{lstlisting}
+\end{minipage}
+\end{figure*}
+
+The etalon implementation is shown in fig.~\ref{etalon:maxandlength}.
+It uses a recursive relation to compute the length and maximum element simultaneously while traversing the list once.
+
+\begin{figure*}[!h]
+  \centering
+  \begin{minipage}{0.8\textwidth}
+\begin{lstlisting}[label={etalon:maxandlength}, caption={Etalon implementation of maxlengtho}, captionpos=b, frame=tb]
+  let maxLength$^o$ xs m l = maxLength$_1^o$ xs m zero l
+  let rec maxLength$_1^o$ xs m n l = conde [
+    (xs === [] /\ m === n /\ l === zero);
+    (fresh (h t l$_1$)
+       (xs === h % t) /\
+       (l === succ l$_1$) /\
+       (conde [
+         (le$^o$ h n ^true /\ maxLength$_1^o$ t m n l);
+         (gt$^o$ h n ^true /\ maxLength$_1^o$ t m h l)]))]
+  \end{lstlisting}
+\end{minipage}
+\end{figure*}
+
+We measured the execution time of \lstinline{maxLength$^o$ lst m l}, where \lstinline{lst} is a list of Peano numbers from $1$ to $100$.
+Note, that the second disjunct in the implementation of both \lstinline{le$^o$} and \lstinline{gt$^o$} can never contribute into the result of \lstinline{maxLength$^o$} execution.
+Thus among others we compared two etalon implentations: one includes these disjuncts, while the other removes them (see table~\ref{tbl:maxlen})
+
+
+\begin{table}
+  \centering
+  \begin{tabular}{c||c}
+                   & [1..100] \\ \hline\hline
+  Original         & 2.286ms  \\ \hline
+  Etalon           & 4.623ms  \\ \hline
+  Etalon removed   & 3.133ms  \\ \hline
+  Ecce             & 1.701ms  \\ \hline
+  Non-CPD          & 2.578ms
+  \end{tabular}
+
+  \caption{Execution time of maxlengtho}
+  \label{tbl:maxlen}
+\end{table}
+
+Surprising enough, the execution time of the etalon program is worse than of the original.
+Ecce succeeds at improving the program performance, while non-conjunctive partial deduction worsens it a little.
+\todo{why}
 
 \subsection{Evaluator of Logic Formulas}
 

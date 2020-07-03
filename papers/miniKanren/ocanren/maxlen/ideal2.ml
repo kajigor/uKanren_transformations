@@ -11,9 +11,9 @@ let topLevel x0 x1 x2 =
     ||| (fresh (h t k) ((x === Std.( % ) h t) &&& (gto h n !!true) &&& (ml t h m k) &&& (l === Std.Nat.succ k)))
   and leo x y b =
     x === Std.Nat.zero &&& (b === !!true)
-     ||| ( (* fresh (zz) (x === Std.Nat.succ zz &&& (y === Std.Nat.zero &&& (b === !!false)))
-        ||| *) fresh (y' x') (x === Std.Nat.succ x' &&& (y === Std.Nat.succ y' &&& leo x' y' b)) )
+     ||| ( fresh (zz) (x === Std.Nat.succ zz &&& (y === Std.Nat.zero &&& (b === !!false)))
+        ||| fresh (y' x') (x === Std.Nat.succ x' &&& (y === Std.Nat.succ y' &&& leo x' y' b)) )
   and gto x y b =
     fresh (zz) (x === Std.Nat.succ zz &&& (y === Std.Nat.zero &&& (b === !!true)))
-    ||| ((* x === Std.Nat.zero &&& (b === !!false) ||| *) fresh (y' x') (x === Std.Nat.succ x' &&& (y === Std.Nat.succ y' &&& gto x' y' b)))
+    ||| ( x === Std.Nat.zero &&& (b === !!false) ||| fresh (y' x') (x === Std.Nat.succ x' &&& (y === Std.Nat.succ y' &&& gto x' y' b)))
   in maxLengtho x0 x1 x2
