@@ -30,7 +30,7 @@ This double traversal negatively impacts the execution time.
 
 \begin{figure*}[!h]
   \centering
-  \begin{minipage}{0.8\textwidth}
+  \begin{minipage}{0.6\textwidth}
     \begin{lstlisting}[label={doubleApp}, caption={Concatenation of three lists}, captionpos=b, frame=tb]
   let doubleAppend$^o$ xs ys zs res =
     fresh (ts) (
@@ -51,7 +51,7 @@ This etalon implementation is generated with the conjunctive partial deduction.
 
 \begin{figure*}[!h]
   \centering
-  \begin{minipage}{0.8\textwidth}
+  \begin{minipage}{0.6\textwidth}
     \begin{lstlisting}[label={doubleApp:etalon}, caption={Etalon implementation of concatenation of three lists}, captionpos=b, frame=tb]
   let doubleAppend$^o$ xs ys zs res = conde [
     (xs === [] /\ append$^o$ ys zs res);
@@ -94,7 +94,7 @@ This transformation is called \emph{tupling} and can be achieved with conjunctiv
 
 \begin{figure*}[!h]
   \centering
-  \begin{minipage}{0.8\textwidth}
+  \begin{minipage}{0.85\textwidth}
 \begin{lstlisting}[label={cpd:maxandlength}, caption={Maximum element and length of the list}, captionpos=b, frame=tb]
   let maxLength$^o$ xs m l = max$^o$ xs m /\ length$^o$ xs l
   let rec length$^o$ xs l = conde [
@@ -111,16 +111,12 @@ This transformation is called \emph{tupling} and can be achieved with conjunctiv
         (gt$^o$ h n ^true /\ max$_1^o$ t h m)])))]
   let rec le$^o$ x y b = conde [
     (x === zero /\ b === ^true);
-    (fresh (x$_1$) (
-      x === succ x$_1$ /\ y === zero /\ b === ^false));
-    (fresh (x$_1$ y$_1$) (
-      x === succ x$_1$ /\ y === succ y$_1$ /\ le$^o$ x$_1$ y$_1$ b))]
+    (fresh (x$_1$) (x === succ x$_1$ /\ y === zero /\ b === ^false));
+    (fresh (x$_1$ y$_1$) (x === succ x$_1$ /\ y === succ y$_1$ /\ le$^o$ x$_1$ y$_1$ b))]
   let rec gt$^o$ x y b = conde [
     (x === zero /\ b === ^false);
-    (fresh (x$_1$) (
-      x === succ x$_1$ /\ y === zero /\ b === ^false));
-    (fresh (x$_1$ y$_1$) (
-      x === succ x$_1$ /\ y === succ y$_1$ /\ gt$^o$ x$_1$ y$_1$ b))]
+    (fresh (x$_1$) (x === succ x$_1$ /\ y === zero /\ b === ^false));
+    (fresh (x$_1$ y$_1$) (x === succ x$_1$ /\ y === succ y$_1$ /\ gt$^o$ x$_1$ y$_1$ b))]
   \end{lstlisting}
 \end{minipage}
 \end{figure*}
@@ -130,7 +126,7 @@ It uses a recursive relation to compute the length and maximum element simultane
 
 \begin{figure*}[!h]
   \centering
-  \begin{minipage}{0.8\textwidth}
+  \begin{minipage}{0.7\textwidth}
 \begin{lstlisting}[label={etalon:maxandlength}, caption={Etalon implementation of maxlengtho}, captionpos=b, frame=tb]
   let maxLength$^o$ xs m l = maxLength$_1^o$ xs m zero l
   let rec maxLength$_1^o$ xs m n l = conde [
@@ -192,7 +188,7 @@ The relations \lstinline{and$^o$}, \lstinline{or$^o$}, and \lstinline{not$^o$} e
 
 \begin{figure*}[!h]
   \centering
-  \begin{minipage}{0.8\textwidth}
+  \begin{minipage}{0.95\textwidth}
     \begin{lstlisting}[label={eval:last}, caption={Evaluator of formulas with boolean operation last}, captionpos=b, frame=tb]
   let rec eval$^o$ subst fm res = conde [
     fresh (x y z v w) (
@@ -220,7 +216,7 @@ This program is easier for CPD to transform which demonstrates how unequal is th
 
 \begin{figure*}[!h]
   \centering
-  \begin{minipage}{0.85\textwidth}
+  \begin{minipage}{0.95\textwidth}
     \begin{lstlisting}[label={eval:fst}, caption={Evaluator of formulas with boolean operation second}, captionpos=b, frame=tb]
   let rec eval$^o$ subst fm res = conde [
     fresh (x y z v w) (
@@ -258,7 +254,7 @@ Non-conjunctive partial deduction drives the selected call until it derives usef
 
 \begin{figure*}[!h]
   \centering
-  \begin{minipage}{0.7\textwidth}
+  \begin{minipage}{0.85\textwidth}
     \begin{lstlisting}[label={not:nando}, caption={Implementation of boolean operation via \lstinline{nand}}, captionpos=b, frame=tb]
   let not$^o$ x y = nand$^o$ x x y
 
@@ -325,9 +321,9 @@ The row marked ``Original'' contains the running time of the original \mk{} rela
 \begin{table}
   \centering
   \begin{tabular}{c||c|c|c||c}
-                   & \multicolumn{3}{c}{unify} & isPath \\
+                   & \multicolumn{3}{c||}{unify} & isPath \\
   \hline
-                   & first  & second & third   &        \\
+                   & first  & second & third     &        \\
   \hline\hline
   Original         & $0.247*10^{-4}s$ & $>30s$ (oum?) & $>30s$ (oum?) & $23.743s$ \\
   \hline
@@ -347,9 +343,11 @@ The row marked ``Original'' contains the running time of the original \mk{} rela
 
 \subsection{Typechecker-Term Generator}
 
-This relation implements a typechecker for a tiny language. Being executed in the backward direction it serves as a generator of terms of the given type.
+This relation implements a typechecker for a tiny language.
+Being executed in the backward direction it serves as a generator of terms of the given type.
+The abstract syntax of the language is presented below.
+The variables are represented with de Bruijn indices, thus let-binding does not specify which variable is being bound.
 
-Its abstract syntax is the following.
 
 % \begin{align*}
 %   &type \ term = \\
@@ -377,9 +375,15 @@ Its abstract syntax is the following.
   &| \ \underline{if} \ term \ \underline{then} \ term \ \underline{else} \ term
 \end{align*}
 
-We use de Bruijn indices for variables.
 
-Typing rules are the following
+The typing rules are straightforward and are presented below.
+Boolean and integer constants have the corresponding types regardless of the environment.
+Only terms of type integer can be summed up, multiplied or checked for being less or equal.
+Any terms of the same type can be checked for equality.
+If-then-else expression typechecks only if its condition is of type boolean, while both then- and else-branches have the same type.
+An environment $\Gamma$ is an ordered list, in which the $i$-th element is the type of the variable with the $i$-th de Bruijn index.
+To typecheck a let-binding, first, the term being bound is typechecked and is added in the beginning of the environment $\Gamma$, and then the body is typechecked in the context of the new environment.
+Typechecking a variable with the index $i$ boils down to getting a $i$-th element of the list.
 
 \begin{table}
   \setlength{\tabcolsep}{0.5cm}
@@ -405,24 +409,26 @@ Typing rules are the following
   \end{tabular}
 \end{table}
 
-Implementation 1 is a straightforward implementation in a relational programming language.
+We compared two possible implementations of these typing rules.
+The first one is obtained by unnesting of the functional program as described in~\cite{lozov2019relational}.
+The second program is hand-written in \oc{}.
+Each implementation has been transformed with non-conjunctive partial deducer and by Ecce.
 
-Implementation 2 is obtained by translating into \mk{} an implementation of the typing rules \ocaml{}.
-
-We measured the time needed to generate 100 formulas (averaged over 10 iterations).
+We measured the time needed to generate 100 terms of type integer (averaged over 10 iterations).
+Ecce significantly worsens the execution time for both implementations.
+Non-conjunctive partial deduction improves the first implementation a little bit, while worsening the performance of the second implementation 3 times.
 
 \begin{table}
   \centering
   \begin{tabular}{c||c||c}
-              & Implementation 1 & Implementation 2 \\
-  \hline\hline
-  Original    & 0.057s & 0.464s\\
-  \hline
-  Non-CPD     & 0.154s & 0.448s \\
-  \hline
-  Ecce        & 2.543s  & 1.518s \\
+              & Implementation 1 & Implementation 2 \\ \hline\hline
+  Original    & 0.464s           & 0.057s           \\ \hline
+  Non-CPD     & 0.448s           & 0.154s           \\ \hline
+  Ecce        & 1.518s           & 2.543s           \\
   \end{tabular}
 
   \caption{Running time of generating 100 closed terms of type Int}
   \label{tbl:eval}
 \end{table}
+
+\todo{why}
