@@ -1,7 +1,7 @@
 open OCanren
 open GT
 open Helper
-(*
+
 let inputList = ocanren ([1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;
                           1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;
                           1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;
@@ -15,8 +15,8 @@ let inputList = ocanren ([1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;
                         ])
 
 let _ =
-  run_2_nums 2 "nonconj\t" @@
-  run q (fun q -> fresh (x y) ((q === Std.Pair.pair x y) &&& (Maxlen.topLevel inputList x y)))
+  run_2_nums 2 "ecce_right\t" @@
+  run q (fun q -> fresh (x y) ((q === Std.Pair.pair x y) &&& (Ecce_right.topLevel inputList x y)))
 
 let _ =
   run_2_nums 2 "original\t" @@
@@ -25,7 +25,7 @@ let _ =
 let _ =
   run_2_nums 2 "ideal\t" @@
   run q (fun q -> fresh (x y) ((q === Std.Pair.pair x y) &&& (Ideal.topLevel inputList x y)))
-*)
+
 
 let inputLists =
   [ ("1", ocanren ([1; 2; 3; 4; 5; 6; 7; 8; 9; 10]))
@@ -41,17 +41,23 @@ let inputLists =
   ]
 
 let inputs =
-  [ "ecce",    Ecce.topLevel
-  ; "nonconj", Maxlen.topLevel
-  ; "orignal", Original.topLevel
-  ; "ideal_f", Ideal2.topLevel
-  ; "ideal",   Ideal.topLevel
+  [ "    ecce", Ecce.topLevel
+  ; "  ecce_r", Ecce_right.topLevel
+  ; " nonconj", Maxlen.topLevel
+  ; "original", Original.topLevel
+  ; " ideal_f", Ideal2.topLevel
+  ; "   ideal", Ideal.topLevel
   ]
 
 let _ =
-  List.iter (fun (name, maxlen) ->
+  to_csv "res/results.csv" @@
+  List.map (fun (name, maxlen) ->
     Printf.printf "%s\n" name;
-    do_tables 1000L 1 (fun lst -> run q (fun q -> fresh (x y) ((q === Std.Pair.pair x y) &&& (maxlen lst x y)))) inputLists
+    do_tables 1000L
+              1
+              (fun lst -> run q (fun q -> fresh (x y) ((q === Std.Pair.pair x y) &&& (maxlen lst x y))))
+              inputLists
+              (String.trim name)
   ) inputs
 
 

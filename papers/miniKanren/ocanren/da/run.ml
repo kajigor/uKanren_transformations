@@ -51,13 +51,13 @@ let inputs0 =
 let _ =
   Printf.printf "Forward direction\n\n" ;
   List.iter (fun (name, da) ->
-    Printf.printf "%s" name;
+    Printf.printf "%s\n" name;
     do_tables 100L 100 (fun lst -> run q (fun q -> fresh (x y z) ((q === (Std.pair (Std.pair x y) z)) &&& (da x y z lst)))) inputs0
   ) inputs
 
 let _ =
   Printf.printf "Backward direction\n\n";
   List.iter (fun (name, da) ->
-    Printf.printf "%s" name;
+    Printf.printf "%s\n" name;
     do_tables 1000L 1 (fun lst -> run q (fun q -> da lst (ocanren([0])) (ocanren([0])) q)) inputs0
   ) inputs
