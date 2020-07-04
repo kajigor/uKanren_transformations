@@ -373,19 +373,25 @@ The variables are represented with de Bruijn indices, thus let-binding does not 
 %   &| \ If \ of \ term * term * term
 % \end{align*}
 
-\begin{align*}
-  &type \ term = \\
-  &| \ BConst \ of \ Bool \\
-  &| \ IConst \ of \ Int \\
-  &| \ Var \ of \ Int \\
-  &| \ term + term \\
-  &| \ term * term \\
-  &| \ term = term \\
-  &| \ term < term \\
-  &| \ \underline{let} \ term \ \underline{in} \ term \\
-  &| \ \underline{if} \ term \ \underline{then} \ term \ \underline{else} \ term
-\end{align*}
+%% \begin{align*}
+%%   &type \ term = \\
+%%   &| \ BConst \ of \ Bool \\
+%%   &| \ IConst \ of \ Int \\
+%%   &| \ Var \ of \ Int \\
+%%   &| \ term + term \\
+%%   &| \ term * term \\
+%%   &| \ term = term \\
+%%   &| \ term < term \\
+%%   &| \ \underline{let} \ term \ \underline{in} \ term \\
+%%   &| \ \underline{if} \ term \ \underline{then} \ term \ \underline{else} \ term
+%% \end{align*}
 
+\[\begin{array}{lllll}
+  type \ term = &\ BConst \ of \ Bool &| \ IConst \ of \ Int &| \ Var \ of \ Int & \\
+  & | \ term + term &| \ term * term &| \ term = term &| \ term < term \\
+  &| \ \underline{let} \ term \ \underline{in} \ term 
+  &\multicolumn{2}{l}{| \ \underline{if} \ term \ \underline{then} \ term \ \underline{else} \ term} &
+\end{array}\]
 
 The typing rules are straightforward and are presented below.
 Boolean and integer constants have the corresponding types regardless of the environment.
