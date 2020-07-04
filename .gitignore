@@ -69,3 +69,5 @@ papers/miniKanren/prolog/len/bench.pl
 mk
 
 papers/aplas/main.log
+
+papers/aplas/benchmarks/*/run
