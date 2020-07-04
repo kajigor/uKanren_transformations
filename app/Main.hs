@@ -13,6 +13,7 @@ import qualified Program.LLangType
 import           Program.Path
 import           Program.Programs       (doubleAppendo, rep)
 import qualified Program.Prop
+import qualified Program.PropEval
 import qualified Program.Sort
 import           Program.Stlc           (evalo)
 import qualified Program.Typing
@@ -109,39 +110,51 @@ runTyping = do
     runNc (-1) "type" Program.Typing.query
 
 runL = do
-    -- runNc (-1) "llang" Program.L.query
-    -- runNc (-1) "llang1" Program.L.query1
-    Transformer.CPD.transform "llangBranch" Program.L.query1 Nothing Branching
-    putStrLn "llangBranch done"
-    Transformer.CPD.transform "llangDeterm" Program.L.query1 Nothing Deterministic
-    putStrLn "llangDeterm done"
+    runNc (-1) "llang" Program.L.query
+    runNc (-1) "llang1" Program.L.query1
+    -- Transformer.CPD.transform "llangBranch" Program.L.query1 Nothing Branching
+    -- putStrLn "llangBranch done"
+    -- Transformer.CPD.transform "llangDeterm" Program.L.query1 Nothing Deterministic
+    -- putStrLn "llangDeterm done"
 
 
 runL' = do
-    -- runNc (-1) "llangPeter" Program.LLangType.query1
-    Transformer.CPD.transform "llangPeterBranch" Program.LLangType.query1 Nothing Branching
-    putStrLn "llangPeterBranch done"
-    Transformer.CPD.transform "llangPeterDeterm" Program.LLangType.query1 Nothing Deterministic
-    putStrLn "llangPeterDeterm done"
+    runNc (-1) "llangPeter" Program.LLangType.query1
+    -- Transformer.CPD.transform "llangPeterBranch" Program.LLangType.query1 Nothing Branching
+    -- putStrLn "llangPeterBranch done"
+    -- Transformer.CPD.transform "llangPeterDeterm" Program.LLangType.query1 Nothing Deterministic
+    -- putStrLn "llangPeterDeterm done"
 
 runDoubleApp = do
     runNc (-1) "da" dA
 
+runMaxlen = do
+    runNc (-1) "maxlen" maxLen
+
+runPropEval = do
+    runNc (-1) "propFirstPlain" Program.PropEval.plainFirstQuery
+    runNc (-1) "propFirstNando" Program.PropEval.nandoFirstQuery
+    runNc (-1) "propLastPlain"  Program.PropEval.plainLastQuery
+    runNc (-1) "propLastNando"  Program.PropEval.nandoLastQuery
 
 main :: IO ()
 main = do
-    -- runDoubleApp
-    -- runL
     -- runL'
-    -- runPath
-    -- runL'
-    Transformer.PrologToMk.transform  "test/out/nc/maxlen/ecce.pl"
-    -- runTyping
-    -- runSort
 
-    -- runBridge
-    -- runDesert
-    -- runNc (-1) "maxlen" maxLen
---   runAppendo
---   runBottles
+    -- -- runPropEval
+    -- -- runDoubleApp
+    -- -- runMaxlen
+    -- -- runL
+    -- -- runPath
+    -- -- runUnify
 
+    -- Transformer.PrologToMk.transform  "test/out/nc/da/ecce.pl"
+    -- Transformer.PrologToMk.transform  "test/out/nc/maxlen/ecce.pl"
+    -- Transformer.PrologToMk.transform  "test/out/nc/llang1/ecce.pl"
+    Transformer.PrologToMk.transform  "test/out/nc/llangPeter/ecce.pl"
+    -- Transformer.PrologToMk.transform  "test/out/nc/path/ecce.pl"
+    -- Transformer.PrologToMk.transform  "test/out/nc/unify/ecce.pl"
+    -- Transformer.PrologToMk.transform  "test/out/nc/propFirstPlain/ecce.pl"
+    -- Transformer.PrologToMk.transform  "test/out/nc/propLastPlain/ecce.pl"
+    -- Transformer.PrologToMk.transform  "test/out/nc/propFirstNando/ecce.pl"
+    -- Transformer.PrologToMk.transform  "test/out/nc/propLastNando/ecce.pl"
