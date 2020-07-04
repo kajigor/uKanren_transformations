@@ -21,10 +21,13 @@ typeEqDef :: Def
 typeEqDef =
     ( Def "typeEq" ["x", "y", "q86"]
       ( fresh ["q87"]
-        ( ( q87 === pair integer integer &&& q86 === trueo ) |||
-          ( q87 === pair boolean boolean &&& q86 === trueo ) |||
-          ( q87 === pair integer boolean &&& q86 === falso ) |||
-          ( q87 === pair boolean integer &&& q86 === falso )
+        (
+          ( q87 === pair x y ) &&&
+          ( ( q87 === pair integer integer &&& q86 === trueo ) |||
+            ( q87 === pair boolean boolean &&& q86 === trueo ) |||
+            ( q87 === pair integer boolean &&& q86 === falso ) |||
+            ( q87 === pair boolean integer &&& q86 === falso )
+          )
         )
       )
     )
