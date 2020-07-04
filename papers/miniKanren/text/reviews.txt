@@ -1,0 +1,393 @@
+Review #9A
+===========================================================================
+
+Overall merit
+-------------
+4. Accept
+
+Reviewer expertise
+------------------
+2. Some familiarity
+
+Paper summary
+-------------
+This paper presents a new approach for partial deduction in miniKanren, based on a heuristic for selecting relations to unfold, which is intended to improve execution time. Previous partial deduction approaches can improve running time, but give inconsistent results and often depend on whether the program is run forwards or backwards.
+
+Comments for author
+-------------------
+The paper is clear and easy to read, though I am not an expert in supercompilation or previous approaches for partial deduction in miniKanren. My understanding is that the heuristic for unfolding is the most important novel feature of the approach; the selection of the heuristic makes intuitive sense to me, but it would be nice to see some discussion of why this particular heuristic was selected. In fact, a systematic investigation of which features of a relation are most predictive of a particular unfolding leading to a contradiction would be an interesting piece of work in itself.
+
+The evaluation results suggest that the paper's approach is more consistent than previous ones, but not always the best. I agree with the conclusion that more work is needed on this problem.
+
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
+Review #9B
+===========================================================================
+
+Overall merit
+-------------
+3. Weak accept
+
+Reviewer expertise
+------------------
+3. Knowledgeable
+
+Paper summary
+-------------
+The authors study particular program specialization techniques as
+applied to a logic or relational programming language. They both
+survey the domain generally and in particular on supercompilation and
+applications of specialization to logic programming. They introduce
+their conjunctive partial deduction technique, explain their
+heuristics, and analyze the effectiveness of their techniques on four
+problems---two problems they formulate here and two others they
+obtained from existing literature. They conclude noting that the most
+general problem is still open.
+
+Comments for author
+-------------------
+The authors study particular program specialization techniques as
+applied to a logic or relational programming language. They both
+survey the domain generally and in particular on supercompilation and
+applications of specialization to logic programming. They introduce
+their conjunctive partial deduction technique, explain their
+heuristics, and analyze the effectiveness of their techniques on four
+problems---two problems they formulate here and two others they
+obtained from existing literature. They conclude noting that the most
+general problem is still open.
+
+In general, I prefer having the review=true option on when reading a
+draft; having the line numbers helps me pinpoint comments to the
+author. Other reviewers might also find this helpful too.
+
+This discussion is well motivated and I thought gently introduces a
+non-specialist to the area. For work so focused on improving
+performance in particular application areas, I found the performance
+results at the end somewhat underwhelming. I would love to have known
+more of why those particular examples were chosen. Two were existing
+benchmarks in the related literature, but still, that could use some
+explanation.
+
+I have not read 13, but it would be useful to mention here why that
+unification is prototypical or exemplary of the behavior you want to
+capture. Verifying to the reader that it is, in fact, a well-chosen
+example would be a good use of an additional sentence. If these are
+carefully chosen examples benchmarked at carefully chosen points, that
+would be helpful to know and assuage the curious reader.  The actual
+end performance results were a little underwhelming, but the journey
+sufficiently justifies this submission even in it does not right now
+present the general success they hope to achieve.
+
+The first line of pg 4 is I think the first time you introduce us to
+the term "non-conjunctive partial deduction." It appears as the title
+of this section, and also in the label of Figure 1, but this is the
+first time it appears in prose. Even sign-posting forward references,
+either toward the front of this section or sooner, would help.
+
+The typical miniKanren search strategy is itself interleaving over a
+left-to-right depth-first search. Are those sub-portions of the
+evaluation more amenable to the older Prolog techniques? Also, I'm not
+sure it follows necessarily that complete search means re-ordering
+goals is safe, full stop. I know you'll expound after page 1, but we
+can be more precise here with just different words. I presume we mean
+reordering _finitely_ many goals, offline/ahead-of-time yes? One
+imagines perverse online re-orderings that continually, infinitely
+bury certain goals.
+
+You might consider employing the following prose linters.
+
+```
+$ detex foo.tex | diction -s
+$ detex foo.tex | style -n
+```
+
+In the 2nd pgh of S1, when you say "different directions", this is
+what others refer to as "multiple modes", yes? If so, established
+terminology probably preferred. If not, it would help to distinguish
+it here.
+
+"In general, it is possible to create a solver for a recognizer by
+translating it into miniKanren and running it in the appropriate
+direction" This makes me want to ask P/NP questions Should those be
+addressed? Does separation foreclose this possibility?
+
+I have a tough time unambiguously parsing the last sentence of sec1
+pgh 3.  Does "In other cases, unfortunately, conjunctive partial
+deduction does not improve performance and can even make the program
+\emph{less} performant." equally convey what you mean? That helps me
+more. "Performance" is ambiguous enough to mean many things (memory
+usage? network latency?), and I imagine you're limiting the discussion
+to speed/throughput. It would help to write in terms of the specific
+performance metric you're using in these last two sentences.
+
+I'm surprised that in Figure 1, you did not want to use \tt for the
+code-ish portions. Something about that mixture of serif fonts, line
+numbers, and an algorithmic environment feels askew. If \tt isn't the
+correct answer, I think at least something else should be.
+
+Smaller details
+
+pg 2
+
+"In this paper, we show some examples typifying the issues with
+conjunctive partial deduction."? Something about the top sentence on
+pg 2 feels off.
+
+"of a relational programming language miniKanren." feels off.
+
+We compare it to" (instead of 'it', use a specific noun; grammatically
+'it' would refer to 'miniKanren' here, which I don't think you mean.)
+
+Likewise on 2nd sentence of section 2, s/It/Specialisation/ for the
+same reasons.
+
+H'bout change to "The result of driving is a so-called \emph{process
+tree}, where nodes correspond to \emph{configurations} that <present>
+computation state."
+
+I would love something more precise here than "present"; as an
+only-somewhat-sophisticated reader, a more precise verb/phrase here
+would help me situate myself. Also, I think full-stop, and make the
+rest it's own sentence. "For example, in the case of pure functional
+programming languages, the computational state might be a term." Or
+the correct equivalent if I misunderstood.
+
+"are 1) aggressive information propagation about variables' values,
+equalities, and disequalities, and 2) " Note the plural
+possessive. Also this helped me as I read to understand that the
+second source only came in at 2). When I started to read I
+misunderstood you to mean that "equalities and disequalities" was the
+second source.
+
+I think also after "deterministic evaluation steps" period, full
+stop. Then continue in a new sentence, "The latter process, also known
+as deforestation, means <the rest of what you had there>."
+
+It would help also to frame the process not as "when the tree is
+constructed", but as the process by which *something* is removed or
+equated or solved; "residual" means what's left over after some
+clean-up or removal, so framing the rest of the process that way makes
+"residual" and "residuation" clearer to the uninitiated in context.
+
+s/ensure termination in supercompilation./ensure supercompilation
+terminates./ Helps to remove passive voice.
+
+If s/the/a/ (because there could be more than one in a program?)
+whistle s/signalled/signals/ (because as I understand it, we usually
+stay in present tense, yes?)
+
+s/include stopping driving/include 1) stop driving ../ (I removed the
+"either" because it sounds like these are two among many options. If
+instead they are the only two reasonable choices, maybe instead remove
+"include")
+
+It's not the term that makes folding possible, it's generalization,
+yes? How about then "The main instrument to perform such a folding is
+\emph{generalization}. Generalization, abstracting away some computed
+data about the current term, makes folding possible." This way you
+define generalization by apposition, and still get across the nuanced
+relationship between folding and generalization.
+
+Again, and I'm so sorry. How about "most-specific generalization
+(anti-unification) and using \emph{homeomorphic embedding} [6, 9] as a
+whistle being the most common."
+
+"What is worse, they rarely consider the residual" Who or what is
+"they" here? Authors of prior works?
+
+s/even disregarding problems above/even disregarding the problems above/
+
+s/indeed improved/indeed improves/
+
+s/is lack of/is a lack of/
+
+s/for left-to-right/for the left-to-right/
+
+s/similar to SLD-NF/similar to a SLD-NF/
+
+pg 3
+
+"a whistle based on homeomorphic" I'm unclear what that means to
+convey. 'homeomorphic' is an adjective. It could be you wanted "a
+homeomorphic whistle". Perhaps also, though, "a whistle based on a
+homeomorphism".
+
+"only if only one" seems odd. "only if precisely one"?
+
+"for it with the one exception: it is allowed to" I got what you meant
+contextually, but the anaphora obscure your meaning.
+
+s/within conjunction/within a conjunction/
+
+s/unfolded and introduce/unfolded and to introduce/
+
+s/of presented functions/of the functions provided/
+
+s/our case configuration is/our case a configuration is/
+
+Canonical normal form. Is this related to/equivalent of canonical
+logic programs? A term in general usage re: LP
+
+I actually have trouble understanding how fresh variable introduction
+fits into canonical normal form. "We assume all fresh variables to be
+introduced into the scope", I do read that, but I can't tell does that
+just mean to say that all fresh variables have been introduced into
+scope (say by a '(fresh (....) ...)?'). Or is this saying something
+more? If the former, then where to those freshes fit with regard to
+canonical normal form?
+
+s/Other disjuncts take the form of/Each other disjunct takes the form of a/
+
+s/Fig. 1 function/Fig. 1 the function/
+
+pg 4.
+
+You sometimes join, and if the join fails, you in fact fall back to
+splitting. Yes? Is "partially conjunctive partial deduction" then more
+accurate than "non-conjunctive"?
+
+s/do not start driving conjunction/do not start driving a conjunction/
+
+s/We decided not to perform generalization in this approach/In this
+approach, we decided not to generalize/
+
+s/or supercompilation does./or supercompilation./
+
+s/such conjunction/such a conjunction/
+
+I have trouble parsing "Unfolding in functional programming languages
+specialization"; I wonder if the word "specialization" is supposed to
+be there?
+
+s/inlining in imperative one/inlining in imperative ones/
+
+s/specialization of relational/specialization of a relational/
+
+s/functional and imperative,/in functional and imperative languages,/
+
+s/relational programming language/relational programming languages/
+
+s/target program/target program's/
+
+s/propagating the unfolding results/propagating the unfolding's results/
+
+I think rather than "the relation call" "a relation call" here. Small
+difference, but the former sounds as though there is guaranteed to be
+one, perhaps only one, such relation. The latter doesn't imply that
+commitment.
+
+s/The unsafe unfolding/An unsafe unfolding/
+
+This special-casing for deterministic relations reminds me of Mercury.
+
+s/describing heuristic/describing our heuristic/
+
+"fig 2." You had normally been upcasing, as in Fig 1.
+
+I think the Fig 2 pseudocode isn't the best way to present this. Type
+signatures aren't doing a great deal for you here. /Perhaps/ the
+Maybe, but even that doesn't say it as directly as you did in the
+prose below.
+
+The paragraph of text below---if you unfolded it to look like an
+enumerated list with each level of selection preference an item---I
+think would say what that code is saying more clearly, and I don't
+know what you would lose. And keep the sentence saying that it can
+fail.
+
+s/for miniKanren/for miniKanren of [13]/
+
+s/test the specializers on/test the specializers/
+
+I was slightly jarred that we had four programs, and only three
+bullets. Is there a sensible way to tease the first two apart, and
+make each its own bullet.
+
+Had you considered specializing your evalo to Horn clauses?
+
+Re "less than optimal performance". Is that understating the issue?
+Worse than optimal may be fine in a wide variety of contexts.
+
+Here we use "listing 2", the label reads "Listing 2"
+
+s/how unequal is the behaviour of CPD/how unequal the behaviour of CPD is/
+
+s/and thus should be unfolded/and thus not every relation call should be unfolded/
+
+We say "In the implementation of evalo", but we do have two
+implementations. It would help the reader to point out which you mean.
+
+The anaphoric "they" in "on the way they are implemented" should I
+assume refer to the boolean operations, but right now I think it reads
+like a reference to the conjunctions.
+
+s/the different number/different number/, and if you can phrase that
+sentence in active voice it would help me.
+
+s/which is,/which has,/
+
+I would break to a new sentence, "involved. CPD with deterministic
+unfolding may fail to derive useful substitutions."
+
+Listing 4 (again "listing 4" in text) s/of boolean operation/of boolean operations/
+
+s/Besides evaluator of/Besides the evaluator of/
+
+Set off "which searches ... two terms" with commas.
+
+s/paths in the graph./paths in a graph./
+
+At the top of page 6 we said we will not describe those latter two
+relations here. We do describe them, briefly, at the end of section
+4.2. You could at the top of page 6 say "We describe the first two in
+detail, and adumbrate the latter two. The interested reader should
+refer to [13] for details."
+
+s/generated by adding branching/generated by adding the branching/
+
+I was slightly confused here. In section 3.2 we named this the
+"less-branching heuristic" yes? These are two descriptions of the same
+heuristic? If so, a consistent name would help the reader.
+
+s/with the residual program terminated/with the residual program terminating/
+
+s/test executed isPath/test executed the isPath/
+
+s/the graph/a graph/
+
+s/a relational programming language miniKanren/a relational programming language, miniKanren/
+
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
+Review #9C
+===========================================================================
+
+Overall merit
+-------------
+3. Weak accept
+
+Reviewer expertise
+------------------
+2. Some familiarity
+
+Paper summary
+-------------
+This work introduces a new approach for improving the performance in MINIKANREN. The authors introduce an approach, non-CPD, that uses partial deduction which uses a heuristic to select the most suitable relation call to unfold at each step of deriving. The evaluation results show that there is no best approach for all relational programs.
+
+Comments for author
+-------------------
+It is important to improve the performance of MINIKANREN.
+Although the novel approach is not the best for all relational programs,
+it is pretty better for one example and better for another example.
+The possibility of non-CPD looks nice.
+
+The following points might improve the paper.
+- Although I understand that it will be difficult to know which approach might be better for which kinds of programs, such (informal) feeling will be helpful to know the examples used in this paper are not too specific.
+- I understand the evaluation results in Section 4.2 uses the heuristic in Section 3.2. If we remove the heuristic, how is the result?
+
+- small thing:
+Section 3, -4 Line: fig. 2 -> Fig. 2 (For Figure 1, FIg. 1 is used).
