@@ -87,14 +87,14 @@ call = Invoke
 
 disj :: [G a] -> Maybe (G a)
 disj [] = Nothing
-disj xs = Just $ foldl1 (:\/:) xs
+disj xs = Just $ foldr1 (:\/:) xs
 
 conj :: [G a] -> Maybe (G a)
 conj [] = Nothing
-conj xs = Just $ foldl1 (:/\:) xs
+conj xs = Just $ foldr1 (:/\:) xs
 
 unsafeConj :: [G a] -> G a
-unsafeConj = foldl1 (:/\:)
+unsafeConj = foldr1 (:/\:)
 
 successName :: String
 successName = "success"

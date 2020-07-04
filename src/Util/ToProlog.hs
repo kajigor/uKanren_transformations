@@ -280,7 +280,7 @@ ruleToG v ((name, a ), b ) =
   let conjs1 = map (\(v,t) -> V v === t) $ zip v a in
   let conjs2 = map (\(n,a) -> Invoke n a) b in
   let conjs  = conjs1 ++ conjs2 in
-  let g      = if null conjs then success else foldl1 (&&&) conjs in
+  let g      = if null conjs then success else foldr1 (&&&) conjs in
   fresh (fvg g \\ v) g
 
 {-------------------------------------------}
@@ -288,7 +288,7 @@ rulesToDef :: Rules -> Def
 rulesToDef rs@(((n,a),_):_) =
   let v     = map (('z':) . show) [1..length a] in
   let disjs = map (ruleToG v) rs in
-  Def n v $ foldl1 (|||) disjs
+  Def n v $ foldr1 (|||) disjs
 
 {-------------------------------------------}
 prologToG :: String -> (G X, [String], [Def])

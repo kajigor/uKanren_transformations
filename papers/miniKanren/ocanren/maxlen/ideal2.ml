@@ -7,8 +7,8 @@ let topLevel x0 x1 x2 =
   let rec maxLengtho x m l = ml x Std.Nat.zero m l
   and ml x n m l =
     ((x === Std.List.nil ()) &&& (m === n) &&& (l === Std.Nat.zero))
-    ||| (fresh (h t k) ((x === Std.( % ) h t) &&& (leo h n !!true) &&& (ml t n m k) &&& (l === Std.Nat.succ k)))
-    ||| (fresh (h t k) ((x === Std.( % ) h t) &&& (gto h n !!true) &&& (ml t h m k) &&& (l === Std.Nat.succ k)))
+    ||| (fresh (h t k) ((x === Std.( % ) h t) &&& ((l === Std.Nat.succ k) &&& ((leo h n !!true) &&& (ml t n m k)))))
+    ||| (fresh (h t k) ((x === Std.( % ) h t) &&& ((l === Std.Nat.succ k) &&& ((gto h n !!true) &&& (ml t h m k)))))
   and leo x y b =
     x === Std.Nat.zero &&& (b === !!true)
      ||| ( fresh (zz) (x === Std.Nat.succ zz &&& (y === Std.Nat.zero &&& (b === !!false)))
