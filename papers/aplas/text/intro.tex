@@ -1,26 +1,26 @@
 \section{Introduction}
 
-The core feature of the family of relational programming languages \mk{}\footnote{\mk{} language web site: \url{http://minikanren.org}} is their ability to run a program in different directions.
+The core feature of the family of relational programming languages \mk\footnote{\mk language web site: \url{http://minikanren.org}} is their ability to run a program in different directions.
 Having specified a relation for adding two numbers, one can also compute the subtraction of two numbers or find all pairs of numbers which can be summed up to get the given one.
 Program synthesis can be done by running \emph{backwards} a relational interpreter for some language.
-In general, it is possible to create a solver for a recognizer by translating it into \mk{} and running in the appropriate direction~\cite{lozov2019relational}.
+In general, it is possible to create a solver for a recognizer by translating it into \mk and running in the appropriate direction~\cite{lozov2019relational}.
 
-The search employed in \mk{} is complete which means that every answer will be found, although it may take a long time.
-The promise of \mk{} falls short when speaking of performance.
-The running time of a program in \mk{} is highly unpredictable and varies greatly for different directions.
+The search employed in \mk is complete which means that every answer will be found, although it may take a long time.
+The promise of \mk falls short when speaking of performance.
+The running time of a program in \mk is highly unpredictable and varies greatly for different directions.
 What is even worse, it depends on the order of the relation calls within a program.
 One order can be good for one direction, but slow down the computation drastically in the other direction.
 
 Specialization or partial evaluation~\cite{jonesbook} is a technique aimed at improving the performance of a program given some information about it beforehand.
 It may either be a known value of some argument, its structure (i.e. the length of an input list) or, in case of a relational program, --- the direction in which it is intended to be run.
-An earlier paper~\cite{lozov2019relational} showed that \emph{conjunctive partial deduction}~\cite{de1999conjunctive} can sometimes improve the performance of \mk{} programs.
+An earlier paper~\cite{lozov2019relational} showed that \emph{conjunctive partial deduction}~\cite{de1999conjunctive} can sometimes improve the performance of \mk programs.
 Unfortunately, it may also not affect the running time of a program or even make it slower.
 
-Control issues in partial deduction of logic programming language \pro{} have been studied before~\cite{leuschel2002logic}.
-The ideas described there are aimed at left-to-right evaluation strategy of \pro{}.
-Since the search in \mk{} is complete, it is safe to reorder some relation calls within the goal for better performance.
+Control issues in partial deduction of logic programming language \pro have been studied before~\cite{leuschel2002logic}.
+The ideas described there are aimed at left-to-right evaluation strategy of \pro.
+Since the search in \mk is complete, it is safe to reorder some relation calls within the goal for better performance.
 While sometimes conjunctive partial deduction gives great performance boost, sometimes it does not behave as well as it could have.
 
 In this paper, we show on examples some issues which conjunctive partial deduction faces.
-We also describe a novel approach to partial deduction of a relational programming language \mk{}.
-We compare it to the existing specialization algorithms on several programs and discuss why some \mk{} programs run slower after specialization.
+We also describe a novel approach to partial deduction of a relational programming language \mk.
+We compare it to the existing specialization algorithms on several programs and discuss why some \mk programs run slower after specialization.

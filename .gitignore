@@ -71,3 +71,5 @@ mk
 papers/aplas/main.log
 
 papers/aplas/benchmarks/*/run
+
+papers/aplas/text/main.log

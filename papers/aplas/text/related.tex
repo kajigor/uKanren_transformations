@@ -29,7 +29,7 @@ Moreover, it may be hard to predict the real speedup of any given program on con
 The worst-case for partial evaluation is when all static variables are used in a dynamic context, and there is some advice on how to implement a partial evaluator as well as a target program so that specialization indeed improved its performance~\cite{jonesbook,bulyonkov84}.
 There is lack of research in determining the classes of programs which transformers would definitely speed up.
 
-Conjunctive partial deduction~\cite{de1999conjunctive} makes an effort to provide reasonable control for left-to-right evaluation strategy of \pro{}.
+Conjunctive partial deduction~\cite{de1999conjunctive} makes an effort to provide reasonable control for left-to-right evaluation strategy of \pro.
 CPD constructs a tree which models goal evaluation and is similar to SLD-NF tree, then a residual program is generated from this tree.
 Partial deduction itself resembles driving in supercompilation~\cite{gluck1994partial}.
 The specialization is done in two levels of control: the local control determines the shape of the residual programs, while the global control ensures that every relation which can be called in the residual program is indeed defined.
@@ -40,13 +40,13 @@ At the local level, CPD examines a conjunction of atoms by considering each atom
 An atom is \emph{unfolded} if it is deemed safe, i.e. a whistle based on homeomorphic does not signal for the atom.
 When an atom is unfolded, a clause whose head can be unified with the atom is found, and a new node is added into the tree where the atom in the conjunction is replaced with the body of that clause.
 If there is more than one suitable head, then several branches are added into the tree which corresponds to the disjunction in the residualized program.
-An adaptation of CPD for the \mk{} programming language is described in~\cite{lozov2019relational}.
+An adaptation of CPD for the \mk programming language is described in~\cite{lozov2019relational}.
 
-The most well-behaved strategy of local control in CPD for \pro{} is \emph{deterministic unfolding}~\cite{leuschel1997advanced}.
+The most well-behaved strategy of local control in CPD for \pro is \emph{deterministic unfolding}~\cite{leuschel1997advanced}.
 An atom is unfolded only if only one suitable clause head exists for it with the one exception: it is allowed to unfold an atom non-deterministically once for one local control tree.
 This means that if a non-deterministic atom is the leftmost within conjunction, it is most likely to be unfolded and introduce many new relation calls within the conjunction.
-We believe this is the core problem with CPD which limits its power when applied to \mk{}.
-The strategy of unfolding atoms from left to right is reasonable in the context of \pro{} because it mimics the way programs in \pro{} execute.
+We believe this is the core problem with CPD which limits its power when applied to \mk.
+The strategy of unfolding atoms from left to right is reasonable in the context of \pro because it mimics the way programs in \pro execute.
 But it often leads to larger global control trees and, as a result, bigger, less efficient programs.
-The evaluation result of a \mk{} program does not depend on the order of atoms (relation calls) within a conjunction, thus we believe a better result can be achieved by selecting a relation call which can restrict the number of branches in the tree.
+The evaluation result of a \mk program does not depend on the order of atoms (relation calls) within a conjunction, thus we believe a better result can be achieved by selecting a relation call which can restrict the number of branches in the tree.
 We describe our approach which implements this idea in the next section.

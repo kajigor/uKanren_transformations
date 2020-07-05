@@ -4,7 +4,7 @@
 
 In this section, we describe a novel approach to relational programs specialization.
 This approach draws inspiration from both conjunctive partial deduction and supercompilation.
-The aim was to create a specialization algorithm which is simpler than conjunctive partial deduction and uses properties of \mk{} to improve the performance of the input programs.
+The aim was to create a specialization algorithm which is simpler than conjunctive partial deduction and uses properties of \mk to improve the performance of the input programs.
 
 The algorithm pseudocode is shown in Fig.~\ref{fig:ncpd-pseudo}.
 For the sake of brevity and clarity, we provide functions \code{drive\_disj} and \code{drive\_conj} which describe how to process disjunctions and conjunctions respectively.
@@ -20,7 +20,7 @@ Hereafter, we consider all goals and relation bodies to be in \emph{canonical no
 Moreover, we assume all fresh variables to be introduced into the scope and all unifications to be computed at each step.
 Those disjuncts in which unifications fail are removed.
 Other disjuncts take the form of possibly empty conjunction of relation calls accompanied with a substitution computed from unifications.
-Any \mk{} term can be trivially transformed into the described form.
+Any \mk term can be trivially transformed into the described form.
 In Fig.~\ref{fig:ncpd-pseudo} function \code{normalize} is assumed to perform term normalization.
 The code is omitted for brevity.
 
@@ -44,7 +44,7 @@ When the heuristic selects a call to unfold (line 15), a process tree is constru
 The leaves of the computed tree are examined.
 If all leaves are either computed substitutions or are instances of some relations accompanied with non-empty substitutions, then the leaves are collected and each of them replaces the considered call in the root conjunction (lines 19--20).
 If the selected call does not suit the criteria, the results of its unfolding are not propagated onto other relation calls within the conjunction, instead, the next suitable call is selected (line 22).
-According to the denotational semantics of \mk{} it is safe to compute individual conjuncts in any order, thus it is ok to drive any call and then propagate its results onto the other calls.
+According to the denotational semantics of \mk it is safe to compute individual conjuncts in any order, thus it is ok to drive any call and then propagate its results onto the other calls.
 
 % Each time we examine a conjunction of calls, we \emph{split} them into separate nodes which are driven independently from each other.
 % Among the relation calls we select one which is according to the heuristic is likely to narrow down the answer set \db{(line 15)}.
