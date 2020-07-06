@@ -1,6 +1,6 @@
 set datafile separator ','
 
-set terminal pdf size 3.5, 3.8
+set terminal pdf size 3.5, 3.5
 set output 'max.pdf'
 
 set style data histogram  
@@ -12,7 +12,6 @@ set xrange [-0.5:1.75]
 set yrange [0:55]
 
 set ylabel 'Time (ms)' # label for the Y axis
-set xlabel 'maxLength' # label for the X axis
 
 set key left top
 
