@@ -6,16 +6,17 @@ Unifications are combined into \emph{conjunctions} and \emph{disjunctions} which
 Relations can call other relations and be recursive.
 A program in \mk consists of a set of relations.
 To run a \mk program, one specifies a \emph{goal}: a \mk expression with some free variables.
-\mk searches for the values of the free variables which satisfy the given goal.
+\mk searches for the values of the free variables which satisfy given goal.
 
-The core feature of relational programming is the ability to run a program in different directions by executing goals with different free variables.
+The core feature of relational programming is the ability to run a program in various directions by executing goals with free variables.
+The distribution of free variable occurrences determines the direction of relational search.
 Having specified a relation for adding two numbers, one can also compute the subtraction of two numbers or find all pairs of numbers which can be summed up to get the given one.
 Program synthesis can be done by running \emph{backwards} a relational interpreter for some language.
 In general, it is possible to create a solver for a recognizer by translating it into \mk and running in the appropriate direction~\cite{lozov2019relational}.
 
 The search employed in \mk is complete which means that every answer will be found, although it may take a long time.
 The promise of \mk falls short when speaking of performance.
-The execution time of a program in \mk is highly unpredictable and varies greatly for different directions.
+The execution time of a program in \mk is highly unpredictable and varies greatly for various directions.
 What is even worse, it depends on the order of the relation calls within a program.
 One order can be good for one direction, but slow down the computation drastically in the other direction.
 
