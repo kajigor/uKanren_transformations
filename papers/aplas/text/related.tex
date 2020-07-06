@@ -37,7 +37,7 @@ The leaves of local control trees become nodes of the global control tree.
 CPD analyses these nodes at the global level and runs local control for all those which are new.
 
 At the local level, CPD examines a conjunction of atoms by considering each atom one-by-one from left to right.
-An atom is \emph{unfolded} if it is deemed safe, i.e. a whistle based on homeomorphic does not signal for the atom.
+An atom is \emph{unfolded} if it is deemed safe, i.e. a whistle based on homeomorphic embedding does not signal for the atom.
 When an atom is unfolded, a clause whose head can be unified with the atom is found, and a new node is added into the tree where the atom in the conjunction is replaced with the body of that clause.
 If there is more than one suitable head, then several branches are added into the tree which corresponds to the disjunction in the residualized program.
 An adaptation of CPD for the \mk programming language is described in~\cite{lozov2019relational}.

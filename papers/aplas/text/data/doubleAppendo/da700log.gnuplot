@@ -12,6 +12,7 @@ set format y "10^%L"
 set size ratio 0.8
 
 set xrange [0.5:2.75]
+set yrange [0.01:]
 
 set ylabel 'Time (ms)' # label for the Y axis
 set xlabel 'Direction' # label for the X axis
