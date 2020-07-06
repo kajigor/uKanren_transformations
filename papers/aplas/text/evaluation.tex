@@ -25,7 +25,7 @@ This sharing leads to the list being traversed twice during execution.
 This example is used to demonstrate \emph{tupling}: the transformation in which multiple traversals of the same data structure are replaced with a single traversal which
 computes all the necessary results simultaneously. CPD performes tupling more often than our approach, and we explore how it affects the performance of the specialized program.
 
-The \lstinline{isPath} and \lstinline{unify} relations demonstrate the relational interpretation approach in which a relation is generated from a functional program.
+The \lstinline{isPath$^o$} and \lstinline{unify$^o$} relations demonstrate the relational interpretation approach in which a relation is generated from a functional program.
 Partial deduction is capable of improving the execution time of the generated relations in the given direction.
 These two relations are described in~\cite{lozov2019relational}, thus we will only briefly describe them in this paper.
 Here the aim is to study if our approach can help to achieve comparable performance improvement as \ecce.
@@ -211,7 +211,7 @@ ConsPD removes disjuncts which never succeed, but does not perform tupling, thus
 \subsection{Evaluator of Logic Formulas}
 
 The relation \lstinline{eval$^o$} describes an evaluation of a propositional formula under given variable assignments.
-The relation has thee arguments. The first argument is a list of boolean values which plays a role of variable assignments.
+The relation has three arguments. The first argument is a list of boolean values which plays a role of variable assignments.
 The $i$-th value of the substitution is the value of the $i$-th variable.
 The second argument is a formula with the following abstract syntax.
 A formula is either a \emph{variable} represented with a Peano number, a \emph{negation} of a formula, a \emph{conjunction} of two formulas or a \emph{disjunction} of two formulas.
@@ -221,9 +221,9 @@ We specialize the \lstinline{eval$^o$} relation to synthesize formulas which eva
 To do so, we run the specializer for the goal with the last argument fixed to \lstinline{^true}, while the first two arguments remain free variables.
 Depending on the way the \lstinline{eval$^o$} is implemented, different specializers generate significantly different residual programs.
 
-\subsubsection{The Order of Relation Calls}
+\subsubsection{The Order of Relation Calls.}
 
-One possible implementation of the evaluator is presented in listing~\ref{eval:last}.
+One possible implementation of the evaluator is presented in fig.~\ref{eval:last}.
 Here the relation \lstinline{elem$^o$ subst v res} unifies \lstinline{res} with the value of the variable \lstinline{v} in the list \lstinline{subst}.
 The relations \lstinline{and$^o$}, \lstinline{or$^o$}, and \lstinline{not$^o$} encode corresponding boolean connectives.
 
@@ -253,7 +253,7 @@ It leads to over-unfolding, large residual programs and poor performance.
 The conservative partial deduction first unfolds those calls which are selected according to the heuristics.
 Since exploring the implementations of boolean connectives makes more sense, they are unfolded before recursive calls of \lstinline{eval$^o$}.
 The way conservative partial deduction treats this program is the same as it treats the other implementation in which boolean connectives
-are moved to the left, as shown in listing~\ref{eval:fst}.
+are moved to the left, as shown in fig.~\ref{eval:fst}.
 This program is easier for \ecce to specialize which demonstrates how unequal is the behaviour of CPD for similar programs.
 
 \begin{figure*}[!h]
@@ -270,13 +270,13 @@ This program is easier for \ecce to specialize which demonstrates how unequal is
   \end{minipage}
 \end{figure*}
 
-\subsubsection{Unfolding of Complex Relations}
+\subsubsection{Unfolding of Complex Relations.}
 
 Depending on the way a relation is implemented, it may take a different number of driving steps to reach the point when any useful information is derived through its unfolding.
 Partial deduction tries to unfold every relation call unless it is unsafe, but not all relation calls serve to restrict the search space and thus should be unfolded.
 In the implementation of \lstinline{eval$^o$} boolean connectives can effectively restrict variables within the conjunctions and should be unfolded until they do.
 But depending on the way they are implemented, the different number of driving steps should be performed for that.
-The simplest way to implement these relations is by mimicking a truth tables as demonstrated by the implementation of \lstinline{not$^o$} in listing~\ref{not:table}.
+The simplest way to implement these relations is by mimicking a truth tables as demonstrated by the implementation of \lstinline{not$^o$} in fig.~\ref{not:table}.
 It is enough to unfold such relation calls once to derive useful information about variables.
 
 \begin{figure*}[!h]
@@ -291,7 +291,7 @@ It is enough to unfold such relation calls once to derive useful information abo
 \end{figure*}
 
 The other way to implement boolean connectives is to express them using a single basic boolean relation such as \lstinline{nand$^o$} which is, in turn, has a table-based
-implementation (see listing~\ref{not:nando}). It will take several sequential unfoldings to derive that variables \lstinline{v} and \lstinline{w} should
+implementation (see fig.~\ref{not:nando}). It will take several sequential unfoldings to derive that variables \lstinline{v} and \lstinline{w} should
 be \lstinline{^true} when considering a call \lstinline{and$^o$ v w ^true} implemented via a basic relation.
 Conservative partial deduction drives the selected call until it derives useful substitutions for the variables involved while CPD with deterministic unfolding may fail to do so.
 
@@ -314,7 +314,7 @@ Conservative partial deduction drives the selected call until it derives useful 
   \end{minipage}
 \end{figure*}
 
-\subsubsection{Evaluation Results}
+\subsubsection{Evaluation Results.}
 In our study we considered four implementations of \lstinline{eval$^o$}:
 \begin{itemize}
   \item \emph{FirstPlain} in which the implementations of boolean connectives are \textbf{table-based} and are placed \textbf{before} recursive calls to \lstinline{eval$^o$}
@@ -347,34 +347,6 @@ ConsPD generates programs with comparable performance for all four implementatio
 \ecce worsens performance for every implementation as compared to the original program.
 ConsPD worsens performance of only the fastest implementation \emph{LastPlain}, while improving it for others.
 
-\subsection{Unification and Path Search}
-
-Besides evaluator of logic formulas we also run the specializers on the relation \lstinline{unify} which searches for a unifier of two terms and a relation \lstinline{isPath}
-specialized to search for paths in the graph. These two relations are described in paper~\cite{lozov2019relational} so we will not go into too many details here.
-
-The \lstinline{unify} relation was executed to find a unifier of three pairs of terms (see table~\ref{tbl:unify}) which vary in their complexity.
-The original program failed to terminate on two last unification problems in under 30s, while both ConsPD and \ecce generate programs which are able to find the unifiers.
-
-\begin{table}
-  \centering
-  \begin{tabular}{c||c|c|c||c}
-    & \multicolumn{3}{c||}{unify} & \\
-    \multirow{2}{*}{Terms} & f(X, a) & f(a \% b \% nil, c \% d \% nil, L) & f(X, X, g(Z, t)) & \multirow{2}{*}{isPath}  \\
-    \cline{2-4} &
-    f(a, X) & f(X \% XS, YS, X \% ZS) & f(g(p, L), Y, Y)  \\
-    \hline\hline
-  Original          & 0.23ms &  ---   &  ---    & 24.9ms \\ \hline
-  ConsPD            & 0.07ms & 16.5ms & 397.6ms & 1.6ms  \\ \hline
-  \ecce             & 0.12ms & 18.8ms & 352.0ms & 1.1ms  \\ \hline
-  \end{tabular}
-
-  \caption{Evaluation results of unification and path search}
-  \label{tbl:unify}
-\end{table}
-
-The relation \lstinline{isPath} was executed to search for 3 paths of length 7 in the graph with 20 vertices and 30 edges (see table~\ref{tbl:unify}).
-Both specializers significantly improve the performance as compared to the original program, although ConsPD is about 30\% worse than \ecce.
-
 
 \subsection{Typechecker-Term Generator}
 
@@ -406,7 +378,7 @@ The variables are represented with de Bruijn indices, thus let-binding does not 
 
 The typing rules are straightforward and are presented below.
 Boolean and integer constants have the corresponding types regardless of the environment.
-Only terms of type integer can be summed up, multiplied or compared by less-then operator.
+Only terms of type integer can be summed up, multiplied or compared by less-than operator.
 Any terms of the same type can be checked for equality.
 Addition and multiplication of two terms of suitable types have integer type, while comparisons have boolean type.
 If-then-else expression typechecks only if its condition is of type boolean, while both then- and else-branches have the same type.
@@ -455,7 +427,7 @@ We measured the time needed to generate 1000 closed terms of type integer (avera
 \end{table}
 
 Note that the generated program is far slower than hand-written.
-The principal difference between these two implementations is that the generated program is contains a certain redundancy.
+The principal difference between these two implementations is that the generated program contains a certain redundancy.
 For example, typechecking of the sum of two terms in the hand-written implementation is implemented by a single conjunction (see fig.~\ref{type:hand}) while the generated program is far more complicated and also uses a special relation \lstinline{typeEq$^o$} to compare types (see fig.~\ref{type:gen}).
 
 
@@ -503,4 +475,35 @@ For example, typechecking of the sum of two terms in the hand-written implementa
 
 Most of the redundancy of the generated program is removed by specialization with respect to the known type of the term.
 This is why both implementations have comparable speed after specialization.
-The specialized programs differ too much and it is not clear why one implementation is better specialized by \ecce and the other by ConsPD.
+\todo{The specialized programs differ too much and it is not clear why one implementation is better specialized by \ecce and the other by ConsPD.
+}
+
+\subsection{Unification and Path Search}
+
+Besides evaluator of logic formulas we also run the specializers on the relation \lstinline{unify$^o$} which searches for a unifier of two terms and a relation \lstinline{isPath$^o$}
+specialized to search for paths in the graph.
+Both relations were generated from functional programs by unnesting.
+These two relations are described in paper~\cite{lozov2019relational} so we will not go into too many details here.
+
+The \lstinline{unify$^o$} relation was executed to find a unifier of three pairs of terms (see table~\ref{tbl:unify}) which vary in their complexity.
+The original program failed to terminate on two last unification problems in under 30s, while both ConsPD and \ecce generate programs which are able to find the unifiers.
+
+\begin{table}
+  \centering
+  \begin{tabular}{c||c|c|c||c}
+    & \multicolumn{3}{c||}{unify$^o$} & \\
+    \multirow{2}{*}{Terms} & f(X, a) & f(a \% b \% nil, c \% d \% nil, L) & f(X, X, g(Z, t)) & \multirow{2}{*}{isPath$^o$}  \\
+    \cline{2-4} &
+    f(a, X) & f(X \% XS, YS, X \% ZS) & f(g(p, L), Y, Y)  \\
+    \hline\hline
+  Original          & 0.23ms &  ---   &  ---    & 24.9ms \\ \hline
+  ConsPD            & 0.07ms & 16.5ms & 397.6ms & 1.6ms  \\ \hline
+  \ecce             & 0.12ms & 18.8ms & 352.0ms & 1.1ms  \\ \hline
+  \end{tabular}
+
+  \caption{Evaluation results of unification and path search}
+  \label{tbl:unify}
+\end{table}
+
+The relation \lstinline{isPath$^o$} was executed to search for 3 paths of length 7 in the graph with 20 vertices and 30 edges (see table~\ref{tbl:unify}).
+Both specializers significantly improve the performance as compared to the original program, although ConsPD is about 30\% worse than \ecce.
