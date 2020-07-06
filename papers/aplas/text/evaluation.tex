@@ -62,11 +62,11 @@ The first two examples also contain \emph{Ideal} row which contains the executio
   \end{minipage}
 
   \begin{minipage}{\textwidth}
-    \begin{lstlisting}[label={doubleApp:ideal}, caption={Ideal implementation of concatenation of three lists}, captionpos=b, frame=tb]
-      let doubleAppend$^o$ xs ys zs res = conde [
-        (xs === [] /\ append$^o$ ys zs res);
-        fresh (h t r) (xs === h % t /\ res === h % r /\ doubleAppend$^o$ t ys zs r)]
-    \end{lstlisting}
+\begin{lstlisting}[label={doubleApp:ideal}, caption={Ideal implementation of concatenation of three lists}, captionpos=b, frame=tb]
+  let doubleAppend$^o$ xs ys zs res = conde [
+    (xs === [] /\ append$^o$ ys zs res);
+    fresh (h t r) (xs === h % t /\ res === h % r /\ doubleAppend$^o$ t ys zs r)]
+\end{lstlisting}
   \end{minipage}
 \end{figure*}
 
@@ -170,17 +170,13 @@ Note that the comparison relations have three arguments with the last one repres
       \ecce            & 23.7ms  \\ \hline
       ConsPD          & 35.7ms
     \end{tabular}
-
-    \caption{Execution time of maxlengtho}
-    \label{tbl:maxlen}
   \end{subfigure}
   \hfill
   \begin{subfigure}[c]{0.5\textwidth}
     \includegraphics[width=\textwidth]{../data/maxLengtho/max.pdf}
-    \caption{???}
-    %\label{tbl:doubleApp}
   \end{subfigure}
-  \caption{???}
+  \caption{Execution time of maxlengtho}
+  \label{tbl:maxlen}
 \end{figure}
 
 The ideal implementation provided in the CPD literature~\cite{de1999conjunctive} is shown on fig.~\ref{ideal:maxandlength}.
@@ -320,15 +316,13 @@ The results are presented in table~\ref{tbl:eval}.
       LastPlain & 7.4ms & 14.0ms & 9.1ms \\ \hline
       LastNando & 10.1ms & 14.9ms & 9.9ms
     \end{tabular}
-    \caption{Execution time of evalo}
-    \label{tbl:eval}
   \end{subfigure}
   \hfill
   \begin{subfigure}[c]{0.6\textwidth}
     \includegraphics[width=\textwidth]{../data/propEval/prop.pdf}
-    \caption{???}
   \end{subfigure}
-  \caption{???}
+  \caption{Execution time of evalo}
+  \label{tbl:eval}
 \end{figure}
 
 ConsPD generates programs with comparable performance for all four implementations, while the quality of \ecce specialization differs significantly.
