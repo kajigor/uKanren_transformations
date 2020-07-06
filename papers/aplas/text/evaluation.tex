@@ -397,18 +397,18 @@ For example, typechecking of the sum of two terms in the hand-written implementa
 
   \begin{minipage}{0.95\textwidth}
     \begin{lstlisting}[label={type:gen}, caption={A fragment of generated typechecker}, captionpos=b, frame=tb]
-  let rec typecheck$^o$ gamma term res = conde [
-    ...
-    fresh (x y t1 t2) ((term === x + y /\
-      conde [
-        typecheck$^o$ gamma x ^None       /\ res === ^None;
-        typecheck$^o$ gamma x ^(Some t1) /\
-          typecheck$^o$ gamma y ^None     /\ res === ^None;
-        typecheck$^o$ gamma x ^(Some t1) /\  typecheck$^o$ gamma y ^(Some t2) /\
-          typeEq$^o$ t1 Integer ^true    /\ typeEq$^o$ t2 Integer ^true /\
-          res === ^(Some Integer);
-      ])
-    ...]
+let rec typecheck$^o$ gamma term res = conde [
+  ...
+  fresh (x y t1 t2) ((term === x + y /\
+    conde [
+      typecheck$^o$ gamma x ^None       /\ res === ^None;
+      typecheck$^o$ gamma x ^(Some t1) /\
+        typecheck$^o$ gamma y ^None     /\ res === ^None;
+      typecheck$^o$ gamma x ^(Some t1) /\  typecheck$^o$ gamma y ^(Some t2) /\
+        typeEq$^o$ t1 Integer ^true    /\ typeEq$^o$ t2 Integer ^true /\
+        res === ^(Some Integer);
+    ])
+  ...]
     \end{lstlisting}
   \end{minipage}
 \end{figure*}
