@@ -308,19 +308,26 @@ The results are presented in table~\ref{tbl:eval}.
 
 \begin{figure}[!t]
   \centering
-  \begin{subfigure}[c]{0.6\textwidth}
+  \begin{subfigure}[c]{0.35\textwidth}
     \centering
-    \begin{tabular}{c||c|c|c|c}
-      & FirstPlain & FirstNando & LastPlain & LastNando \\ \hline\hline
-      Original         & 14.8ms     & 14.5ms     & 7.4ms     & 10.1ms    \\ \hline
-      \ecce            & 16.0ms     & 22.3ms     & 14.0ms    & 14.9ms    \\ \hline
-      ConsPD          & 9.1ms      & 9.7ms      & 9.1ms     & 9.9ms     \\
+    %% \begin{tabular}{c||c|c|c|c}
+    %%   & FirstPlain & FirstNando & LastPlain & LastNando \\ \hline\hline
+    %%   Original         & 14.8ms     & 14.5ms     & 7.4ms     & 10.1ms    \\ \hline
+    %%   \ecce            & 16.0ms     & 22.3ms     & 14.0ms    & 14.9ms    \\ \hline
+    %%   ConsPD          & 9.1ms      & 9.7ms      & 9.1ms     & 9.9ms     \\
+    %% \end{tabular}
+    \begin{tabular}{e{1cm}||c|c|c}
+      & Original & \ecce & ConsPD \\ \hline\hline
+      FirstPlain & 14.8ms & 16.0ms & 9.1ms \\ \hline
+      FirstNando & 14.5ms & 22.3ms & 9.7ms \\ \hline
+      LastPlain & 7.4ms & 14.0ms & 9.1ms \\ \hline
+      LastNando & 10.1ms & 14.9ms & 9.9ms
     \end{tabular}
     \caption{Execution time of evalo}
     \label{tbl:eval}
   \end{subfigure}
-  
-  \begin{subfigure}[c]{0.8\textwidth}
+  \hfill
+  \begin{subfigure}[c]{0.6\textwidth}
     \includegraphics[width=\textwidth]{../data/propEval/prop.pdf}
     \caption{???}
   \end{subfigure}
