@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.14159265-2.6-0.99998 (TeX Live 2017/Debian) (preloaded format=xelatex 2019.9.2)  7 JUL 2020 01:25
+This is XeTeX, Version 3.14159265-2.6-0.99998 (TeX Live 2017/Debian) (preloaded format=xelatex 2019.9.2)  7 JUL 2020 09:54
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -148,7 +148,7 @@ Package: stmaryrd 1994/03/03 St Mary's Road symbol package
 LaTeX Font Info:    Overwriting symbol font `stmry' in version `bold'
 (Font)                  U/stmry/m/n --> U/stmry/b/n on input line 89.
 )
-No file typechecker.aux.
+(./typechecker.aux)
 \openout1 = `typechecker.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 35.
@@ -165,6 +165,7 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 35.
 LaTeX Font Info:    ... okay on input line 35.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 35.
 LaTeX Font Info:    ... okay on input line 35.
+
 *geometry* driver: auto-detecting
 *geometry* detected driver: xetex
 *geometry* verbose mode - [ preamble ] result:
@@ -208,18 +209,18 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <6> on input line 41.
 LaTeX Font Info:    Try loading font information for U+stmry on input line 41.
 (/usr/share/texlive/texmf-dist/tex/latex/stmaryrd/Ustmry.fd)
-Overfull \hbox (35.29733pt too wide) in paragraph at lines 41--53
+Overfull \hbox (20.8383pt too wide) in paragraph at lines 41--55
  [][] 
  []
 
 [1] (./typechecker.aux) ) 
 Here is how much of TeX's memory you used:
- 2869 strings out of 493007
- 39255 string characters out of 6136720
+ 2871 strings out of 493007
+ 39287 string characters out of 6136720
  145488 words of memory out of 5000000
  6848 multiletter control sequences out of 15000+600000
  6996 words of font info for 27 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 26i,13n,35p,203b,241s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 26i,13n,35p,203b,237s stack positions out of 5000i,500n,10000p,200000b,80000s
 
 Output written on typechecker.pdf (1 page).

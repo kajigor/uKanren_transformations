@@ -24,7 +24,7 @@
     keywordstyle = [2]{\textit},
     morekeywords = [2]{lookup,initial_code,extend,reduce,eval,rest,first_command,first_instruction,new_tail,first_symbol},
     showspaces=false,
-    showstringspaces=false, 
+    showstringspaces=false,
     stringstyle=\color{blue},
     identifierstyle=,
     escapechar=@*,
@@ -40,14 +40,16 @@
   \centering
   \begin{tabular}{c c c}
     \infer[]{\Gamma \vdash IConst \ i : Int}{} &
-    \infer[]{\Gamma \vdash BConst \ b : Bool}{} \vspace{0.5cm} &
-    \infer[]{\Gamma \vdash t + s : Int}{\Gamma \vdash t : Int, \Gamma \vdash  s : Int} \\
-    \infer[]{\Gamma \vdash t * s : Int}{\Gamma \vdash t : Int, \Gamma \vdash  s : Int} \vspace{0.5cm} &
+    \infer[]{\Gamma \vdash BConst \ b : Bool}{}  &
+    \infer[\Gamma \lbrack v \rbrack \equiv \tau]{\Gamma \vdash Var \ v : \tau}{} \vspace{0.5cm}
+    \\
+    \infer[]{\Gamma \vdash t + s : Int}{\Gamma \vdash t : Int, \Gamma \vdash  s : Int}  \vspace{0.5cm} &
     \infer[]{\Gamma \vdash t = s : Bool}{\Gamma \vdash t : \tau, \Gamma \vdash  s : \tau} &
-    \infer[]{\Gamma \vdash t < s : Bool}{\Gamma \vdash t : Int, \Gamma \vdash  s : Int} \vspace{0.5cm} \\
+    \infer[]{\Gamma \vdash \underline{let} \ v \ b : \tau}{\Gamma \vdash v : \tau_v, \ (\tau_v :: \Gamma) \vdash b : \tau}
+     \\
 
-    \infer[]{\Gamma \vdash \underline{let} \ v \ b : \tau}{\Gamma \vdash v : \tau_v, \ (\tau_v :: \Gamma) \vdash b : \tau} &
-    \infer[\Gamma \lbrack v \rbrack \equiv \tau]{\Gamma \vdash Var \ v : \tau}{} \vspace{0.5cm} &
+     \infer[]{\Gamma \vdash t * s : Int}{\Gamma \vdash t : Int, \Gamma \vdash  s : Int}  &
+    \infer[]{\Gamma \vdash t < s : Bool}{\Gamma \vdash t : Int, \Gamma \vdash  s : Int} \vspace{0.5cm} &
       \infer[]{\Gamma \vdash \underline{if} \ c \ \underline{then} \ t \ \underline{else} \ s : \tau}{\Gamma \vdash c : Bool, \Gamma \vdash t : \tau, \Gamma \vdash s : \tau}
   \end{tabular}
 \end{table}
