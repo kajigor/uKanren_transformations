@@ -34,7 +34,7 @@ Other criteria, like the size of the generated program or possible optimizations
 It is known that supercompilation may adversely affect GHC optimizations yielding standalone compilation more powerful~\cite{SCBE,TCES} and cause code explosion~\cite{SCHC}.
 Moreover, it may be hard to predict the real speedup of any given program on concrete examples even disregarding the problems above because of the complexity of the transformation algorithm.
 The worst-case for partial evaluation is when all static variables are used in a dynamic context, and there is some advice on how to implement a partial evaluator as well as a target program so that specialization indeed improves its performance~\cite{jonesbook,bulyonkov84}.
-There is a lack of research in determining the classes of programs which transformers would definitely speed up.
+There is a lack of research in determining the classes of programs which transformers would definitely speed~up.
 
 Conjunctive partial deduction~\cite{de1999conjunctive} makes an effort to provide reasonable control for the left-to-right evaluation strategy of \pro.
 CPD constructs a tree which models goal evaluation and is similar to a SLDNF tree, then a residual program is generated from this tree.
