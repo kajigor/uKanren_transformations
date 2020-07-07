@@ -26,7 +26,7 @@ An earlier paper~\cite{lozov2019relational} has shown that \emph{conjunctive par
 Depending on the particular \emph{control} decisions, it may also not affect the execution time of a program or even make it slower.
 
 Control issues in partial deduction of logic programming language \pro have been studied before~\cite{leuschel2002logic}.
-Unlike Prolog, where atoms in the rhs of a clause cannot be arbitrarily reordered without changing the semantics of a program, in miniKanren the subgoals of conjunction/disjunction can be freely switched.
+Unlike Prolog, where atoms in the rhs of a clause cannot be arbitrarily reordered without changing the semantics of a program, in \mk the subgoals of conjunction/disjunction can be freely switched.
 This opens a yet another possibility for optimization, not taken into account by approaches initially developed in the context of conventional logic programming.
 % The ideas described there make use of the deterministic search strategy of \pro.
 % However in \mk it is allowed to reorder some relation calls within the goal for better performance.
