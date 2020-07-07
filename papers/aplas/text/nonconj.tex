@@ -112,7 +112,7 @@ This means that we found some contradiction, some computations were gotten rid o
 To compute this heuristics we precompute the maximum possible number of disjuncts in each relation and compare this number with the number of disjuncts when unfolding a concrete relation call.
 The maximum number of disjuncts is computed by unfolding the body of the relation in which all relation calls were replaced by a unification which always succeeds.
 
-\begin{figure}[h!]
+\begin{figure}[!t]
   \centering
   \includegraphics[width=\textwidth]{heuristic-crop.pdf}
   \caption{Heuristics selection pseudocode}
