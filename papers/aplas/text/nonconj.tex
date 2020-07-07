@@ -6,22 +6,22 @@ In this section, we describe a novel approach to relational programs specializat
 This approach draws inspiration from both conjunctive partial deduction and supercompilation.
 The aim was to create a specialization algorithm which is simpler than conjunctive partial deduction and uses properties of \mk to improve the performance of the input programs.
 
-The algorithm pseudocode is shown in fig.~\ref{fig:ncpd-pseudo}.
+The algorithm pseudocode is shown in Fig.~\ref{fig:ncpd-pseudo}.
 For the sake of brevity and clarity, we provide functions \code{drive\_disj} and \code{drive\_conj} which describe how to process disjunctions and conjunctions respectively.
-Driving itself is a trivial combination of presented functions (line 2).
+Driving itself is a trivial combination of the functions provided (line 2).
 
 A driving process creates a process tree, from which a residual program is later created.
 The process tree is meant to mimic the execution of the input program.
 The nodes of the process tree include a \emph{configuration} which describes the state of program evaluation at some point.
-In our case configuration is a conjunction of relation calls.
+In our case a configuration is a conjunction of relation calls.
 The substitution computed at each step is also stored in the tree node, although it is not included in the configuration.
 
 Hereafter, we consider all goals and relation bodies to be in \emph{canonical normal form}~---~a disjunction of conjunctions of either calls or unifications.
 Moreover, we assume all fresh variables to be introduced into the scope and all unifications to be computed at each step.
 Those disjuncts in which unifications fail are removed.
-Other disjuncts take the form of possibly empty conjunction of relation calls accompanied with a substitution computed from unifications.
+Each other disjunct takes the form of a possibly empty conjunction of relation calls accompanied with a substitution computed from unifications.
 Any \mk term can be trivially transformed into the described form.
-The function \code{normalize} in fig.~\ref{fig:ncpd-pseudo}  is assumed to perform term normalization.
+The function \code{normalize} in Fig.~\ref{fig:ncpd-pseudo} is assumed to perform term normalization.
 The code is omitted for brevity.
 
 \begin{figure}[!t]
@@ -51,14 +51,14 @@ According to the denotational semantics of \mk it is safe to compute individual 
 % If the selected call does not suit the criteria, the results of its unfolding is not propagated onto other relation calls withing the conjunction and the next suitable call is selected \db{(line 22)}.
 
 This process creates branchings whenever a disjunction is examined (lines 4--5).
-At each step, we make sure that we do not start driving conjunction which we have already examined.
+At each step, we make sure that we do not start driving a conjunction which we have already examined.
 To do this, we check if the current conjunction is a renaming of any other configuration in the tree (line 11).
 If it is, then we fold the tree by creating a special node which then is residualized into a call to the corresponding relation.
 
-We decided not to perform generalization in this approach in the same fashion as CPD or supercompilation does.
+In this approach, we decided not to generalize in the same fashion as CPD or supercompilation.
 Our conjunctions are always split into individual calls and are joined back together only if it is sensible.
 If the need for generalization arises, i.e. homeomorphic embedding of conjunctions~\cite{de1999conjunctive} is detected, then we immediately stop driving this conjunction (line 12).
-When residualizing such conjunction, we just generate a conjunction of calls to the input program before specialization.
+When residualizing such a conjunction, we just generate a conjunction of calls to the input program before specialization.
 
 % The generalization is used in supercompilation and partial deduction to ensure termination at the same time as some degree of specialization.
 % The generalization of two terms is usually a \emph{most-specific generalization}.
@@ -85,12 +85,12 @@ Unfolding in our case is done by substitution of some relation call by its body 
 % Those disjuncts in which unifications fails are removed.
 % Other disjuncts take form of a conjunction of relation calls accompanied with a substitution.
 The unfolding itself is straightforward however it is not always clear what to unfold and when to \emph{stop} unfolding.
-Unfolding in functional programming languages specialization, as well as inlining in imperative one, is usually considered to be safe from the residual program efficiency point of view.
+Unfolding in the context of specialization of functional programming languages, as well as inlining in specialization of imperative languages, is usually considered to be safe from the residual program efficiency point of view.
 It may only lead to code explosion or code duplication which is mostly left to a target program compiler optimization or even is out of consideration at all if a specializer is considered as a standalone tool~\cite{jonesbook}.
 
-Unfortunately, this is not the case for the specialization of relational programming language.
-Unlike functional and imperative, in logic and relational programming language unfolding may easily affect the target program efficiency~\cite{leuschel2002logic}.
-Unfolding too much may create extra unifications, which is by itself a costly operation, or even introduce duplicated computations by propagating the unfolding results onto neighbouring conjuncts.
+Unfortunately, this is not the case for the specialization of a relational programming language.
+Unlike in functional and imperative languages, in logic and relational programming languages unfolding may easily affect the target program's efficiency~\cite{leuschel2002logic}.
+Unfolding too much may create extra unifications, which is by itself a costly operation, or even introduce duplicated computations by propagating the results of unfolding onto neighbouring conjuncts.
 
 There is a fine edge between too much unfolding and not enough unfolding.
 The former is maybe even worse than the latter.
@@ -99,8 +99,8 @@ We believe that the following heuristics provides a reasonable approach to unfol
 \subsection{Less Branching Heuristics}
 \label{sec:heurictic}
 
-This heuristics is aimed at selecting the relation call within a conjunction which is both safe to unfold and may lead to discovering contradictions within the conjunction.
-The unsafe unfolding leads to an uncontrollable increase in the number of relation calls in a conjunction.
+This heuristics is aimed at selecting a relation call within a conjunction which is both safe to unfold and may lead to discovering contradictions within the conjunction.
+An unsafe unfolding leads to an uncontrollable increase in the number of relation calls in a conjunction.
 It is best to first unfold those relation calls which can be fully computed up to substitutions.
 
 We deem every static (non-recursive) conjunct to be safe because they never lead to growth in the number of conjunctions.
@@ -122,7 +122,7 @@ The maximum number of disjuncts is computed by unfolding the body of the relatio
 %  more complicated case is when there are less disjuncts than there can possibly be.
 % This signifies that at least one branch of computations is gotten rid of.
 
-The pseudocode describing heuristics is shown in fig.~\ref{fig:heu-pseudo}.
+The pseudocode describing our heuristics is shown in Fig.~\ref{fig:heu-pseudo}.
 Selecting a good relation call can fail (line 1).
 The implementation works such that we first select those relation calls which are static, and only if there are none, we proceed to consider deterministic unfoldings and then we search for those which are less branching.
 We believe this heuristics provides a good balance in unfolding.
