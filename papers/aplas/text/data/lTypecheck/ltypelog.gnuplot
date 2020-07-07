@@ -3,9 +3,9 @@ set datafile separator ','
 set terminal pdf 
 set output 'ltypelog.pdf'
 
-set size ratio 0.8
+set size ratio 0.6
 
-set terminal pdf size 3, 2.4 
+set terminal pdf size 2.8, 1.5
 
 set logscale y 10
 
@@ -15,10 +15,9 @@ set style data histogram
 set style fill solid
 
 set ylabel 'Time (ms)' # label for the Y axis
-set xlabel 'Direction' # label for the X axis
 
 set xrange [0.5:2.5]
-set yrange [0.1:]
+set yrange [1:]
 
 set key left top
 

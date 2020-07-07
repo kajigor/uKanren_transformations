@@ -143,7 +143,7 @@ The reason behind the slowdown is the premature introduction of fresh variables 
   \end{lstlisting}
 \end{minipage}
   \begin{minipage}{0.8\textwidth}
-\begin{lstlisting}[label={ideal:maxandlength}, caption={Ideal implementation of maxlengtho}, captionpos=b, frame=tb]
+\begin{lstlisting}[label={ideal:maxandlength},  caption={Ideal implementation of maxlengtho}, captionpos=b, frame=tb]
   let maxLength$^o$ xs m l = maxLength$_1^o$ xs m zero l
   let rec maxLength$_1^o$ xs m n l = fresh (h t l$_1$) ( conde [
       ( xs === []     /\  m === n        /\ l === zero);
@@ -286,7 +286,7 @@ be \lstinline{^true} when considering a call \lstinline{and$^o$ v w ^true} imple
 Conservative partial deduction drives the selected call until it derives useful substitutions for the variables involved while CPD with deterministic unfolding may fail to do so.
 
 \subsubsection{Evaluation Results.}
-In our study we considered four implementations of \lstinline{eval$^o$}:
+In our study we considered 4 implementations of \lstinline{eval$^o$}:
 \begin{itemize}
   \item \emph{FirstPlain} in which the implementations of boolean connectives are \textbf{table-based} and are placed \textbf{before} recursive calls to \lstinline{eval$^o$}
   \item \emph{LastPlain} in which the implementations of boolean connectives are \textbf{table-based} and are placed \textbf{after} recursive calls to \lstinline{eval$^o$}
@@ -364,17 +364,26 @@ The second program is hand-written in \oc (\emph{Hand-written}).
 Each implementation has been specialized with ConsPD and \ecce.
 We measured the time needed to generate 1000 closed terms of type integer (averaged over 10 iterations; see Table~\ref{tbl:eval}).
 
-\begin{table}
-  \centering
-  \begin{tabular}{c||c||c}
-              & Hand-written & Generated \\ \hline\hline
-  Original    & 916.9ms      & 11458.6ms \\ \hline
-  ConsPD      & 335.9ms      & 289.8ms   \\ \hline
-  \ecce       & 218.6ms      & 382.0ms   \\
-  \end{tabular}
+
+\begin{figure}[!h]
+  \begin{subfigure}[c]{0.4\textwidth}
+    \centering
+    \centering
+    \begin{tabular}{c||c||c}
+                & Hand-written & Generated \\ \hline\hline
+    Original    & 916.9ms      & 11458.6ms \\ \hline
+    ConsPD      & 335.9ms      & 289.8ms   \\ \hline
+    \ecce       & 218.6ms      & 382.0ms   \\
+    \end{tabular}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[c]{0.45\textwidth}
+    \includegraphics[width=\textwidth]{../data/lTypecheck/ltypelog.pdf}
+  \end{subfigure}
   \caption{Execution  time of generating 1000 closed terms of type Integer}
-  \label{tbl:eval}
-\end{table}
+  \label{tbl:maxlen}
+\end{figure}
+
 
 Note that the generated program is far slower than hand-written.
 The principal difference between these two implementations is that the generated program contains a certain redundancy.
