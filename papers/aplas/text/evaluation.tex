@@ -1,6 +1,6 @@
 \section{Evaluation}
 
-In our study we compared the new conservative partial deduction with the \ecce partial deduction system.
+We implemented the conservative partial deduction for \mk and compared it with the \ecce partial deduction system.
 \ecce is designed for \pro programming language and cannot be directly applied for programs, written in \mk.
 To be able to compare our approach with \ecce, we converted each input program first to the pure subset of \pro, then spelialized it with \ecce, and then we converted the result back to \mk.
 The coversion to \pro is a simple syntactic conversion. In the conversion from \pro to \mk, for each Horn clause a conjunction is generated in which unifications are placed before any relation call.
@@ -14,8 +14,8 @@ The last two are examples of non-trivial relational interpreters which at the sa
 In the last two examples we explore how different implementations of the same relation affect the quality of specialization.
 
 The \lstinline{doubleAppend$^o$} program concatenates three lists of numbers by computing a conjunction of two calls of a relation which concatenates two lists.
-This example is prominent in CPD literature, since it demonstrates \emph{deforestation}~--- a transformation which gets rid of intermidiate datastructures.
-This transformation cannot be done with earlier partial deduction approachs, since the relation uses a variable shared between two relation calls within a
+This example is prominent in CPD literature, since it demonstrates \emph{deforestation}~--- a transformation which gets rid of intermidiate data structures.
+This transformation cannot be done with earlier partial deduction approaches, since the relation uses a variable shared between two relation calls within a
 conjunction which requires the transformation to treat conjunctions as a whole.
 We explore how the fact that our approach sometimes splits conjunctions ignoring the variable sharing affects the quality of transformation.
 
@@ -288,10 +288,10 @@ Conservative partial deduction drives the selected call until it derives useful 
 \subsubsection{Evaluation Results.}
 In our study we considered 4 implementations of \lstinline{eval$^o$}:
 \begin{itemize}
-  \item \emph{FirstPlain} in which the implementations of boolean connectives are \textbf{table-based} and are placed \textbf{before} recursive calls to \lstinline{eval$^o$}
-  \item \emph{LastPlain} in which the implementations of boolean connectives are \textbf{table-based} and are placed \textbf{after} recursive calls to \lstinline{eval$^o$}
-  \item \emph{FirstNando} in which boolean connectives are implemented via \lstinline{nand$^o$} and are placed \textbf{before} recursive calls to \lstinline{eval$^o$}
-  \item \emph{LastNando} in which boolean connectives are implemented via \lstinline{nand$^o$} andare placed \textbf{after} recursive calls to \lstinline{eval$^o$}
+  \item \emph{FirstPlain} in which the implementations of boolean connectives are \textbf{table-based} and are placed \textbf{before} the recursive calls to \lstinline{eval$^o$}
+  \item \emph{LastPlain} in which the implementations of boolean connectives are \textbf{table-based} and are placed \textbf{after} the recursive calls to \lstinline{eval$^o$}
+  \item \emph{FirstNando} in which boolean connectives are implemented via \lstinline{nand$^o$} and are placed \textbf{before} the recursive calls to \lstinline{eval$^o$}
+  \item \emph{LastNando} in which boolean connectives are implemented via \lstinline{nand$^o$} and are placed \textbf{after} the recursive calls to \lstinline{eval$^o$}
 
 \end{itemize}
 
@@ -354,15 +354,19 @@ An environment $\Gamma$ is an ordered list, in which the $i$-th element is the t
 To typecheck a let-binding, first, the term being bound is typechecked and is added in the beginning of the environment $\Gamma$, and then the body is typechecked in the context of the new environment.
 Typechecking a variable with the index $i$ boils down to getting an $i$-th element of the list.
 
+\vspace{-15pt}
 \begin{figure*}[!h]
+  \centering
   \includegraphics[width=\textwidth]{typechecker-crop.pdf}
 \end{figure*}
+\vspace{-15pt}
+
 
 We compared two implementations of these typing rules.
 The first one is obtained by unnesting of the functional program as described in~\cite{lozov2019relational} (\emph{Generated}).
 The second program is hand-written in \oc (\emph{Hand-written}).
 Each implementation has been specialized with ConsPD and \ecce.
-We measured the time needed to generate 1000 closed terms of type integer (averaged over 10 iterations; see Table~\ref{tbl:eval}).
+We measured the time needed to generate 1000 closed terms of type integer (see Fig.~\ref{tbl:type}).
 
 
 \begin{figure}[!h]
@@ -381,11 +385,11 @@ We measured the time needed to generate 1000 closed terms of type integer (avera
     \includegraphics[width=\textwidth]{../data/lTypecheck/ltypelog.pdf}
   \end{subfigure}
   \caption{Execution  time of generating 1000 closed terms of type Integer}
-  \label{tbl:maxlen}
+  \label{tbl:type}
 \end{figure}
 
 
-Note that the generated program is far slower than hand-written.
+Note that the generated program is far slower than the hand-written.
 The principal difference between these two implementations is that the generated program contains a certain redundancy.
 For example, typechecking of the sum of two terms in the hand-written implementation is implemented by a single conjunction (see Listing~\ref{type:hand}) while the generated program is far more complicated and also uses a special relation \lstinline{typeEq$^o$} to compare types (see Listing~\ref{type:gen}).
 
@@ -424,7 +428,7 @@ let rec typecheck$^o$ gamma term res = conde [
 
 Most of the redundancy of the generated program is removed by specialization with respect to the known type of the term.
 This is why both implementations have comparable speed after specialization.
-\ecce shows bigger speedup for the hand-written than ConsPD and vice versa for the generated implementation.
+\ecce shows bigger speedup for the hand-written program than ConsPD and vice versa for the generated implementation.
 We believe that this difference can be explained by too much unfolding.
 \ecce performs a lot of excessive unfolding for the generated program and only barely changes the hand-written program.
 At the same time ConsPD specializes both implementations to comparable programs performing average amount of unfolding.
@@ -438,7 +442,7 @@ Both relations were generated from functional programs by unnesting.
 These two relations are described in paper~\cite{lozov2019relational} so we will not go into too many details here.
 
 The \lstinline{unify$^o$} relation was executed to find a unifier of three pairs of terms (see table~\ref{tbl:unify}) which vary in their complexity.
-The original program failed to terminate on two last unification problems in under 30s, while both ConsPD and \ecce generate programs which are able to find the unifiers.
+The original program failed to terminate on two last unification problems in under 30 seconds, while both ConsPD and \ecce generate programs which are able to find the unifiers.
 
 \begin{table}
   \centering
