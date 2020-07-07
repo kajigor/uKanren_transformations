@@ -23,7 +23,7 @@ One order can be good for one direction, but slow down the computation drastical
 Specialization or partial evaluation~\cite{jonesbook} is a technique aimed at improving the performance of a program given some information about it beforehand.
 It may either be a known value of some argument, its structure (i.e. the length of an input list) or, in case of a relational program, --- the direction in which it is intended to be run.
 An earlier paper~\cite{lozov2019relational} has shown that \emph{conjunctive partial deduction}~\cite{de1999conjunctive} can sometimes improve the performance of \mk programs.
-Unfortunately, it may also not affect the execution time of a program or even make it slower.
+Depending on the particular \emph{control} decisions, it may also not affect the execution time of a program or even make it slower.
 
 Control issues in partial deduction of logic programming language \pro have been studied before~\cite{leuschel2002logic}.
 Unlike Prolog, where atoms in the rhs of a clause cannot be arbitrarily reordered without changing the semantics of a program, in miniKanren the subgoals of conjunction/disjunction can be freely switched.
@@ -34,4 +34,4 @@ This opens a yet another possibility for optimization, not taken into account by
 
 In this paper, we study issues which conjunctive partial deduction faces being applied for \mk.
 We also describe a novel approach to partial deduction for relational programming, \emph{conservative partial deduction}.
-We implement this approach and compare it with the existing specialization system (\ecce) on several programs and discuss why some \mk programs run slower after specialization.
+We implemented this approach and compared it with the existing specialization system (\ecce) on several programs and discuss why some \mk programs run slower after specialization.
