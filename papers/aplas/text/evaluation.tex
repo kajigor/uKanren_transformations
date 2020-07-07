@@ -415,8 +415,11 @@ let rec typecheck$^o$ gamma term res = conde [
 
 Most of the redundancy of the generated program is removed by specialization with respect to the known type of the term.
 This is why both implementations have comparable speed after specialization.
-\todo{The specialized programs differ too much and it is not clear why one implementation is better specialized by \ecce and the other by ConsPD.
-}
+\ecce shows bigger speedup for the hand-written than ConsPD and vice versa for the generated implementation.
+We believe that this difference can be explained with too much unfolding.
+\ecce performs a lot of excessive unfolding for the generated program and only barely changes the hand-written program.
+At the same time ConsPD specializes both implementations to comparable programs performing average amount of unfolding.
+This shows that the heuristics we presented gives more stable, although not the best, results.
 
 \subsection{Unification and Path Search}
 
