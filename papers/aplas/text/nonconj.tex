@@ -4,7 +4,7 @@
 
 In this section, we describe a novel approach to relational programs specialization.
 This approach draws inspiration from both conjunctive partial deduction and supercompilation.
-The aim was to create a specialization algorithm which is simpler than conjunctive partial deduction and uses properties of \mk to improve the performance of the input programs.
+The aim was to create a specialization algorithm which would be simpler than conjunctive partial deduction and use properties of \mk to improve the performance of the input programs.
 
 The algorithm pseudocode is shown in Fig.~\ref{fig:ncpd-pseudo}.
 For the sake of brevity and clarity, we provide functions \code{drive\_disj} and \code{drive\_conj} which describe how to process disjunctions and conjunctions respectively.
@@ -84,12 +84,12 @@ Unfolding in our case is done by substitution of some relation call by its body 
 % All unifications are computed.
 % Those disjuncts in which unifications fails are removed.
 % Other disjuncts take form of a conjunction of relation calls accompanied with a substitution.
-The unfolding itself is straightforward however it is not always clear what to unfold and when to \emph{stop} unfolding.
+The unfolding itself is straightforward; however it is not always clear what to unfold and when to \emph{stop} unfolding.
 Unfolding in the context of specialization of functional programming languages, as well as inlining in specialization of imperative languages, is usually considered to be safe from the residual program efficiency point of view.
 It may only lead to code explosion or code duplication which is mostly left to a target program compiler optimization or even is out of consideration at all if a specializer is considered as a standalone tool~\cite{jonesbook}.
 
 Unfortunately, this is not the case for the specialization of a relational programming language.
-Unlike in functional and imperative languages, in logic and relational programming languages unfolding may easily affect the target program's efficiency~\cite{leuschel2002logic}.
+Unlike functional and imperative languages, in logic and relational programming languages unfolding may easily affect the target program's efficiency~\cite{leuschel2002logic}.
 Unfolding too much may create extra unifications, which is by itself a costly operation, or even introduce duplicated computations by propagating the results of unfolding onto neighbouring conjuncts.
 
 There is a fine edge between too much unfolding and not enough unfolding.
@@ -100,7 +100,7 @@ We believe that the following heuristics provides a reasonable approach to unfol
 \label{sec:heurictic}
 
 This heuristics is aimed at selecting a relation call within a conjunction which is both safe to unfold and may lead to discovering contradictions within the conjunction.
-An unsafe unfolding leads to an uncontrollable increase in the number of relation calls in a conjunction.
+An unsafe unfolding leads to an uncontrollable increase of the number of relation calls in a conjunction.
 It is best to first unfold those relation calls which can be fully computed up to substitutions.
 
 We deem every static (non-recursive) conjunct to be safe because they never lead to growth in the number of conjunctions.
