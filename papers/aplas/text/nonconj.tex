@@ -55,8 +55,8 @@ At each step, we make sure that we do not start driving a conjunction which we h
 To do this, we check if the current conjunction is a renaming of any other configuration in the tree (line 11).
 If it is, then we fold the tree by creating a special node which then is residualized into a call to the corresponding relation.
 
-In this approach, we decided not to generalize in the same fashion as CPD or supercompilation.
-Our conjunctions are always split into individual calls and are joined back together only if it is sensible.
+In this approach, we do not generalize in the same fashion as CPD or supercompilation.
+Our conjunctions are always split into individual calls and are joined back together only if it is meaningful.
 If the need for generalization arises, i.e. homeomorphic embedding of conjunctions~\cite{de1999conjunctive} is detected, then we immediately stop driving this conjunction (line 12).
 When residualizing such a conjunction, we just generate a conjunction of calls to the input program before specialization.
 
