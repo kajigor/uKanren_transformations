@@ -1,0 +1,14 @@
+generating 1000 formulas over 2 variables which evaluate to true 
+
+Latencies for 10 iterations of "original", "  conspd", "     cpd", "branches":
+original: 16.11 WALL (16.01 usr +  0.10 sys = 16.11 CPU) @  0.62/s (n=10)
+  conspd:  9.76 WALL ( 9.64 usr +  0.12 sys =  9.76 CPU) @  1.02/s (n=10)
+     cpd:  1.69 WALL ( 1.69 usr +  0.00 sys =  1.69 CPU) @  5.92/s (n=10)
+branches:  1.77 WALL ( 1.77 usr +  0.00 sys =  1.77 CPU) @  5.64/s (n=10)
+
+            Rate original   conspd branches      cpd
+original 0.621/s       --     -39%     -89%     -90%
+  conspd  1.02/s      65%       --     -82%     -83%
+branches  5.64/s     809%     451%       --      -5%
+     cpd  5.92/s     853%     477%       5%       --
+

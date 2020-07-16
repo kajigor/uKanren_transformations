@@ -73,3 +73,19 @@ papers/aplas/main.log
 papers/aplas/benchmarks/*/run
 
 papers/aplas/text/main.log
+
+papers/miniKanren/benchmarks/last/results
+
+papers/miniKanren/benchmarks/last/result
+
+papers/miniKanren/benchmarks/last/run
+
+papers/miniKanren/benchmarks/path/run
+
+papers/miniKanren/benchmarks/plain/result
+
+papers/miniKanren/benchmarks/plain/results
+
+papers/miniKanren/benchmarks/plain/run
+
+papers/miniKanren/benchmarks/unify/run
