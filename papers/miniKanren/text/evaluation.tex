@@ -1,9 +1,9 @@
 \section{Evaluation}
 
-In our study we compared the CPD adaptation for \mk{} and the new non-conjunctive partial deduction.
+We implemented the new conservative partial deduction\footnote{The repository of the \mk{} specialization project: \url{https://github.com/kajigor/uKanren_transformations}. Access date: 17.07.2020.} and compared it with the CPD adaptation for \mk{} of~\cite{lozov2019relational}.
 We have also employed the branching heuristic instead of the deterministic unfolding in the CPD to check whether it can improve the quality of the specialization.
 
-We used the following 4 programs to test the specializers on.
+We used the following programs to test the specializers.
 \begin{itemize}
   \item Two implementations of an evaluator of logic formulas.
   \item A program to compute a unifier of two terms.
@@ -25,14 +25,14 @@ The second argument is a formula with the following abstract syntax.
 A formula is either a \emph{variable} represented with a Peano number, a \emph{negation} of a formula, a \emph{conjunction} of two formulas or a \emph{disjunction} of two formulas.
 The third argument is the value of the formula in the given substitution.
 
-All examples of \mk{} relations in this paper are written in \oc{}\footnote{\oc{}: statically typed \mk{} embedding in \ocaml{}. The repository of the project: \url{https://github.com/JetBrains-Research/OCanren}} syntax.
-We specialize the \lstinline{eval$^o$} relation to synthesize formulas which evaluate to \lstinline{^true}\footnote{An arrow lifts ordinary values to the logic domain}.
+All examples of \mk{} relations in this paper are written in \oc{}\footnote{\oc{}: statically typed \mk{} embedding in \ocaml{}. The repository of the project: \url{https://github.com/JetBrains-Research/OCanren}. Access date: 17.07.2020.} syntax.
+We specialize the \lstinline{eval$^o$} relation to synthesize formulas which evaluate to \lstinline{^true}\footnote{An arrow lifts ordinary values to the logic domain.}.
 To do so, we run the specializer for the goal with the last argument fixed to \lstinline{^true}, while the first two arguments remain free variables.
 Depending on the way the \lstinline{eval$^o$} is implemented, different specializers generate significantly different residual programs.
 
 \subsubsection{The Order of Relation Calls}
 
-One possible implementation of the evaluator in the syntax of \oc{} is presented in listing~\ref{eval:last}.
+One possible implementation of the evaluator in the syntax of \oc{} is presented in Listing~\ref{eval:last}.
 Here the relation \lstinline{elem$^o$ subst v res} unifies \lstinline{res} with the value of the variable \lstinline{v} in the list \lstinline{subst}.
 The relations \lstinline{and$^o$}, \lstinline{or$^o$}, and \lstinline{not$^o$} encode corresponding boolean operations.
 
@@ -57,12 +57,12 @@ Knowing that \lstinline{res} is \lstinline{^true}, we can conclude that in the c
 There are three possible options for these variables in the call \lstinline{or$^o$ v w res} and one for the call \lstinline{not$^o$}.
 These variables are used in recursive calls of \lstinline{eval$^o$} and thus restrict the result of driving them.
 CPD fails to recognize this, and thus unfolds recursive calls of \lstinline{eval$^o$} applied to fresh variables.
-It leads to over-unfolding, big residual programs and less than optimal performance.
+It leads to over-unfolding, big residual programs and poor performance.
 
-The non-conjunctive partial deduction first unfolds those calls which are selected with the heuristic.
+The conservative partial deduction first unfolds those calls which are selected with the heuristic.
 Since exploring boolean operations makes more sense, they are unfolded before recursive calls of \lstinline{eval$^o$}.
-The way non-conjunctive partial deduction treats this program is the same as it treats the other implementation in which boolean operations are moved to the left, as shown in listing~\ref{eval:fst}.
-This program is easier for CPD to transform which demonstrates how unequal is the behaviour of CPD for similar programs.
+The way conservative partial deduction treats this program is the same as it treats the other implementation in which boolean operations are moved to the left, as shown in Listing~\ref{eval:fst}.
+This program is easier for CPD to transform which demonstrates how unequal the behaviour of CPD for similar programs is.
 
 \begin{figure*}[!h]
   \centering
@@ -81,10 +81,10 @@ This program is easier for CPD to transform which demonstrates how unequal is th
 \subsubsection{Unfolding of Complex Relations}
 
 Depending on the way a relation is implemented, it may take a different number of driving steps to reach the point when any useful information is derived through its unfolding.
-Partial deduction tries to unfold every relation call unless it is unsafe, but not all relation calls serve to restrict the search space and thus should be unfolded.
+Partial deduction tries to unfold every relation call unless it is unsafe, but not all relation calls serve to restrict the search space and thus not every relation call should be unfolded.
 In the implementation of \lstinline{eval$^o$} boolean operations can effectively restrict variables within the conjunctions and should be unfolded until they do.
-But depending on the way they are implemented, the different number of driving steps should be performed for that.
-The simplest way to implement these relations is with a table as demonstrated with the implementation of \lstinline{not$^o$} in listing~\ref{not:table}.
+But depending on the way boolean operations are implemented, different number of driving steps should be performed for that.
+The simplest way to implement these relations is with a table as demonstrated with the implementation of \lstinline{not$^o$} in Listing~\ref{not:table}.
 It is enough to unfold such relation calls once to derive useful information about variables.
 
 \begin{figure*}[!h]
@@ -98,14 +98,15 @@ It is enough to unfold such relation calls once to derive useful information abo
   \end{minipage}
 \end{figure*}
 
-The other way to implement boolean operations is via one basic boolean relation such as \lstinline{nand$^o$} which is, in turn, has a table-based implementation (see listing~\ref{not:nando}).
+The other way to implement boolean operations is via one basic boolean relation such as \lstinline{nand$^o$} which has, in turn, a table-based implementation (see Listing~\ref{not:nando}).
 It will take several sequential unfoldings to derive that variables \lstinline{v} and \lstinline{w} should be \lstinline{^true} when considering a call \lstinline{and$^o$ v w ^true} implemented via a basic relation.
-Non-conjunctive partial deduction drives the selected call until it derives useful substitutions for the variables involved while CPD with deterministic unfolding may fail to do so.
+Conservative partial deduction drives the selected call until it derives useful substitutions for the variables involved.
+CPD with deterministic unfolding may fail to derive useful substitutions.
 
 \begin{figure*}[!h]
   \centering
   \begin{minipage}{0.7\textwidth}
-    \begin{lstlisting}[label={not:nando}, caption={Implementation of boolean operation via \lstinline{nand}}, captionpos=b, frame=tb]
+    \begin{lstlisting}[label={not:nando}, caption={Implementation of boolean operations via \lstinline{nand}}, captionpos=b, frame=tb]
   let not$^o$ x y = nand$^o$ x x y
 
   let or$^o$ x y z = nand$^o$ x x xx /\ nand$^o$ y y yy /\ nand$^o$ xx yy z
@@ -125,50 +126,79 @@ Non-conjunctive partial deduction drives the selected call until it derives usef
 
 In our study, we considered two implementations of \lstinline{eval$^o$}, one we call \lstinline{plain} and the other --- \lstinline{last}, and compared how specializers behave on them.
 The \lstinline{plain} relation uses table-based boolean operations and places them further to the left in each conjunction.
-The relation \lstinline{last} employs boolean operations implemented via \lstinline{nand$^o$} and place them at the end of each conjunction.
+The relation \lstinline{last} employs boolean operations implemented via \lstinline{nand$^o$} and places them at the end of each conjunction.
 These two programs are complete opposites from the standpoint of CPD.
 
-We measured the time necessary to generate $10000$ formulas over two variables which evaluate to \lstinline{^true}.
-We compared the results of specialization of the goal \lstinline{eval$^o$ subst fm ^true} by our implementation of CPD, the new non-conjunctive partial deduction, and the CPD modified with the branching heuristic.
-Our evaluation confirmed that CPD behaves very differently on these two implementations of the same relation: the running time of the specialized \lstinline{last} relation is almost 6 times as high as the running time of the specialized \lstinline{plain} relation.
-The running time of two programs generated with our novel non-conjunctive partial deduction is very close and it is a little bit better than the best by CPD.
-CPD with the branching heuristic still constructs residual programs of different quality.
+We measured the time necessary to generate $1000$ formulas over two variables which evaluate to \lstinline{^true}.
+We compared the results of specialization of the goal \lstinline{eval$^o$ subst fm ^true} by our implementation of CPD, the new conservative partial deduction, and the CPD modified with the less-branching heuristic.
+Our evaluation confirmed that CPD behaves very differently on these two implementations of the same relation.
+CPD improves the execution time of the \lstinline{plain} relation, however CPD performs too much unfolding of the  \lstinline{last} relation which is why the specialized relation \lstinline{last} fails to terminate in under 10 seconds.
+The execution time of two programs generated with the novel conservative partial deduction is very similar and it is a little bit better than the best by CPD.
+CPD with the less-branching heuristic constructs residual programs of different quality, worsening the execution time for both implementations.
 The results are shown in table~\ref{tbl:eval}.
 
-Besides evaluator of logic formulas we also run the transformers on the relation \lstinline{unify} which searches for a unifier of two terms and a relation \lstinline{isPath} specialized to search for paths in the graph.
+Besides the evaluator of logic formulas we also run the transformers on the relation \lstinline{unify}, which searches for a unifier of two terms, and the relation \lstinline{isPath} specialized to search for paths in a graph.
 These two relations are described in paper~\cite{lozov2019relational} so we will not go into too many details here.
 
-The \lstinline{unify} relation was executed to find a unifier of two terms $f(X, X, g(Z, t))$ and $f(g(p, L), Y, Y)$.
-The original \mk{} program fails to terminate on this goal in 300 seconds.
-On this example, the most performant is the program generated by CPD (2.35 seconds) while the program generated by adding branching heuristic also fails to terminate in 300 seconds.
-The non-conjunctive partial deduction shows some improvement with the residual program terminated within 15 seconds.
-While driving this program, the non-conjunctive partial deduction does too much unfolding which negatively impacts the running time as compared to CPD.
+The \lstinline{unify} relation was executed to find a unifier of the terms $f(X, X, g(Z, t))$ and $f(g(p, L), Y, Y)$.
+The original \mk{} program fails to terminate on this goal in 30 seconds.
+On this example, the most performant is the program generated by conservative partial deduction (0.96 seconds).
 
-The last test executed \lstinline{isPath} relation to search for 5 paths in the graph with 20 vertices and 30 edges.
-On this program, non-conjunctive partial deduction showed better transformation results than CPD, although the difference is not that drastic.
+The last test executed the \lstinline{isPath} relation to search for 5 paths in a graph with 20 vertices and 30 edges.
+The original \mk{} program fails to terminate on this goal in 30 seconds.
+On this program, CPD with branching heuristic showed much better transformation result than both CPD and conservative partial deduction, although all specialized versions show improvement as compared with the original relation.
 
 All evaluation results are presented in the table~\ref{tbl:eval}.
 Each column corresponds to the relation being run as described above.
-The row marked ``Original'' contains the running time of the original \mk{} relation before specialization, ``CPD'' and ``Non-CPD'' correspond to conjunctive and non-conjunctive partial deduction respectively while ``Branching'' is for the CPD modified with the branching heuristic.
+The row marked ``Original'' contains the execution time of the original \mk{} relation before specialization, ``CPD'' and ``ConsPD'' correspond to conjunctive and conservative partial deduction respectively while ``Branching'' is for the CPD modified with the branching heuristic.
 
 \begin{table}
   \centering
   \begin{tabular}{c||c|c||c||c}
-                   & last & plain & unify & isPath \\
-  \hline\hline
-  Original         & >60.00s & >60.00s & >300.00s & 19.86s \\
-  \hline
-  CPD              & 31.31s & 5.46s & 2.35s & 4.66s \\
-  \hline
-  Non-CPD          & 4.99s  & 5.05s & 14.90s & 3.00s \\
-  \hline
-  Branching        & 17.21s  & 6.17s & >300.00s & N/A \\
-  \hline
+                   & last  & plain & unify  & isPath \\ \hline\hline
+  Original         & 1.06s & 1.84s & ---    & ---    \\ \hline
+  CPD              & ---   & 1.13s & 14.12s & 3.62s  \\ \hline
+  ConsPD           & 0.93s & 0.99s & 0.96s  & 2.51s  \\ \hline
+  Branching        & 3.11s & 7.53s & 3.53s  & 0.54s  \\ \hline
   \end{tabular}
 
   \caption{Evaluation results}
   \label{tbl:eval}
 \end{table}
+
+% \begin{table}
+%   \centering
+%   \begin{tabular}{c||c|c||c||c}
+%                    & last   & plain  & unify    & isPath  \\ \hline\hline
+%   Original         & 1.29s & 1.61s & >30.00s & 25.84s \\ \hline
+%   CPD              & 1.77s & 0.17s & 0.34s   & 3.54s  \\ \hline
+%   Non-CPD          & 1.07s & 0.98s & 0.41s   & 1.68s  \\ \hline
+%   Branching        & 0.51s & 0.18s & >30.00s & N/A     \\ \hline
+%   \end{tabular}
+
+%   \caption{Evaluation results}
+%   \label{tbl:eval}
+% \end{table}
+
+
+% \begin{table}
+%   \centering
+%   \begin{tabular}{c||c|c||c||c}
+%                    & last & plain & unify & isPath \\
+%   \hline\hline
+%   Original         & >60.00s & >60.00s & >300.00s & 19.86s \\
+%   \hline
+%   CPD              & 31.31s & 5.46s & 2.35s & 4.66s \\
+%   \hline
+%   Non-CPD          & 4.99s  & 5.05s & 14.90s & 3.00s \\
+%   \hline
+%   Branching        & 17.21s  & 6.17s & >300.00s & N/A \\
+%   \hline
+%   \end{tabular}
+
+%   \caption{Evaluation results}
+%   \label{tbl:eval}
+% \end{table}
 
 % \subsection{Search for a Unifier}
 
@@ -195,7 +225,7 @@ The row marked ``Original'' contains the running time of the original \mk{} rela
 % The unification of two terms $t$ and $u$ is searching for a substitution $\theta$ such that $t \theta = u \theta$, $\theta$ is called a unifier.
 % We search for any unifier, not necessarily most specific.
 % The details on this benchmark can be found in the earlier paper CITE.
-% This example demonstrates how too much unfolding can be introduced with the non-conjunctive partial deduction.
+% This example demonstrates how too much unfolding can be introduced with the conservative partial deduction.
 
 % \subsection{Search for Paths in a Graph}
 

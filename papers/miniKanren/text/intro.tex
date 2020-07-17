@@ -1,6 +1,6 @@
 \section{Introduction}
 
-The core feature of the family of relational programming languages \mk{}\footnote{\mk{} language web site: \url{http://minikanren.org}} is their ability to run a program in different directions.
+The core feature of the family of relational programming languages \mk{}\footnote{\mk{} language web site: \url{http://minikanren.org}. Access date: 17.07.2020.} is their ability to run a program in different directions.
 Having specified a relation for adding two numbers, one can also compute the subtraction of two numbers or find all pairs of numbers which can be summed up to get the given one.
 Program synthesis can be done by running \emph{backwards} a relational interpreter for some language.
 In general, it is possible to create a solver for a recognizer by translating it into \mk{} and running in the appropriate direction~\cite{lozov2019relational}.
@@ -18,9 +18,9 @@ Unfortunately, it may also not affect the running time of a program or even make
 
 Control issues in partial deduction of logic programming language \pro{} have been studied before~\cite{leuschel2002logic}.
 The ideas described there are aimed at left-to-right evaluation strategy of \pro{}.
-Since the search in \mk{} is complete, it is safe to reorder some relation calls within the goal for better performance.
+Since the search in \mk{} is complete, it is safe to reorder some relation calls within the goal ahead-of-time for better performance.
 While sometimes conjunctive partial deduction gives great performance boost, sometimes it does not behave as well as it could have.
 
 In this paper, we show on examples some issues which conjunctive partial deduction faces.
-We also describe a novel approach to partial deduction of a relational programming language \mk{}.
+We also describe \emph{conservative partial deduction} --- a novel specialization approach for the relational programming language \mk{}.
 We compare it to the existing specialization algorithms on several programs and discuss why some \mk{} programs run slower after specialization.
