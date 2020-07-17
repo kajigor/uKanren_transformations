@@ -1,0 +1,37 @@
+Latencies for 10000 iterations of " original", " branches", " branches_new", "   conspd", "      cpd", "      cpd_new":
+     original:  3.93 WALL ( 3.93 usr +  0.00 sys =  3.93 CPU) @ 2545.27/s (n=10000)
+     branches:  2.89 WALL ( 2.89 usr +  0.00 sys =  2.89 CPU) @ 3459.73/s (n=10000)
+ branches_new:  1.42 WALL ( 1.42 usr +  0.00 sys =  1.42 CPU) @ 7063.61/s (n=10000)
+       conspd:  1.26 WALL ( 1.26 usr +  0.00 sys =  1.26 CPU) @ 7938.15/s (n=10000)
+          cpd:  1.34 WALL ( 1.34 usr +  0.00 sys =  1.34 CPU) @ 7471.43/s (n=10000)
+      cpd_new:  1.27 WALL ( 1.27 usr +  0.00 sys =  1.27 CPU) @ 7890.03/s (n=10000)
+                Rate  original  branches  branches_new       cpd       cpd_new    conspd
+     original 2545/s        --      -26%          -64%      -66%          -68%      -68%
+     branches 3460/s       36%        --          -51%      -54%          -56%      -56%
+ branches_new 7064/s      178%      104%            --       -5%          -10%      -11%
+          cpd 7471/s      194%      116%            6%        --           -5%       -6%
+      cpd_new 7890/s      210%      128%           12%        6%            --       -1%
+       conspd 7938/s      212%      129%           12%        6%            1%        --
+Latencies for 100 iterations of " branches", " branches_new", "   conspd", "      cpd", "      cpd_new":
+     branches: 14.96 WALL (14.89 usr +  0.06 sys = 14.96 CPU) @  6.69/s (n=100)
+ branches_new:  3.00 WALL ( 3.00 usr +  0.00 sys =  3.00 CPU) @ 33.37/s (n=100)
+       conspd:  3.32 WALL ( 3.32 usr +  0.00 sys =  3.32 CPU) @ 30.09/s (n=100)
+          cpd:  3.05 WALL ( 3.05 usr +  0.00 sys =  3.05 CPU) @ 32.77/s (n=100)
+      cpd_new:  3.03 WALL ( 3.03 usr +  0.00 sys =  3.03 CPU) @ 33.04/s (n=100)
+                Rate  branches     conspd        cpd       cpd_new  branches_new
+     branches 6.69/s        --       -78%       -80%          -80%          -80%
+       conspd 30.1/s      350%         --        -8%           -9%          -10%
+          cpd 32.8/s      390%         9%         --           -1%           -2%
+      cpd_new 33.0/s      394%        10%         1%            --           -1%
+ branches_new 33.4/s      399%        11%         2%            1%            --
+Latencies for 10 iterations of " branches_new", "   conspd", "      cpd", "      cpd_new":
+ branches_new: 35.33 WALL (35.18 usr +  0.15 sys = 35.33 CPU) @  0.28/s (n=10)
+       conspd:  9.57 WALL ( 9.56 usr +  0.02 sys =  9.57 CPU) @  1.04/s (n=10)
+          cpd:  7.34 WALL ( 7.32 usr +  0.02 sys =  7.34 CPU) @  1.36/s (n=10)
+      cpd_new: 141.12 WALL (140.94 usr +  0.17 sys = 141.11 CPU) @  0.07/s (n=10)
+                     Rate       cpd_new  branches_new        conspd          cpd
+      cpd_new 0.0708676/s            --          -75%          -93%         -95%
+ branches_new     0.283/s          299%            --          -73%         -79%
+       conspd      1.04/s         1374%          269%            --         -23%
+          cpd      1.36/s         1821%          381%           30%           --
+

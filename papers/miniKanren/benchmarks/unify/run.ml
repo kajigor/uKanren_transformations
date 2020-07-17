@@ -99,8 +99,10 @@ OCanren.injected), t3') =
 let inputs =
   [ " original", Original.topLevel
   ; " branches", Branch.topLevel
-  ; "      cpd", Cpd.topLevel
+  ; " branches_new", Branch_new.topLevel
   ; "   conspd", Conspd.topLevel
+  ; "      cpd", Cpd.topLevel
+  ; "      cpd_new", Cpd_new.topLevel
   ]
 
 (* let _ =

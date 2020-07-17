@@ -23,9 +23,15 @@ let var_to_string r = (show(logic) (show(bool))) (r#reify reify)
 let fm_to_string fm = (show(f)) (fm#reify reify_f)
 
 let run_formula n textRepr r =
+  let conj_before = Peep.conj_counter () in
+  let disj_before = Peep.disj_counter () in
   Printf.printf "-----------------------------\n%s\n" textRepr;
   List.iter (fun (q, r, fm) -> Printf.printf "O:\t%s\tS(O):\t%s\tFm:\t%s\n" (var_to_string q) (var_to_string r) (fm_to_string fm)) @@ RStream.take ~n:n @@
-            r (fun q r fm -> (q, r, fm))
+            r (fun q r fm -> (q, r, fm));
+  let conj_after = Peep.conj_counter () in
+  let disj_after = Peep.disj_counter () in
+  Printf.printf "\nDisj: %s\nConj: %s\n" (string_of_int (disj_after - disj_before)) (string_of_int (conj_after - conj_before))
+
 
 let run_time n text r =
   let t = Sys.time() in

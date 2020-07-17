@@ -7,6 +7,8 @@ let inputs =
   ; "  conspd", Conspd.topLevel
   ; "     cpd", Cpd.topLevel
   ; "branches", Branch.topLevel
+  ; "branches_new", Branch_new.topLevel
+  ; " cpd_new", Cpd_new.topLevel
   ]
 
 
@@ -18,4 +20,4 @@ let _ =
     ) inputs
 
 let _ =
-  do_tables 10L 1000 (fun eval -> run q (fun fm -> fresh (q r) (eval (ocanren ([q;r])) fm))) inputs
+  do_tables 5L 1000 (fun eval -> run q (fun fm -> fresh (q r) (eval (Std.(%<) q r) fm))) inputs

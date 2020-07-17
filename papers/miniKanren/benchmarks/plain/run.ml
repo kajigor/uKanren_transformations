@@ -5,13 +5,14 @@ open Helper
 let inputs =
   [ "original", Original.topLevel
   ; "  conspd", Conspd.topLevel
+  (* ; "conspdor", Conspd_or_and.topLevel
   ; "conspd_fresh", Conspd_fresh.topLevel
   ; "conspd_inline", Conspd_inline.topLevel
-  ; "conspdEl", Conspd_elem.topLevel
+  ; "conspdEl", Conspd_elem.topLevel *)
   ; "     cpd", Cpd.topLevel
-  ; " cpd_old", Cpd_old.topLevel
-  ; "ecce_old", Ecce_old.topLevel
-  ; "branches", Branch.topLevel
+  ; " cpd_new", Cpd_new.topLevel
+  ; "branches", Branch.topLevel 
+  ; "branches_new", Branch_new.topLevel 
   ]
 
 
@@ -24,4 +25,4 @@ let _ =
 
 
 let _ =
-  do_tables 5L 1000 (fun eval -> run q (fun fm -> fresh (q r) (eval (ocanren ([q;r])) fm))) inputs
+  do_tables 10L 1000 (fun eval -> run q (fun fm -> fresh (q r) (eval (Std.(%<) q r) fm))) inputs
