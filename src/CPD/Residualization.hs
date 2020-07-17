@@ -142,7 +142,7 @@ residualizeSldTree rootGoals tree definitions = do
                     resultants
   let defArgs = map Res.vident rootVars
   let body = Eval.postEval defArgs $
-                foldl1 (|||) (reverse goals)
+                unsafeDisj (reverse goals)
 
   if null goals
   then fail (printf "No resultants in the sld tree for %s" (show rootGoals))

@@ -1,6 +1,7 @@
 module Main where
 
 import           CPD.LocalControl       (Heuristic (..))
+import           Debug.Trace            (traceM)
 import           NonConjunctive.Unfold
 import qualified Program.Bottles
 import qualified Program.Bridge
@@ -139,19 +140,32 @@ runPropEval = do
 
 main :: IO ()
 main = do
+    Transformer.CPD.transform "branchPlainFirst" Program.PropEval.plainFirstQuery Nothing Branching
+    Transformer.CPD.transform "cpdPlainFirst" Program.PropEval.plainFirstQuery Nothing Deterministic
+    Transformer.CPD.transform "branchNandoLast" Program.PropEval.nandoLastQuery Nothing Branching
+    Transformer.CPD.transform "cpdNandoLast" Program.PropEval.nandoLastQuery Nothing Deterministic
+
+    Transformer.CPD.transform "branchUnify" Program.Unify.query Nothing Branching
+    Transformer.CPD.transform "cpdUnify" Program.Unify.query Nothing Deterministic
+
+    Transformer.CPD.transform "cpdPath" Program.Path.query1 Nothing Deterministic
+    traceM "\n==============================\nstarted transforming path:  branching\n\n"
+    Transformer.CPD.transform "branchPath" Program.Path.query1 Nothing Branching
+
+    runPath
+    runUnify
+
     -- runL'
 
     -- -- runPropEval
     -- -- runDoubleApp
     -- -- runMaxlen
     -- -- runL
-    -- -- runPath
-    -- -- runUnify
 
     -- Transformer.PrologToMk.transform  "test/out/nc/da/ecce.pl"
     -- Transformer.PrologToMk.transform  "test/out/nc/maxlen/ecce.pl"
     -- Transformer.PrologToMk.transform  "test/out/nc/llang1/ecce.pl"
-    Transformer.PrologToMk.transform  "test/out/nc/llangPeter/ecce.pl"
+    -- Transformer.PrologToMk.transform  "test/out/nc/llangPeter/ecce.pl"
     -- Transformer.PrologToMk.transform  "test/out/nc/path/ecce.pl"
     -- Transformer.PrologToMk.transform  "test/out/nc/unify/ecce.pl"
     -- Transformer.PrologToMk.transform  "test/out/nc/propFirstPlain/ecce.pl"

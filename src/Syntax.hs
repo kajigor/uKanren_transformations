@@ -96,6 +96,9 @@ conj xs = Just $ foldr1 (:/\:) xs
 unsafeConj :: [G a] -> G a
 unsafeConj = foldr1 (:/\:)
 
+unsafeDisj :: [G a] -> G a
+unsafeDisj = foldr1 (:\/:)
+
 successName :: String
 successName = "success"
 
