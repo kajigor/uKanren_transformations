@@ -39,6 +39,7 @@ dependencies:
 - tasty-hedgehog
 - tasty-hunit
 - parsec
+- filepath
 
 ghc-options:
   - -fwarn-unused-imports
@@ -58,6 +59,12 @@ executables:
     main: Main.hs
     source-dirs:
     - app/
+    - test/resources/
+    dependencies: uKanren-transformation
+  bench:
+    main: Main.hs
+    source-dirs:
+    - app/bench/
     - test/resources/
     dependencies: uKanren-transformation
 

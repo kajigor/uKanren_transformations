@@ -1,13 +1,16 @@
-{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module OCanrenize where
 
-import System.Process
-import System.IO
-import System.IO.Temp
-import Data.Char
-import Syntax
-import Text.Printf
+import           Control.Applicative ((<|>))
+import           Data.Char
+import           Data.Maybe          (fromMaybe)
+import           Syntax
+import           System.IO
+import           System.IO.Temp
+import           System.Process
+import           Text.Printf
 
 class OCanren a where
   ocanren :: a -> String
@@ -15,48 +18,48 @@ class OCanren a where
 instance OCanren String where
   ocanren = id
 
-instance {- OCanren v => -} OCanren (Term X) where
-  -- ocanren (V v@('q':_)) = printf "(Obj.magic %s)" (ocanren v)
-  ocanren (V v)        = ocanren v
-  ocanren (C nil _) | map toLower nil == "nil"  = "(Std.List.nil ())"
-  -- ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "(%s %% %s)" (ocanren h) (ocanren t)
-  -- ocanren (C "%"    [h,t]) = printf "(%s %% %s)" (ocanren h) (ocanren t)
-  ocanren (C cons [h,t]) | map toLower cons == "cons" = printf "(Std.(%%) (%s) (%s))" (ocanren h) (ocanren t)
-  ocanren (C "%" [h, t]) = printf "(Std.(%%) (%s) (%s))" (ocanren h) (ocanren t)
-  ocanren (C "O" []) = "Std.Nat.zero"
-  ocanren (C "S" [x]) = printf "(Std.Nat.succ (%s))" (ocanren x)
+instance OCanren v => OCanren (Term v) where
+  ocanren (V v) = ocanren v
+  ocanren (C name args) =
+      let lcName = map toLower name in
+      fromMaybe
+        (consToString name args)
+        (   getList lcName args
+        <|> getSucc lcName args
+        <|> getBool lcName args
+        <|> getSome lcName args
+        )
+    where
+      consToString name args =
+        printf "(%s %s)" (parenthesize $ getConsName name) (printArgs (map ocanren args))
 
-  ocanren (C "o" []) = "(o ())"
-  ocanren (C "s" [x]) = printf "(s (%s))" (ocanren x)
+      getConsName name | name == "fst" || name == "snd" = printf "%s%s" name "_"
+      getConsName (h : t) = toLower h : t
+      getConsName ""      = "emptyCons"
 
+      getList "nil" [] = Just "(List.nil ())"
+      getList name [h, t] | name == "cons" || name == "%" =
+        Just $ printf "(%s %% %s)" (parenthesize $ ocanren h) (parenthesize $ ocanren t)
+      getList _ _ = Nothing
 
-  -- ocanren (C "o" []) = "Std.Nat.zero"
-  -- ocanren (C "s" [x]) = printf "Std.Nat.succ (%s)" (ocanren x)
-  ocanren (C "z" []) = "Nat.zero"
+      getSucc name [] | name == "o" || name == "z" = Just "Nat.zero"
+      getSucc "s" [x] | name == "s" = Just $ printf "(Nat.succ %s)" (parenthesize $ ocanren x)
+      getSucc _ _ = Nothing
 
-  ocanren (C "pair" [x,y]) = printf "(Pair.pair (%s) (%s))" (ocanren x) (ocanren y)
-  ocanren (C "none" []) = "(Option.none ())"
-  ocanren (C "some" [x]) = printf "(Option.some (%s))" (ocanren x)
+      getBool "true" [] = Just "!!true"
+      getBool "false" [] = Just "!!false"
+      getBool _ _ = Nothing
 
+      getPair "pair" [f, s] =
+        Just $ printf "(Pair.pair %s %s)" (parenthesize $ ocanren f) (parenthesize $ ocanren s)
+      getPair _ _ = Nothing
 
-  ocanren (C "fst" []) = "(fst_ ())"
-  ocanren (C "snd" []) = "(snd_ ())"
-  ocanren (C "fill" []) = "(fill ())"
-  ocanren (C "empty" []) = "(empty ())"
-  ocanren (C "pour" []) = "(pour ())"
-
-
-  ocanren (C "true" []) = printf "!!true"
-  ocanren (C "false" []) = printf "!!false"
-  ocanren (C "ltrue" []) = printf "ltrue ()"
-  ocanren (C "lfalse" []) = printf "lfalse ()"
-  -- ocanren (C "o" []) = "o ()"
-  -- ocanren (C "s" [x]) = printf "s (%s)" (ocanren x)
-  -- ocanren (C "z" []) = "z ()"
-  ocanren (C (f:o) ts) = (toLower f : o) ++ ' ' : printArgs (map ocanren ts)
+      getSome "some" [x] =
+        Just $ printf "(Option.some %s)" (parenthesize $ ocanren x)
+      getSome "none" [] = Just "(Option.none ())"
+      getSome _ _ = Nothing
 
 instance {-OCanren v =>-} OCanren (G X) where
---ocanren (t1 :=:  t2)  = printf "(print_string \"%s === %s\\n\"; %s === %s)" (ocanren t1) (ocanren t2) (ocanren t1) (ocanren t2)
   ocanren (t1 :=:  t2)  = printf "(%s === %s)" (ocanren t1) (ocanren t2)
   ocanren (g1 :/\: g2)  = printf "(%s &&& %s)" (ocanren g1) (ocanren g2)
   ocanren (g1 :\/: g2)  = printf "(%s ||| %s)" (ocanren g1) (ocanren g2)
@@ -79,7 +82,10 @@ instance {-OCanren v =>-} OCanren (G X) where
 --   ocanren (Let (Def n as b) g) = printf "let rec %s %s = %s in %s" n (printArgs as) (ocanren b) (ocanren g)
 
 printArgs [] = "()"
-printArgs args = unwords $ map (\x -> if ' ' `elem` x then printf "(%s)" x else x ) args
+printArgs args = unwords $ map parenthesize args
+
+parenthesize x | ' ' `elem` x = printf "(%s)" x
+parenthesize x = x
 
 ocanrenize :: String -> (G X, [String]) -> String
 ocanrenize topLevelName (g, args) =
@@ -89,12 +95,12 @@ ocanrenize' :: String -> (G X, [String], [Def]) -> String
 ocanrenize' topLevelName input@(g, args, defs) =
     printf "let %s %s = %s %s" topLevelName (printArgs args) (printDefs defs) (ocanren g)
   where
-    printFstDef (Def n as g) = printf "let rec %s %s = %s" n (printArgs as) (ocanren g)
-    printLastDefs [] = "in "
+    printFstDef (Def n as g) = printf "\n  let rec %s %s = %s" n (printArgs as) (ocanren g)
+    printLastDefs [] = "\n  in "
     printLastDefs ((Def n [] g) : ds) =
       printLastDefs ds
     printLastDefs ((Def n as g) : ds) =
-      printf "and %s %s = %s %s " n (printArgs as) (ocanren g) $ printLastDefs ds
+      printf "\n  and %s %s = %s %s " n (printArgs as) (ocanren g) $ printLastDefs ds
 
     printDefs []     = ""
     printDefs (d:ds) = (printFstDef d) ++ " " ++ (printLastDefs ds)

@@ -29,7 +29,7 @@ lambda = Program evalo $ fresh ["m", "n"] (call "evalo" [V "m", V "n"])
 
 runJu = JU.transform
 
-runNc l = NonConj.transform Nothing (NC.nonConjunctive l)
+runNc l = NonConj.transform "test/out/nc" True Nothing (NC.nonConjunctive l)
 
 runRep = do
     runJu 100 "rep" rep
@@ -116,10 +116,6 @@ unit_nonConjunctiveTest = do
   -- runNc (-1) "revAcco" revAcco'
   -- runNc (-1) "maxLen" maxLen
   -- -- runNc (55) "lambda" lambda
-
-unit_ecce = do
-    Pl2Mk.transform "ecce_prop_last.txt"
-    Pl2Mk.transform "ecce_plain.txt"
 
 unit_printBottles = do
     Mk2Pl.transform "bottles.pl" Program.Bottles.bottles

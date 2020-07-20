@@ -11,6 +11,7 @@ import           Data.List
 import           Data.Maybe
 import qualified Data.Set                 as Set
 import           Debug.Trace
+import           Embed
 import qualified Eval                     as E
 import qualified OCanrenize               as OC
 import           Prelude                  hiding (succ)
@@ -35,45 +36,45 @@ import           Program.Unify
 import           Purification
 import           Residualize
 import           Syntax
+import           System.CPUTime
 import           System.Directory
+import           System.FilePath          ((</>), (<.>))
+import           System.IO
+import           System.Process           (system)
+import           System.TimeIt
 import           Text.Printf
 import           Unfold
 import           Util.ConjRetriever
 import           Util.Miscellaneous
-import           Embed
-import           System.CPUTime
-import           System.IO
-import           System.Process           (system)
-import           System.TimeIt
 
 transform filename goal env heuristic = do
     let (tree, logicGoal, names) = GC.topLevel goal heuristic
     -- traceM ("\n\n NAMES \n\n" ++ show (vident <$> reverse names) )
-    let path = printf "test/out/%s" filename
+    let path = "test/out" </> filename
     exists <- doesDirectoryExist path
     if exists
     then removeDirectoryRecursive path
     else return ()
-    let pathLocal = printf "%s/local" path
+    let pathLocal = path </> "local"
     createDirectoryIfMissing True path
-    printTree (printf "%s/global.dot" path) tree
+    printTree (path </> "global.dot") tree
     createDirectoryIfMissing True pathLocal
     let nodes = GC.getNodes tree
     for_
       nodes
       (\(goal, tree) ->
-        printTree (printf "%s/%s.dot" pathLocal (take 200 $ filter (/=' ') $ show goal)) tree
+        printTree (pathLocal </> ((take 200 $ filter (/=' ') $ show goal) <.> "dot")) tree
       )
     system (printf "dot -O -Tpdf %s/*.dot" path)
     system (printf "dot -O -Tpdf %s/*.dot" pathLocal)
     let prog = residualizationTopLevel tree
-    writeFile (printf "%s/%s.before.pur" path filename) (show prog)
+    writeFile (path </> (printf "%s.before.pur" filename)) (show prog)
     let pur@(goal, xs, defs) = purification (prog, vident <$> reverse names)
     traceM (show $ length defs)
     traceM (show goal)
     let prog = Program defs goal
-    writeFile (printf "%s/%s.pur" path filename) (show prog)
-    let ocamlCodeFileName = printf "%s/%s.ml" path filename
+    writeFile (path </> filename <.> "pur") (show prog)
+    let ocamlCodeFileName = path </> filename <.> "ml"
     OC.topLevel ocamlCodeFileName "topLevel" env pur
 
 

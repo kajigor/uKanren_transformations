@@ -89,3 +89,5 @@ papers/miniKanren/benchmarks/plain/results
 papers/miniKanren/benchmarks/plain/run
 
 papers/miniKanren/benchmarks/unify/run
+
+bottles.pl
