@@ -8,6 +8,8 @@ import Data.List
 
 import Text.ParserCombinators.Parsec
 
+import Text.Printf
+
 
 {-------------------------------------------}
 {-------------------------------------------}
@@ -76,7 +78,7 @@ defsToProlog defs =
 {-------------------------------------------}
 
 replaceChars '\'' = "_0"
-replaceChars c   = c : []
+replaceChars c   = [c]
 
 toConstrName :: String -> String
 toConstrName "%"   = "cons"
@@ -84,7 +86,7 @@ toConstrName (c:s) = concatMap replaceChars $ toLower c : s
 
 {-------------------------------------------}
 toVarName :: String -> String
-toVarName (c:s) = toUpper c : s
+toVarName (c:s) = concatMap replaceChars $ toUpper c : s
 
 {-------------------------------------------}
 toFuncName :: String -> String
@@ -94,11 +96,11 @@ toFuncName = toConstrName
 printTerm :: Term X -> String
 printTerm (V x)    = toVarName x
 printTerm (C n []) = toConstrName n
-printTerm (C n a)  = toConstrName n ++ "(" ++ intercalate ", " (map printTerm a) ++ ")"
+printTerm (C n a)  = printf "%s(%s)" (toConstrName n) (intercalate ", " (map printTerm a))
 
 {-------------------------------------------}
 printFunc :: Func -> String
-printFunc (n, a) = toFuncName n ++ "(" ++ intercalate ", " (map printTerm a) ++ ")"
+printFunc (n, a) = printf "%s(%s)" (toFuncName n) (intercalate ", " (map printTerm a))
 
 {-------------------------------------------}
 printFuncs :: Funcs -> String
@@ -106,8 +108,8 @@ printFuncs = intercalate ", " . map printFunc
 
 {-------------------------------------------}
 printRule :: Rule -> String
-printRule (h, []) = printFunc h ++ "."
-printRule (h, t) = printFunc h ++ " :- " ++ printFuncs t ++ "."
+printRule (h, []) = printf "%s." (printFunc h)
+printRule (h, t) = printf "%s :- %s." (printFunc h) (printFuncs t)
 
 {-------------------------------------------}
 printRules :: Rules -> String
@@ -115,7 +117,8 @@ printRules = intercalate "\n" . map printRule
 
 {-------------------------------------------}
 printGoal :: Funcs -> String
-printGoal = (++ ".") . (":- " ++) . printFuncs
+printGoal fs = printf ":- %s." (printFuncs fs)
+-- printGoal = (++ ".") . (":- " ++) . printFuncs
 
 {-------------------------------------------}
 printGoals :: [Funcs] -> String
@@ -126,7 +129,7 @@ printProg :: (Rules, [Funcs]) -> String
 printProg ([], []) = ""
 printProg (rs, []) = printRules rs
 printProg ([], gs) = printGoals gs
-printProg (rs, gs) = printRules rs ++ "\n" ++ printGoals gs
+printProg (rs, gs) = printf "%s\n%s" (printRules rs) (printGoals gs)
 
 {-------------------------------------------}
 {-------------------------------------------}
