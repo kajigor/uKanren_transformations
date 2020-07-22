@@ -1,29 +1,28 @@
 {-# LANGUAGE TupleSections #-}
 
-module NonConjunctive.Residualization where
+module ConsPD.Residualization where
 
-import           Control.Applicative   ((<|>))
-import qualified CPD.LocalControl      as LC
-import qualified CPD.Residualization   as CpdR
-import           Data.List             (find, intercalate, nub, sort, union,
-                                        (\\))
-import           Data.Maybe            (catMaybes, fromJust, fromMaybe)
-import           Debug.Trace           (trace, traceM)
-import           Embed                 (isInst)
-import qualified Eval                  as E
-import           NonConjunctive.Unfold
-import qualified Residualize           as Res
+import           ConsPD.Unfold
+import           Control.Applicative ((<|>))
+import qualified CPD.LocalControl    as LC
+import qualified CPD.Residualization as CpdR
+import           Data.List           (find, intercalate, nub, sort, union, (\\))
+import           Data.Maybe          (catMaybes, fromJust, fromMaybe)
+import           Debug.Trace         (trace, traceM)
+import           Embed               (isInst)
+import qualified Eval                as E
+import qualified Residualize         as Res
 import           Syntax
-import           Text.Printf           (printf)
-import           Unfold                (normalize)
-import           Util.Miscellaneous    (fst3, show', snd3, trd3)
+import           Text.Printf         (printf)
+import           Unfold              (normalize)
+import           Util.Miscellaneous  (fst3, show', snd3, trd3)
 
 topLevel :: Program -> Program
 topLevel input =
-  residualize $ nonConjunctive (-1) input
+  residualize $ ConsPD.Unfold.topLevel (-1) input
 
 
-residualize :: (NCTree, G S, [S]) -> Program
+residualize :: (ConsPDTree, G S, [S]) -> Program
 residualize (Fail, goal, names) = Program [] (generateGoal goal names)
 residualize (tree, goal, names) =
   -- let restricted = restrictSubsts tree in
@@ -31,7 +30,7 @@ residualize (tree, goal, names) =
   let (defs, newGoal) = generateDefs restricted in
   Program defs newGoal
 
-generateDefs :: NCTree -> ([Def], G X)
+generateDefs :: ConsPDTree -> ([Def], G X)
 generateDefs tree =
   let toplevel = fromJust $ nodeContent tree in
   let leaves = collectLeaves tree in
@@ -84,7 +83,7 @@ generateInvocation' defs gs v =
 
 
 
-findNode :: [G S] -> NCTree -> ([G S], NCTree)
+findNode :: [G S] -> ConsPDTree -> ([G S], ConsPDTree)
 findNode v tree =
     let nodes = go tree in
     case find nontrivial nodes of
@@ -101,7 +100,7 @@ findNode v tree =
     go (Gen ch _ _ _ _)                  = go ch
     go _                                 = []
 
-nontrivial :: NCTree -> Bool
+nontrivial :: ConsPDTree -> Bool
 nontrivial (Leaf _ _ _ _) = False
 nontrivial _              = True
 
@@ -110,14 +109,14 @@ nodeContent (Conj _ goal _)              = Just goal
 nodeContent (Split _ goal _)             = Just goal
 nodeContent x                            = Nothing -- error "Failed to get node content: unsupported node type"
 
-generateDef :: CpdR.Definitions -> [([G S], G S)] -> (([G S], Name, [S]), NCTree) -> Def
+generateDef :: CpdR.Definitions -> [([G S], G S)] -> (([G S], Name, [S]), ConsPDTree) -> Def
 generateDef defs invocations ((gs, n, args), tree) =
   let body = generateGoalFromTree defs invocations tree args in
   let argsX = map Res.vident args in
   Def n argsX (E.postEval argsX body)
 
--- generateGoalFromTree :: [([G S], G S)] -> NCTree -> [S] -> G X
-generateGoalFromTree :: CpdR.Definitions -> [([G S], G S)] -> NCTree -> [S] -> G X
+-- generateGoalFromTree :: [([G S], G S)] -> ConsPDTree -> [S] -> G X
+generateGoalFromTree :: CpdR.Definitions -> [([G S], G S)] -> ConsPDTree -> [S] -> G X
 generateGoalFromTree definitions invocations tree args =
     case go args True tree of
       Just goal ->
@@ -130,7 +129,7 @@ generateGoalFromTree definitions invocations tree args =
     residualizeState xs =
       (conj $ map (\(s, ts) -> (V s) === ts) $ reverse xs) <|> return success
 
-    go :: [S] -> Bool -> NCTree -> Maybe (G S)
+    go :: [S] -> Bool -> ConsPDTree -> Maybe (G S)
     go seen r Fail           = Just failure
     go seen r (Success ss _) = residualizeState ss
     go seen r (Or ch (LC.Descend gs _) s) = do
@@ -174,7 +173,7 @@ generateGoalFromTree definitions invocations tree args =
     getInvocation' gs v = return $ generateInvocation' definitions gs v
 
 
-  -- go :: NCTree -> [[G S]]
+  -- go :: ConsPDTree -> [[G S]]
     -- go Fail            = [[fail]]
     -- go (Success ss _) | null ss = [[success]]
     -- go (Success ss _)  = [residualizeState ss]
@@ -186,7 +185,7 @@ generateGoalFromTree definitions invocations tree args =
     -- go (Prune _ _)     = error "Failed to residualize: Prune node in tree"
 
 
-renameAmbigousVars :: NCTree -> NCTree
+renameAmbigousVars :: ConsPDTree -> ConsPDTree
 renameAmbigousVars tree = tree
   --   go (getVars (fromJust $ nodeContent tree) []) tree
   -- where
@@ -213,7 +212,7 @@ renameAmbigousVars tree = tree
   --     let vs = map fst subst ++ concatMap (fv . snd) subst in
   --     nub $ union vg vs
 
-  --   maxVar :: NCTree -> Int
+  --   maxVar :: ConsPDTree -> Int
   --   maxVar = maximum . getVarsTree
 
   --   getVarsTree (Success s _) = getVars [] s
@@ -222,7 +221,7 @@ renameAmbigousVars tree = tree
   --   getVarsTree (Leaf gs s _ _) = getVars gs s
   --   getVarsTree _ = []
 
-  --   renameTree :: Int -> [S] -> NCTree -> NCTree
+  --   renameTree :: Int -> [S] -> ConsPDTree -> ConsPDTree
   --   renameTree n seen =
   --       go
   --     where
@@ -256,7 +255,7 @@ renameAmbigousVars tree = tree
 generateGoal :: G S -> [S] -> G X
 generateGoal g ns = (Res.vident <$> g)
 
-collectLeaves :: NCTree -> [([G S], [G S])]
+collectLeaves :: ConsPDTree -> [([G S], [G S])]
 collectLeaves (Leaf  gs _ _ v) = [(gs, v)]
 collectLeaves (Or    ch _ _)   = concatMap collectLeaves ch
 collectLeaves (Conj  ch _ _)   = concatMap collectLeaves ch
@@ -273,7 +272,7 @@ collectLeaves (Split ch _ _)   =
 collectLeaves (Prune _ _)      = error "Cannot residualize a tree with Prune nodes"
 collectLeaves g = []
 
-collectGens :: NCTree -> [([G S], [G S])]
+collectGens :: ConsPDTree -> [([G S], [G S])]
 collectGens (Leaf  gs _ _ v) = []
 collectGens (Or    ch _ _)   = concatMap collectGens ch
 collectGens (Conj  ch _ _)   = concatMap collectGens ch

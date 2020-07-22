@@ -1,34 +1,34 @@
-module Transformer.NonConj where
+module Transformer.ConsPD where
 
 
-import           Control.Applicative            ((<|>))
-import           Control.Monad                  (guard)
-import           Debug.Trace                    (traceM)
-import           NonConjunctive.Residualization
-import qualified NonConjunctive.Unfold          as NC
-import qualified OCanrenize                     as OC
+import           ConsPD.Residualization
+import qualified ConsPD.Unfold          as ConsPD
+import           Control.Applicative    ((<|>))
+import           Control.Monad          (guard)
+import           Debug.Trace            (traceM)
+import qualified OCanrenize             as OC
 import           Printer.Dot
-import           Printer.NCTree                 ()
+import           Printer.ConsPDTree     ()
 import           Purification
-import           Residualize                    (vident)
+import           Residualize            (vident)
 import           Syntax
 import           System.Directory
-import           System.FilePath                ((</>), (<.>))
-import           System.Process                 (system)
+import           System.FilePath        ((<.>), (</>))
+import           System.Process         (system)
 import           Text.Printf
 import qualified Transformer.MkToProlog
-import           Util.Miscellaneous             (escapeTick)
+import           Util.Miscellaneous     (escapeTick)
 
 
 toOcanren fileName (Program defs goal) names =
   OC.topLevel fileName "topLevel" Nothing (goal, names, defs)
 
-runNc l = Transformer.NonConj.transform "test/out/nc" True Nothing (NC.nonConjunctive l)
+runConsPD l = Transformer.ConsPD.transform "test/out/consPD" True Nothing (ConsPD.topLevel l)
 
 transform dirName cleanDir env function filename goal@(Program definitions _) = (do
   let transformed@(tree, logicGoal, names) = function goal
-  let tree' = NC.simplify tree
-  -- traceM (printf "\n========================================\nBefore:\n%s\n\nAfter:\n%s\n========================================\n" (show tree) (show $ NC.simplify tree))
+  let tree' = ConsPD.simplify tree
+  -- traceM (printf "\n========================================\nBefore:\n%s\n\nAfter:\n%s\n========================================\n" (show tree) (show $ ConsPD.simplify tree))
 
   let path = dirName </> filename
   exists <- doesDirectoryExist path
@@ -41,7 +41,7 @@ transform dirName cleanDir env function filename goal@(Program definitions _) = 
   printTree (path </> "tree.dot") tree
   printTree (path </> "tree.after.dot") tree'
   system (printf "dot -O -Tpdf %s/*.dot" (escapeTick path))
-  guard (NC.noPrune tree)
+  guard (ConsPD.noPrune tree)
   let prog = residualize transformed
   writeFile (path </> (printf "%s.before.pur" filename)) (show prog)
 

@@ -1,8 +1,8 @@
 module Main where
 
+import           ConsPD.Unfold
 import           CPD.LocalControl       (Heuristic (..))
 import           Debug.Trace            (traceM)
-import           NonConjunctive.Unfold
 import qualified Program.Bottles
 import qualified Program.Bridge
 import qualified Program.Bridge2
@@ -20,9 +20,9 @@ import           Program.Stlc           (evalo)
 import qualified Program.Typing
 import qualified Program.Unify
 import           Syntax
+import qualified Transformer.ConsPD
 import qualified Transformer.CPD
 import qualified Transformer.JustUnfold
-import qualified Transformer.NonConj
 import qualified Transformer.PrologToMk
 
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
@@ -33,7 +33,7 @@ lambda = Program evalo $ fresh ["m", "n"] (call "evalo" [V "m", V "n"])
 
 runJu = Transformer.JustUnfold.transform
 
-runNc = Transformer.NonConj.runNc
+runConsPD = Transformer.ConsPD.runConsPD
 
 runRep = do
     runJu 100 "rep" rep
@@ -41,20 +41,20 @@ runRep = do
     rep = Program Program.Programs.rep $ fresh ["n", "x"] (call "rep" [V "n", V "x"])
 
 runProp = do
-    -- runNc (-1) "prop"  prop
-    -- runNc (-1) "prop1" prop1
-    -- runNc (-1) "prop2" prop2
-    -- runNc (-1) "prop3" prop3
-    -- runNc (-1) "prop4" prop4
-    -- runNc (-1) "prop_" prop'
-    runNc (-1) "prop__" prop''
-    -- runNc (-1) "prop1___" prop1'''
-    -- runNc (-1) "prop2___" prop2'''
-    runNc (-1) "propPlain" propPlain
-    -- runNc (-1) "propPlain_" propPlain'
-    -- runNc (-1) "prop__1" prop''1
-    -- runNc (-1) "prop__2" prop''2
-    -- runNc (-1) "prop__3" prop''3
+    -- runConsPD (-1) "prop"  prop
+    -- runConsPD (-1) "prop1" prop1
+    -- runConsPD (-1) "prop2" prop2
+    -- runConsPD (-1) "prop3" prop3
+    -- runConsPD (-1) "prop4" prop4
+    -- runConsPD (-1) "prop_" prop'
+    runConsPD (-1) "prop__" prop''
+    -- runConsPD (-1) "prop1___" prop1'''
+    -- runConsPD (-1) "prop2___" prop2'''
+    runConsPD (-1) "propPlain" propPlain
+    -- runConsPD (-1) "propPlain_" propPlain'
+    -- runConsPD (-1) "prop__1" prop''1
+    -- runConsPD (-1) "prop__2" prop''2
+    -- runConsPD (-1) "prop__3" prop''3
 
   where
     -- won't terminate: accumulator in assoco
@@ -76,27 +76,27 @@ runProp = do
     prop''3    = Program.Prop.query''3
 
 runBottles = do
-    runNc (-1) "bottles" Program.Bottles.query
-    -- runNc(-1) "bottlesQuery" Program.Bottles.query'
-    -- runNc(-1) "fancyEq" Program.Bottles.queryEq
+    runConsPD (-1) "bottles" Program.Bottles.query
+    -- runConsPD(-1) "bottlesQuery" Program.Bottles.query'
+    -- runConsPD(-1) "fancyEq" Program.Bottles.queryEq
 
 runBridge = do
-    runNc (-1) "bridge" Program.Bridge.query
-    -- runNc (-1) "bridge2" Program.Bridge2.query
+    runConsPD (-1) "bridge" Program.Bridge.query
+    -- runConsPD (-1) "bridge2" Program.Bridge2.query
 
 runDesert = do
-    -- runNc (-1) "desert"    Program.Desert.query
-    -- runNc (-1) "desert_"   Program.Desert.query'
-    -- runNc (-1) "desert__"  Program.Desert.query''
-    -- runNc (-1) "desert___" Program.Desert.query'''
-    runNc (-1) "desert1" Program.Desert.query1
+    -- runConsPD (-1) "desert"    Program.Desert.query
+    -- runConsPD (-1) "desert_"   Program.Desert.query'
+    -- runConsPD (-1) "desert__"  Program.Desert.query''
+    -- runConsPD (-1) "desert___" Program.Desert.query'''
+    runConsPD (-1) "desert1" Program.Desert.query1
 
 runUnify = do
-    runNc (-1) "unify" Program.Unify.query
+    runConsPD (-1) "unify" Program.Unify.query
 
 runPath = do
-    runNc (-1) "path" Program.Path.query1
-    runNc (-1) "pathlen" Program.Path.querylength
+    runConsPD (-1) "path" Program.Path.query1
+    runConsPD (-1) "pathlen" Program.Path.querylength
 
 runAppendo = do
     mapM (\d -> runJu d ("app" ++ show d) app) [1..15]
@@ -105,14 +105,14 @@ runAppendo = do
     app = Program Program.List.appendo $ fresh ["x", "y", "z"] (call "appendo" [V "x", V "y", V "z"])
 
 runSort = do
-    runNc (-1) "sort" Program.Sort.query
+    runConsPD (-1) "sort" Program.Sort.query
 
 runTyping = do
-    runNc (-1) "type" Program.Typing.query
+    runConsPD (-1) "type" Program.Typing.query
 
 runL = do
-    runNc (-1) "llang" Program.L.query
-    runNc (-1) "llang1" Program.L.query1
+    runConsPD (-1) "llang" Program.L.query
+    runConsPD (-1) "llang1" Program.L.query1
     -- Transformer.CPD.transform "llangBranch" Program.L.query1 Nothing Branching
     -- putStrLn "llangBranch done"
     -- Transformer.CPD.transform "llangDeterm" Program.L.query1 Nothing Deterministic
@@ -120,23 +120,23 @@ runL = do
 
 
 runL' = do
-    runNc (-1) "llangPeter" Program.LLangType.query1
+    runConsPD (-1) "llangPeter" Program.LLangType.query1
     -- Transformer.CPD.transform "llangPeterBranch" Program.LLangType.query1 Nothing Branching
     -- putStrLn "llangPeterBranch done"
     -- Transformer.CPD.transform "llangPeterDeterm" Program.LLangType.query1 Nothing Deterministic
     -- putStrLn "llangPeterDeterm done"
 
 runDoubleApp = do
-    runNc (-1) "da" dA
+    runConsPD (-1) "da" dA
 
 runMaxlen = do
-    runNc (-1) "maxlen" maxLen
+    runConsPD (-1) "maxlen" maxLen
 
 runPropEval = do
-    runNc (-1) "propFirstPlain" Program.PropEval.plainFirstQuery
-    runNc (-1) "propFirstNando" Program.PropEval.nandoFirstQuery
-    runNc (-1) "propLastPlain"  Program.PropEval.plainLastQuery
-    runNc (-1) "propLastNando"  Program.PropEval.nandoLastQuery
+    runConsPD (-1) "propFirstPlain" Program.PropEval.plainFirstQuery
+    runConsPD (-1) "propFirstNando" Program.PropEval.nandoFirstQuery
+    runConsPD (-1) "propLastPlain"  Program.PropEval.plainLastQuery
+    runConsPD (-1) "propLastNando"  Program.PropEval.nandoLastQuery
 
 main :: IO ()
 main = do

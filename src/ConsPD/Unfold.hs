@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module NonConjunctive.Unfold where
+module ConsPD.Unfold where
 
 import qualified CPD.LocalControl   as LC
 import           Data.Foldable      (foldlM)
@@ -20,18 +20,18 @@ import           Unfold             (findBestByComplexity, notMaximumBranches,
 import           Util.Check         (checkConj)
 import           Util.Miscellaneous (fst3, fst4, show', snd3)
 
-data NCTree = Fail
-            | Success E.Sigma E.Gamma
-            | Or [NCTree] (LC.Descend [G S]) E.Sigma
-            | Conj [NCTree] [G S] E.Sigma
-            | Gen NCTree [G S] [G S] Generalizer E.Sigma
-            | Leaf [G S] E.Sigma E.Gamma [G S] -- last argument is a goal renaming of which current node is
-            | Split [NCTree] [G S] E.Sigma
-            | Prune [G S] E.Sigma
-            -- deriving (Show, Eq)
+data ConsPDTree = Fail
+                | Success E.Sigma E.Gamma
+                | Or [ConsPDTree] (LC.Descend [G S]) E.Sigma
+                | Conj [ConsPDTree] [G S] E.Sigma
+                | Gen ConsPDTree [G S] [G S] Generalizer E.Sigma
+                | Leaf [G S] E.Sigma E.Gamma [G S] -- last argument is a goal renaming of which current node is
+                | Split [ConsPDTree] [G S] E.Sigma
+                | Prune [G S] E.Sigma
+                -- deriving (Show, Eq)
 
 
-instance Show NCTree where
+instance Show ConsPDTree where
   show Fail = "_|_"
   show (Success _ _) = "Success"
   show (Or ch (LC.Descend gs _) _) = printf "Or %s %s" (show gs) (show ch)
@@ -42,7 +42,7 @@ instance Show NCTree where
   show (Gen _ _ _ _ _) = "Gen"
 
 
-instance Eq NCTree where
+instance Eq ConsPDTree where
   Fail == Fail = True
   Success s _ == Success s' _ = s == s'
   Or ch ds s == Or ch' ds' s' = ch == ch' && ds == ds' && s == s'
@@ -86,7 +86,7 @@ productList :: [[a]] -> [[a]]
 productList []       = [[]]
 productList (xs:xss) = [ h : t | h <- xs, t <- productList xss]
 
-restrictSubsts :: NCTree -> NCTree
+restrictSubsts :: ConsPDTree -> ConsPDTree
 restrictSubsts =
     go []
   where
@@ -136,7 +136,7 @@ realIncrDeep globalLimit f x =
     go localLimit curr f x =
       go localLimit (curr + 1) f (f x)
 
-leaf :: E.Sigma -> E.Gamma -> NCTree
+leaf :: E.Sigma -> E.Gamma -> ConsPDTree
 leaf [] _ = Fail
 leaf s  e = Success s e
 
@@ -159,7 +159,7 @@ conjToList x          = [x]
 globalLimit :: Int
 globalLimit = 8
 
-justUnfold :: Int -> Program -> (NCTree, G S, [S])
+justUnfold :: Int -> Program -> (ConsPDTree, G S, [S])
 justUnfold limit (Program defs goal) =
     let gamma = E.updateDefsInGamma E.env0 defs in
     let (logicGoal, gamma', names) = E.preEval gamma goal in
@@ -180,8 +180,8 @@ justUnfold limit (Program defs goal) =
       Or children d subst
 
 
-nonConjunctive :: Int -> Program -> (NCTree, G S, [S])
-nonConjunctive limit (Program defs goal) =
+topLevel :: Int -> Program -> (ConsPDTree, G S, [S])
+topLevel limit (Program defs goal) =
     let gamma = E.updateDefsInGamma E.env0 defs in
     let (logicGoal, gamma', names) = E.preEval gamma goal in
     let nodes = [] in
@@ -189,7 +189,7 @@ nonConjunctive limit (Program defs goal) =
     let descend = LC.Descend (conjToList logicGoal) [] in
     (fst4 $ go descend gamma' nodes E.s0 failed, logicGoal, names)
   where
-    go :: LC.Descend [G S] -> E.Gamma -> [[G S]] -> E.Sigma -> [[G S]] -> (NCTree, [[G S]], [[G S]], E.Gamma)
+    go :: LC.Descend [G S] -> E.Gamma -> [[G S]] -> E.Sigma -> [[G S]] -> (ConsPDTree, [[G S]], [[G S]], E.Gamma)
     go (LC.Descend goal' ancs') env@(x,y,z) seen state failed =
      let goal = E.substitute state goal' in
      let seen' = goal : seen in
@@ -309,7 +309,7 @@ nonConjunctive limit (Program defs goal) =
 
     merge (_, _, d) newEnv@(x, y, z) = if head d > head z then (x, y, d) else newEnv
 
-createLeafNode :: [[G S]] -> ([G S], E.Sigma, E.Gamma) -> NCTree
+createLeafNode :: [[G S]] -> ([G S], E.Sigma, E.Gamma) -> ConsPDTree
 createLeafNode seen = go
   where
     go ([], state, env) = leaf state env
@@ -327,7 +327,7 @@ createLeafNode seen = go
 --       filter (\(v,t) -> any (`elem` varsToLeave) (v : fv t)) st
 
 
-computedAnswers :: NCTree -> Maybe ([([G S], E.Sigma, E.Gamma)])
+computedAnswers :: ConsPDTree -> Maybe ([([G S], E.Sigma, E.Gamma)])
 computedAnswers (Success s e) = Just [([], s, e)]
 computedAnswers Fail = Just []
 computedAnswers (Leaf g s e _) = Just [(g, s, e)]
@@ -366,7 +366,7 @@ doStep goal env state =
       (oneStep goal env state)
       (incrDeepOneStep globalLimit 0 goal env state)
 
-or :: [NCTree] -> LC.Descend [G S] -> E.Sigma -> [[G S]] -> [[G S]] -> E.Gamma -> (NCTree, [[G S]], [[G S]], E.Gamma)
+or :: [ConsPDTree] -> LC.Descend [G S] -> E.Sigma -> [[G S]] -> [[G S]] -> E.Gamma -> (ConsPDTree, [[G S]], [[G S]], E.Gamma)
 or ch d@(LC.Descend gs _) state seen failed env =
   if null ch || all (\x -> case x of Fail -> True; _ -> False) ch
   then (Fail, (delete gs seen), (gs:failed), env)
@@ -375,7 +375,7 @@ or ch d@(LC.Descend gs _) state seen failed env =
     --   [x] -> (x, seen, failed)
     --   _ -> (Or ch d state, seen, failed)
 
-split :: [NCTree] -> [G S] -> E.Sigma -> [[G S]] -> [[G S]] -> E.Gamma -> (NCTree, [[G S]], [[G S]], E.Gamma)
+split :: [ConsPDTree] -> [G S] -> E.Sigma -> [[G S]] -> [[G S]] -> E.Gamma -> (ConsPDTree, [[G S]], [[G S]], E.Gamma)
 split [x] goal state seen failed env = (x, seen, failed, env)
 split ch goal state seen failed env = (Split ch goal state, seen, failed, env)
 
@@ -384,7 +384,7 @@ checkConflicts sigmas =
     let conflicting = findConflicting sigmas in
     any (\x -> length x /= 1) conflicting
 
-collectSubsts :: NCTree -> [E.Sigma]
+collectSubsts :: ConsPDTree -> [E.Sigma]
 collectSubsts (Or ch _ _) =
     mapMaybe go ch
   where
@@ -421,7 +421,7 @@ findConflicting (x:xs) =
       let (conf', unConf') = partition (isConflicting x) unConf in
       go (xs ++ conf') (x : conf) unConf'
 
-simplify :: NCTree -> NCTree
+simplify :: ConsPDTree -> ConsPDTree
 simplify tree =
     removeTransient $ go tree
   where
@@ -461,7 +461,7 @@ simplify tree =
     --       then head children
     --       else replaceChildren (go <$> children) tree
 
-    untilMany :: NCTree -> [NCTree]
+    untilMany :: ConsPDTree -> [ConsPDTree]
     untilMany tree =
       let children = getChildren tree in
       case length children of
@@ -469,14 +469,14 @@ simplify tree =
         1 -> untilMany $ head children
         n -> children
 
-    getChildren :: NCTree -> [NCTree]
+    getChildren :: ConsPDTree -> [ConsPDTree]
     getChildren (Or    ch g s) = ch
     getChildren (Conj  ch g s) = ch
     getChildren (Split ch g s) = ch
     getChildren x = []
 
 
-    getGs :: NCTree -> [G S]
+    getGs :: ConsPDTree -> [G S]
     getGs (Or    ch (LC.Descend g _) s) = g
     getGs (Conj  ch g s) = g
     getGs (Split ch g s) = g
@@ -503,7 +503,7 @@ simplify tree =
       then Fail
       else f simplified
 
-noPrune :: NCTree -> Bool
+noPrune :: ConsPDTree -> Bool
 noPrune (Prune _ _) = False
 noPrune (Or ch _ _) = all noPrune ch
 noPrune (Conj ch _ _) = all noPrune ch

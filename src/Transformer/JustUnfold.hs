@@ -1,6 +1,6 @@
 module Transformer.JustUnfold where
 
-import qualified Transformer.NonConj
-import qualified NonConjunctive.Unfold
+import qualified ConsPD.Unfold
+import qualified Transformer.ConsPD
 
-transform l = Transformer.NonConj.transform "test/out/nc" True Nothing (NonConjunctive.Unfold.justUnfold l)
+transform l = Transformer.ConsPD.transform "test/out/consPD" True Nothing (ConsPD.Unfold.justUnfold l)
