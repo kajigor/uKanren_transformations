@@ -198,9 +198,6 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
 type Zeta = (E.Iota, E.P, G S)
 
 eval :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] -> Zeta -> [Zeta]  -> (TreeContext, Tree, E.Delta)
-eval tc cs d s gen prev (i, p, Let def g) conjs =
-  let (p', d') = update (p, d) def in
-  eval tc cs d' s gen prev (i, p', g) conjs
 eval tc cs d s gen prev g@(i, p, t1 :=: t2) conjs =
   case takeS 1 $ E.eval (p, i, d) s (trd3 g) of
     []       -> (tc, Fail, d)

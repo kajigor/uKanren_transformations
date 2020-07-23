@@ -27,7 +27,6 @@ purification (program@(Program defs x), names) =
   -- trace_pur (x, names) $
   -- identity x
   --justTakeOutLets x
-  --purification_old x
   --purificationWithErasure x
   conservativePurificationWithErasure program names
 
@@ -45,93 +44,13 @@ justTakeOutLetsProgram program args =
     (Program defs goalWithoutLets) = evalState state initialFvs
     state = do
       renamed <- renameProgram program
-      traceM $ "\n===============================\nESCAPE\n===============================\n" ++ show renamed
       escaped <- escapeFreeVarsProgram renamed
       return escaped
       -- evalState (renameProgram program >>= escapeFreeVarsProgram) initialFvs
 
 {-------------------------------------------}
 justTakeOutLets :: (G X, [String]) -> (G X, [String], [Def])
-justTakeOutLets (goal, args) = (goalWithoutLets, args, defs) where
-  initialFvs                 = [0..]
-  (goalWithoutClashs,  fvs ) = renameLetArgs initialFvs goal
-  (goalWithClosedLets, fvs') = escapeFreeVars fvs goalWithoutClashs
-  (goalWithoutLets,    defs) = takeOutLets goalWithClosedLets
-
-{-------------------------------------------}
-purification_old :: (G X, [String]) -> (G X, [String], [Def])
-purification_old (goal, args) =
-  let purG = totalPurification goalWithClosedLets args in
-  let (res, defs) = takeOutLets purG in
-  (res, args, defs) where
-
-  {-------------------------------------------}
-  getEssentialVars :: G X -> Set X -> Set X
-  getEssentialVars (g1 :/\: g2)    s = getEssentialVars g2 $ getEssentialVars g1 s
-  getEssentialVars (g1 :\/: g2)    s = getEssentialVars g2 $ getEssentialVars g1 s
-  getEssentialVars (Let _ g)       s = getEssentialVars g s
-  getEssentialVars (t1 :=:  t2)    s = let vars = Set.fromList $ fv t1 ++ fv t2 in
-                                       if Set.null $ Set.intersection s vars then s else Set.union vars s
-  getEssentialVars (Invoke _ args) s = let vars = Set.fromList $ concatMap fv args in Set.union vars s
-  getEssentialVars (Fresh _ g)     s = getEssentialVars g s
-
-  {-------------------------------------------}
-  getAllEssentialVars :: G X -> Set X -> Set X
-  getAllEssentialVars g s = let s' = getEssentialVars g s in if s == s' then s else getAllEssentialVars g s'
-
-  {-------------------------------------------}
-  findQuasiEssentialVars :: G X -> (Set X, Set X)
-  findQuasiEssentialVars (t1 :=:  t2) = (Set.fromList $ fv t1, Set.fromList $ fv t2)
-  findQuasiEssentialVars (Invoke _ a) = (Set.empty, Set.fromList $ concatMap fv a)
-  findQuasiEssentialVars (g1 :\/: g2) = let (qevs1, evs1) = findQuasiEssentialVars g1 in
-                                        let (qevs2, evs2) = findQuasiEssentialVars g2 in
-                                        let evs           = Set.union evs1 evs2 in
-                                        (Set.union qevs1 qevs2 Set.\\ evs, evs)
-  findQuasiEssentialVars (g1 :/\: g2) = let (qevs1, evs1) = findQuasiEssentialVars g1 in
-                                        let (qevs2, evs2) = findQuasiEssentialVars g2 in
-                                        let evs           = Set.union (Set.union evs1 evs2) $ Set.intersection qevs1 qevs2 in
-                                        (Set.union qevs1 qevs2 Set.\\ evs, evs)
-  findQuasiEssentialVars (Fresh _ g)  = findQuasiEssentialVars g
-  findQuasiEssentialVars (Let _ g)    = findQuasiEssentialVars g
-
-  {-------------------------------------------}
-  removeUnessentialVars :: Set X -> G X -> G X
-  removeUnessentialVars args g =
-    let essentialVars      = getAllEssentialVars g args in
-    let allVars            = Set.fromList $ fvg g in
-    let unessentialVars    = allVars Set.\\ essentialVars in
-    let p1 t1 t2           = Set.null $ Set.intersection essentialVars $ Set.fromList $ fv t1 ++ fv t2 in
-    let g0                 = removeUnifications p1 g in
-    let quasiEssentialVars = fst (findQuasiEssentialVars g0) Set.\\ args in
-    let p2 t1 t2           = not $ Set.null $ Set.intersection quasiEssentialVars $ Set.fromList $ fv t1 ++ fv t2 in
-    let g1                 = removeUnifications p2 g0 in --trace ("step: " ++ show unessentialVars ++ ", " ++ show quasiEssentialVars) $
-    if Set.size unessentialVars == 0 && Set.size quasiEssentialVars == 0 then g1 else removeUnessentialVars args g1
-
-  {-------------------------------------------}
-  purifyInternalLets :: G X -> G X
-  purifyInternalLets (g1 :\/: g2)          = purifyInternalLets g1 ||| purifyInternalLets g2
-  purifyInternalLets (g1 :/\: g2)          = purifyInternalLets g1 &&& purifyInternalLets g2
-  purifyInternalLets (Fresh n g)           = Fresh n $ purifyInternalLets g
-  purifyInternalLets (Let (Def n a g1) g2) = Let (Def n a (totalPurification g1 a)) $ purifyInternalLets g2
-  purifyInternalLets g                     = g
-
-  {-------------------------------------------}
-  totalPurification :: G X -> [X] -> G X
-  totalPurification g a =
-    let args      = Set.fromList a in
-    let g0        = snd $ freshVars [] g in
-    let purifiedG = removeUnessentialVars args g0 in
-    let inlinedG  = removeLinks args purifiedG in
-    let p t1 t2   = case (t1, t2) of { (V x1, V x2) -> x1 == x2; _ -> False } in
-    let filteredG = removeUnifications p inlinedG in
-    let totalG    = fresh (fvg filteredG \\ a) filteredG in
-    purifyInternalLets totalG
-
-  {-------------------------------------------}
-
-  initialFvs                 = [0..]
-  (goalWithoutClashs,  fvs ) = renameLetArgs initialFvs goal
-  (goalWithClosedLets, fvs') = escapeFreeVars fvs goalWithoutClashs
+justTakeOutLets (goal, args) = (goal, args, [])  where
 
 {-------------------------------------------}
 {-------------------------------------------}
@@ -164,13 +83,13 @@ purificationWithErasure x = (g''', args', defs''') where
   ruleToOcanren v ((_, a), bd) =
     let unifies = map (\(v, t) -> V v === t) $ zip v a in
     let calls   = map (\(n, a) -> Invoke n a) bd in
-    foldl1 (&&&) $ unifies ++ calls
+    unsafeConj $ unifies ++ calls
 
   {-------------------------------------------}
   rulesToDef :: Rules -> Def
   rulesToDef rules@(((n,a),_):_) =
     let v = map (toV "z") [1..length a] in
-    let g = foldl1 (|||) $ map (ruleToOcanren v) rules in
+    let g = unsafeDisj $ map (ruleToOcanren v) rules in
     Def n v g
 
   {-------------------------------------------}
@@ -334,65 +253,6 @@ defToRules (Def n a g) = map (\(s, f) -> (applyInFunc s (n, ta), map (applyInFun
 closeByFresh :: [X] -> G X -> G X
 closeByFresh a g = fresh (fvg g \\ a) g
 
-{-------------------------------------------}
-takeOutLets :: G X -> (G X, [Def])
-takeOutLets g = (\(x, y, _) -> (x, y)) $ go [] g
-  where
-    go seen (g1 :/\: g2)        = let (g1', lets1, seen')  = go seen  g1 in
-                                  let (g2', lets2, seen'') = go seen' g2 in
-                                  (g1' &&& g2', lets1 ++ lets2, seen'')
-    go seen (g1 :\/: g2)        = let (g1', lets1, seen')  = go seen  g1 in
-                                  let (g2', lets2, seen'') = go seen' g2 in
-                                  (g1' ||| g2', lets1 ++ lets2, seen'')
-    go seen (Fresh n g)         = let (g', lets, seen') = go seen g in
-                                  (Fresh n g', lets, seen')
-    go seen (Let (Def n a g1) g2) | n `notElem` seen
-                                = let newSeen = n : seen in
-                                  let (g1', lets1, seen')  = go newSeen g1 in
-                                  let (g2', lets2, seen'') = go seen' g2 in
-                                  (g2', (Def n a g1') : lets1 ++ lets2, seen'')
-    go seen (Let (Def n a g1) g2)
-                                = let (g1', lets1, seen')  = go seen g1 in
-                                  let (g2', lets2, seen'') = go seen' g2 in
-                                  (g2', (Def n a g1') : lets1 ++ lets2, seen'')
-    go seen g                   = (g, [], seen)
-
--- renameVar :: X -> (S -> X) -> State ([S], [X], Map X S) X
--- renameVar x f = do
---     (names, notToRename, mapping) <- get
---     if x `elem` notToRename
---     then return x
---     else
---       f <$>
---       case Map.lookup x mapping of
---         Just s -> return s
---         Nothing -> do
---           let v = head names
---           put (tail names, notToRename, Map.insert x v mapping)
---           return v
-
--- renameGoal :: G X -> (S -> X) -> State ([S], [X], Map X S) (G X)
--- renameGoal goal f =
---     case goal of
---       g1 :/\: g2 -> do
---         g1 <- renameGoal g1 f
---         g2 <- renameGoal g2 f
---         return $ g1 :/\: g2
---       g1 :\/: g2 -> do
---         g1 <- renameGoal g1 f
---         g2 <- renameGoal g2 f
---         return $ g1 :\/: g2
---       Fresh n g -> do
---         before@(fv, notToRename, mapping) <- get
---         put (fv, n : notToRename, mapping)
---         g <- renameGoal g fh
---         put before
---         return $ Fresh n g
---       V x :=: V y -> do
---         x <- renameVar x f
---         y <- renameVar y f
---         return $ V x :=: V y
-
 renameGoal :: G X -> Map X X -> G X
 renameGoal goal mapping =
     (\x -> maybe x id (Map.lookup x mapping)) <$> goal
@@ -412,28 +272,11 @@ renameDefs = mapM renameDef
 renameProgram :: Program -> State [S] Program
 renameProgram (Program defs goal) = do
     defs' <- renameDefs defs
-    let res = Program defs' goal
-    traceM $ "Done with renameProgram\n" ++ show res
-    return res
+    return $ Program defs' goal
 
 {-------------------------------------------}
 renameLetArgs :: [S] -> G X -> (G X, [S])
-renameLetArgs fvs (g1 :/\: g2)        = let (g1', fvs')   = renameLetArgs fvs  g1 in
-                                        let (g2', fvs'')  = renameLetArgs fvs' g2 in
-                                        (g1' &&& g2', fvs'')
-renameLetArgs fvs (g1 :\/: g2)        = let (g1', fvs')   = renameLetArgs fvs  g1 in
-                                        let (g2', fvs'')  = renameLetArgs fvs' g2 in
-                                        (g1' ||| g2', fvs'')
-renameLetArgs fvs (Fresh n g)         = let (g', fvs')    = renameLetArgs fvs g in
-                                        (Fresh n g', fvs')
-renameLetArgs fvs (Let (Def n a g1) g2)
-                                      = let (na, fvs')    = splitAt (length a) fvs in
-                                        let na'           = map (toV "y") na in
-                                        let ng1           = foldr (\(o, n) -> subst_in_goal o $ V n) g1 $ zip a na' in
-                                        let (ng1', fvs'') = renameLetArgs fvs' ng1 in
-                                        let (g2', fvs''') = renameLetArgs fvs'' g2 in
-                                        (Let (Def n na' ng1') g2', fvs''')
-renameLetArgs fvs x                   = (x, fvs)
+renameLetArgs fvs x = (x, fvs)
 
 
 escapeFreeVarsDef :: Def -> State ([S], Map Name [X]) Def
@@ -470,33 +313,13 @@ addArgsInInvocations mapping =
 
 {-------------------------------------------}
 escapeFreeVars :: [S] -> G X -> (G X, [S])
-escapeFreeVars fvs (g1 :/\: g2)        = let (g1', fvs')   = escapeFreeVars fvs  g1 in
-                                         let (g2', fvs'')  = escapeFreeVars fvs' g2 in
-                                         (g1' &&& g2', fvs'')
-escapeFreeVars fvs (g1 :\/: g2)        = let (g1', fvs')   = escapeFreeVars fvs  g1 in
-                                         let (g2', fvs'')  = escapeFreeVars fvs' g2 in
-                                         (g1' ||| g2', fvs'')
-escapeFreeVars fvs (Fresh n g)         = let (g', fvs')    = escapeFreeVars fvs g in
-                                         (Fresh n g', fvs')
-escapeFreeVars fvs (Let (Def n a g1) g2)
-                                       = let (g1', fvs')   = escapeFreeVars fvs  g1 in
-                                         let (g2', fvs'')  = escapeFreeVars fvs' g2 in
-                                         let freeVars      = fvg g1' \\ a in
-                                         let (nvs, fvs''') = splitAt (length freeVars) fvs'' in
-                                         let nvs'          = map (toV "y") nvs in
-                                         let g1''          = addArgsInCall n (map V nvs') g1' in
-                                         let g1'''         = foldr (\(o,n) -> subst_in_goal o $ V n) g1'' $ zip freeVars nvs' in
-                                         let g2''          = addArgsInCall n (map V freeVars) g2' in
-                                         (Let (Def n (nvs' ++ a) g1''') g2'', fvs''')
-escapeFreeVars fvs x                   = (x, fvs)
+escapeFreeVars fvs x = (x, fvs)
 
 {-------------------------------------------}
 addArgsInCall :: Name -> [Term X] -> G X -> G X
 addArgsInCall n na   (g1 :/\: g2)         = addArgsInCall n na g1 &&& addArgsInCall n na g2
 addArgsInCall n na   (g1 :\/: g2)         = addArgsInCall n na g1 ||| addArgsInCall n na g2
 addArgsInCall n na   (Fresh v g)          = Fresh v $ addArgsInCall n na g
-addArgsInCall n na   (Let (Def n' a g1) g2)
-                                          = Let (Def n' a (addArgsInCall n na g1)) $ addArgsInCall n na g2
 addArgsInCall n na g@(Invoke n' a)        = if n == n' then Invoke n (na ++ a) else g
 addArgsInCall _ _  g                      = g
 
@@ -525,7 +348,6 @@ getFstLink a disjC conjC branch (g1 :/\: g2) =
     v@(Just x) -> v
     Nothing    -> getFstLink a disjC (conjC . (g1 &&&)) branch g2
 getFstLink a disjC conjC branch (Fresh n g) = getFstLink a disjC (conjC . Fresh n) branch g
-getFstLink a disjC conjC branch (Let d g)   = getFstLink a disjC (conjC . Let d) branch g
 getFstLink _ _     _     _      _           = Nothing
 
 {-------------------------------------------}
@@ -552,7 +374,6 @@ removeUnifications p   (g1 :/\: g2) = case (removeUnifications p g1, removeUnifi
                                         (x, g) | isSuccess x -> g
                                         (g1, g2) -> g1 :/\: g2
 removeUnifications p   (Fresh v g)  = Fresh v $ removeUnifications p g
-removeUnifications p   (Let def g)  = Let def $ removeUnifications p g
 removeUnifications _ g              = g
 
 
@@ -565,28 +386,30 @@ renameFreshVars g =
 {-------------------------------------------}
 {-------------------------------------------}
 {-------------------------------------------}
+trace_pur ::  (Program, [String]) -> (G X, [String], [Def]) -> (G X, [String], [Def])
+trace_pur (Program defs1 g1, _) result@(g2, _, defs2) =
+    trace (printf "pur(fresh,unify,arg,constr,var,calls):\n%s -> %s\n"
+            (show $ calcProg $ Program defs1 g1)
+            (show $ calcProg $ Program defs2 g2)) $
+    result
+  where
 
-trace_pur :: (G X, [String]) -> (G X, [String], [Def]) -> (G X, [String], [Def])
-trace_pur (g1, _) result@(g2, _, defs) =
-  let test_g       = foldr Let g2 defs in
-  -- trace ("pur(fresh,unify,arg,constr,var,calls): " ++
-  --          show (calc g1) ++
-  --          " -> " ++
-  --          show (calc test_g)) $
-  result where
+    (a1,b1,c1,d1,e1,f1) <+> (a2,b2,c2,d2,e2,f2) = (a1+a2,b1+b2,c1+c2,d1+d2,e1+e2,f1+f2)
 
-      (a1,b1,c1,d1,e1,f1) <+> (a2,b2,c2,d2,e2,f2) = (a1+a2,b1+b2,c1+c2,d1+d2,e1+e2,f1+f2)
+    constrs (C _ a) = 1 + sum (map constrs a)
+    constrs _       = 0
 
-      constrs (C _ a) = 1 + sum (map constrs a)
-      constrs _       = 0
+    vars (C _ a) = sum (map constrs a)
+    vars _       = 1
 
-      vars (C _ a) = sum (map constrs a)
-      vars _       = 1
+    calc (g1 :/\: g2)          = calc g1 <+> calc g2
+    calc (g1 :\/: g2)          = calc g1 <+> calc g2
+    calc (Fresh _ g)           = (1, 0, 0, 0, 0, 0) <+> calc g
+    calc (t1 :=: t2)           = (0, 1, 0, constrs t1 + constrs t2, vars t1 + vars t2, 0)
+    calc g | isSuccess g       = (0, 0, 0, 0, 0, 0)
+    calc (Invoke _ a)          = (0, 0, 0, sum $ map constrs a, sum $ map vars a, 1)
 
-      calc (g1 :/\: g2)          = calc g1 <+> calc g2
-      calc (g1 :\/: g2)          = calc g1 <+> calc g2
-      calc (Fresh _ g)           = (1, 0, 0, 0, 0, 0) <+> calc g
-      calc (Let (Def _ a g1) g2) = (0, 0, length a, 0, 0, 0) <+> calc g1 <+> calc g2
-      calc (t1 :=: t2)           = (0, 1, 0, constrs t1 + constrs t2, vars t1 + vars t2, 0)
-      calc g | isSuccess g       = (0, 0, 0, 0, 0, 0)
-      calc (Invoke _ a)          = (0, 0, 0, sum $ map constrs a, sum $ map vars a, 1)
+    calcDef (Def _ a g) = (0, 0, length a, 0, 0, 0) <+> calc g
+
+    calcProg (Program defs goal) =
+      (calc goal <+> (foldr (\d acc -> calcDef d <+> acc) (0,0,0,0,0,0) defs))

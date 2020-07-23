@@ -109,44 +109,9 @@ unit_select = do
         max2D = Descend max2 [max0]
         len2D = Descend len2 [len1]
 
-unit_takingOutLets = do
-    test justTakeOutLets (uni0, []) (uni0, [], [])
-    test justTakeOutLets (flatlet, []) (uni1, [], [(Def defName args0' uni0')])
-    test justTakeOutLets (doublet, []) (conj, [], [(Def defName args0'' uni0''), (Def fedName args2' disj')])
-  where
-    x = V "x"
-    y = V "y"
-    z = V "z"
-    y0 = V "y0"
-    y1 = V "y1"
-    y2 = V "y2"
-    y3 = V "y3"
-    y4 = V "y4"
-    uni0 = x === y
-    uni1 = y === z
-    uni2 = x === z
-    conj = uni0 &&& uni1
-    disj = conj ||| uni2
-    uni0' = y0 === y1
-    uni0'' = y3 === y4
-    uni1' = y1 === y2
-    uni2' = y0 === y2
-    conj' = uni0' &&& uni1'
-    disj' = conj' ||| uni2'
-    defName = "def"
-    fedName = "fed"
-    args0 = []
-    args1 = ["x"]
-    args0'  = ["y0", "y1"]
-    args0'' = ["y3", "y4"]
-    args1' = ["y2"]
-    args2' = ["y1", "y2", "y0"]
-    flatlet = Let (Def defName args0 uni0) uni1
-    doublet = Let (Def defName args0 uni0) (Let (Def fedName args1 disj) conj)
-
 unit_popingOutFreshes = do
     test (fst3 . E.preEval E.env0) (fresh ["x", "y"] goal) (callF x' y')
-    test (fst3 . E.preEval E.env0) (fresh ["x", "y"] $ fLet goal) (fLet (callF x' y'))
+    test (fst3 . E.preEval (E.gammaFromDefs [fDef])) (fresh ["x", "y"] $ goal) (callF x' y')
     test ((\(x, _, y) -> (x, y)) . E.preEval E.env0) (fresh ["m", "n"] body) (body', reverse [0..4])
   where
     x = V "x"
@@ -162,7 +127,7 @@ unit_popingOutFreshes = do
     gamma = []
     goal = callF x y
     body = fresh ["h"] (m === cS h &&& fresh ["t"] (n === cT t) &&& m === cS n) ||| fresh ["h"] (m === n &&& m === cT h &&& callT h)
-    fLet = Let (Def "f" ["m", "n"] body)
+    fDef = Def "f" ["m", "n"] body
     x' = V 0
     y' = V 1
     body' = (V 0 === cS (V 2) &&& (V 1 === cT (V 3) &&& V 0 === cS (V 1))) ||| (V 0 === V 1 &&& (V 0 === cT (V 4) &&& callT (V 4)))

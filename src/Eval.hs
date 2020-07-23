@@ -165,19 +165,12 @@ preEval =
       go (y : vars) (p, extend i x (V y), d') g'
     go vars g@(_, i, _) (Invoke f fs)  =
       (Invoke f (map (i <@>) fs), g, vars)
-    go vars e (Let def g) =
-      let (g', e', vars') = go vars e g in
-      (Let def g', e', vars')
 
 postEval :: [X] -> G X -> G X
 postEval as goal =
   let freshs = fvg goal \\ as in
   foldr Fresh (go (freshs ++ as) goal) freshs
   where
-    go vars (Let (Def f args b) g) =
-      let freshs = (fvg b \\ args) \\ vars in
-      let b' = foldr Fresh (go (vars ++ args ++ freshs) b) freshs in
-      Let (Def f args b') $ go vars g
     go vars (g1 :/\: g2) = go vars g1 :/\: go vars g2
     go vars (g1 :\/: g2) = go vars g1 :\/: go vars g2
     go _ g = g
@@ -238,7 +231,6 @@ eval     (p, i, d) s (Invoke f as) =
   let i'         = foldl (\ i'' (f', a) -> extend i'' f' a) i $ zip fs as in
   let (g', env', _) = preEval (p, i', d) g in
   eval env' s g'
-eval env s (Let def g) = eval (update env def) s g
 eval _ _ _ = error "Impossible case in eval"
 
 env0 :: Gamma
@@ -250,11 +242,14 @@ update (p, i, d) def@(Def name _ _) = (\ name' -> if name == name' then def else
 updateDefsInGamma :: Gamma -> [Def] -> Gamma
 updateDefsInGamma = foldl update
 
+gammaFromDefs :: [Def] -> Gamma
+gammaFromDefs = updateDefsInGamma env0
+
 s0 :: Sigma
 s0 = []
 
 run :: Program -> Stream Sigma
 run (Program defs goal) =
-  let env = updateDefsInGamma env0 defs in
+  let env = gammaFromDefs defs in
   let (goal', env', _) = preEval env goal in
   fmap fst $ eval env' s0 goal'

@@ -65,6 +65,3 @@ emptyTree = node []
 subtree = node [y, z]
 
 t <<= u = IndWrap t <= IndWrap u
-
-strip (Let def goal) = def
-strip _ = error "Failed to retrieve a definition"

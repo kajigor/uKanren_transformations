@@ -22,14 +22,9 @@ instance Ord a => Ord (IndWrap (Term a)) where
       isSubtree (C _ _) (V _) = False
       isSubtree x (C _ ts)    = any (isSubtree x) ts
 
-isInductiveGoal :: G X -> Bool
-isInductiveGoal goal =
-  let (goal', defs) = takeOutLets goal in
-  isInductive (Program defs goal')
-
 isInductive :: Program -> Bool
 isInductive (Program defs goal) =
-  let gamma = updateDefsInGamma env0 defs in
+  let gamma = gammaFromDefs defs in
   let (logicGoal, gamma', names) = preEval gamma goal in
   let (g', _) = oneStepUnfold (logicGoal) gamma' in
   let normalized = normalize g' in

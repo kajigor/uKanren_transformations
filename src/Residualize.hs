@@ -46,31 +46,31 @@ simplConj :: [G a] -> G a
 simplConj conj' =
   let noSuccess = filter (not . isSuccess) conj'
   in  if   not $ null noSuccess
-      then foldl1 (&&&) noSuccess
+      then unsafeConj noSuccess
       else success
 
 vident = ('x' :) . show
 
 residualize :: (TreeContext, Tree, [Id]) -> (G X, [String])
-residualize (tc, t, args) =
-  (E.postEval (vident <$> args) $ residualizeGen [] tc (simpl t) [], vident <$> args)
-  where
-    residualizeGen _ _ Fail         _ = failure
-    residualizeGen g _ (Success s ) ubst =
-      let delta = s \\ ubst in
-      if null delta
-      then success
-      else residualizeSubst g delta
-    residualizeGen g tc (Rename id _ s r s' )  ubst = substCon g s' ubst $ simplConj [residualizeGen g tc (Success s) s', Invoke (fident id) (reverse [V $ vident $ snd x | x <- r])]
-    residualizeGen g tc (Or     l r _    s' )  ubst = substCon g s' ubst $ residualizeGen g tc l s' ||| residualizeGen g tc r s'
-    residualizeGen g tc (Split  id ts _ s' )   ubst = substCon g s' ubst $ scope tc id $ simplConj $ map (\x -> residualizeGen g tc x s') ts
-    residualizeGen g tc (Gen    id g' t _ s' ) ubst = substCon g (s' ++ g') ubst $ scope tc id $ residualizeGen (g' `E.o` g) tc t s'
-    residualizeGen g tc (Call   id s    _ s' ) ubst = substCon g s' ubst $ scope tc id $ residualizeGen g tc s s'
-    residualizeGen _ _ _ _ = error "Oops, something is wrong in residualizeGen"
-    fident id' = 'f' : show id'
-    scope (sr, args, _) id g =
-      if Set.member id sr
-      then let as = reverse $ args Map.! id in
-           let fargs = vident <$> as in
-           Let (Def (fident id) fargs g) (Invoke (fident id) $ map V fargs)
-      else g
+residualize (tc, t, args) = undefined
+  -- (E.postEval (vident <$> args) $ residualizeGen [] tc (simpl t) [], vident <$> args)
+  -- where
+  --   residualizeGen _ _ Fail         _ = failure
+  --   residualizeGen g _ (Success s ) ubst =
+  --     let delta = s \\ ubst in
+  --     if null delta
+  --     then success
+  --     else residualizeSubst g delta
+  --   residualizeGen g tc (Rename id _ s r s' )  ubst = substCon g s' ubst $ simplConj [residualizeGen g tc (Success s) s', Invoke (fident id) (reverse [V $ vident $ snd x | x <- r])]
+  --   residualizeGen g tc (Or     l r _    s' )  ubst = substCon g s' ubst $ residualizeGen g tc l s' ||| residualizeGen g tc r s'
+  --   residualizeGen g tc (Split  id ts _ s' )   ubst = substCon g s' ubst $ scope tc id $ simplConj $ map (\x -> residualizeGen g tc x s') ts
+  --   residualizeGen g tc (Gen    id g' t _ s' ) ubst = substCon g (s' ++ g') ubst $ scope tc id $ residualizeGen (g' `E.o` g) tc t s'
+  --   residualizeGen g tc (Call   id s    _ s' ) ubst = substCon g s' ubst $ scope tc id $ residualizeGen g tc s s'
+  --   residualizeGen _ _ _ _ = error "Oops, something is wrong in residualizeGen"
+  --   fident id' = 'f' : show id'
+  --   scope (sr, args, _) id g =
+  --     if Set.member id sr
+  --     then let as = reverse $ args Map.! id in
+  --          let fargs = vident <$> as in
+  --          Let (Def (fident id) fargs g) (Invoke (fident id) $ map V fargs)
+  --     else g

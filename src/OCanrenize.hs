@@ -68,7 +68,6 @@ instance {-OCanren v =>-} OCanren (G X) where
   ocanren (Invoke "success" []) = "success"
   ocanren (Invoke "fail" []) = "fail"
   ocanren (Invoke f ts) = printf "(%s %s)" f (printArgs $ map ocanren ts)
-  ocanren (Let (Def n as b) g) = printf "let rec %s %s = %s in %s" n (printArgs as) (ocanren b) (ocanren g)
 
 
 -- instance {-OCanren v =>-} OCanren (G X) where
@@ -79,7 +78,6 @@ instance {-OCanren v =>-} OCanren (G X) where
 --   ocanren (Fresh x g )  = let (names, goal) = freshVars [x] g in printf "(fresh ((%s)) (%s))" (printArgs names) (ocanren goal)
 -- --ocanren (Invoke f ts) = printf "(print_string \"%s\\n\";%s)" (f ++ concat [' ' : ocanren t | t <- ts]) (f ++ concat [' ' : ocanren t | t <- ts])
 --   ocanren (Invoke f ts) = printf "defer (%s %s)" f (printArgs $ map ocanren ts)
---   ocanren (Let (Def n as b) g) = printf "let rec %s %s = %s in %s" n (printArgs as) (ocanren b) (ocanren g)
 
 printArgs [] = "()"
 printArgs args = unwords $ map parenthesize args

@@ -156,8 +156,7 @@ resultants Fail            = []
 
 topLevel :: Program -> Heuristic -> SldTree
 topLevel (Program defs goal) heuristic =
-  -- let (goal', _, defs) = justTakeOutLets (goal, []) in
-  let gamma = E.updateDefsInGamma E.env0 defs in
+  let gamma = E.gammaFromDefs defs in
   let (logicGoal, gamma', names) = E.preEval gamma goal in
   sldResolutionStep [Descend logicGoal []] gamma' E.s0 [] True heuristic
 

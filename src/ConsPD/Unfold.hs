@@ -161,7 +161,7 @@ globalLimit = 8
 
 justUnfold :: Int -> Program -> (ConsPDTree, G S, [S])
 justUnfold limit (Program defs goal) =
-    let gamma = E.updateDefsInGamma E.env0 defs in
+    let gamma = E.gammaFromDefs defs in
     let (logicGoal, gamma', names) = E.preEval gamma goal in
     (go 0 (LC.Descend (conjToList logicGoal) []) gamma' E.s0, logicGoal, names)
   where
@@ -182,7 +182,7 @@ justUnfold limit (Program defs goal) =
 
 topLevel :: Int -> Program -> (ConsPDTree, G S, [S])
 topLevel limit (Program defs goal) =
-    let gamma = E.updateDefsInGamma E.env0 defs in
+    let gamma = E.gammaFromDefs defs in
     let (logicGoal, gamma', names) = E.preEval gamma goal in
     let nodes = [] in
     let failed = [] in

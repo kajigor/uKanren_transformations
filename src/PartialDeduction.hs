@@ -22,7 +22,7 @@ data PDTree = Fail
 
 topLevel :: Program -> (PDTree, G S, [S])
 topLevel (Program defs goal) =
-    let gamma = E.updateDefsInGamma E.env0 defs in
+    let gamma = E.gammaFromDefs defs in
     let (logicGoal, gamma', names) = E.preEval gamma goal in
     let nodes = [] in
     let descend = LC.Descend logicGoal [] in

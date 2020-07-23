@@ -61,13 +61,6 @@ defToProlog (Def n a g) = map (\(s, f) -> (applyInFunc s (n, map V a), map (appl
 goalToProlog :: G X -> [Funcs]
 goalToProlog g = map (\(s, f) -> map (applyInFunc s) f) $ goalToDNF g
 
-{-------------------------------------------}
-toProlog :: G X -> (Rules, [Funcs])
-toProlog g = let (g', defs) = takeOutLets g in
-             let rules = concatMap defToProlog defs in
-             let goals = goalToProlog g' in
-             (rules, goals)
-
 defsToProlog :: [Def] -> String
 defsToProlog defs =
   let rules = concatMap defToProlog defs in
@@ -130,13 +123,6 @@ printProg ([], []) = ""
 printProg (rs, []) = printRules rs
 printProg ([], gs) = printGoals gs
 printProg (rs, gs) = printf "%s\n%s" (printRules rs) (printGoals gs)
-
-{-------------------------------------------}
-{-------------------------------------------}
-{-------------------------------------------}
-
-translateAndPrint :: G X -> String
-translateAndPrint = printProg . toProlog
 
 {-------------------------------------------}
 {-------------------------------------------}

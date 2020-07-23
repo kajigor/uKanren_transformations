@@ -47,7 +47,7 @@ data G a =
   | G a :\/: G a
   | Fresh  Name (G a)
   | Invoke Name [Term a]
-  | Let Def (G a) deriving (Eq, Ord)
+  deriving (Eq, Ord)
 
 instance Functor G where
   fmap f (t :=: u)          = (f <$> t) :=:  (f <$> u)
@@ -55,7 +55,6 @@ instance Functor G where
   fmap f (g :\/: h)         = (f <$> g) :\/: (f <$> h)
   fmap f (Fresh name g)     = Fresh name (f <$> g)
   fmap f (Invoke name args) = Invoke name $ map (f <$>) args
-  fmap f (Let def g)        = Let def (f <$> g)
 
 freshVars :: [Name] -> G t -> ([Name], G t)
 freshVars names (Fresh name goal) = freshVars (name : names) goal
@@ -133,7 +132,6 @@ fvgs = nub . go
   go (g1 :\/: g2) = go g1 ++ go g2
   go (Invoke _ ts) = concatMap fv ts
   -- go (Fresh x g)   = filter (x /=) $ go g
-  go (Let _ g) = go g
 
 fvg :: G X -> [X]
 fvg = nub . go
@@ -143,7 +141,6 @@ fvg = nub . go
   go (g1 :\/: g2) = go g1 ++ go g2
   go (Invoke _ ts) = concatMap fv ts
   go (Fresh x g)   = filter (x /=) $ go g
-  go (Let _ g) = go g
 
 subst_in_term :: Eq v => v -> Term v -> Term v -> Term v
 subst_in_term v t t0@(V v0)     = if v == v0 then t else t0
@@ -155,8 +152,6 @@ subst_in_goal v t   (g1 :/\: g2)        = subst_in_goal v t g1 &&& subst_in_goal
 subst_in_goal v t   (g1 :\/: g2)        = subst_in_goal v t g1 ||| subst_in_goal v t g2
 subst_in_goal v t g@(Fresh n g')        = if v == n then g else Fresh n $ subst_in_goal v t g'
 subst_in_goal v t   (Invoke n ts)       = Invoke n $ map (subst_in_term v t) ts
-subst_in_goal v t   (Let (Def n a g1) g2) =
-  Let (Def n a (if elem v a then g1 else subst_in_goal v t g1)) $ subst_in_goal v t g2
 
 instance Show a => Show (Term a) where
   show (V v) = showVar v
@@ -176,7 +171,6 @@ instance Show a => Show (G a) where
     let (names, goal) = freshVars [name] g in
     printf "fresh %s (%s)" (unwords $ map show $ reverse names) (show goal)
   show (Invoke name ts)           = printf "%s %s" name (unwords $ map (\x -> if ' ' `elem` x then printf "(%s)" x else x) $ map show ts)
-  show (Let (Def name args body) g) = printf "let %s %s = %s in %s" name (unwords args) (show body) (show g)
 
 class Dot a where
   dot :: a -> String
@@ -243,7 +237,6 @@ instance Dot a => Dot (G a) where
     let (names, goal) = freshVars [name] g in
     printf "fresh %s (%s)" (dot $ reverse names) (dot goal)
   dot (Invoke name ts)           = printf "%s(%s)" name (dot ts)
-  dot (Let (Def name args body) g) = printf "let %s = %s in %s" name (unwords args) (dot body) (dot g)
 
 instance {-# OVERLAPPING #-} Dot a => Dot [G a] where
   dot gs = intercalate " /\\ " (map dot gs)

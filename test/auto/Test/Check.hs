@@ -22,7 +22,7 @@ unit_checkConj = do
 
 checkTest :: Program -> Bool
 checkTest (Program defs goal) =
-    let gamma = E.updateDefsInGamma E.env0 defs in
+    let gamma = E.gammaFromDefs defs in
     let (logicGoal, gamma', names) = E.preEval gamma goal in
     checkWhenUnfolding logicGoal gamma' E.s0
 

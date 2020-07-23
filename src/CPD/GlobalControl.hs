@@ -87,8 +87,7 @@ conjToList _              = error "This conjunction is not a list of calls"
 
 topLevel :: Program -> LC.Heuristic -> (GlobalTree, G S, [S])
 topLevel (Program defs goal) heuristic =
-  -- let (goal', defs) = takeOutLets goal in
-  let gamma = E.updateDefsInGamma E.env0 defs in
+  let gamma = E.gammaFromDefs defs in
   let (logicGoal, gamma', names) = E.preEval gamma goal in
   trace (printf "\nGoal:\n%s\nNames:\n%s\n" (show goal) (show names)) $
   let nodes = [[logicGoal]] in
