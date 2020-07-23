@@ -220,7 +220,7 @@ unfold tc _ d s _ []            = (tc, Success s, d)
 unfold (sr, args, ids) cs e s gen conjs =
   let cs_conjs     = map (\ (_, _, Invoke f as) -> Invoke f $ map (E.substitute s) as) conjs in
   let (e', conjs') = foldl (\ (d, conj) (i, p, zyz@(Invoke f as)) ->
-                               let (Def _ fs g) = p f in
+                               let (Def _ fs g) = E.getDef p f in
                                let i'           = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
                                let (g', (p', i'', d'), _) = E.preEval (p, i', d) g in
                                (d', (i'', p', g'):conj)

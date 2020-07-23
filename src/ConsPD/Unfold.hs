@@ -52,26 +52,26 @@ instance Eq ConsPDTree where
   Prune gs s == Prune gs' s' = gs == gs' && s == s'
   _ == _ = False
 
-conjConcat :: [([([G S], E.Sigma)], E.Gamma)] -> Maybe ([([G S], E.Sigma)], E.Gamma)
-conjConcat x = do
-    let (goals, envs) = unzip x
-    cGoals <- mapM goalsConcat goals
-    cGammas <- gammaConcat envs
-    return (cGoals, cGammas)
-  where
-    gammaConcat xs =
-      foldlM (\(p, i, d) (_, i', d') -> do
-                  i'' <- mergeI i i'
-                  return (p, i'', mergeD d d'))
-             (head xs)
-             (tail xs)
-    mergeD (x:xs) (y:ys) = if x >= y then x : xs else y : ys
-    mergeI (d, f) i@(d', f') =
-      let dd' = d \\ d' in
-      let intersection = d `intersect` d' in
-      if map f intersection /= map f' intersection
-      then Nothing
-      else Just $ foldl (\interp x -> E.extend interp x (f x)) i dd'
+-- conjConcat :: [([([G S], E.Sigma)], E.Gamma)] -> Maybe ([([G S], E.Sigma)], E.Gamma)
+-- conjConcat x = do
+--     let (goals, envs) = unzip x
+--     cGoals <- mapM goalsConcat goals
+--     cGammas <- gammaConcat envs
+--     return (cGoals, cGammas)
+--   where
+--     gammaConcat xs =
+--       foldlM (\(p, i, d) (_, i', d') -> do
+--                   i'' <- mergeI i i'
+--                   return (p, i'', mergeD d d'))
+--              (head xs)
+--              (tail xs)
+--     mergeD (x:xs) (y:ys) = if x >= y then x : xs else y : ys
+--     mergeI (d, f) i@(d', f') =
+--       let dd' = d \\ d' in
+--       let intersection = d `intersect` d' in
+--       if map f intersection /= map f' intersection
+--       then Nothing
+--       else Just $ foldl (\interp x -> E.extend interp x (f x)) i dd'
 
 statesConcat :: [E.Sigma] -> Maybe E.Sigma
 statesConcat = unifySubsts

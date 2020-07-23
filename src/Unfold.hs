@@ -12,7 +12,7 @@ import           Util.Miscellaneous  (fst3, show', pinpoint)
 
 oneStepUnfold :: G S -> E.Gamma -> (G S, E.Gamma)
 oneStepUnfold g@(Invoke f as) env@(p, i, d) =
-  let (Def n fs body) = p f in
+  let (Def n fs body) = E.getDef p f in
   if length fs == length as
   then
     let i' = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
@@ -61,13 +61,13 @@ maximumBranches def@(Def _ args body) =
 
 getMaximumBranches :: E.Gamma -> G S -> Int
 getMaximumBranches (p,_,_) (Invoke name _) =
-    let def = p name in
+    let def = E.getDef p name in
     maximumBranches def
 
 
 notMaximumBranches :: E.Gamma -> E.Sigma -> G S -> Bool
 notMaximumBranches gamma@(p, _, _) state goal@(Invoke name args) =
-    let maxBranches = maximumBranches (p name) in
+    let maxBranches = maximumBranches (E.getDef p name) in
     let (unfolded, _) = oneStep goal gamma state in
     length unfolded < maxBranches
     -- let result = length unfolded < maxBranches in
@@ -113,7 +113,7 @@ findBestByComplexity gamma sigma goals =
 unfoldComplexity :: E.Gamma -> E.Sigma -> G S -> Complexity
 unfoldComplexity gamma@(p, _, _) sigma goal@(Invoke name _) =
   let (unfolded, _) = oneStep goal gamma sigma in
-  let max = maximumBranches (p name) in
+  let max = maximumBranches (E.getDef p name) in
   -- trace (printf "\n%s is %s\n" name (if static gamma name then "static" else "not static")) $
   Complexity max (length unfolded) (length $ filter (null . fst) unfolded)
 
@@ -129,7 +129,7 @@ static (p, _, _) name =
     go _ _ = True
 
     getBody name =
-      let Def _ _ body = p name in body
+      let Def _ _ body = E.getDef p name in body
 
 isGoalStatic :: E.Gamma -> G S -> Bool
 isGoalStatic gamma (Invoke name _) =

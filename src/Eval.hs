@@ -5,10 +5,10 @@ module Eval where
 
 import           Control.Monad
 import           Data.List
+import           Debug.Trace
 import           Stream
 import           Syntax
 import           Text.Printf
-import Debug.Trace
 
 import qualified Data.Map.Strict as Map
 
@@ -30,10 +30,10 @@ instance Substitution MapSigma where
   sInsert = Map.insert
 
 -- States
-type Iota  = ([X], X -> Ts)
+type Iota  = Map.Map X Ts
 type Sigma = [(S, Ts)]
 type Delta = [S]
-type P     = Name -> Def
+type P     = Map.Map Name Def
 type Gamma = (P, Iota, Delta)
 
 unifyG :: Substitution subst => (S -> Ts -> subst -> Bool)
@@ -72,8 +72,8 @@ unify =
       let t' = walk t s in
       case t' of
         V v' | v' == u' -> True
-        V _ -> False
-        C _ as -> any (\x -> occursCheck u' x s) as
+        V _             -> False
+        C _ as          -> any (\x -> occursCheck u' x s) as
 
     -- occursCheck u' t s = if elem u' $ fv t then Nothing else s
 
@@ -100,17 +100,18 @@ i <@> (V x) = app i x
 i <@> (C c ts) = C c $ map (i<@>) ts
 
 showInt :: Iota -> String
-showInt (dom, f) = intercalate ", " $ map (\ x -> printf "%s -> %s" x (show $ f x)) dom
+showInt =
+    intercalate ", " . map (\(x, y) -> printf "%s -> %s" x (show y)) . Map.toList
 
 ---- Extending variable interpretation
 extend :: Iota -> X -> Ts -> Iota
-extend (xs, i) x ts = (if x `elem` xs then xs else x : xs , \y -> if x == y then ts else i y)
+extend iota x ts = Map.insert x ts iota
 
 emptyIota :: Iota
-emptyIota = ([], error . printf "Empty interpretation on %s" . show)
+emptyIota = Map.empty
 
 app :: Iota -> X -> Ts
-app (_, i) = i
+app iota x = iota Map.! x
 
 -- Applying substitution
 class Subst a where
@@ -173,7 +174,7 @@ postEval as goal =
   where
     go vars (g1 :/\: g2) = go vars g1 :/\: go vars g2
     go vars (g1 :\/: g2) = go vars g1 :\/: go vars g2
-    go _ g = g
+    go _ g               = g
 
 closeFresh :: [X] -> G X -> G X
 closeFresh as goal = goal
@@ -227,23 +228,26 @@ eval     (_, _, d) s (t1 :=:  t2)  = fmap (,d) (maybeToStream $ unify (Just s) t
 eval env           s (g1 :\/: g2)  = eval env s g1 `mplus` eval env s g2
 eval env@(p, i, _) s (g1 :/\: g2)  = eval env s g1 >>= (\ (s', d') -> eval (p, i, d') s' g2)
 eval     (p, i, d) s (Invoke f as) =
-  let (Def _ fs g) = p f in
+  let (Def _ fs g) = getDef p f in
   let i'         = foldl (\ i'' (f', a) -> extend i'' f' a) i $ zip fs as in
   let (g', env', _) = preEval (p, i', d) g in
   eval env' s g'
 eval _ _ _ = error "Impossible case in eval"
 
 env0 :: Gamma
-env0 = (\ i -> error $ printf "Empty environment on %s" (show i), emptyIota, [0 ..])
+env0 = (Map.empty, emptyIota, [0 ..])
 
 update :: Gamma -> Def -> Gamma
-update (p, i, d) def@(Def name _ _) = (\ name' -> if name == name' then def else p name', i, d)
+update (p, i, d) def@(Def name _ _) = (Map.insert name def p, i, d)
 
 updateDefsInGamma :: Gamma -> [Def] -> Gamma
 updateDefsInGamma = foldl update
 
 gammaFromDefs :: [Def] -> Gamma
 gammaFromDefs = updateDefsInGamma env0
+
+getDef :: P -> Name -> Def
+getDef p n = p Map.! n
 
 s0 :: Sigma
 s0 = []
