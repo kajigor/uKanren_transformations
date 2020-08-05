@@ -1,0 +1,15 @@
+open GT
+open OCanren
+open OCanren.Std
+open Helper
+
+let topLevel y1 y2 y3 = 
+  let rec p z1 z2 z3 = ((fresh (fT fV fA fN fSubst) (((z1 === fSubst) &&& ((z2 === (constr fN fA)) &&& ((z3 === (var_ fV)) &&& (p____ fV fSubst fSubst fN fA fT)))))) ||| ((fresh (fA2 fN2 fA1 fN1 fSubst) (((z1 === fSubst) &&& ((z2 === (constr fN1 fA1)) &&& ((z3 === (constr fN2 fA2)) &&& ((p_ fN1 fN2) &&& (p__ fSubst fA1 fA2))))))) ||| ((fresh (fT fA fN fV fSubst) (((z1 === fSubst) &&& ((z2 === (var_ fV)) &&& ((z3 === (constr fN fA)) &&& (p___ fV fSubst fSubst fT fN fA)))))) ||| ((fresh (fT11 fV2 fV1 fSubst) (((z1 === fSubst) &&& ((z2 === (var_ fV1)) &&& ((z3 === (var_ fV2)) &&& (p_____ fV1 fSubst fSubst fT11 fV2)))))) ||| (fresh (fV2 fV1 fSubst) (((z1 === fSubst) &&& ((z2 === (var_ fV1)) &&& ((z3 === (var_ fV2)) &&& (p______ fSubst fV1 fV2)))))))))) 
+  and p_ z1 z2 = ((fresh (fY fX___) (((z1 === (Nat.succ fX___)) &&& ((z2 === (Nat.succ fY)) &&& (p_ fX___ fY))))) ||| ((z1 === Nat.zero) &&& (z2 === Nat.zero))) 
+  and p__ z1 z2 z3 = ((fresh (fYs fY fXs fX___ fSubst) (((z1 === fSubst) &&& ((z2 === (fX___ % fXs)) &&& ((z3 === (fY % fYs)) &&& ((p fSubst fX___ fY) &&& (p__ fSubst fXs fYs))))))) ||| (fresh (fSubst) (((z1 === fSubst) &&& ((z2 === (List.nil ())) &&& (z3 === (List.nil ()))))))) 
+  and p___ z1 z2 z3 z4 z5 z6 = ((fresh (fA fN fT fX__ fXs fX___ fN_) (((z1 === (Nat.succ fN_)) &&& ((z2 === (fX___ % fXs)) &&& ((z3 === fX__) &&& ((z4 === fT) &&& ((z5 === fN) &&& ((z6 === fA) &&& (p___ fN_ fXs fX__ fT fN fA))))))))) ||| (fresh (fA fN fX__ fXs fT) (((z1 === Nat.zero) &&& ((z2 === (((Option.some fT)) % fXs)) &&& ((z3 === fX__) &&& ((z4 === fT) &&& ((z5 === fN) &&& ((z6 === fA) &&& (p fX__ fT ((constr fN fA)))))))))))) 
+  and p____ z1 z2 z3 z4 z5 z6 = ((fresh (fT fA fN fX__ fXs fX___ fN_) (((z1 === (Nat.succ fN_)) &&& ((z2 === (fX___ % fXs)) &&& ((z3 === fX__) &&& ((z4 === fN) &&& ((z5 === fA) &&& ((z6 === fT) &&& (p____ fN_ fXs fX__ fN fA fT))))))))) ||| (fresh (fA fN fX__ fXs fT) (((z1 === Nat.zero) &&& ((z2 === (((Option.some fT)) % fXs)) &&& ((z3 === fX__) &&& ((z4 === fN) &&& ((z5 === fA) &&& ((z6 === fT) &&& (p fX__ ((constr fN fA)) fT)))))))))) 
+  and p_____ z1 z2 z3 z4 z5 = ((fresh (fV2 fT11 fX__ fXs fX___ fN) (((z1 === (Nat.succ fN)) &&& ((z2 === (fX___ % fXs)) &&& ((z3 === fX__) &&& ((z4 === fT11) &&& ((z5 === fV2) &&& (p_____ fN fXs fX__ fT11 fV2)))))))) ||| (fresh (fV2 fX__ fXs fT11) (((z1 === Nat.zero) &&& ((z2 === (((Option.some fT11)) % fXs)) &&& ((z3 === fX__) &&& ((z4 === fT11) &&& ((z5 === fV2) &&& (p fX__ fT11 ((var_ fV2))))))))))) 
+  and p______ z1 z2 z3 = ((fresh (fN_ fN fXs fX) (((z1 === (fX % fXs)) &&& ((z2 === (Nat.succ fN)) &&& ((z3 === (Nat.succ fN_)) &&& (p______ fXs fN fN_)))))) ||| ((fresh (fXs) (((z1 === (((Option.none ())) % fXs)) &&& ((z2 === Nat.zero) &&& (z3 === Nat.zero))))) ||| (fresh (fV2 fV1) (((z1 === (List.nil ())) &&& ((z2 === fV1) &&& ((z3 === fV2) &&& (p_______ fV1 fV2)))))))) 
+  and p_______ z1 z2 = ((fresh (fY fX) (((z1 === (Nat.succ fX)) &&& ((z2 === (Nat.succ fY)) &&& (p_______ fX fY))))) ||| ((z1 === Nat.zero) &&& (z2 === Nat.zero))) 
+  in         (p y1 y2 y3)

@@ -45,176 +45,47 @@ let inputs =
   [ " original", Original.topLevel
   ; "  nonconj", Nonconj.topLevel
   ; "     ecce", Ecce.topLevel
+  ; "    geoff", Geoff.topLevel
   ]
 
 let _ =
-  run_subst 1 "trans1" @@
+  run_subst 1 "trans1%!" @@
   run q (fun q -> Nonconj.topLevel q t1 t1')
   ;
 
-  run_subst 3 "trans2" @@
+  run_subst 3 "trans2%!" @@
   run q (fun q -> Nonconj.topLevel q t2 t2')
   ;
 
-  run_subst 3 "trans3" @@
+  run_subst 3 "trans3%!" @@
   run q (fun q -> Nonconj.topLevel q t3 t3')
 
 let _ =
-  run_subst 1 "ecce" @@
+  run_subst 1 "ecce%!" @@
   run q (fun q -> Ecce.topLevel q t1 t1')
   ;
 
-  run_subst 3 "ecce2" @@
+  run_subst 3 "ecce2%!" @@
   run q (fun q -> Ecce.topLevel q t2 t2')
   ;
 
-  run_subst 3 "ecce3" @@
+  run_subst 3 "ecce3%!" @@
   run q (fun q -> Ecce.topLevel q t3 t3')
+
+let _ =
+  run_subst 1 "geoff1%!" @@
+  run q (fun q -> Geoff.topLevel q t1 t1')
+  ;
+
+  run_subst 3 "geoff2%!" @@
+  run q (fun q -> Geoff.topLevel q t2 t2')
+  ;
+
+  run_subst 3 "geoff3%!" @@
+  run q (fun q -> Geoff.topLevel q t3 t3')
 
 
 let _ =
   to_csv "res/first.csv" @@ [ do_tables 10000L 1 (fun unifier -> run q (fun q -> unifier q t1 t1')) inputs "first" ];
   to_csv "res/second.csv" @@ [ do_tables 100L 3 (fun unifier -> run q (fun q -> unifier q t2 t2')) (L.tl inputs) "second" ];
   to_csv "res/third.csv" @@ [ do_tables 10L 3 (fun unifier -> run q (fun q -> unifier q t3 t3')) (L.tl inputs) "third" ]
-
-(*
-let _ =
-  (* run_formula 5 "original" @@
-  run qrs (fun q r s -> Original.check_uni q r s !!true) *)
-  run_subst 1 "original1" @@
-  run q (fun q -> Original.check_uni q t1 t1' !!true)
-  (* ;
-
-  run_subst 1 "original" @@
-  run q (fun q -> Original.check_uni q t2 t2' !!true);
-
-  run_subst 1 "original" @@
-  run q (fun q -> Original.check_uni q t3 t3' !!true) *)
-
-let _ =
-  (* run_formula 5 "spec" @@
-  run qrs (fun q r s -> Spec.topLevel q r s) *)
-  (* run_subst 1 "spec1" @@
-  run q (fun q -> Spec.topLevel q t1 t1')
-  ;
-
-  run_subst 3 "spec2" @@
-  run q (fun q -> Spec.topLevel q t2 t2')
-  ;
-
-  run_subst 3 "spec3" @@
-  run q (fun q -> Spec.topLevel q t3 t3') *)
-
-  run_time 1 "spec1" @@
-  run q (fun q -> Spec.topLevel q t1 t1')
-  ;
-
-  run_time 3 "spec2" @@
-  run q (fun q -> Spec.topLevel q t2 t2')
-  ;
-
-  run_time 3 "spec3" @@
-  run q (fun q -> Spec.topLevel q t3 t3')
-
-
-
-let _ =
-  (* run_formula 5 "spec" @@
-  run qrs (fun q r s -> Spec.topLevel q r s) *)
-  run_subst 1 "trans1" @@
-  run q (fun q -> Nonconj.topLevel q t1 t1')
-  ;
-
-  run_subst 3 "trans2" @@
-  run q (fun q -> Nonconj.topLevel q t2 t2')
-  ;
-
-  run_subst 3 "trans3" @@
-  run q (fun q -> Nonconj.topLevel q t3 t3');
-
-  run_time 1 "trans1" @@
-  run q (fun q -> Nonconj.topLevel q t1 t1')
-  ;
-
-  run_time 3 "trans2" @@
-  run q (fun q -> Nonconj.topLevel q t2 t2')
-  ;
-
-  run_time 3 "trans3" @@
-  run q (fun q -> Nonconj.topLevel q t3 t3')
-
-let _ =
-  (* run_formula 5 "spec" @@
-  run qrs (fun q r s -> Spec.topLevel q r s) *)
-  (* run_subst 1 "transUnf1" @@
-  run q (fun q -> Trans_unf.topLevel q t1 t1')
-  ;
-
-  run_subst 3 "transUnf2" @@
-  run q (fun q -> Trans_unf.topLevel q t2 t2')
-  ;
-
-  run_subst 3 "transUnf3" @@
-  run q (fun q -> Trans_unf.topLevel q t3 t3'); *)
-
-  run_time 1 "transUnf1" @@
-  run q (fun q -> Trans_unf.topLevel q t1 t1')
-  ;
-
-  run_time 3 "transUnf2" @@
-  run q (fun q -> Trans_unf.topLevel q t2 t2')
-  ;
-
-  run_time 3 "transUnf3" @@
-  run q (fun q -> Trans_unf.topLevel q t3 t3')
-
-
-let _ =
-  (* run_formula 5 "spec" @@
-  run qrs (fun q r s -> Spec.topLevel q r s) *)
-  (* run_subst 1 "cpd1" @@
-  run q (fun q -> Cpd.topLevel q t1 t1')
-  ;
-
-  run_subst 3 "cpd2" @@
-  run q (fun q -> Cpd.topLevel q t2 t2')
-  ;
-
-  run_subst 3 "cpd3" @@
-  run q (fun q -> Cpd.topLevel q t3 t3'); *)
-
-  run_time 1 "cpd1" @@
-  run q (fun q -> Cpd.topLevel q t1 t1')
-  ;
-
-  run_time 3 "cpd2" @@
-  run q (fun q -> Cpd.topLevel q t2 t2')
-  ;
-
-  run_time 3 "cpd3" @@
-  run q (fun q -> Cpd.topLevel q t3 t3')
-
-let _ =
-  (* run_formula 5 "spec" @@
-  run qrs (fun q r s -> Spec.topLevel q r s) *)
-  run_subst 1 "branches1" @@
-  run q (fun q -> Branches.topLevel q t1 t1')
-  ;
-
-  run_subst 3 "branches2" @@
-  run q (fun q -> Branches.topLevel q t2 t2')
-  ;
-(*
-  run_subst 3 "branches3" @@
-  run q (fun q -> Branches.topLevel q t3 t3'); *)
-
-  run_time 1 "branches1" @@
-  run q (fun q -> Branches.topLevel q t1 t1')
-  ;
-
-  run_time 3 "branches2" @@
-  run q (fun q -> Branches.topLevel q t2 t2')
-  ;
-(*
-  run_time 1 "branches3: 1 formula, not 3" @@
-  run q (fun q -> Branches.topLevel q t3 t3') *) *)
