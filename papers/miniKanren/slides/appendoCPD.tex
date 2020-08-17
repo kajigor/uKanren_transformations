@@ -1,0 +1,6 @@
+\begin{tikzpicture}[processTree]
+  \node {\rel{append}{$x \ y \ r$}}
+      child { node {\subst{$x \to [], y \to r$}}}
+      child { node {\rel{append}{$x' \ y \ r'$ \\ \subst{$x \to h :: x', r \to h :: r'$}}}
+    };
+\end{tikzpicture}

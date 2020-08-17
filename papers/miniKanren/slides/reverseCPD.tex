@@ -1,0 +1,11 @@
+\begin{tikzpicture}[processTree]
+  \node {
+    \underline{\rel{reverse}{$xs \ sx$}}}
+    child { node {
+      \underline{\rel{reverse}{$t \ t'$}} \and \rel{append}{$t' \ [h] \ sx$} \\
+      \subst{$xs \to h :: t$}}
+      child { node {
+        \underline{\rel{reverse}{$s \ s'$}} \and \rel{append}{$s' \ [h'] \ t'$} \and \rel{append}{$t' \ [h] \ sx$} \\
+        \subst{$t \to h' :: s$}}
+        child { node[draw=none,fill=none ] {...}}}};
+\end{tikzpicture}

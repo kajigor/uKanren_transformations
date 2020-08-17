@@ -91,3 +91,13 @@ papers/miniKanren/benchmarks/plain/run
 papers/miniKanren/benchmarks/unify/run
 
 bottles.pl
+
+papers/miniKanren/slides/presentation.nav
+
+papers/miniKanren/slides/presentation.snm
+
+papers/miniKanren/slides/presentation.toc
+
+papers/miniKanren/slides/presentation.vrb
+
+papers/miniKanren/slides/presentation.log

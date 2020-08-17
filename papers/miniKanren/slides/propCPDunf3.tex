@@ -1,0 +1,18 @@
+\begin{tikzpicture}[
+  processTree,
+  sibling distance=10em,
+  level distance=8em]
+  \node {
+    \underline{\rel{eval}{$fm \ s \ true$}}}
+    child { node[draw=none, fill=none] {...}}
+    child { node {
+      \rel{eval}{$x \ s \ a$} \and \\
+      \underline{\rel{not}{$a \ true$}} \\
+      \subst{$fm \to neg \ x$}}
+      child { node {
+        \rel{eval}{$x \ s \ false$} \\
+        \subst{$a \to false$}}}}
+    child { node[draw=none, fill=none] {...}}
+    child { node[draw=none, fill=none] {...}}
+  ;
+\end{tikzpicture}

@@ -1,0 +1,8 @@
+\begin{lstlisting}
+let rec append$^o$ x y r =
+  ocanren { fresh h t r' in
+    (x === [] & y === r) |
+    ( x === h :: t &
+      append$^o$ t y r' &
+      t === h :: r')}
+\end{lstlisting}

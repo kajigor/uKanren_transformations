@@ -1,0 +1,12 @@
+\begin{tikzpicture}[
+  processTree]
+  \node {
+    \underline{\rel{or}{$x \ y \ true$}}}
+    child { node {
+      \subst{$x \to true, y \to true$}}}
+    child { node {
+      \subst{$x \to true, y \to false$}}}
+    child { node {
+      \subst{$x \to false, y \to true$}}}
+  ;
+\end{tikzpicture}
