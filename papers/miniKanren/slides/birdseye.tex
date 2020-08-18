@@ -1,0 +1,57 @@
+\begin{tikzpicture}[
+  node distance = 17mm and 13 mm,
+  decoration = {
+    snake,
+    pre length=2pt,
+    post length=2pt
+  }]
+  \node (a) [program]
+  {
+    \adjustbox{scale=0.65}{
+      \begin{minipage}[c]{0.4\textwidth}
+        \input{appendoDef.tex}
+      \end{minipage}
+    }
+  };
+
+  \node (b) [goal,anchor=north east] at (a.south east)
+  {
+    \adjustbox{scale=0.65}{
+      \begin{minipage}[c]{0.22\textwidth}
+        \begin{lstlisting}
+append$^o$ x y r
+        \end{lstlisting}
+      \end{minipage}
+    }
+  };
+
+  \node [transparent, anchor=south] at (a.north) {\footnotesize input};
+
+
+  \node (c) [program, below=of a.south west, anchor=north west]% right=of a.north east, anchor=north west]
+  {
+    \adjustbox{scale=0.65}{
+      \begin{minipage}[c]{0.47\textwidth}
+        \input{appendoRes.tex}
+      \end{minipage}
+    }
+  };
+
+  \node [transparent, anchor=south] at (c.north) {\footnotesize output};
+
+  \node (d) [transparent, fill=red!10, right=of a.north east, anchor=north west]
+  {
+    \begin{minipage}[c]{0.51\textwidth}
+      \input{appendoInf.tex}
+    \end{minipage}
+  };
+
+
+  \node (e) [transparent, fill=red!10, anchor=north west] at ($(c.north east)+(2,0)$)
+  {
+    \begin{minipage}[c]{0.4\textwidth}
+      \input{appendoCPD.tex}
+    \end{minipage}
+  };
+
+\end{tikzpicture}

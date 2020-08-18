@@ -1,0 +1,45 @@
+\begin{tikzpicture}[
+  node distance = 10mm and 18 mm,
+  decoration = {
+    snake,
+    pre length=2pt,
+    post length=2pt
+  }]
+  \node (a) [program]
+  {
+    \adjustbox{scale=0.7}{
+      \begin{minipage}[c]{0.47\textwidth}
+        \input{doubleAppDef.tex}
+        \input{appendoDef.tex}
+      \end{minipage}
+    }
+  };
+
+  \node (b) [goal,anchor=north east] at (a.south east)
+  {
+    \adjustbox{scale=0.7}{
+      \begin{minipage}[c]{0.35\textwidth}
+        \begin{lstlisting}
+double_append$^o$ x y z r
+        \end{lstlisting}
+      \end{minipage}
+    }
+  };
+
+  \node [transparent, anchor=south] at (a.north) {\footnotesize input};
+
+
+  \node (c) [program, right=of a.north east, anchor=north west]
+  {
+    \adjustbox{scale=0.7}{
+      \begin{minipage}[c]{0.52\textwidth}
+        \input{doubleAppRes.tex}
+        \input{appendoDef.tex}
+      \end{minipage}
+    }
+  };
+
+  \node [transparent, anchor=south] at (c.north) {\footnotesize output};
+
+
+\end{tikzpicture}

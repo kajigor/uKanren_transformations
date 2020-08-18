@@ -1,0 +1,107 @@
+\begin{tikzpicture}[
+  node distance = 10mm and 11 mm,
+  decoration = {
+    snake,
+    pre length=2pt,
+    post length=2pt
+  }]
+  \node (a) [program]
+  {
+    \adjustbox{scale=0.7}{
+      \begin{minipage}[c]{0.63\textwidth}
+        \begin{lstlisting}
+let rec eval$^o$ fm s r =
+  fm === neg x & eval$^o$ x s a & not$^o$ a r |
+  ...
+        \end{lstlisting}
+      \end{minipage}
+    }
+  };
+
+  \node [transparent,anchor=south] at (a.north) {
+    \footnotesize
+    input program
+  };
+
+  \pause
+
+  \node (c) [goal,anchor=south east] at (a.south east)
+  {
+    \adjustbox{scale=0.7}{
+      \begin{minipage}[c]{0.25\textwidth}
+        \begin{lstlisting}
+eval$^o$ fm s true
+        \end{lstlisting}
+      \end{minipage}
+    }
+  };
+
+  \node (lbl) [transparent,anchor=south west] at (a.east) {
+    \footnotesize
+    known argument
+  };
+
+  \draw [dashed,->] (lbl.south) to [out=270,in=0] ($(c.east)-(0.2,0)$);
+  \pause
+
+  \node (d) [input, below=of a]
+  {
+    \adjustbox{scale=0.7}{
+      \begin{minipage}[c]{0.65\textwidth}
+        \begin{lstlisting}
+fm === neg x & eval$^o$ x s a & not$^o$ a true |
+...
+        \end{lstlisting}
+      \end{minipage}
+    }
+  };
+
+  \path[draw=black,->,thick, decorate] (a.south) to (d.north);
+
+  \pause
+
+  \node (e) [input, below=of d]
+  {
+    \adjustbox{scale=0.7}{
+      \begin{minipage}[c]{0.5\textwidth}
+        \begin{lstlisting}
+fm === neg x & eval$^o$ x s false |
+...
+        \end{lstlisting}
+      \end{minipage}
+    }
+  };
+
+  \path[draw=black,->,thick, decorate] (d.south) to (e.north);
+
+  \pause
+
+  \node (dots) [input, below=of e] {...};
+
+  \path[draw=black,->,thick, decorate] (e.south) to (dots.north);
+
+  \pause
+
+  \node (b) [program, right=of d]
+  {
+    \adjustbox{scale=0.7}{
+      \begin{minipage}[c]{0.53\textwidth}
+        \begin{lstlisting}
+let rec eval_true$^o$ fm s =
+  fm === neg x & eval_false$^o$ x s |
+  ...
+
+let rec eval_false$^o$ fm s =
+  fm === neg x & eval_true$^o$ x s |
+  ...
+        \end{lstlisting}
+      \end{minipage}
+    }
+  };
+
+  \node [transparent,anchor=south] at (b.north) {
+    \footnotesize
+    output
+  };
+\onslide<1->
+\end{tikzpicture}

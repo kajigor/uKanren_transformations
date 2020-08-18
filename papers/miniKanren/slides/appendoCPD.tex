@@ -1,6 +1,11 @@
-\begin{tikzpicture}[processTree]
-  \node {\rel{append}{$x \ y \ r$}}
+\begin{tikzpicture}[
+  processTree,
+  sibling distance=12em,
+  anchor=center]
+  \node (1) {\rel{append}{$x \ y \ r$}}
       child { node {\subst{$x \to [], y \to r$}}}
-      child { node {\rel{append}{$x' \ y \ r'$ \\ \subst{$x \to h :: x', r \to h :: r'$}}}
+      child { node (2) {\rel{append}{$x' \ y \ r'$ \\ \subst{$x \to h :: x', r \to h :: r'$}}}
     };
+    \draw [dashed,<-] (1.east) to [out=10,in=30] (2.east);
+
 \end{tikzpicture}

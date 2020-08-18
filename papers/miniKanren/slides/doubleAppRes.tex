@@ -1,0 +1,9 @@
+\begin{lstlisting}
+let double_append$^o$ x y z r =
+  ocanren {
+    (x === [] & append$^o$ y z r) |
+    (fresh h x' r' in
+      x === h :: x' &
+      double_append$^o$ x' y z r' &
+      r === h :: r')}
+\end{lstlisting}
