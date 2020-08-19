@@ -1,9 +1,11 @@
 \begin{tikzpicture}[
-  node distance = 17mm and 13 mm,
+  node distance = 14mm and 13 mm,
   decoration = {
     snake,
     pre length=2pt,
-    post length=2pt
+    post length=4pt,
+    amplitude=0.5pt,
+    segment length=4pt
   }]
   \node (a) [program]
   {
@@ -25,10 +27,38 @@ append$^o$ x y r
     }
   };
 
-  \node [transparent, anchor=south] at (a.north) {\footnotesize input};
+  \pause
+
+  \node (d) [transparent, right=of a.north east, anchor=north west]
+  {
+    \begin{minipage}[c]{0.51\textwidth}
+      \input{appendoInf.tex}
+    \end{minipage}
+  };
+
+  \draw[->,semithick, decorate]
+    (a.north) to
+    [out=15,in=165,"{\footnotesize driving}"]
+    ($(d.north west)+(2,0)$);
+
+  \pause
+
+  \node (e) [transparent, anchor=north east] at ($(d.south east)+(0,-1)$)
+  {
+    \begin{minipage}[c]{0.4\textwidth}
+      \input{appendoCPD.tex}
+    \end{minipage}
+  };
+
+  \draw[->,semithick, decorate]
+    ($(d.south)+(0.6,0.9)$) to
+    [out=-55,in=75,"{\footnotesize folding}"]
+    (e.north);
+
+  \pause
 
 
-  \node (c) [program, below=of a.south west, anchor=north west]% right=of a.north east, anchor=north west]
+  \node (c) [program, below=of a.south west, anchor=north west]
   {
     \adjustbox{scale=0.65}{
       \begin{minipage}[c]{0.47\textwidth}
@@ -37,21 +67,10 @@ append$^o$ x y r
     }
   };
 
-  \node [transparent, anchor=south] at (c.north) {\footnotesize output};
+  \draw[->,semithick, decorate]
+    (e.west) to
+    [out=200,in=-35,"{\footnotesize residualization}",pos=0.4]
+    (c.east);
 
-  \node (d) [transparent, fill=red!10, right=of a.north east, anchor=north west]
-  {
-    \begin{minipage}[c]{0.51\textwidth}
-      \input{appendoInf.tex}
-    \end{minipage}
-  };
-
-
-  \node (e) [transparent, fill=red!10, anchor=north west] at ($(c.north east)+(2,0)$)
-  {
-    \begin{minipage}[c]{0.4\textwidth}
-      \input{appendoCPD.tex}
-    \end{minipage}
-  };
-
+    \onslide<1->
 \end{tikzpicture}

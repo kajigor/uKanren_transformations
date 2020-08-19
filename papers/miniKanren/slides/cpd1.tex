@@ -1,0 +1,37 @@
+\begin{tikzpicture}[]
+  \node (a) [
+    program,
+    anchor=north west,
+    scale=0.6
+  ]
+  at (current page.north west)
+  {
+    \input{doubleAppDef.tex}
+  };
+
+  \node [
+    program,
+    anchor=south west,
+    scale=0.6
+  ]
+  at ($(current page.south west)+(0,2)$)
+  {
+    \input{doubleAppRes.tex}
+  };
+
+  \node [
+    transparent,
+    fill=none,
+    anchor=north west,
+    xshift=-1cm,
+    yshift=0.8cm
+  ]
+  at (a.south east)
+    {
+      \begin{minipage}[c]{0.8\textwidth}
+        \input{doubleAppCPD.tex}
+      \end{minipage}
+    };
+
+
+\end{tikzpicture}

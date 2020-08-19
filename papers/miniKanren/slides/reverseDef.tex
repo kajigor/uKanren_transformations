@@ -1,9 +1,9 @@
 \begin{lstlisting}
-  let rec reverse$^o$ xs sx =
-    ocanren {
-      (xs === [] & sx === []) |
-      (fresh h t t' in
-        xs === h :: t &
-        reverse$^o$ t t' &
-        append$^o$ t' [h] sx}
+let rec reverse$^o$ xs sx =
+  ocanren {
+    (xs === [] & sx === []) |
+    (fresh h t t' in
+      xs === h :: t &
+      reverse$^o$ t t' &
+      append$^o$ t' [h] sx}
   \end{lstlisting}

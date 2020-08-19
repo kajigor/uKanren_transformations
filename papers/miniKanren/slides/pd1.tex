@@ -1,0 +1,25 @@
+\begin{tikzpicture}[]
+  \node (a) [
+    program,
+    anchor=north west,
+    scale=0.6
+  ]
+  at (current page.north west)
+  {
+    \input{doubleAppDef.tex}
+  };
+
+  \node [
+    transparent,
+    anchor=north west,
+    xshift=-2cm
+  ]
+  at (a.south east)
+    {
+      \begin{minipage}[c]{\textwidth}
+        \input{doubleAppPD.tex}
+      \end{minipage}
+    };
+
+
+\end{tikzpicture}

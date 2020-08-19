@@ -1,7 +1,8 @@
 \begin{tikzpicture}[
   processTree,
-  level 3/.style={sibling distance=23em},
-  level 4/.style={sibling distance=10em}]
+  level 3/.style={sibling distance=20em},
+  level 4/.style={sibling distance=10em},
+  anchor=center]
   \node {\rel{double\_append}{$x \ y \ z \ r$}}
     child { node (0) {
       \underline{\rel{append}{$x \ y \ t$}} \and \rel{append}{$t \ z \ r$}}
@@ -22,4 +23,6 @@
             \subst{$r \to h :: r'$}}}}}};
   \draw [dashed,<-] (1.east) to [out=10,in=30] (12.east);
   \draw [dashed,<-] (0.east) .. controls +(0:8) and +(2:2) .. (22.east);
+
+  \draw [densely dotted,->] ($(0.west)-(2,1.2)$) node[below,draw=none] {\Large call to unfold} to [out=45,in=180] (0.west);
 \end{tikzpicture}
