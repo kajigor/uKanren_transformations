@@ -90,8 +90,7 @@ morecomment=[s]{(*}{*)},
 
 \tikzstyle{transparent} = [
   draw=none,
-  inner ysep=3pt,
-  fill=green!20
+  inner ysep=3pt
   ]
 
 \lstset{
@@ -134,7 +133,6 @@ Saint Petersburg State University
 }
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Specialization: a Method to Improve Programs}
 \begin{center}
   \input{spec.tex}
@@ -142,7 +140,6 @@ Saint Petersburg State University
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Partial Deduction: Specialization for Logic Programming}
 \begin{center}
   \input{pd.tex}
@@ -150,7 +147,6 @@ Saint Petersburg State University
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Partial Deduction for \mk: Bird's-eye View}
   \begin{center}
 \input{birdseye.tex}
@@ -158,7 +154,6 @@ Saint Petersburg State University
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Driving: Unfolding}
   \begin{center}
     \input{drivingUnfold.tex}
@@ -166,7 +161,6 @@ Saint Petersburg State University
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Partial Deduction}
 
 \begin{center}
@@ -176,7 +170,6 @@ Saint Petersburg State University
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Conjunctive Partial Deduction}
 
 \begin{center}
@@ -184,14 +177,103 @@ Saint Petersburg State University
 \end{center}
 \end{frame}
 
-\begin{frame}[fragile]
-  \transwipe[direction=90]
-  \frametitle{Evaluator of Logic Formulas}
 
-\begin{tikzpicture}[]
+\begin{frame}[fragile]
+  \frametitle{CPD: Split is Necessary}
+
+\begin{tikzpicture}[
+  remember picture,
+  overlay
+]
+ \node (a) [
+   program,
+   anchor=north west,
+   xshift=0.4cm,
+   yshift=-1.4cm
+ ]
+ at (current page.north west)
+ {
+   \adjustbox{scale=0.6}
+   {
+     \begin{minipage}[c]{0.4\textwidth}
+       \input{reverseDef.tex}
+     \end{minipage}
+   }};
+
+ \node [
+     goal,
+     anchor=north east,
+   ]
+   at (a.south east)
+   {
+     \adjustbox{scale=0.6}
+     {
+       \begin{minipage}[c]{0.25\textwidth}
+         \begin{lstlisting}
+reverse$^o$ xs sx
+         \end{lstlisting}
+       \end{minipage}
+     }};
+
+\node [
+  transparent,
+  anchor=south west,
+  yshift=0.5cm,
+  xshift=0.4cm
+  ]
+  at (current page.south west)
+  {
+      \input{reverseSplit.tex}
+  };
+
+ \node [
+   transparent,
+   anchor=south east,
+   yshift=2.5cm,
+   xshift=-0.4cm
+ ]
+ at (current page.south east)
+ {
+     \input{reverseCPD.tex}
+ };
+\end{tikzpicture}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Decisions in Partial Deduction}
+\begin{itemize}
+  \item What to unfold: which calls, how many calls?
+  \begin{itemize}
+    \item CPD: the leftmost call, which does not have a predecessor \emph{embedded} into it
+  \end{itemize}
+  \item How to unfold: to what depth a call should be unfolded?
+  \begin{itemize}
+    \item CPD: unfold once
+  \end{itemize}
+  \item When to stop driving?
+  \begin{itemize}
+    \item When a goal is an instance of some goal in the process tree
+  \end{itemize}
+  \item When to split?
+  \begin{itemize}
+    \item When there is a predecessor embedded into the goal
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Evaluator of Logic Formulas: Unfolding Step 1}
+
+\begin{tikzpicture}[
+  remember picture,
+  overlay
+]
   \node (a) [
     program,
     anchor=north west,
+    xshift=0.4cm,
+    yshift=-1.4cm
   ]
   at (current page.north west)
   {
@@ -220,10 +302,9 @@ eval$^o$ fm s true
   \node [
     transparent,
     anchor=south,
-    yshift=-2cm,
-    xshift=-0.4cm
+    yshift=1cm,
   ]
-  at (current page.center)
+  at (current page.south)
   {
       \input{propCPD.tex}
   };
@@ -233,8 +314,7 @@ eval$^o$ fm s true
 
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
-  \frametitle{Evaluator of Logic Formulas: Unfolding 2}
+  \frametitle{Evaluator of Logic Formulas: Unfolding Step 2}
 
 \begin{center}
   \input{propCPDunf2.tex}
@@ -242,8 +322,7 @@ eval$^o$ fm s true
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
-  \frametitle{Boolean Connectives}
+  \frametitle{Unfolding of Boolean Connectives}
 
   \begin{center}
     \input{boolOr.tex}
@@ -267,8 +346,7 @@ eval$^o$ fm s true
 
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
-  \frametitle{Evaluator of Logic Formulas: Unfolding 3}
+  \frametitle{Unfolding Boolean Connectives First}
 
 \begin{center}
   \input{propCPDunf3.tex}
@@ -276,8 +354,7 @@ eval$^o$ fm s true
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
-  \frametitle{Evaluator of Logic Formulas: ConsPD}
+  \frametitle{Evaluator of Logic Formulas: Conservative PD}
 
 \begin{center}
   \input{propConsPD.tex}
@@ -285,70 +362,28 @@ eval$^o$ fm s true
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
-  \frametitle{\texttt{reverse}$^o$}
-
-  \begin{tikzpicture}[]
-    \node (a) [
-      program,
-      anchor=north west,
-    ]
-    at (current page.north west)
-    {
-      \adjustbox{scale=0.6}
-      {
-        \begin{minipage}[c]{0.4\textwidth}
-          \input{reverseDef.tex}
-        \end{minipage}
-      }};
-
-    \node [
-        goal,
-        anchor=north east,
-      ]
-      at (a.south east)
-      {
-        \adjustbox{scale=0.6}
-        {
-          \begin{minipage}[c]{0.25\textwidth}
-            \begin{lstlisting}
-reverse$^o$ xs sx
-            \end{lstlisting}
-          \end{minipage}
-        }};
-
-    \node [
-      transparent,
-      anchor=south,
-      yshift=-2cm,
-      xshift=1cm
-    ]
-    at (current page.center)
-    {
-        \input{reverseCPD.tex}
-    };
-  \end{tikzpicture}
-
-\end{frame}
-
-
-\begin{frame}[fragile]
-  \transwipe[direction=90]
-  \frametitle{Split}
+  \frametitle{Split: Which Way is the Right Way?}
 \input{split.tex}
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Conservative Partial Deduction}
+\begin{itemize}
+  \item Split conjunction into individual calls
+  \item Unfold each call in isolation
+  \item Unfold until embedding is encountered
+  \item Find a call which narrows the search state (less-branching heuristics)
+  \item Join the result of unfolding the selected call with the other calls not unfolded
+  \item Continue driving the constucted conjunction
+\end{itemize}
+
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
-  \frametitle{Branching Heuristics}
+  \frametitle{Less-branching Heuristics}
 
   \begin{center}
-    Branching heuristics is used to select a call to unfold
+    Less-branching heuristics is used to select a call to unfold
 
     \vspace{0.5cm}
 
@@ -377,42 +412,117 @@ reverse$^o$ xs sx
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Evaluation}
+We implemented the Conservative Partial Deduction and compared it with CPD for \mk and CPD with branching heuristics on the following relations
+
+\begin{itemize}
+  \item Two implementations of an evaluator of logic formulas
+  \item A program to compute a unifier of two terms
+  \item A program to search for paths of a specific length in a graph
+\end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Evaluator of Logic Formulas}
+    \begin{center}
+      \adjustbox{scale=0.9}
+      {
+        \begin{minipage}[c]{\textwidth}
+          \input{propDef.tex}
+        \end{minipage}
+      }
+    \end{center}
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]  :
   \frametitle{Evaluator of Logic Formulas: Order of Calls}
+    \begin{center}
+      \adjustbox{scale=0.9}
+      {
+        \begin{minipage}[c]{\textwidth}
+          \input{propDef1.tex}
+        \end{minipage}
+      }
+    \end{center}
+
+    \begin{center}
+      \adjustbox{scale=0.9}
+      {
+        \begin{minipage}[c]{\textwidth}
+          \input{propDef.tex}
+        \end{minipage}
+      }
+    \end{center}
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Evaluator of Logic Formulas: Compexity of Relations}
+
+  \begin{center}
+    \adjustbox{scale=0.7}
+    {
+      \begin{minipage}[c]{0.8\textwidth}
+        \input{orDef.tex}
+      \end{minipage}
+    }
+  \end{center}
+
+
+  \begin{center}
+    \adjustbox{scale=0.7}
+    {
+      \begin{minipage}[c]{0.8\textwidth}
+        \input{orDef1.tex}
+      \end{minipage}
+    }
+  \end{center}
+
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
-  \frametitle{Evaluator of Logic Formulas: Results}
+  \frametitle{Evaluator of Logic Formulas: Evaluation}
+Implementations:
+
+\begin{itemize}
+  \item \emph{last}: boolean connectives last, implemented via \lstinline{nand$^o$}
+  \item \emph{plain}: boolean connectives first, straightforward implementation
+\end{itemize}
+
+
+\begin{table}
+  \centering
+  \begin{tabular}{c||c|c}
+                   & last  & plain  \\ \hline\hline
+  Original         & 1.06s & 1.84s  \\ \hline
+  CPD              & ---   & 1.13s  \\ \hline
+  ConsPD           & 0.93s & 0.99s  \\ \hline
+  Branching        & 3.11s & 7.53s  \\ \hline
+  \end{tabular}
+
+  \caption{Evaluation results}
+\end{table}
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Unification}
+Relation to find a unifier of two terms
+
+\vspace{0.5cm}
+
+Query: unification of terms $f (X, X, g(Z,t))$ and $f (g(p,L),Y,Y)$.
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Path Search}
+Relation to search for paths in a graph
+
+\vspace{0.5cm}
+
+Query: find 5 paths in a graph with 20 vertices and 30 edges
+
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Evaluation Results}
 
   \begin{table}
@@ -426,21 +536,23 @@ reverse$^o$ xs sx
     \end{tabular}
 
     \caption{Evaluation results}
-    \label{tbl:eval}
   \end{table}
 
 \end{frame}
 
 \begin{frame}[fragile]
-  \transwipe[direction=90]
   \frametitle{Conclusion}
   \begin{itemize}
-    \item Conservative Partial Deduction
+    \item We developped and implemented Conservative Partial Deduction
     \begin{itemize}
       \item Less-branching heuristics
     \end{itemize}
     \item Evaluation shows some improvement, but not for every query
-    \item Models to predict performance can help
+    \item Future work:
+    \begin{itemize}
+      \item Develop models to predict execution time
+      \item Develop specialization which is more predictable, stable and well-behaved
+    \end{itemize}
   \end{itemize}
 \end{frame}
 

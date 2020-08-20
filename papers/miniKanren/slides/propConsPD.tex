@@ -12,7 +12,7 @@
       \rel{eval}{$x \ s \ a$} \and \\
       \underline{\rel{not}{$a \ true$}} \\
       \subst{$fm \to neg \ x$}}
-      child { node {
+      child { node (1) {
         \rel{eval}{$x \ s \ false$} \\
         \subst{$a \to false$}}}}
     child { node {
@@ -31,7 +31,7 @@
         child { node [diamond] { \and }
           child { node (rename) {
             \rel{eval}{$x \ s \ true$}}}
-          child { node {
+          child { node (2) {
             \rel{eval}{$y \ s \ false$}}
             child { node[draw=none, fill=none] {...}}
             child { node[draw=none, fill=none] {...}}
@@ -58,6 +58,8 @@
   \draw [->] (root.west) to [out=180,in=0] (lookup.east);
   \pause
   \draw [dashed,<-] ($(root.south west)-(-1,0)$) .. controls +(-7,-2.5) and +(-4,0) .. (rename.west);
+
+  \draw[dashed,->] (1.south) to [out=-90,in=-135] (2.south west);
 
   \onslide<1->
 \end{tikzpicture}

@@ -1,7 +1,12 @@
-\begin{tikzpicture}[]
+\begin{tikzpicture}[
+  remember picture,
+  overlay
+]
   \node (a) [
     program,
     anchor=north west,
+    xshift=0.4cm,
+    yshift=-1.4cm,
     scale=0.6
   ]
   at (current page.north west)
@@ -9,17 +14,31 @@
     \input{doubleAppDef.tex}
   };
 
+  \node (b) [goal,anchor=north east] at (a.south east)
+  {
+    \adjustbox{scale=0.6}{
+      \begin{minipage}[c]{0.35\textwidth}
+        \begin{lstlisting}
+double_append$^o$ x y z r
+        \end{lstlisting}
+      \end{minipage}
+    }
+  };
+
   \node [
     transparent,
-    anchor=north west,
-    xshift=-2cm
+    anchor=south east,
+    fill=none,
+    xshift=-0.4cm,
+    yshift=0.8cm
   ]
-  at (a.south east)
+  at (current page.south east)
     {
-      \begin{minipage}[c]{\textwidth}
+      \begin{minipage}[c]{0.8\textwidth}
         \input{doubleAppPD.tex}
       \end{minipage}
     };
+
 
 
 \end{tikzpicture}

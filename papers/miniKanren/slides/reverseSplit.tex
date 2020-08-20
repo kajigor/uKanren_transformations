@@ -1,0 +1,19 @@
+\begin{tikzpicture}[
+  processTree,
+  anchor=center,
+  level distance=5em,
+  sibling distance=10em]
+  \node (0) {
+    \underline{\rel{reverse}{$xs \ sx$}}}
+    child { node[diamond] {\and}
+      child { node (1) {
+        \underline{\rel{reverse}{$t \ t'$}} \\
+        \subst{$xs \to h :: t$}}
+        }
+      child { node {
+        \underline{\rel{append}{$t' \ [h] \ xs$}} \\
+        \subst{$xs \to h :: t$}}
+        }
+      };
+  \draw[dashed,->] (1.west) to [out=135,in=-155] (0.west);
+\end{tikzpicture}
