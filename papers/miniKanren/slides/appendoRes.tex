@@ -2,7 +2,7 @@
 let rec append$^o$ x y r =
   ocanren { fresh h t r' in
     (x === [] & y === r) |
-    ( x === h :: x' &
-      append$^o$ x' y r' &
-      t === h :: r')}
+    (x === h :: x' &
+     t === h :: r' &
+     append$^o$ x' y r')}
 \end{lstlisting}

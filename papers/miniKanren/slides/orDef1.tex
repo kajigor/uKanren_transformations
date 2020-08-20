@@ -2,8 +2,7 @@
 let or$^o$ x y r =
   ocanren {
     fresh a b in
-      (nand$^o$ x x a & nand$^o$ y y b & nand$^o$ a b r)
-  }
+      (nand$^o$ x x a & nand$^o$ y y b & nand$^o$ a b r) }
 
 let rec nand$^o$ x y r =
   ocanren {

@@ -436,46 +436,117 @@ We implemented the Conservative Partial Deduction and compared it with CPD for \
 
 \begin{frame}[fragile]
   \frametitle{Evaluator of Logic Formulas: Order of Calls}
-    \begin{center}
-      \adjustbox{scale=0.9}
+  \begin{tikzpicture}[remember picture, overlay]
+
+    \node (a) [
+      transparent,
+      anchor=north west,
+      xshift=0.4cm,
+      yshift=-1.8cm
+    ]
+    at (current page.north west)
+    {
+      \adjustbox{scale=0.8}
       {
-        \begin{minipage}[c]{\textwidth}
+        \begin{minipage}[c]{0.9\textwidth}
           \input{propDef1.tex}
         \end{minipage}
       }
-    \end{center}
+    };
 
-    \begin{center}
-      \adjustbox{scale=0.9}
+    \node (b) [
+      transparent,
+      anchor=south west]
+      at (a.north west)
+    {\footnotesize
+        boolean connective first
+    };
+
+    \pause
+
+    \node (c) [
+      transparent,
+      anchor=south east,
+      xshift=-1.3cm,
+      yshift=0.5cm
+    ]
+    at (current page.south east)
+    {
+      \adjustbox{scale=0.8}
       {
-        \begin{minipage}[c]{\textwidth}
+        \begin{minipage}[c]{0.9\textwidth}
           \input{propDef.tex}
         \end{minipage}
       }
-    \end{center}
+    };
+
+    \node (d) [
+      transparent,
+      anchor=south west]
+      at (c.north west)
+    {\footnotesize
+      boolean connective last
+    };
+  \end{tikzpicture}
+
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Evaluator of Logic Formulas: Compexity of Relations}
 
-  \begin{center}
-    \adjustbox{scale=0.7}
-    {
-      \begin{minipage}[c]{0.8\textwidth}
-        \input{orDef.tex}
-      \end{minipage}
-    }
-  \end{center}
 
+  \begin{tikzpicture}[remember picture, overlay]
 
-  \begin{center}
-    \adjustbox{scale=0.7}
+    \node (a) [
+      transparent,
+      anchor=north west,
+      xshift=0.4cm,
+      yshift=-1.8cm
+    ]
+    at (current page.north west)
     {
-      \begin{minipage}[c]{0.8\textwidth}
-        \input{orDef1.tex}
-      \end{minipage}
-    }
-  \end{center}
+      \adjustbox{scale=0.7}
+      {
+        \begin{minipage}[c]{0.8\textwidth}
+          \input{orDef.tex}
+        \end{minipage}
+      }
+    };
+
+    \node (b) [
+      transparent,
+      anchor=south]
+      at (a.north)
+    {\footnotesize
+        table-based implementation
+    };
+
+    \pause
+
+    \node (c) [
+      transparent,
+      anchor=south east,
+      xshift=-0.4cm,
+      yshift=0.5cm
+    ]
+    at (current page.south east)
+    {
+      \adjustbox{scale=0.7}
+      {
+        \begin{minipage}[c]{0.8\textwidth}
+          \input{orDef1.tex}
+        \end{minipage}
+      }
+    };
+
+    \node (d) [
+      transparent,
+      anchor=south]
+      at (c.north)
+    {\footnotesize
+        implementation via nand$^o$
+    };
+  \end{tikzpicture}
 
 \end{frame}
 
@@ -509,7 +580,7 @@ Relation to find a unifier of two terms
 
 \vspace{0.5cm}
 
-Query: unification of terms $f (X, X, g(Z,t))$ and $f (g(p,L),Y,Y)$.
+Query: unification of terms $f (X, X, g(Z,t))$ and $f (g(p,L),Y,Y)$
 \end{frame}
 
 \begin{frame}[fragile]

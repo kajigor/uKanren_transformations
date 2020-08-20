@@ -4,5 +4,5 @@ let rec eval$^o$ fm s r =
     (fm === var v & lookup$^o$ v s r) |
     (fm === neg x & eval$^o$ x s a & not$^o$ a r) |
     (fm === conj x y & eval$^o$ x s a & eval$^o$ y s b & and$^o$ a b r) |
-    (fm === disj x y & eval$^o$ x s a & eval$^o$ y s b & oro$^o$ a b r)
+    (fm === disj x y & eval$^o$ x s a & eval$^o$ y s b & oro$^o$ a b r) }
   \end{lstlisting}
