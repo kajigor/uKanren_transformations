@@ -1,0 +1,16 @@
+\begin{tikzpicture}[
+  processTree,
+  sibling distance=7em,
+  level distance=6em]
+  \node {
+    \underline{\rel{and}{$x \ y \ r$}}}
+    child { node {
+      \subst{$x \to true,$ \\ $y \to true,$ \\ $r \to true$}}}
+    child { node {
+      \subst{$x \to true,$ \\ $y \to false,$ \\ $r \to false$}}}
+    child { node {
+      \subst{$x \to false,$ \\ $y \to true,$ \\ $r \to false $}}}
+    child { node {
+      \subst{$x \to false,$ \\ $y \to false,$ \\ $r \to false $}}}
+  ;
+\end{tikzpicture}

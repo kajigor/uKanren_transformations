@@ -241,6 +241,11 @@ reverse$^o$ xs sx
 \end{frame}
 
 \begin{frame}[fragile]
+  \frametitle{Split: Which Way is the Right Way?}
+\input{split.tex}
+\end{frame}
+
+\begin{frame}[fragile]
   \frametitle{Decisions in Partial Deduction}
 \begin{itemize}
   \item What to unfold: which calls, how many calls?
@@ -362,17 +367,12 @@ eval$^o$ fm s true
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Split: Which Way is the Right Way?}
-\input{split.tex}
-\end{frame}
-
-\begin{frame}[fragile]
   \frametitle{Conservative Partial Deduction}
 \begin{itemize}
   \item Split conjunction into individual calls
   \item Unfold each call in isolation
   \item Unfold until embedding is encountered
-  \item Find a call which narrows the search state (less-branching heuristics)
+  \item Find a call which narrows the search space (less-branching heuristics)
   \item Join the result of unfolding the selected call with the other calls not unfolded
   \item Continue driving the constucted conjunction
 \end{itemize}
@@ -387,7 +387,7 @@ eval$^o$ fm s true
 
     \vspace{0.5cm}
 
-    If the call has less branches in the process tree than the relation can possible have, unfold the call
+    If a call in the context unfolds into less branches than it does in isolation, select it
   \end{center}
 
 \vspace{0.5cm}
@@ -396,17 +396,11 @@ eval$^o$ fm s true
   \begin{columns}
     \begin{column}[]{0.65\textwidth}
       \begin{center}
-        \input{appendoCPD.tex}
+        \input{boolAndIso.tex}
       \end{center}
     \end{column}
     \begin{column}[]{0.35\textwidth}
-      \begin{center}
-        \begin{tikzpicture}[processTree]
-          \node {\rel{append}{$(h::x') \ y \ r$}}
-              child { node {\rel{append}{$x' \ y \ r'$ \\ \subst{$r \to h :: r'$}}}
-            };
-        \end{tikzpicture}
-      \end{center}
+      \input{boolAnd.tex}
     \end{column}
   \end{columns}
 \end{frame}
@@ -422,71 +416,78 @@ We implemented the Conservative Partial Deduction and compared it with CPD for \
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{Evaluator of Logic Formulas}
-    \begin{center}
-      \adjustbox{scale=0.9}
-      {
-        \begin{minipage}[c]{\textwidth}
-          \input{propDef.tex}
-        \end{minipage}
-      }
-    \end{center}
-\end{frame}
+%\begin{frame}[fragile]
+%  \frametitle{Evaluator of Logic Formulas}
+%    \begin{center}
+%      \adjustbox{scale=0.9}
+%      {
+%        \begin{minipage}[c]{\textwidth}
+%          \input{propDef.tex}
+%        \end{minipage}
+%      }
+%    \end{center}
+%\end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Evaluator of Logic Formulas: Order of Calls}
   \begin{tikzpicture}[remember picture, overlay]
 
     \node (a) [
-      transparent,
-      anchor=north west,
-      xshift=0.4cm,
+      program,
+      anchor=north,
       yshift=-1.8cm
     ]
-    at (current page.north west)
+    at (current page.north)
     {
       \adjustbox{scale=0.8}
       {
-        \begin{minipage}[c]{0.9\textwidth}
-          \input{propDef1.tex}
+        \begin{minipage}[c]{\textwidth}
+          \input{propDef.tex}
         \end{minipage}
       }
     };
 
     \node (b) [
       transparent,
-      anchor=south west]
-      at (a.north west)
+      anchor=south]
+      at (a.north)
     {\footnotesize
-        boolean connective first
+        boolean connective last
     };
 
-    \pause
+    \node[draw=none, fill=green!50, opacity=0.2, shape=rectangle, minimum width=1.3cm,minimum height=0.45cm, anchor=west] at ($(a.south)+(0.15,1.3)$) {};
+    \node[draw=none, fill=green!50, opacity=0.2, shape=rectangle, minimum width=1.7cm,minimum height=0.9cm, anchor=west] at ($(a.south)+(2.75,0.7)$) {};
+
+
+\pause
 
     \node (c) [
-      transparent,
-      anchor=south east,
-      xshift=-1.3cm,
-      yshift=0.5cm
+      program,
+      anchor=south,
+      yshift=0.8cm
     ]
-    at (current page.south east)
+    at (current page.south)
     {
       \adjustbox{scale=0.8}
       {
-        \begin{minipage}[c]{0.9\textwidth}
-          \input{propDef.tex}
+        \begin{minipage}[c]{\textwidth}
+          \input{propDef1.tex}
         \end{minipage}
       }
     };
 
+    \node[draw=none, fill=green!50, opacity=0.2, shape=rectangle, minimum width=1.3cm,minimum height=0.45cm, anchor=west] at ($(c.south)+(-2.05,1.35)$) {};
+    \node[draw=none, fill=green!50, opacity=0.2, shape=rectangle, minimum width=1.7cm,minimum height=0.85cm, anchor=west] at ($(c.south)+(-1.6,0.7)$) {};
+
+
     \node (d) [
       transparent,
-      anchor=south west]
-      at (c.north west)
+      anchor=south]
+      at (c.north)
     {\footnotesize
-      boolean connective last
+      boolean connective first
     };
+    \onslide<1->
   \end{tikzpicture}
 
 \end{frame}
@@ -498,16 +499,16 @@ We implemented the Conservative Partial Deduction and compared it with CPD for \
   \begin{tikzpicture}[remember picture, overlay]
 
     \node (a) [
-      transparent,
+      program,
       anchor=north west,
       xshift=0.4cm,
       yshift=-1.8cm
     ]
     at (current page.north west)
     {
-      \adjustbox{scale=0.7}
+      \adjustbox{scale=0.65}
       {
-        \begin{minipage}[c]{0.8\textwidth}
+        \begin{minipage}[c]{0.7\textwidth}
           \input{orDef.tex}
         \end{minipage}
       }
@@ -524,14 +525,14 @@ We implemented the Conservative Partial Deduction and compared it with CPD for \
     \pause
 
     \node (c) [
-      transparent,
+      program,
       anchor=south east,
       xshift=-0.4cm,
       yshift=0.5cm
     ]
     at (current page.south east)
     {
-      \adjustbox{scale=0.7}
+      \adjustbox{scale=0.65}
       {
         \begin{minipage}[c]{0.8\textwidth}
           \input{orDef1.tex}
@@ -559,6 +560,11 @@ Implementations:
   \item \emph{plain}: boolean connectives first, straightforward implementation
 \end{itemize}
 
+\vspace{0.5cm}
+
+Query: find 1000 formulas which evaluate to true
+
+\vspace{0.5cm}
 
 \begin{table}
   \centering
@@ -566,8 +572,8 @@ Implementations:
                    & last  & plain  \\ \hline\hline
   Original         & 1.06s & 1.84s  \\ \hline
   CPD              & ---   & 1.13s  \\ \hline
-  ConsPD           & 0.93s & 0.99s  \\ \hline
   Branching        & 3.11s & 7.53s  \\ \hline
+  ConsPD           & 0.93s & 0.99s  \\ \hline
   \end{tabular}
 
   \caption{Evaluation results}
@@ -576,20 +582,26 @@ Implementations:
 
 \begin{frame}[fragile]
   \frametitle{Unification}
-Relation to find a unifier of two terms
 
-\vspace{0.5cm}
+\begin{center}
+  Relation to find a unifier of two terms
 
-Query: unification of terms $f (X, X, g(Z,t))$ and $f (g(p,L),Y,Y)$
+  \vspace{0.5cm}
+
+  Query: unification of terms $f (X, X, g(Z,t))$ and $f (g(p,L),Y,Y)$
+\end{center}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Path Search}
-Relation to search for paths in a graph
 
-\vspace{0.5cm}
+\begin{center}
+  Relation to search for paths in a graph
 
-Query: find 5 paths in a graph with 20 vertices and 30 edges
+  \vspace{0.5cm}
+
+  Query: find 5 paths in a graph with 20 vertices and 30 edges
+\end{center}
 
 \end{frame}
 
@@ -602,8 +614,8 @@ Query: find 5 paths in a graph with 20 vertices and 30 edges
                      & last  & plain & unify  & isPath \\ \hline\hline
     Original         & 1.06s & 1.84s & ---    & ---    \\ \hline
     CPD              & ---   & 1.13s & 14.12s & 3.62s  \\ \hline
-    ConsPD           & 0.93s & 0.99s & 0.96s  & 2.51s  \\ \hline
     Branching        & 3.11s & 7.53s & 3.53s  & 0.54s  \\ \hline
+    ConsPD           & 0.93s & 0.99s & 0.96s  & 2.51s  \\ \hline
     \end{tabular}
 
     \caption{Evaluation results}
@@ -614,7 +626,7 @@ Query: find 5 paths in a graph with 20 vertices and 30 edges
 \begin{frame}[fragile]
   \frametitle{Conclusion}
   \begin{itemize}
-    \item We developped and implemented Conservative Partial Deduction
+    \item We developed and implemented Conservative Partial Deduction
     \begin{itemize}
       \item Less-branching heuristics
     \end{itemize}
