@@ -6,12 +6,26 @@
     post length=4pt,
     amplitude=0.5pt,
     segment length=4pt
-  }]
-  \node (a) [program]
+  },
+  remember picture,overlay]
+  \node (a) [
+    program,
+    anchor=north west,
+    xshift=1cm,
+    yshift=-1.8cm]
+  at (current page.north west)
   {
     \adjustbox{scale=0.65}{
-      \begin{minipage}[c]{0.4\textwidth}
-        \input{appendoDef.tex}
+      \begin{minipage}[c]{0.38\textwidth}
+        \begin{lstlisting}
+let rec eval$^o$ fm s r =
+  ...
+  fm === conj x y &
+  and$^o$ a b r &
+  eval$^o$ x s a &
+  eval$^o$ y s b |
+  ...
+        \end{lstlisting}
       \end{minipage}
     }
   };
@@ -19,9 +33,9 @@
   \node (b) [goal,anchor=north east] at (a.south east)
   {
     \adjustbox{scale=0.65}{
-      \begin{minipage}[c]{0.22\textwidth}
+      \begin{minipage}[c]{0.24\textwidth}
         \begin{lstlisting}
-append$^o$ x y r
+eval$^o$ fm s true
         \end{lstlisting}
       \end{minipage}
     }
@@ -29,46 +43,60 @@ append$^o$ x y r
 
   \pause
 
-  \node (d) [transparent, right=of a.north east, anchor=north west]
+  \node (d) [
+    transparent,
+    xshift=-1cm,
+    yshift=-1.8cm,
+    anchor=north east]
+  at (current page.north east)
   {
-    \begin{minipage}[c]{0.51\textwidth}
-      \input{appendoInf.tex}
-    \end{minipage}
+      \input{propSimpl.tex}
   };
 
   \draw[->,semithick, decorate]
-    (a.north) to
+    (a.north east) to
     [out=15,in=165,"{\footnotesize driving}"]
-    ($(d.north west)+(2,0)$);
+    ($(d.north west)+(0.9,0)$);
 
   \pause
 
   \node (e) [transparent, anchor=north east] at ($(d.south east)+(0,-1)$)
   {
     \begin{minipage}[c]{0.4\textwidth}
-      \input{appendoCPD.tex}
+      \input{propSimplFold.tex}
     \end{minipage}
   };
 
   \draw[->,semithick, decorate]
-    ($(d.south)+(0.6,0.9)$) to
-    [out=-55,in=75,"{\footnotesize folding}"]
+    ($(d.south)+(0.6,0.7)$) to
+    [out=-75,in=45,"{\footnotesize folding}"]
     (e.north);
 
   \pause
 
 
-  \node (c) [program, below=of a.south west, anchor=north west]
+  \node (c) [
+    program,
+    anchor=south west,
+    xshift=1cm,
+    yshift=1cm]
+  at (current page.south west)
   {
     \adjustbox{scale=0.65}{
-      \begin{minipage}[c]{0.47\textwidth}
-        \input{appendoRes.tex}
+      \begin{minipage}[c]{0.4\textwidth}
+        \begin{lstlisting}
+let rec eval$^o$_true fm s =
+  ...
+  eval$^o$_true x s &
+  eval$^o$_true y s |
+  ...
+        \end{lstlisting}
       \end{minipage}
     }
   };
 
   \draw[->,semithick, decorate]
-    (e.west) to
+    ($(e.west)+(0.45,0)$) to
     [out=200,in=-35,"{\footnotesize residualization}",pos=0.4]
     (c.east);
 

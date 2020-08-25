@@ -33,7 +33,7 @@ For example, consider the relation double-appendo which concatenates three lists
 Here we first construct 't' as a concatenation of the first and the second list, and then concatenate the third list to it. 
 This relation reads the first list twice thus being ineffective.
 Specialization should hopefully be able to construct the program on the right. 
-Here the fist list is only read once. 
+Here the fist list is only read once and immidiately copied to the result. 
 
 4: 
 As a first approximation, partial deduction works like this. 

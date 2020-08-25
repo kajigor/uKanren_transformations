@@ -4,14 +4,21 @@
     snake,
     pre length=2pt,
     post length=2pt
-  }]
-  \node (a) [program]
+  },
+  remember picture,
+  overlay]
+  \node (a) [
+    program,
+    anchor=north west,
+    xshift=0.4cm,
+    yshift=-1.7cm]
+  at (current page.north west)
   {
     \adjustbox{scale=0.7}{
       \begin{minipage}[c]{0.63\textwidth}
         \begin{lstlisting}
 let rec eval$^o$ fm s r =
-  fm === neg x & eval$^o$ x s a & not$^o$ a r |
+  fm === neg x & not$^o$ a r & eval$^o$ x s a |
   ...
         \end{lstlisting}
       \end{minipage}
@@ -49,7 +56,7 @@ eval$^o$ fm s true
     \adjustbox{scale=0.7}{
       \begin{minipage}[c]{0.65\textwidth}
         \begin{lstlisting}
-fm === neg x & eval$^o$ x s a & not$^o$ a true |
+fm === neg x & not$^o$ a true & eval$^o$ x s a |
 ...
         \end{lstlisting}
       \end{minipage}
@@ -82,7 +89,12 @@ fm === neg x & eval$^o$ x s false |
 
   \pause
 
-  \node (b) [program, right=of d]
+  \node (b) [
+    program,
+    anchor=south east,
+    xshift=-0.4cm,
+    yshift=0.7cm]
+  at (current page.south east)
   {
     \adjustbox{scale=0.7}{
       \begin{minipage}[c]{0.53\textwidth}

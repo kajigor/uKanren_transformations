@@ -18,8 +18,15 @@
     at (current page.north west)
   {
     \adjustbox{scale=0.5}{
-      \begin{minipage}[c]{0.4\textwidth}
-        \input{appendoDef.tex}
+      \begin{minipage}[c]{0.68\textwidth}
+        \begin{lstlisting}
+let rec eval$^o$ fm s r =
+  ...
+  fm === conj x y & and$^o$ a b r &
+  eval$^o$ x s a & eval$^o$ y s b |
+  ...
+        \end{lstlisting}
+        \input{andDef1.tex}
       \end{minipage}
     }
   };
@@ -27,9 +34,9 @@
   \node (b) [goal,anchor=north east] at (a.south east)
   {
     \adjustbox{scale=0.5}{
-      \begin{minipage}[c]{0.22\textwidth}
+      \begin{minipage}[c]{0.24\textwidth}
         \begin{lstlisting}
-append$^o$ x y r
+eval$^o$ fm s true
         \end{lstlisting}
       \end{minipage}
     }
@@ -44,8 +51,27 @@ append$^o$ x y r
     yshift=-1.4cm]
     at (current page.north east)
   {
-    \input{unfold.tex}
+    \input{evalUnfold.tex}
   };
+
+  \node (e) [
+    transparent,
+    anchor=north,
+    yshift=-1cm]
+    at (d.south)
+  {
+    \input{andUnfold.tex}
+  };
+
+  \node (g) [
+    transparent,
+    anchor=north,
+    yshift=-1cm]
+    at (e.south)
+  {
+    \input{nandUnfold.tex}
+  };
+
 
   \node (exmpl) [
     draw=black,
@@ -53,47 +79,37 @@ append$^o$ x y r
     semithick,
     rounded corners=2pt,
     align=center,
-    anchor=south east,
-    xshift=-0.4cm,
-    yshift=0.7cm,
+    anchor=south west,
+    xshift=0.4cm,
+    yshift=1.5cm,
     scale=0.6]
-    at (current page.south east)
+    at (current page.south west)
     {
-      \rel{append}{$x' \ y \ r'$ \\ \subst{$x \to h :: x', r \to h :: r'$}}
+      \rel{and}{$a \ b \ true$} \and
+      \rel{eval}{$x \ s \ a$} \and
+      \rel{eval}{$y \ s \ b$} \\
+      \subst{$fm \to conj \ x \ y$}
     };
 
-  \node (tip1) [transparent,anchor=south east] at ($(exmpl.south west)-(0.5,0)$)
+  \node (tip1) [transparent,anchor=south west] at ($(exmpl.north west)+(0.5,0.3)$)
   { \scriptsize
     goal
   };
 
-  \node (tip2) [transparent,anchor=south east] at ($(exmpl.north east)+(0,0.5)$)
+  \node (tip2) [transparent,anchor=north east] at ($(exmpl.south east)+(0,-0.5)$)
   { \scriptsize
     substitution
   };
 
   \draw[densely dotted,->]
-    (tip1.north east) to
-    [out=45,in=180]
-    ($(exmpl.north west)+(0.45,-0.2)$);
+    (tip1.east) to
+    [out=15,in=90]
+    ($(exmpl.north)$);
 
   \draw[densely dotted,->]
-    (tip2.south east) to
-    [out=-30,in=0]
-    ($(exmpl.east)+(0,-0.15)$);
-
-
-  \pause
-
-  \node (c) [
-    transparent,
-    anchor=south west,
-    xshift=0.4cm,
-    yshift=0.7cm]
-    at (current page.south west)
-  {
-    \input{appendoCPD.tex}
-  };
+    (tip2.west) to
+    [out=165,in=-90]
+    (exmpl.south);
 
     \onslide<1->
 \end{tikzpicture}

@@ -1,0 +1,25 @@
+\begin{tikzpicture}[
+  processTree,
+  sibling distance=4em,
+  level distance=3em,
+  level 3/.style={level distance=4em,sibling distance=7em},
+  anchor=center]
+  \node (root) {
+    \rel{eval}{$fm \ s \ true$}}
+    child { node[draw=none, fill=none] {...}}
+    child { node[draw=none, fill=none] {...}
+      child { node {
+        \rel{eval}{$x \ s \ a$} \and \\
+        \rel{eval}{$y \ s \ b$}}
+        child { node (1) {\rel{eval}{$x \ s \ a$}}}
+        child { node (2) {\rel{eval}{$y \ s \ b$}}}
+        }
+    }
+    child { node[draw=none, fill=none] {...}}
+  ;
+
+  \draw [dashed,->] (1.west) to [out=170,in=-150] (root.west);
+  \draw [dashed,->] (2.east) to [out=10,in=-30] (root.east);
+
+
+\end{tikzpicture}

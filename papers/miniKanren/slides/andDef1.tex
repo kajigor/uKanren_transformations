@@ -1,8 +1,8 @@
 \begin{lstlisting}
-let or$^o$ x y r =
+let and$^o$ x y r =
   ocanren {
-    fresh a b in
-      (nand$^o$ x x a & nand$^o$ y y b & nand$^o$ a b r) }
+    fresh xy in
+      (nand$^o$ x y xy & nand$^o$ xy xy r) }
 
 let rec nand$^o$ x y r =
   ocanren {

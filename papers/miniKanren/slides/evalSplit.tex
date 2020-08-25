@@ -1,0 +1,37 @@
+\begin{tikzpicture}[
+  processTree,
+  anchor=center,
+  level 2/.style={level distance=5em},
+  level 3/.style={level distance=4em},
+  sibling distance=10em]
+  \node (root) {\rel{eval}{$fm \ s \ true$}}
+      child { node {
+        \rel{and}{$a \ b \ true$} \and
+        \rel{eval}{$x \ s \ a$} \and
+        \rel{eval}{$y \ s \ b$} \\
+        \subst{$fm \to conj \ x \ y$}}
+        child { node (d) [diamond] {\and}
+          child { node {\rel{and}{$a \ b \ true$}}
+            child { node (subst) {\subst{$b \to true, a \to true$}}}}
+          child { node (x) {\rel{eval}{$x \ s \ a$}}
+          child { node[draw=none, fill=none] {...}}
+          }
+          child { node (y) {\rel{eval}{$y \ s \ b$}}
+            child { node[draw=none, fill=none] {...}}
+        }
+      }
+    }
+    ;
+
+  \node[left=4em of root, yshift=-0.5cm] (lookup) {...};
+  \draw [->] (root.west) to [out=-170,in=10] (lookup.east);
+
+  \node[right=4em of root, yshift=-0.5cm] (lookup) {...};
+  \draw [->] (root.east) to [in=170,out=-10] (lookup.west);
+
+  \draw [red,<->] ($(subst.south)+(0.5,0.15)$) to [out=300,in=-100] node[below, draw=none, red] {\Large data lost} ($(x.south)+(0.85,0.15)$);
+
+  \draw [red,<->] ($(subst.south)+(-1.2,0.15)$) to [out=300,in=240] node[below, draw=none, red] {\Large data lost} ($(y.south)+(0.8,0.15)$);
+
+  \draw [densely dotted,->] ($(d.east)+(5,0.5)$) node[above,draw=none] {\Large split node} to [out=210,in=0] (d.east);
+\end{tikzpicture}

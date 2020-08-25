@@ -1,0 +1,58 @@
+
+
+\begin{tikzpicture}[
+  decoration = {
+    snake,
+    pre length=2pt,
+    post length=4pt,
+    amplitude=0.5pt,
+    segment length=4pt,
+  },
+  remember picture,overlay]
+  % \draw[thick] (current page.south west) rectangle (current page.north east);
+  \node (a) [
+    program,
+    anchor=north west,
+    xshift=0.4cm,
+    yshift=-1.4cm]
+    at (current page.north west)
+  {
+    \adjustbox{scale=0.5}{
+      \begin{minipage}[c]{0.5\textwidth}
+        \begin{lstlisting}
+let rec eval$^o$ fm s r =
+  ...
+  fm === conj x y & and$^o$ a b r &
+  eval$^o$ x s a & eval$^o$ y s b |
+  ...
+        \end{lstlisting}
+      \end{minipage}
+    }
+  };
+
+  \node (b) [goal,anchor=north east] at (a.south east)
+  {
+    \adjustbox{scale=0.5}{
+      \begin{minipage}[c]{0.24\textwidth}
+        \begin{lstlisting}
+eval$^o$ fm s true
+        \end{lstlisting}
+      \end{minipage}
+    }
+  };
+
+  \pause
+
+  \node (d) [
+    transparent,
+    anchor=north east,
+    xshift=-1cm,
+    yshift=-2.4cm]
+    at (current page.north east)
+  {
+    \input{evalSplit.tex}
+  };
+
+
+    \onslide<1->
+\end{tikzpicture}

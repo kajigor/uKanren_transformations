@@ -133,16 +133,9 @@ Saint Petersburg State University
 }
 
 \begin{frame}[fragile]
-  \frametitle{Specialization: a Method to Improve Programs}
+  \frametitle{Partial Deduction: a Method to Improve Logic Programs}
 \begin{center}
   \input{spec.tex}
-\end{center}
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{Partial Deduction: Specialization for Logic Programming}
-\begin{center}
-  \input{pd.tex}
 \end{center}
 \end{frame}
 
@@ -164,80 +157,25 @@ Saint Petersburg State University
   \frametitle{Partial Deduction}
 
 \begin{center}
-  \input{pd1.tex}
+  \input{pd2.tex}
 \end{center}
 
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Conjunctive Partial Deduction}
+  \frametitle{Conjunctive Partial Deduction: Left-to-right Unfolding}
 
 \begin{center}
-  \input{cpd1.tex}
+  \input{cpd2.tex}
 \end{center}
 \end{frame}
 
 
 \begin{frame}[fragile]
   \frametitle{CPD: Split is Necessary}
-
-\begin{tikzpicture}[
-  remember picture,
-  overlay
-]
- \node (a) [
-   program,
-   anchor=north west,
-   xshift=0.4cm,
-   yshift=-1.4cm
- ]
- at (current page.north west)
- {
-   \adjustbox{scale=0.6}
-   {
-     \begin{minipage}[c]{0.4\textwidth}
-       \input{reverseDef.tex}
-     \end{minipage}
-   }};
-
- \node [
-     goal,
-     anchor=north east,
-   ]
-   at (a.south east)
-   {
-     \adjustbox{scale=0.6}
-     {
-       \begin{minipage}[c]{0.25\textwidth}
-         \begin{lstlisting}
-reverse$^o$ xs sx
-         \end{lstlisting}
-       \end{minipage}
-     }};
-
-\node [
-  transparent,
-  anchor=south west,
-  yshift=0.5cm,
-  xshift=0.4cm
-  ]
-  at (current page.south west)
-  {
-      \input{reverseSplit.tex}
-  };
-
- \node [
-   transparent,
-   anchor=south east,
-   yshift=2.5cm,
-   xshift=-0.4cm
- ]
- at (current page.south east)
- {
-     \input{reverseCPD.tex}
- };
-\end{tikzpicture}
-
+\begin{center}
+  \input{splitNecessary.tex}
+\end{center}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -573,7 +511,7 @@ Query: find 1000 formulas which evaluate to true
   Original         & 1.06s & 1.84s  \\ \hline
   CPD              & ---   & 1.13s  \\ \hline
   Branching        & 3.11s & 7.53s  \\ \hline
-  ConsPD           & 0.93s & 0.99s  \\ \hline
+  ConsPD           & \cellcolor{green!20}0.93s & \cellcolor{green!20}0.99s  \\ \hline
   \end{tabular}
 
   \caption{Evaluation results}
@@ -614,8 +552,8 @@ Query: find 1000 formulas which evaluate to true
                      & last  & plain & unify  & isPath \\ \hline\hline
     Original         & 1.06s & 1.84s & ---    & ---    \\ \hline
     CPD              & ---   & 1.13s & 14.12s & 3.62s  \\ \hline
-    Branching        & 3.11s & 7.53s & 3.53s  & 0.54s  \\ \hline
-    ConsPD           & 0.93s & 0.99s & 0.96s  & 2.51s  \\ \hline
+    Branching        & 3.11s & 7.53s & 3.53s  & \cellcolor{green!20}0.54s  \\ \hline
+    ConsPD           & \cellcolor{green!20}0.93s & \cellcolor{green!20}0.99s & \cellcolor{green!20}0.96s  & 2.51s  \\ \hline
     \end{tabular}
 
     \caption{Evaluation results}

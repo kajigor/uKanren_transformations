@@ -1,0 +1,11 @@
+\begin{tikzpicture}[
+  processTree,
+  anchor=center,
+  sibling distance=4.5em]
+  \node {\rel{nand}{$xy \ xy \ true$}}
+    child { node {fail}}
+    child { node {fail}}
+    child { node {fail}}
+    child { node {\subst{$xy \to false$}}}
+    ;
+\end{tikzpicture}
