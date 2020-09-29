@@ -18,6 +18,17 @@ let disj x y = inj @@ F.distrib (Disj (x, y))
 let var  x   = inj @@ F.distrib (Var x)
 let neg  x   = inj @@ F.distrib (Neg x)
 
+let max x y m =
+  ((Std.Nat.geo x y (!!true)) &&& (m === x)) ||| ((Std.Nat.leo x y (!!true)) &&& (m === y))
+
+
+let rec depth fm d =
+  (fresh (z) ((fm === var z) &&& (d === Std.Nat.zero))) |||
+  (fresh (x dx) ((fm === neg x) &&& (d === Std.Nat.succ dx) &&& (depth x dx))) |||
+  (fresh (x y dx dy m) ((fm === conj x y) &&& (depth x dx) &&& (depth y dy) &&& (max dx dy m) &&& (d === Std.Nat.succ m))) |||
+  (fresh (x y dx dy m) ((fm === disj x y) &&& (depth x dx) &&& (depth y dy) &&& (max dx dy m) &&& (d === Std.Nat.succ m)))
+
+
 let rec reify_f f = F.reify reify_f Std.Nat.reify f
 
 let var_to_string r = (show(logic) (show(bool))) (r#reify reify)

@@ -61,7 +61,7 @@ module Relational = struct
 
   let _ =
     let name = "typecheck [] fm (Some Int)" in
-    let transformer fm = typecheck_ (ocanren ([])) fm (some (integer ())) in
+    let transformer fm = typecheck_ (ocanren {[]}) fm (some (integer ())) in
     run_formula 100 name @@
     run q (fun fm -> transformer fm)
 
@@ -78,6 +78,7 @@ module Time = struct
                 ; ("    eccePeter", EccePeter.topLevel)
                 ; ("      nonconj", Nonconj.topLevel)
                 ; (" nonconjPeter", NonconjPeter.topLevel)
+                ; ("        geoff", Geoff.topLevel)
                 ]
 
   let _ =

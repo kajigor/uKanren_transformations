@@ -57,4 +57,4 @@ let rec typecheck_ gamma term q0 =
     fresh (v b q80) (term === (let_ v b)) (typecheck_ gamma v q80)
       (((q80 === (none ())) &&& (q0 === (none ()))) ||| (fresh (v') (q80 === (some v')) (typecheck_ (v' % gamma) b q0)))]
 
-let topLevel fm = typecheck_ (ocanren ([])) fm (some (integer ()))
+let topLevel fm = typecheck_ (ocanren {[]}) fm (some (integer ()))
