@@ -1,1 +1,0 @@
-swipl -O -o len -c len.pl

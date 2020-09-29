@@ -1,9 +1,0 @@
-\begin{lstlisting}
-let rec append$^o$ x y r =
-  ocanren {
-    (x === [] & y === r) |
-    (fresh h x' r' in
-      x === h :: x' &
-      append$^o$ x' y r' &
-      r === h :: r')}
-\end{lstlisting}

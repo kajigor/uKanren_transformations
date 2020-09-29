@@ -1,8 +1,0 @@
-  original:  0.55 WALL ( 0.55 usr +  0.00 sys =  0.55 CPU) @ 18.03/s (n=10)
-            (warning: too few iterations for a reliable count)
-     trans:  1.54 WALL ( 1.51 usr +  0.02 sys =  1.54 CPU) @  6.50/s (n=10)
-      ecce: 24.94 WALL (24.82 usr +  0.12 sys = 24.94 CPU) @  0.40/s (n=10)
-     peter:  4.58 WALL ( 4.57 usr +  0.00 sys =  4.57 CPU) @  2.19/s (n=10)
- eccePeter: 15.18 WALL (15.11 usr +  0.07 sys = 15.18 CPU) @  0.66/s (n=10)
-transPeter:  4.50 WALL ( 4.50 usr +  0.00 sys =  4.50 CPU) @  2.22/s (n=10)
-
