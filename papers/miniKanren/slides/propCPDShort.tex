@@ -4,8 +4,8 @@
   level 2/.style={level distance=5em},
   level 3/.style={level distance=4em},
   sibling distance=10em]
-  \node (root) {\rel{eval}{$fm \ s \ true$}}
-      child { node {
+  \node (root) {\underline{\rel{eval}{$fm \ s \ true$}}}
+      child { node (0) {
         \underline{\rel{and}{$a \ b \ true$}} \and
         \rel{eval}{$x \ s \ a$} \and
         \rel{eval}{$y \ s \ b$} \\
@@ -24,5 +24,8 @@
 
   \node[right=4em of root, yshift=-0.5cm] (lookup) {...};
   \draw [->] (root.east) to [in=170,out=-10] (lookup.west);
+
+ \draw [densely dotted,->] ($(0.west)-(2,1.2)$) node[below,draw=none    ] {\Large call to unfold} to [out=45,in=180] ($(0.west)+(0,0.2)$);
+
 
 \end{tikzpicture}

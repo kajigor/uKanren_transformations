@@ -1,9 +1,10 @@
-1: 
+1:
 Hi, I am going to talk about our empitical study of partial deduction for miniKanren.
 
 2: 
-The aim of our research is to find a good way to automatically specialize program in miniKanren. 
+The aim of our research is to find a good way to automatically specialize programs in miniKanren. 
 Specialization is a method to improve the performance of programs given some information about how the program is going to be run. 
+Partial deduction is specialization of logic languages.
 For example, here we see the fragment of the miniKanren relation which evaluates a logic formula fm in the given substitution s. 
 One of the cases here is when the formula is a negation of another formula, 'x'. 
 In this case we need to recursively call the relation evalo on the 'x', and then negate its result. 
@@ -26,96 +27,77 @@ As a result we will get something like this.
 Two mutually recursive relations evalo-true and evalo-false, specialized for two possible values of the input formula. 
 These relations do not have to evaluate noto and other boolean connectives thus being more performant. 
 
-3: 
-Partial deduction is a specialization method for logic programming, first developed for Prolog. 
-In the case of logic programming the information about how the program is going to be run may be more complex than just the value of the argument. 
-For example, consider the relation double-appendo which concatenates three lists by using an intermediate variable 't'. 
-Here we first construct 't' as a concatenation of the first and the second list, and then concatenate the third list to it. 
-This relation reads the first list twice thus being ineffective.
-Specialization should hopefully be able to construct the program on the right. 
-Here the fist list is only read once and immidiately copied to the result. 
 
-4: 
+3: 
 As a first approximation, partial deduction works like this. 
 The input is a program and a specific goal to specialize: it may have some arguments known, for example.
 
-4.1: 
+3.1: 
 A *process tree* is constructed by the program and the goal by driving
 The process tree represents the execution for the given goal. 
 This tree is often infinite and self-similar.
 
-4.2: 
+3.2: 
 *Folding* generates some finite graph which represents the infinite tree. 
-The main way to fold is to identify nodes in the trees which have terms which are instances or renamings of some terms within the tree.
-Here we can see that the second appendo node renames the root node, thus we can just add a back-edge into the tree and stop building the tree at this stage. 
+The main way to fold is to identify nodes in the trees which are instances or renamings of some other nodes within the tree.
+Here the two leaves are renamings of the root nodes, unfolding them will generate the tree which is similar to the one we've already constructed thus we can stop driving them and just add a back edge into the tree
 
-4.3:
+3.3:
 The specialized program is generated from the folded process tree by the process called residualization.
 When doing residualization, backedges become calls for the new relations. 
 The computed substitutions become unifications, branches become disjunctions and so on. 
 The performance gain in specialization comes from removing intermidiate computations which is done at this stage. 
-This particular example involves a very simple program which cannot be improved by specialization, which is why the resulting program is very similar to the original.
 
-5: 
+4: 
 Unfolding is at the core of driving. 
 Let me demonstrate unfolding informally by example. 
 We start by symbolic execution of the input goal.
 
-5.1: 
+4.1: 
 We replace the call with the body of the relation and substitute all known arguments. 
-Since the body is a disjunction, and disjuncts are independent, we continue evaluating each disjunct individually. 
-Here we have a conjunction of two unifications, so we evaluate them one by one.
+If there is a disjunction, we process each disjunct individually.
 
-5.2:
-As a result we get a substitution and stop driving this branch. 
-In the second branch we have a conjunction of two unifications and a relation call. 
-We drive this conjunction until we are only left with the relation call to appendo. 
-All this represent one step of unfolding: we replace a relation call with its body, drive each disjunct in isolation, compute all unifications into substitutions. 
-Whatever relation calls are left after this step are supposed to be processed at the next step.
+This disjunct is a conjunction with a unification for the formula. 
+All unifications are computed into substitutions. 
+We stop unfolding when all leaves in are conjunctions of relation calls. 
 
-5.3: 
-We will represent one unfolding step as this tree: here we omitted all intermidiate nodes. 
-We also always assume that the program is written as a disjunction of conjunctions of unifications and relation calls, thus 
-each node contains either a conjunction of relation calls, a substitution or both. 
-No disjunctions or unifications are allowed at this stage. 
-Since the appendo call in the leaf is an instance of the root, we fold the tree into the graph by adding the backedge. 
+Sometimes unfolding is trivial as for ando here. 
+and sometimes we find failed branches, when unification fails, as for nando. 
 
-6:
+We remove all failed branches, and omit intermidiate nodes. 
+The result of one step of unfolding is a disjunction of conjunctions of relation calls in some substitutions. 
+These conjunctions of calls and substitutions are terms in the process trees. 
+
+5:
 Dealing with disjunctions and unifications is easy, but what to do if there is a conjunction of several relation calls? 
-The classic partial deduction splits a conjunction in individual relation calls much like it does with disjunctions.
+The classic partial deduction splits a conjunction into individual relation calls much like it does with disjunctions.
 Then each relation call is unfolded in isolation. 
 At residualization stage, a conjunction is constructed from the split node.  
-Note, that these two leaves contain substitutions which conflict, since 't' cannot be simultaneously an empty list and a consed list. 
-Moreover, we cannot achieve with partial deduction anything but a trivial transformation for such kind of programs, since by splitting conjunctions we loose the link between the conjuncts. 
+Note that by splitting we often loose some data essential for specialization. 
+Here, once we split, there is no way to convay that 'a' and 'b' are supposed to be true in this calls to evalo, thus partial deduction cannot improve this program. 
 
-7: 
+6: 
 *Conjunctive* partial deduction attempts to battle this shortcoming by treating conjunctions as a whole. 
 It does not split the conjunction right away and instead selects one relation call to unfold, unfolds it once in the context of the other calls and then drives the constructed conjunction. 
-Here, after we unfolded the double-appendo relation, we get a conjunction of two calls to appendo. 
-We select the leftmost call, and unfold it.
-As a result we get a substitution when the first argument is an empty list, and if it is not, we get another appendo call with a substitution. 
-We replace the first call in the conjunction with the result of its unfolding and apply the substitutions to the second call. 
-Then we unfold the second call in both of the branches. 
-Look at this leaf.
-It is a renaming of the initial conjunction, thus we can safely fold the tree here. 
-This more efficient program can be residualized from the process tree.
-Note that we no longer traverse the first list twice. 
-We instead created a new relation thanks to this renaming which traverses the first list once, copies it into the resulting list and then calls the initial appendo relatio. 
+Here, after we unfolded the evalo, we get a conjunction of calls to ando and evalo. 
+We select the leftmost call ando, and unfold it.
+As a result we get a substitution that a and b are true. 
+We replace the ando call in the conjunction with the rusult of its unfolding and apply the substitutions to the other calls. 
+Then CPD unfolds the next leftmost call.
+
+7: 
+Look at what happens next. 
+By unfolding this evalo call we get a new conjunction of three relation calls, and if we unfold ando here, we will get three evalo calls. 
+This lead to the uncontrollable growth in the number of conjunctions, which impacts termination of specialization. 
+This is why split is still necessary, and if we split this conjunction, we will get two renamings of the root node and thus may stop unfolding. 
 
 8: 
-Unfortunately, we still have to split conjunctions when we encounter the growth in the number of relation calls in a conjunction. 
-Consider this reverso relation.
-It calls reverso and appendo recursively, adding one new relation call each time we unfold reverso. 
-To ensure termination of driving, we have to split the conjunction into two calls, even though we will loose the connection between these relation calls. 
+It is time to note that there are many ways to split a conjunction into subconjunctions. 
+If we have three relation calls, we can either split any relation call from two other relation calls, or split the whole conjunction into individual calls. 
+It is not always clear which way is the most reasonable and will provide the best specialization. 
+CPD attempts to split conjunctions depending on the shared variables and predeccessors of the node. 
 
 9: 
-It is time to note that there are many ways to split a conjunction into subconjunctions. 
-If we have three relation calls, we can split the first two from the third, or split the first one from the two remaining.
-We can also split a conjunction into individual calls, or split the second call from the first and the third one. 
-It is not always clear which way is the most reasonable and will provide the best specialization. 
-CPD attempts to split conjunctions depending on which calls have predecessors embedded into them. 
-
-10: 
 There are many decisions to be made in partial deduction. 
 We need to decide what to unfold: which calls within a conjunction and how many of them. 
 CPD selects the leftmost call which does not have a predecessor embedded into it. 
@@ -131,47 +113,49 @@ The decision to split is based on embedding.
 
 There are advantages and disadvantages to every decision made. 
 
-11: 
+10:
+Let's take a closer look at how CPD behaves when specializing the evalo relation. 
 Consider the evaluator of logic formula 'fm' in a substitution 's'. 
 A formula can be either a variable, a negation of another formula, a disjunction or a conjunction of two subformulas. 
 In the case formula is a variable, we lookup its value in the substitution. 
 Otherwise we evaluate subformulas and then use boolean connectives to compute the result. 
-So for example, if 'fm' is a conjunction of 'x' and 'y', then the value of 'x' is 'a', the value of 'y' is 'b', and to get the result 'r' we call to the relation 'ando'. 
+Note that this time we will put all boolean relations last withing conjunctions.
 
 Let's run CPD on 'evalo' with the last argument fixed to be true. 
 We get four branches after one step of unfolding.
 Note that true is propagated into the boolean relations noto, oro and ando. 
 
-12: 
+11: 
 At the next step of unfolding, the first recursive call to evalo is selected and unfolded, producing new 4 branches. 
 Note that at this stage all variables in the evalo call are free, 
-and we know absolutely nothing about it. 
+and we know absolutely nothing about these evalo calls. 
 Unfolding calls to evalo in the two branches for conjunction and disjunction we will get 16 new branches, so our tree will become very wide and the residualized program will end up very large. 
+This problem of too much unfolding leads to program which may behave even worse than the original. 
 
 It would be much better if we were to first unfold the call to noto, since this way we can compute the value of 'a' to be false.
+But there is no way to achieve this with CPD, because of its leftmost unfolding strategy. 
 
-13: 
+12: 
 The other two relations --- oro and ando --- also allow us to compute some information about the recursive calls to evalo. 
 We can see, that there is only one possible substitution for variables in calls to noto and ando, and there are three possibilities for oro.
 
-14:
+13:
 If we were to unfold noto first, we would only get one branch in the process tree for negation. 
 
-15: 
+14: 
 The same goes for other cases. 
 Look at the process tree after two unfoldings.
-We get only 5 nodes at the second level instead of 20 we would get by selecting the first node. 
+We get only 5 nodes at the second level instead of dozens we would get by selecting the first node.
 Let's take a look at this node. 
 Here we have a conjunction of two calls of evalo: one specialized to true and another -- to false. 
 It is a good time to make a split. 
 There is no reason to unfold 'evalo x s true', since we will get the same tree we've already constructed. 
 We will still have to unfold 'evalo x s false', and we get similar tree, with three possible branches for conjunction, and one for negation and disjunction. 
 
-15.1:
+14.1:
 All nodes which are left in this tree are instances of the root node and this node, and thus we  can fold and stop driving.
-It would be very nice for the partial deduction to behave as I have just described, and CPD does not do it like this. 
 
-16: 
+15: 
 The decision to unfold calls from left to right is perfectly reasonable in the setting of prolog, especially if we want to guarantee semantics preservation. 
 But since miniKanren employs interleaving and is capable to eventually find all answers, it is safe to reorder some calls and thus it is safe to unfold calls which are not leftmost. 
 We thus came up with conservative partial deduction which suits miniKanren better. 
@@ -182,37 +166,35 @@ So to do so, we first split a conjunction into individual calls.
 We drive each call in isolation. 
 This driving continues until we encounter embedding: this makes it possible to unfold multiple times and guarantee termination. 
 Then we examine process trees for the calls. 
-We find a call which narrows the search space using less-branching heuristics> 
+We find a call which narrows the search space using the less-branching heuristics
 Then we join the conjunction back together. 
 We replace the selected call with the result of its unfolding (a disjunction of conjunctions and substitutions). 
 We do not unfold other calls at this step. 
 We then continue driving the constructed conjunction. 
 
-17: 
+16: 
 We came up with the less-branching heuristics to select the call which narrows down the seach space and thus should be unfolded. 
 We unfold the call once and check if it unfolds into less branches than it does in isolation. 
 For example, ando being applied to free variables produce four branches, but if we fix the last argument to be true, then only one branch is in the process tree, thus it is reasonable to unfold this call. 
 
-18: 
+17: 
 We implemented our proposed approach and compared it to our earlier implementation of conjunctive partial deduction as well as CPD which employs branching heuristics. 
 We evaluated the approach on 4 relations. 
 2 implementations of the evalo relation which are very different from the standpoint of CPD; 
 A program to compute a unifier of two terms 
 and a program to search for paths of a specifica length in the graph. 
 
-19: 
-Let's take a closer  look at the evaluator of logic formulas. 
-Note that boolean connectives are placed last within each conjunction. 
-We compare this implementation with the one in which boolean connectives are placed to the left. 
-CPD, always selecting relation calls from left to right has more difficulty specializing the first implementation than the second. 
+18:
+The two implementations of evalo which we use are different in, first of all, the placement of the boolean relation calls.  
+The one where they are placed last are much harder for CPD to specialize. 
 
-20: 
+19: 
 Another issue for CPD comes from how the boolean connectives are implemented. 
-There are two ways to implement oro, for example. 
+There are two ways to implement ando, for example. 
 One is table based where we just enumerate all possible values for all variables in relation. 
 The other way is more generic: we can define all boolean relations via nando, which is in turn table based. 
-Since CPD only unfolds each relation once, it won't be able to derive there are only three possible values for 'x' and 'y' so that the disjunction evaluates to true. 
-This creates disparity in the specialization results.
+Since CPD only unfolds each relation once, it won't be able to derive there are only three possible values for 'x' and 'y' so that their conjunction evaluates to true. 
+This creates even more disparity in the specialization results.
 Conservative partial deduction treats both these implementation pretty much the same, driving the calls until it computes substitutions. 
 
 21: 

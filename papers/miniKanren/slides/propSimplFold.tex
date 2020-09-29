@@ -2,17 +2,17 @@
   processTree,
   sibling distance=4em,
   level distance=3em,
-  level 3/.style={level distance=4em,sibling distance=7em},
+  level 3/.style={level distance=4em,sibling distance=8em},
   anchor=center]
   \node (root) {
     \rel{eval}{$fm \ s \ true$}}
     child { node[draw=none, fill=none] {...}}
     child { node[draw=none, fill=none] {...}
       child { node {
-        \rel{eval}{$x \ s \ a$} \and \\
-        \rel{eval}{$y \ s \ b$}}
-        child { node (1) {\rel{eval}{$x \ s \ a$}}}
-        child { node (2) {\rel{eval}{$y \ s \ b$}}}
+        \rel{eval}{$x \ s \ true$} \and \\
+        \rel{eval}{$y \ s \ true$}}
+        child { node (1) {\rel{eval}{$x \ s \ true$}}}
+        child { node (2) {\rel{eval}{$y \ s \ true$}}}
         }
     }
     child { node[draw=none, fill=none] {...}}
