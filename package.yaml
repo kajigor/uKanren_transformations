@@ -40,6 +40,8 @@ dependencies:
 - tasty-hunit
 - parsec
 - filepath
+- megaparsec
+- parser-combinators
 
 ghc-options:
   - -fwarn-unused-imports
