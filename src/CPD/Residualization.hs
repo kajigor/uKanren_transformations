@@ -17,6 +17,7 @@ import Data.Char
 import Data.Maybe
 import CPD.GlobalControl
 import Util.Miscellaneous
+import qualified Subst
 
 type Set = Set.Set
 type Map = Map.Map
@@ -35,7 +36,7 @@ residualizeGlobalTree tree =
   let definitions = foldl (\defs gs -> fst3 (renameGoals gs defs) ) [] $ map fst nodes  in
   mapMaybe (\(gs, sld) -> residualizeSldTree gs sld definitions) nodes
 
-unifyInvocationLists :: [G S] -> [G S] -> Maybe Eval.MapSigma -> Maybe Eval.MapSigma
+unifyInvocationLists :: [G S] -> [G S] -> Maybe Subst.Subst -> Maybe Subst.Subst
 unifyInvocationLists [] [] state = state
 unifyInvocationLists xs@(Invoke name args : gs) ys@(Invoke name' args' : gs') state | name == name' && length args == length args' = do
   let state' = unifyArgs args args' state
@@ -71,7 +72,7 @@ generateInvocation goals defs = do
     generate args subst = map (\a -> Res.toX $ fromMaybe (V a) (Map.lookup a subst)) args
     findDef goals defs =
       find (isJust . lst4) $
-      map (\(g, n, args) -> (g, n, args, unifyInvocationLists g goals $ Just Eval.s0)) defs
+      map (\(g, n, args) -> (g, n, args, unifyInvocationLists g goals $ Just Subst.empty)) defs
     oneInvocation goals defs =
       case findDef goals defs of
         Just (goal, name, args, Just subst) -> Just $ Invoke name $ generate args subst
@@ -163,7 +164,7 @@ residualizeSldTree rootGoals tree definitions = do
 residualizeGoals :: [G S] -> Definitions -> G X
 residualizeGoals = generateInvocation
 
-residualizeSubst :: Eval.MapSigma -> G X
+residualizeSubst :: Subst.Subst -> G X
 residualizeSubst subst =
   unsafeConj $ map (\(s, ts) -> Res.toX (V s) === Res.toX ts) $ reverse (Map.toList subst)
 

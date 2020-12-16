@@ -7,17 +7,18 @@ import           Embed
 import qualified Eval               as E
 import           Generalization     (generalizeGoals)
 import           Prelude            hiding (or)
+import qualified Subst
 import           Syntax
 import           Unfold             (oneStepUnfold, unifyStuff, normalize)
 import           Util.Miscellaneous (fst3)
 
 data PDTree = Fail
-            | Success E.MapSigma
-            | Or [PDTree] (LC.Descend (G S)) E.MapSigma
-            | Conj [PDTree] [G S] E.MapSigma
+            | Success Subst.Subst
+            | Or [PDTree] (LC.Descend (G S)) Subst.Subst
+            | Conj [PDTree] [G S] Subst.Subst
             | Gen PDTree (G S)
-            | Leaf (G S) E.MapSigma
-            | Split [PDTree] [G S] E.MapSigma
+            | Leaf (G S) Subst.Subst
+            | Split [PDTree] [G S] Subst.Subst
             deriving (Show, Eq)
 
 topLevel :: Program -> (PDTree, G S, [S])
@@ -26,7 +27,7 @@ topLevel (Program defs goal) =
     let (logicGoal, gamma', names) = E.preEval gamma goal in
     let nodes = [] in
     let descend = LC.Descend logicGoal [] in
-    go descend gamma' nodes E.s0
+    go descend gamma' nodes Subst.empty
   where
     go d@(LC.Descend goal ancs) env@(x, y, z) seen state =
       let treeResult =
@@ -54,7 +55,7 @@ topLevel (Program defs goal) =
                     state
       in (treeResult, V 1 === V 2, [4, 5, 6, 7])
 
-leaf :: E.MapSigma -> PDTree
+leaf :: Subst.Subst -> PDTree
 leaf x = if null x then Fail else Success x
 
 simplify :: PDTree -> PDTree

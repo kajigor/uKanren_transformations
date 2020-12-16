@@ -13,6 +13,7 @@ import           Embed
 import qualified Eval               as E
 import           Generalization
 import           Prelude            hiding (lookup, showList)
+import qualified Subst
 import           Syntax
 import           Text.Printf
 import           Unfold             (oneStepUnfold, normalize, unifyStuff, getMaximumBranches)
@@ -31,10 +32,10 @@ instance (Show a) => Show (Descend a) where
 type DescendGoal = Descend (G S)
 
 data SldTree = Fail
-             | Success E.MapSigma
-             | Or [SldTree] (Maybe (G S)) E.MapSigma
-             | Conj SldTree [DescendGoal] E.MapSigma
-             | Leaf [DescendGoal] E.MapSigma E.Gamma
+             | Success Subst.Subst
+             | Or [SldTree] (Maybe (G S)) Subst.Subst
+             | Conj SldTree [DescendGoal] Subst.Subst
+             | Leaf [DescendGoal] Subst.Subst E.Gamma
 
 select :: [DescendGoal] -> Maybe DescendGoal
 select = find (\x -> isSelectable embed (getCurr x) (getAncs x))
@@ -58,11 +59,11 @@ isSelectable emb goal ancs =
     fineToUnfold _            = False
     basics = [] -- ["leo", "gto"]-- [] -- ["eqNat", "eqPair"] -- ["leo", "gto"]
 
-instance E.Subst [Descend (G S)] where
+instance Subst.ApplySubst [Descend (G S)] where
   substitute s =
-    map $ \(Descend g ancs) -> Descend (E.substitute s g) ancs
+    map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
 
-sldResolution :: [G S] -> E.Gamma -> E.MapSigma -> [[G S]] -> Heuristic -> SldTree
+sldResolution :: [G S] -> E.Gamma -> Subst.Subst -> [[G S]] -> Heuristic -> SldTree
 sldResolution goal gamma subst seen heuristic =
   -- sldResolutionStep (map (\x -> Descend x Set.empty) goal) gamma subst Set.empty True
   -- trace "\n\nSLDRESOLUTION \n\n" $
@@ -71,7 +72,7 @@ sldResolution goal gamma subst seen heuristic =
 showList :: Show a => [a] -> String
 showList = unlines . map show
 
-sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.MapSigma -> [[G S]] -> Bool -> Heuristic -> SldTree
+sldResolutionStep :: [DescendGoal] -> E.Gamma -> Subst.Subst -> [[G S]] -> Bool -> Heuristic -> SldTree
 sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime heuristic =
   let curs = map getCurr gs in
   let prettySeen = showList seen  in
@@ -103,8 +104,8 @@ sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime heuristic =
           let unified = mapMaybe (unifyStuff s) normalized in
           -- trace (printf "unified:\n%s" $ showList unified) $
           let addDescends xs s =
-                -- E.substitute s (ls ++ map (\x -> Descend x (g : ancs)) xs ++ rs) in
-                E.substitute s  ( map addDescendId ls ++
+                -- Subst.substitute s (ls ++ map (\x -> Descend x (g : ancs)) xs ++ rs) in
+                Subst.substitute s  ( map addDescendId ls ++
                                   map (\x -> Descend x (g : ancs)) xs ++
                                   map addDescendId rs
                                 )
@@ -147,7 +148,7 @@ leaves (Conj ch  _ _) = leaves ch
 leaves (Leaf ds _ _)  = [map getCurr ds]
 leaves _              = []
 
-resultants :: SldTree -> [(E.MapSigma, [G S], Maybe E.Gamma)]
+resultants :: SldTree -> [(Subst.Subst, [G S], Maybe E.Gamma)]
 resultants (Success s)     = [(s, [], Nothing)]
 resultants (Or disjs _ _)  = concatMap resultants disjs
 resultants (Conj ch _ _)   = resultants ch
@@ -158,7 +159,7 @@ topLevel :: Program -> Heuristic -> SldTree
 topLevel (Program defs goal) heuristic =
   let gamma = E.gammaFromDefs defs in
   let (logicGoal, gamma', names) = E.preEval gamma goal in
-  sldResolutionStep [Descend logicGoal []] gamma' E.s0 [] True heuristic
+  sldResolutionStep [Descend logicGoal []] gamma' Subst.empty [] True heuristic
 
 mcs :: (Eq a, Show a) => [G a] -> [[G a]]
 mcs []     = []

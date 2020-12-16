@@ -5,17 +5,18 @@ import Syntax
 import Debug.Trace
 import Text.Printf
 import Generalization
+import qualified Subst
 
 type Id = Int
 data Tree =
-  Prune   [G S]                                   |
-  Fail                                            |
-  Success E.MapSigma                              |
-  Or      Tree Tree (G S) E.MapSigma              |
-  Rename  Id (G S) E.MapSigma Renaming E.MapSigma |
-  Gen     Id Generalizer Tree (G S) E.MapSigma    |
-  Call    Id Tree (G S) E.MapSigma                |
-  Split   Id [Tree] (G S) E.MapSigma              deriving Show
+  Prune   [G S]                                     |
+  Fail                                              |
+  Success Subst.Subst                               |
+  Or      Tree Tree (G S) Subst.Subst               |
+  Rename  Id (G S) Subst.Subst Renaming Subst.Subst |
+  Gen     Id Generalizer Tree (G S) Subst.Subst     |
+  Call    Id Tree (G S) Subst.Subst                 |
+  Split   Id [Tree] (G S) Subst.Subst               deriving Show
 
 -- Renaming
 type Renaming = [(S, S)]

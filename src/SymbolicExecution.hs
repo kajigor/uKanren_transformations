@@ -12,23 +12,24 @@ import           Embed
 import qualified Eval               as E
 import           Generalization     (generalizeGoals, generalizeSplit)
 import           Prelude            hiding (or)
+import qualified Subst
 import           Syntax
 import           Text.Printf        (printf)
 import           Unfold             (oneStep)
 import           Util.Miscellaneous (fst3, show')
 
 data SymTree = Fail
-             | Success E.MapSigma
-             | Disj [SymTree] [G S] E.MapSigma
-             | Conj [SymTree] [G S] E.MapSigma
-             | Prune [G S] E.MapSigma
+             | Success Subst.Subst
+             | Disj [SymTree] [G S] Subst.Subst
+             | Conj [SymTree] [G S] Subst.Subst
+             | Prune [G S] Subst.Subst
              deriving (Show, Eq)
 
 topLevel :: Int -> Program -> SymTree
 topLevel depth (Program defs goal) =
     let gamma = E.gammaFromDefs defs in
     let (logicGoal, gamma', names) = E.preEval gamma goal in
-    go logicGoal [] gamma' E.s0 depth
+    go logicGoal [] gamma' Subst.empty depth
   where
     go goal ctx _ state d | d <= 1 = Prune (goal : ctx) state
     go goal ctx env@(x, y, z) state depth =
@@ -44,7 +45,7 @@ topLevel depth (Program defs goal) =
             (goal : ctx)
             state
 
-leaf :: E.MapSigma -> SymTree
+leaf :: Subst.Subst -> SymTree
 leaf x = if null x then Fail else Success x
 
 simplify :: SymTree -> SymTree

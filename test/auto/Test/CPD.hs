@@ -42,6 +42,7 @@ import           Unfold
 import           Util.ConjRetriever
 import           Util.Miscellaneous
 import           Embed
+import qualified Subst
 import           System.CPUTime
 import           System.IO
 import           System.Process           (system)
@@ -150,14 +151,14 @@ unit_normalization = do
     m = Invoke "m" []
 
 unit_unifyStuff = do
-    test unifyStuff' [] (Just ([], E.s0))
+    test unifyStuff' [] (Just ([], Subst.empty))
     test unifyStuff' [x === y, y === x] (Just ([], Map.fromList [(0, y)]))
     test unifyStuff' [x === y, x === s] (Just ([], Map.fromList [(1, s), (0, y)]))
     test unifyStuff' [f x y, x === y, g x, t === y, x === u] (Just ([f x y, g x], Map.fromList [(13, x), (1, t), (0, y)]))
-    test unifyStuff' inp (Just (inp, E.s0))
+    test unifyStuff' inp (Just (inp, Subst.empty))
     test unifyStuff' [x === s, x === t] Nothing
   where
-    unifyStuff' = unifyStuff E.s0
+    unifyStuff' = unifyStuff Subst.empty
     inp = [f x y, f u v, g x, g v, g s]
     x = V 0
     y = V 1
@@ -309,7 +310,7 @@ unit_minimallyGeneral = do
     t = V "t"
     u = V "u"
 
-    minimallyGeneral' = fst . minimallyGeneral . map (\x -> (x, E.s0))
+    minimallyGeneral' = fst . minimallyGeneral . map (\x -> (x, Subst.empty))
 
 testSplit = do -- TODO more tests
   assertCustom "split 0" checkVariant ([f x x], [g x]) (fst3 $ split [2..] [f x x] [f x x, g x] )
@@ -502,7 +503,7 @@ unit_unifyInvocationsStuff = do
     --      [f [c [c [z]], z], g [d [z], c [d [c [z]]]]]
     --      Nothing
   where
-    runTest gs hs expected = test (unifyInvocationLists gs hs) (Just E.s0) (Map.fromList <$> expected)
+    runTest gs hs expected = test (unifyInvocationLists gs hs) (Just Subst.empty) (Map.fromList <$> expected)
     f = Invoke "f"
     g = Invoke "g"
     x = V 0

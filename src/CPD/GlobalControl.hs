@@ -11,15 +11,16 @@ import           Embed
 import qualified Eval               as E
 import           Generalization     (Generalizer)
 import           Prelude            hiding (sequence)
+import qualified Subst
 import           Syntax
 import           Text.Printf
 import           Util.Miscellaneous
 
 type Descend = LC.Descend
 
-data GlobalTree = Leaf  (Descend [G S]) Generalizer E.MapSigma
+data GlobalTree = Leaf  (Descend [G S]) Generalizer Subst.Subst
                 | Node  (Descend [G S]) Generalizer LC.SldTree [GlobalTree]
-                | Prune (Descend [G S]) E.MapSigma
+                | Prune (Descend [G S]) Subst.Subst
 
 sequence :: Descend a -> [a]
 sequence = LC.getAncs
@@ -75,7 +76,7 @@ generalize m b d =
     where
       project gen goals = (goals, {- filter (\(x, _) -> (V x) `elem` concatMap LC.vars goals) -} gen)
 
-abstractChild :: [[G S]] -> (E.MapSigma, [G S], Maybe E.Gamma) -> [(E.MapSigma, [G S], Generalizer, E.Gamma)]
+abstractChild :: [[G S]] -> (Subst.Subst, [G S], Maybe E.Gamma) -> [(Subst.Subst, [G S], Generalizer, E.Gamma)]
 abstractChild _ (_, _, Nothing) = []
 abstractChild ancs (subst, g, Just env@(x, y, d)) =
   let (abstracted, delta) = abstract (LC.Descend g ancs) g d in
@@ -92,12 +93,12 @@ topLevel (Program defs goal) heuristic =
   let (logicGoal, gamma', names) = E.preEval gamma goal in
   trace (printf "\nGoal:\n%s\nNames:\n%s\n" (show goal) (show names)) $
   let nodes = [[logicGoal]] in
-  (fst $ go nodes (LC.Descend [logicGoal] []) gamma' E.s0 E.s0, logicGoal, names) where
+  (fst $ go nodes (LC.Descend [logicGoal] []) gamma' Subst.empty Subst.empty, logicGoal, names) where
     go nodes d@(LC.Descend goal ancs) gamma subst generalizer =
       -- if head (trd3 gamma) > 10
       -- then (Prune d subst, nodes)
       -- else
-        let subst = E.s0 in
+        let subst = Subst.empty in
         -- let newNodes = (delete goal nodes) in
         let newNodes = filter (not . Embed.isVariant goal) nodes in
 

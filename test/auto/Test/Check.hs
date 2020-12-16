@@ -3,6 +3,7 @@ module Test.Check where
 import qualified Eval   as E
 import           Program.List
 import           Program.Programs
+import qualified Subst
 import           Syntax
 import           Test.Helper      (manyAssert, test, test2)
 import           Text.Printf
@@ -24,7 +25,7 @@ checkTest :: Program -> Bool
 checkTest (Program defs goal) =
     let gamma = E.gammaFromDefs defs in
     let (logicGoal, gamma', names) = E.preEval gamma goal in
-    checkWhenUnfolding logicGoal gamma' E.s0
+    checkWhenUnfolding logicGoal gamma' Subst.empty
 
 app = Program appendo $ fresh ["x", "y", "z"] (call "appendo" [V "x", V "y", V "z"])
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])

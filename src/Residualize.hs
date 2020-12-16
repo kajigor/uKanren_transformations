@@ -7,15 +7,16 @@ import qualified Eval as E
 import Data.List
 import qualified Data.Set        as Set
 import qualified Data.Map.Strict as Map
+import qualified Subst
 
 
 toX :: Term S -> Term X
 toX = (vident <$>)
 
-residualizeSubst :: E.MapSigma -> E.MapSigma -> G X
-residualizeSubst g s = unsafeConj $ map (\ (s', ts) -> toX (V s') :=: toX (E.substitute g ts)) $ reverse (Map.toList s)
+residualizeSubst :: Subst.Subst -> Subst.Subst -> G X
+residualizeSubst g s = unsafeConj $ map (\ (s', ts) -> toX (V s') :=: toX (Subst.substitute g ts)) $ reverse (Map.toList s)
 
-substCon :: E.MapSigma -> E.MapSigma -> E.MapSigma -> G X -> G X
+substCon :: Subst.Subst -> Subst.Subst -> Subst.Subst -> G X -> G X
 substCon gen s ubst g =
   let delta = Map.difference s ubst in
   if null delta

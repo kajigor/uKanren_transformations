@@ -10,12 +10,13 @@ import           Data.List              hiding (group, groupBy)
 import qualified Data.Map               as Map
 import           Embed
 import qualified Eval                   as E
+import qualified Subst
 import           Syntax
 import           Text.Printf            (printf)
 import           Util.Miscellaneous     (map1in4, show')
 import Debug.Trace (trace )
 
-type Generalizer = E.MapSigma
+type Generalizer = Subst.Subst
 
 class Generalization a g | g -> a where
   generalize :: [a] -> Generalizer -> Generalizer -> g -> g -> (g, Generalizer, Generalizer, [a])
@@ -71,7 +72,7 @@ refine msg@(g, s1, s2, d) =
     let sim1 = map (map fst) similar1 in
     let sim2 = map (map fst) similar2 in
     let toSwap = concatMap (\(x:xs) -> map (, V x) xs) (sim1 `intersect` sim2) in
-    let newGoal = E.substitute (Map.fromList toSwap) g in
+    let newGoal = Subst.substitute (Map.fromList toSwap) g in
     let s2' = filter (\(x,_) -> x `notElem` map fst toSwap) (Map.toList s2) in
     let s1' = filter (\(x,_) -> x `notElem` map fst toSwap) (Map.toList s1) in
     (newGoal, Map.fromList s1', Map.fromList s2', d)

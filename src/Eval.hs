@@ -10,68 +10,48 @@ import           Stream
 import           Syntax
 import           Text.Printf
 import qualified Data.Map.Strict as Map
-
-class Substitution s where
-  sEmpty  :: s
-  sLookup :: S -> s -> Maybe Ts
-  sInsert :: S -> Ts -> s -> s
-  sLength :: s -> Int
-  sLength _ = error "Length not implemented"
-
-instance Substitution Sigma where
-  sEmpty = []
-  sLookup a s = lookup a s
-  sInsert a b s = (a, b) : s
-  sLength = length
-
-type MapSigma = Map.Map S Ts
-
-instance Substitution MapSigma where
-  sEmpty  = Map.empty
-  sLookup = Map.lookup
-  sInsert = Map.insert
-  sLength = Map.size
+import qualified Subst as Subst
 
 -- States
 type Iota  = Map.Map X Ts
-type Sigma = [(S, Ts)]
+-- type Sigma = [(S, Ts)]
 type Delta = [S]
 type P     = Map.Map Name Def
 type Gamma = (P, Iota, Delta)
 
-unifyG :: Substitution subst => (S -> Ts -> subst -> Bool)
-          -> Maybe subst -> Ts -> Ts -> Maybe subst
+unifyG :: (S -> Ts -> Subst.Subst -> Bool)
+          -> Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
 unifyG _ Nothing _ _ = Nothing
 unifyG f st@(Just subst) u v =
-  trace (printf "Subst length: %d" (sLength subst)) $
+  trace (printf "Subst length: %d" (Subst.length subst)) $
   unify' (walk u subst) (walk v subst)  where
     unify' (V u') (V v') | u' == v' = Just subst
-    unify' (V u') (V v') = Just $ sInsert (min u' v') (V $ max u' v') subst
+    unify' (V u') (V v') = Just $ Subst.insert (min u' v') (V $ max u' v') subst
     unify' (V u') t =
       if f u' t subst
       then Nothing
-      else return $ sInsert u' v subst
+      else return $ Subst.insert u' v subst
     unify' t (V v') =
       if f v' t subst
       then Nothing
-      else return $ sInsert v' u subst
+      else return $ Subst.insert v' u subst
     unify' (C a as) (C b bs) | a == b && length as == length bs =
       foldl (\ st' (u', v') -> unifyG f st' u' v') st $ zip as bs
     unify' _ _ = Nothing
 
-walk :: Substitution subst => Ts -> subst -> Ts
+walk :: Ts -> Subst.Subst -> Ts
 walk x@(V v') s =
-  case sLookup v' s of
+  case Subst.lookup v' s of
     Nothing -> x
     Just t  -> walk t s
 walk u' _ = u'
 
 -- Unification
-unify :: Substitution subst => Maybe subst -> Ts -> Ts -> Maybe subst
+unify :: Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
 unify =
     unifyG occursCheck
   where
-    occursCheck :: Substitution subst => S -> Ts -> subst -> Bool
+    occursCheck :: S -> Ts -> Subst.Subst -> Bool
     occursCheck u' t s =
       let t' = walk t s in
       case t' of
@@ -81,13 +61,13 @@ unify =
 
     -- occursCheck u' t s = if elem u' $ fv t then Nothing else s
 
-unifySubsts :: MapSigma -> MapSigma -> Maybe MapSigma
+unifySubsts :: Subst.Subst -> Subst.Subst -> Maybe Subst.Subst
 unifySubsts one two =
     -- trace ("one: " ++ show one ++ "\ntwo: " ++ show two) $
     let maximumVar = max (findUpper one) (findUpper two) in
     let one' = manifactureTerm maximumVar one in
     let two' = manifactureTerm maximumVar two in
-    unify (Just s0) one' two'
+    unify (Just Subst.empty) one' two'
   where
     findUpper subst =
       if Map.null subst
@@ -96,7 +76,7 @@ unifySubsts one two =
     supplement upper lst = lst --  [(x, y) | x <- [0..upper], let y = maybe (V x) id (lookup x lst)]
     manifactureTerm upper subst = C "ManifacturedTerm" $ Map.elems $ supplement upper subst
 
-unifyNoOccursCheck :: Substitution subst => Maybe subst -> Ts -> Ts -> Maybe subst
+unifyNoOccursCheck :: Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
 unifyNoOccursCheck = unifyG (\_ _ -> const False)
 
 ---- Interpreting syntactic variables
@@ -118,45 +98,6 @@ emptyIota = Map.empty
 
 app :: Iota -> X -> Ts
 app iota x = iota Map.! x
-
--- Applying substitution
-class Subst a where
-  substitute :: MapSigma -> a -> a
-
-instance Subst (Term S) where
-  substitute s t@(V x) =
-    case sLookup x s of
-      Just tx | tx /= t -> substitute s tx
-      _                 -> t
-  substitute s (C m ts) = C m $ map (substitute s) ts
-
-instance Subst (G S) where
-  substitute s (Invoke name as) = Invoke name (map (substitute s) as)
-  substitute _ g = error $ printf "We have only planned to substitute into calls, and you are trying to substitute into:\n%s" (show g)
-
-instance Subst [G S] where
-  substitute = map . substitute
-
----- Composing substitutions
-o :: MapSigma -> MapSigma -> MapSigma
-o sigma theta =
-  if null $ Map.intersection sigma theta
-  then
-    Map.fromList $ map (\ (s, ts) -> (s, substitute sigma ts)) (Map.toList theta) ++ (Map.toList sigma)
-  else
-    error "Non-disjoint domains in substitution composition"
-
-dotSigma :: MapSigma -> String
-dotSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (dot $ V x) (dot y)) (Map.toList s)))
-
-instance Dot MapSigma where
-  dot = dotSigma
-
-showSigma :: MapSigma -> String
-showSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (show $ V x) (show y)) (Map.toList s)))
-
-showSigma' :: MapSigma -> String
-showSigma' s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s -> %s" (show $ V x) (show y)) (Map.toList s)))
 
 -- Pre-evaluation
 preEval :: Gamma -> G X -> (G S, Gamma, [S])
@@ -227,14 +168,14 @@ closeFresh as goal = goal
 
 
 
-topLevel :: Program -> Stream (MapSigma, Delta)
+topLevel :: Program -> Stream (Subst.Subst, Delta)
 topLevel (Program defs goal) =
   let gamma = foldl update env0 defs in
   let (goal', gamma', _) = preEval gamma goal in
-  eval gamma' s0 goal'
+  eval gamma' Subst.empty goal'
 
 -- Evaluation relation
-eval :: Gamma -> MapSigma -> G S -> Stream (MapSigma, Delta)
+eval :: Gamma -> Subst.Subst -> G S -> Stream (Subst.Subst, Delta)
 eval     (_, _, d) s (t1 :=:  t2)  = fmap (,d) (maybeToStream $ unify (Just s) t1 t2)
 eval env           s (g1 :\/: g2)  = eval env s g1 `mplus` eval env s g2
 eval env@(p, i, _) s (g1 :/\: g2)  = eval env s g1 >>= (\ (s', d') -> eval (p, i, d') s' g2)
@@ -260,11 +201,8 @@ gammaFromDefs = updateDefsInGamma env0
 getDef :: P -> Name -> Def
 getDef p n = p Map.! n
 
-s0 :: MapSigma
-s0 = Map.empty
-
-run :: Program -> Stream MapSigma
+run :: Program -> Stream Subst.Subst
 run (Program defs goal) =
   let env = gammaFromDefs defs in
   let (goal', env', _) = preEval env goal in
-  fmap fst $ eval env' s0 goal'
+  fmap fst $ eval env' Subst.empty goal'

@@ -6,6 +6,7 @@ import           CPD.LocalControl
 import           Data.Maybe
 import           Eval
 import           Purification
+import qualified Subst
 import           Syntax
 import           Unfold       (oneStepUnfold, unifyStuff, normalize)
 
@@ -28,7 +29,7 @@ isInductive (Program defs goal) =
   let (logicGoal, gamma', names) = preEval gamma goal in
   let (g', _) = oneStepUnfold (logicGoal) gamma' in
   let normalized = normalize g' in
-  let unified = mapMaybe (unifyStuff s0) normalized in
+  let unified = mapMaybe (unifyStuff Subst.empty) normalized in
   let withCalls = filter (\(x,_) -> not $ null x) unified in
 
   let (Invoke name args) = logicGoal in
@@ -37,7 +38,7 @@ isInductive (Program defs goal) =
         length calls == 1 &&
         case head calls of
           Invoke n as | n == name ->
-            let terms = map (substitute subst) args in
+            let terms = map (Subst.substitute subst) args in
             and $ zipWith (\f a -> a <= f) terms as
           _ -> False
       )

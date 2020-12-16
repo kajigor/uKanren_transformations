@@ -13,6 +13,7 @@ import           Debug.Trace         (trace, traceM)
 import           Embed               (isInst)
 import qualified Eval                as E
 import qualified Residualize         as Res
+import qualified Subst
 import           Syntax
 import           Text.Printf         (printf)
 import           Unfold              (normalize)
@@ -61,7 +62,7 @@ generateInvocation defs (gs, v) =
     (gs, call name args)
   where
     generateArgs xs =
-      case CpdR.unifyInvocationLists v gs (Just E.s0) of
+      case CpdR.unifyInvocationLists v gs (Just Subst.empty) of
         Just subst ->
           map (\a -> fromMaybe (V a) (Map.lookup a subst)) xs
         Nothing -> error (printf "Failed to generate invocation for %s" (show v))
@@ -76,7 +77,7 @@ generateInvocation' defs gs v =
     (call name args)
   where
     generateArgs xs =
-      case CpdR.unifyInvocationLists v gs (Just E.s0) of
+      case CpdR.unifyInvocationLists v gs (Just Subst.empty) of
         Just subst ->
           map (\a -> fromMaybe (V a) (Map.lookup a subst)) xs
         Nothing -> error (printf "Failed to generate invocation for %s" (show v))
@@ -126,7 +127,7 @@ generateGoalFromTree definitions invocations tree args =
       Nothing -> error $ printf "Failed to generate relation body for %s" (show $ nodeContent tree)
     -- Res.vident <$> (disj (map conj $ filter (not . null) $ go tree))
   where
-    residualizeState :: E.MapSigma -> Maybe (G S)
+    residualizeState :: Subst.Subst -> Maybe (G S)
     residualizeState xs =
       (conj $ map (\(s, ts) -> (V s) === ts) $ reverse (Map.toList xs)) <|> return success
 

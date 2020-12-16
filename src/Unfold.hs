@@ -6,6 +6,7 @@ import           Data.Maybe          (mapMaybe)
 import qualified Data.Set            as Set
 import           Debug.Trace         (trace)
 import qualified Eval                as E
+import qualified Subst
 import           Syntax
 import           Text.Printf         (printf)
 import           Util.Miscellaneous  (fst3, show', pinpoint)
@@ -21,7 +22,7 @@ oneStepUnfold g@(Invoke f as) env@(p, i, d) =
   else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
 oneStepUnfold g env = (g, env)
 
-oneStep :: G S -> E.Gamma -> E.MapSigma -> ([([G S], E.MapSigma)], E.Gamma)
+oneStep :: G S -> E.Gamma -> Subst.Subst -> ([([G S], Subst.Subst)], E.Gamma)
 oneStep goal env state =
     let (unfolded, gamma) = oneStepUnfold goal env in
     let normalized = normalize unfolded in
@@ -35,7 +36,7 @@ normalize g@(Invoke _ _) = [[g]]
 normalize g@(_ :=: _) = [[g]]
 normalize g = error ("Unexpected goal type in normalization\n" ++ show g)
 
-unifyStuff :: E.MapSigma -> [G S] -> Maybe ([G S], E.MapSigma)
+unifyStuff :: Subst.Subst -> [G S] -> Maybe ([G S], Subst.Subst)
 unifyStuff state gs =
     go gs state []
   where
@@ -48,7 +49,7 @@ unifyStuff state gs =
 maximumBranches :: Def -> Int
 maximumBranches def@(Def _ args body) =
     let goal = fst3 $ E.preEval E.env0 (fresh args body) in
-    length $ fst $ oneStep (succeed goal) E.env0 E.s0
+    length $ fst $ oneStep (succeed goal) E.env0 Subst.empty
   where
     succeed (g :/\: h)         = succeed g :/\: succeed h
     succeed (g :\/: h)         = succeed g :\/: succeed h
@@ -65,7 +66,7 @@ getMaximumBranches (p,_,_) (Invoke name _) =
     maximumBranches def
 
 
-notMaximumBranches :: E.Gamma -> E.MapSigma -> G S -> Bool
+notMaximumBranches :: E.Gamma -> Subst.Subst -> G S -> Bool
 notMaximumBranches gamma@(p, _, _) state goal@(Invoke name args) =
     let maxBranches = maximumBranches (E.getDef p name) in
     let (unfolded, _) = oneStep goal gamma state in
@@ -93,7 +94,7 @@ instance Ord Complexity where
   (Complexity max cur subst) <= (Complexity max' cur' subst') =
     cur < max || cur - subst >= cur' - subst' || cur <= cur'
 
-findBestByComplexity :: E.Gamma -> E.MapSigma -> [G S] -> Maybe ([G S], G S, [G S])
+findBestByComplexity :: E.Gamma -> Subst.Subst -> [G S] -> Maybe ([G S], G S, [G S])
 findBestByComplexity gamma sigma goals =
     let estimated = map (\g -> (g, unfoldComplexity gamma sigma g)) goals in
     pinpoint (\(Invoke name _) -> static gamma name) goals
@@ -110,7 +111,7 @@ findBestByComplexity gamma sigma goals =
       (ls, x, rs) <- input
       return (map fst ls, fst x, map fst rs)
 
-unfoldComplexity :: E.Gamma -> E.MapSigma -> G S -> Complexity
+unfoldComplexity :: E.Gamma -> Subst.Subst -> G S -> Complexity
 unfoldComplexity gamma@(p, _, _) sigma goal@(Invoke name _) =
   let (unfolded, _) = oneStep goal gamma sigma in
   let max = maximumBranches (E.getDef p name) in

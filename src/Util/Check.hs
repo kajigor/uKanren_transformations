@@ -1,6 +1,7 @@
 module Util.Check where
 
 import qualified Eval   as E
+import qualified Subst
 import           Syntax
 import           Unfold
 
@@ -23,7 +24,7 @@ subTerm (V x) (V y)  = x == y
 subTerm _ _ = False
 
 -- Checks if the current goal should be unfolded more than once.
-checkWhenUnfolding :: G S -> E.Gamma -> E.MapSigma -> Bool
+checkWhenUnfolding :: G S -> E.Gamma -> Subst.Subst -> Bool
 checkWhenUnfolding g@(Invoke n xs) gamma@(p,_,_) state =
   let (gs, gamma') = oneStep g gamma state in
-  not $ any (\(goals, s) -> any (\g' -> check g (E.substitute s g')) goals) gs
+  not $ any (\(goals, s) -> any (\g' -> check g (Subst.substitute s g')) goals) gs

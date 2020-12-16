@@ -5,6 +5,7 @@ import Stream
 import Eval
 import Driving
 import Tree
+import qualified Subst
 import Program.List
 import Program.Num
 import Program.Bool
@@ -14,7 +15,7 @@ import Prelude hiding (succ)
 
 -- reify :: Eq a => [(a, Term a)] -> Term a -> Term a
 reify s x@(V v) =
-  case Eval.sLookup v s of
+  case Subst.lookup v s of
     Nothing -> x
     Just t  -> reify s t
 reify s (C n ts) = C n $ map (reify s) ts
