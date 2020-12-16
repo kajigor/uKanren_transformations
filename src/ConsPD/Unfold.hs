@@ -21,13 +21,13 @@ import           Util.Check         (checkConj)
 import           Util.Miscellaneous (fst3, fst4, show', snd3)
 
 data ConsPDTree = Fail
-                | Success E.Sigma E.Gamma
-                | Or [ConsPDTree] (LC.Descend [G S]) E.Sigma
-                | Conj [ConsPDTree] [G S] E.Sigma
-                | Gen ConsPDTree [G S] [G S] Generalizer E.Sigma
-                | Leaf [G S] E.Sigma E.Gamma [G S] -- last argument is a goal renaming of which current node is
-                | Split [ConsPDTree] [G S] E.Sigma
-                | Prune [G S] E.Sigma
+                | Success E.MapSigma E.Gamma
+                | Or [ConsPDTree] (LC.Descend [G S]) E.MapSigma
+                | Conj [ConsPDTree] [G S] E.MapSigma
+                | Gen ConsPDTree [G S] [G S] Generalizer E.MapSigma
+                | Leaf [G S] E.MapSigma E.Gamma [G S] -- last argument is a goal renaming of which current node is
+                | Split [ConsPDTree] [G S] E.MapSigma
+                | Prune [G S] E.MapSigma
                 -- deriving (Show, Eq)
 
 
@@ -73,10 +73,10 @@ instance Eq ConsPDTree where
 --       then Nothing
 --       else Just $ foldl (\interp x -> E.extend interp x (f x)) i dd'
 
-statesConcat :: [E.Sigma] -> Maybe E.Sigma
+statesConcat :: [E.MapSigma] -> Maybe E.MapSigma
 statesConcat = unifySubsts
 
-goalsConcat :: [([a], E.Sigma)] -> Maybe ([a], E.Sigma)
+goalsConcat :: [([a], E.MapSigma)] -> Maybe ([a], E.MapSigma)
 goalsConcat x = do
   let (goals, states) = unzip x
   cStates <- statesConcat states
@@ -88,19 +88,19 @@ productList (xs:xss) = [ h : t | h <- xs, t <- productList xss]
 
 restrictSubsts :: ConsPDTree -> ConsPDTree
 restrictSubsts =
-    go []
+    go M.empty
   where
-    go subst (Conj ch gs s)  = Conj (map (go s) ch) gs (s \\ subst)
-    go subst (Or ch gs s)    = Or (map (go s) ch) gs (s \\ subst)
-    go subst (Gen ch gs gs' gen s) = Gen (go subst ch) gs gs' gen (s \\ subst)
-    go subst (Leaf gs s e v) = Leaf gs (s \\ subst) e v
-    go subst (Split ch gs s) = Split (map (go s) ch) gs (s \\ subst)
-    go subst (Prune gs s)    = Prune gs (s \\ subst)
-    go subst (Success s e)   = Success (s \\ subst) e
+    go subst (Conj ch gs s)  = Conj (map (go s) ch) gs (M.difference s subst)
+    go subst (Or ch gs s)    = Or (map (go s) ch) gs (M.difference s subst)
+    go subst (Gen ch gs gs' gen s) = Gen (go subst ch) gs gs' gen (M.difference s subst)
+    go subst (Leaf gs s e v) = Leaf gs (M.difference s subst) e v
+    go subst (Split ch gs s) = Split (map (go s) ch) gs (M.difference s subst)
+    go subst (Prune gs s)    = Prune gs (M.difference s subst)
+    go subst (Success s e)   = Success (M.difference s subst) e
     go _ Fail                = Fail
 
 
-incrDeepOneStep :: Int -> Int -> G S -> E.Gamma -> E.Sigma -> Maybe ([([G S], E.Sigma)], E.Gamma)
+incrDeepOneStep :: Int -> Int -> G S -> E.Gamma -> E.MapSigma -> Maybe ([([G S], E.MapSigma)], E.Gamma)
 incrDeepOneStep limit depth _ _ _ | limit < depth = Nothing
 incrDeepOneStep limit depth goal env state =
     let (unified, gamma) = oneStep goal env state in
@@ -136,15 +136,15 @@ realIncrDeep globalLimit f x =
     go localLimit curr f x =
       go localLimit (curr + 1) f (f x)
 
-leaf :: E.Sigma -> E.Gamma -> ConsPDTree
-leaf [] _ = Fail
-leaf s  e = Success s e
+leaf :: E.MapSigma -> E.Gamma -> ConsPDTree
+leaf s e =
+  if null s then Fail else Success s e
 
-unifySubsts :: [E.Sigma] -> Maybe E.Sigma
-unifySubsts [] = return []
+unifySubsts :: [E.MapSigma] -> Maybe E.MapSigma
+unifySubsts [] = return M.empty
 unifySubsts [s] = return s
 unifySubsts (x : y : xs) = do
-    s <- go x y
+    s <- go x (M.toList y)
     unifySubsts (s : xs)
   where
     go s [] = Just s
@@ -189,7 +189,7 @@ topLevel limit (Program defs goal) =
     let descend = LC.Descend (conjToList logicGoal) [] in
     (fst4 $ go descend gamma' nodes E.s0 failed, logicGoal, names)
   where
-    go :: LC.Descend [G S] -> E.Gamma -> [[G S]] -> E.Sigma -> [[G S]] -> (ConsPDTree, [[G S]], [[G S]], E.Gamma)
+    go :: LC.Descend [G S] -> E.Gamma -> [[G S]] -> E.MapSigma -> [[G S]] -> (ConsPDTree, [[G S]], [[G S]], E.Gamma)
     go (LC.Descend goal' ancs') env@(x,y,z) seen state failed =
      let goal = E.substitute state goal' in
      let seen' = goal : seen in
@@ -309,7 +309,7 @@ topLevel limit (Program defs goal) =
 
     merge (_, _, d) newEnv@(x, y, z) = if head d > head z then (x, y, d) else newEnv
 
-createLeafNode :: [[G S]] -> ([G S], E.Sigma, E.Gamma) -> ConsPDTree
+createLeafNode :: [[G S]] -> ([G S], E.MapSigma, E.Gamma) -> ConsPDTree
 createLeafNode seen = go
   where
     go ([], state, env) = leaf state env
@@ -327,7 +327,7 @@ createLeafNode seen = go
 --       filter (\(v,t) -> any (`elem` varsToLeave) (v : fv t)) st
 
 
-computedAnswers :: ConsPDTree -> Maybe ([([G S], E.Sigma, E.Gamma)])
+computedAnswers :: ConsPDTree -> Maybe ([([G S], E.MapSigma, E.Gamma)])
 computedAnswers (Success s e) = Just [([], s, e)]
 computedAnswers Fail = Just []
 computedAnswers (Leaf g s e _) = Just [(g, s, e)]
@@ -341,7 +341,7 @@ computedAnswers _ = Nothing
 -- Finds a conjunct, for which at least one substitution exists in the unfolding.
 -- The result is the pair in which first element is list of conjuncts excluding the one which generates substitutions.
 -- The second element is the unfolding result for the selected conjunct.
-tryFindSubsts :: [G S] -> E.Gamma -> E.Sigma -> Maybe ([G S], (([E.Sigma], [([G S], E.Sigma)]), E.Gamma), [G S])
+tryFindSubsts :: [G S] -> E.Gamma -> E.MapSigma -> Maybe ([G S], (([E.MapSigma], [([G S], E.MapSigma)]), E.Gamma), [G S])
 tryFindSubsts =
     -- TODO USE PINPOINT
     go []
@@ -360,13 +360,13 @@ selectMin xs =
     let (ls, (h:rs)) = span (/= minimal) xs in
     (ls, h, rs)
 
-doStep :: G S -> E.Gamma -> E.Sigma -> ([([G S], E.Sigma)], E.Gamma)
+doStep :: G S -> E.Gamma -> E.MapSigma -> ([([G S], E.MapSigma)], E.Gamma)
 doStep goal env state =
     fromMaybe
       (oneStep goal env state)
       (incrDeepOneStep globalLimit 0 goal env state)
 
-or :: [ConsPDTree] -> LC.Descend [G S] -> E.Sigma -> [[G S]] -> [[G S]] -> E.Gamma -> (ConsPDTree, [[G S]], [[G S]], E.Gamma)
+or :: [ConsPDTree] -> LC.Descend [G S] -> E.MapSigma -> [[G S]] -> [[G S]] -> E.Gamma -> (ConsPDTree, [[G S]], [[G S]], E.Gamma)
 or ch d@(LC.Descend gs _) state seen failed env =
   if null ch || all (\x -> case x of Fail -> True; _ -> False) ch
   then (Fail, (delete gs seen), (gs:failed), env)
@@ -375,16 +375,16 @@ or ch d@(LC.Descend gs _) state seen failed env =
     --   [x] -> (x, seen, failed)
     --   _ -> (Or ch d state, seen, failed)
 
-split :: [ConsPDTree] -> [G S] -> E.Sigma -> [[G S]] -> [[G S]] -> E.Gamma -> (ConsPDTree, [[G S]], [[G S]], E.Gamma)
+split :: [ConsPDTree] -> [G S] -> E.MapSigma -> [[G S]] -> [[G S]] -> E.Gamma -> (ConsPDTree, [[G S]], [[G S]], E.Gamma)
 split [x] goal state seen failed env = (x, seen, failed, env)
 split ch goal state seen failed env = (Split ch goal state, seen, failed, env)
 
-checkConflicts :: [E.Sigma] -> Bool
+checkConflicts :: [E.MapSigma] -> Bool
 checkConflicts sigmas =
     let conflicting = findConflicting sigmas in
     any (\x -> length x /= 1) conflicting
 
-collectSubsts :: ConsPDTree -> [E.Sigma]
+collectSubsts :: ConsPDTree -> [E.MapSigma]
 collectSubsts (Or ch _ _) =
     mapMaybe go ch
   where
@@ -397,10 +397,10 @@ collectSubsts (Or ch _ _) =
 collectSubsts (Leaf _ s _ _) = [s]
 collectSubsts x = []
 
-isConflicting :: E.Sigma -> E.Sigma -> Bool
+isConflicting :: E.MapSigma -> E.MapSigma -> Bool
 isConflicting s1 s2 =
-    let m1 = M.fromList s1 in
-    let m2 = M.fromList s2 in
+    let m1 = s1 in
+    let m2 = s2 in
     let intersection = M.intersectionWith (\x y -> (E.walk x s1, E.walk y s2)) m1 m2 in
     M.size intersection > 0 &&
     any (uncurry conflicting) intersection
@@ -408,7 +408,7 @@ isConflicting s1 s2 =
     conflicting (C x xs) (C y ys) = x /= y || length xs /= length ys || any (uncurry conflicting) (zip xs ys)
     conflicting _ _ = False
 
-findConflicting :: [E.Sigma] -> [[E.Sigma]]
+findConflicting :: [E.MapSigma] -> [[E.MapSigma]]
 findConflicting [] = []
 findConflicting [x] = [[x]]
 findConflicting (x:xs) =

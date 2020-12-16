@@ -8,6 +8,7 @@ import           CPD.LocalControl
 import           CPD.Residualization
 import           Data.Foldable            (for_)
 import           Data.List
+import qualified Data.Map                 as Map
 import           Data.Maybe
 import qualified Data.Set                 as Set
 import           Debug.Trace
@@ -150,9 +151,9 @@ unit_normalization = do
 
 unit_unifyStuff = do
     test unifyStuff' [] (Just ([], E.s0))
-    test unifyStuff' [x === y, y === x] (Just ([], [(0, y)]))
-    test unifyStuff' [x === y, x === s] (Just ([], [(1, s), (0, y)]))
-    test unifyStuff' [f x y, x === y, g x, t === y, x === u] (Just ([f x y, g x], [(13, x), (1, t), (0, y)]))
+    test unifyStuff' [x === y, y === x] (Just ([], Map.fromList [(0, y)]))
+    test unifyStuff' [x === y, x === s] (Just ([], Map.fromList [(1, s), (0, y)]))
+    test unifyStuff' [f x y, x === y, g x, t === y, x === u] (Just ([f x y, g x], Map.fromList [(13, x), (1, t), (0, y)]))
     test unifyStuff' inp (Just (inp, E.s0))
     test unifyStuff' [x === s, x === t] Nothing
   where
@@ -169,9 +170,11 @@ unit_unifyStuff = do
     h = Invoke "h" []
 
 unit_unifySubsts = do
-  test2 E.unifySubsts [] [] (Just [])
-  test2 E.unifySubsts [(1, V 2)] [] Nothing
-  test2 E.unifySubsts [(1, C "d" [])] [(1, C "c" [])] Nothing
+    test2' E.unifySubsts [] [] (Just [])
+    test2' E.unifySubsts [(1, V 2)] [] Nothing
+    test2' E.unifySubsts [(1, C "d" [])] [(1, C "c" [])] Nothing
+  where
+    test2' f x y z = test2 f (Map.fromList x) (Map.fromList y) (Map.fromList <$> z)
 
 -- unit_localControl = do
 --   manyAssertCustom "local control" isVariant [[app x y z], [app x y t, app t z r]] (leaves $ topLevel (Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])))
@@ -306,7 +309,7 @@ unit_minimallyGeneral = do
     t = V "t"
     u = V "u"
 
-    minimallyGeneral' = fst . minimallyGeneral . map (\x -> (x, []))
+    minimallyGeneral' = fst . minimallyGeneral . map (\x -> (x, E.s0))
 
 testSplit = do -- TODO more tests
   assertCustom "split 0" checkVariant ([f x x], [g x]) (fst3 $ split [2..] [f x x] [f x x, g x] )
@@ -499,7 +502,7 @@ unit_unifyInvocationsStuff = do
     --      [f [c [c [z]], z], g [d [z], c [d [c [z]]]]]
     --      Nothing
   where
-    runTest gs hs expected = test (unifyInvocationLists gs hs) (Just E.s0) expected
+    runTest gs hs expected = test (unifyInvocationLists gs hs) (Just E.s0) (Map.fromList <$> expected)
     f = Invoke "f"
     g = Invoke "g"
     x = V 0

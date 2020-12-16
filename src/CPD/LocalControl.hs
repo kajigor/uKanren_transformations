@@ -31,10 +31,10 @@ instance (Show a) => Show (Descend a) where
 type DescendGoal = Descend (G S)
 
 data SldTree = Fail
-             | Success E.Sigma
-             | Or [SldTree] (Maybe (G S)) E.Sigma
-             | Conj SldTree [DescendGoal] E.Sigma
-             | Leaf [DescendGoal] E.Sigma E.Gamma
+             | Success E.MapSigma
+             | Or [SldTree] (Maybe (G S)) E.MapSigma
+             | Conj SldTree [DescendGoal] E.MapSigma
+             | Leaf [DescendGoal] E.MapSigma E.Gamma
 
 select :: [DescendGoal] -> Maybe DescendGoal
 select = find (\x -> isSelectable embed (getCurr x) (getAncs x))
@@ -62,7 +62,7 @@ instance E.Subst [Descend (G S)] where
   substitute s =
     map $ \(Descend g ancs) -> Descend (E.substitute s g) ancs
 
-sldResolution :: [G S] -> E.Gamma -> E.Sigma -> [[G S]] -> Heuristic -> SldTree
+sldResolution :: [G S] -> E.Gamma -> E.MapSigma -> [[G S]] -> Heuristic -> SldTree
 sldResolution goal gamma subst seen heuristic =
   -- sldResolutionStep (map (\x -> Descend x Set.empty) goal) gamma subst Set.empty True
   -- trace "\n\nSLDRESOLUTION \n\n" $
@@ -71,7 +71,7 @@ sldResolution goal gamma subst seen heuristic =
 showList :: Show a => [a] -> String
 showList = unlines . map show
 
-sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.Sigma -> [[G S]] -> Bool -> Heuristic -> SldTree
+sldResolutionStep :: [DescendGoal] -> E.Gamma -> E.MapSigma -> [[G S]] -> Bool -> Heuristic -> SldTree
 sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime heuristic =
   let curs = map getCurr gs in
   let prettySeen = showList seen  in
@@ -147,7 +147,7 @@ leaves (Conj ch  _ _) = leaves ch
 leaves (Leaf ds _ _)  = [map getCurr ds]
 leaves _              = []
 
-resultants :: SldTree -> [(E.Sigma, [G S], Maybe E.Gamma)]
+resultants :: SldTree -> [(E.MapSigma, [G S], Maybe E.Gamma)]
 resultants (Success s)     = [(s, [], Nothing)]
 resultants (Or disjs _ _)  = concatMap resultants disjs
 resultants (Conj ch _ _)   = resultants ch

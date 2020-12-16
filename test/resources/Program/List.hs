@@ -207,6 +207,25 @@ lengthoDef =
 lengtho :: [Def]
 lengtho = [lengthoDef]
 
+lengtho'Def :: Def
+lengtho'Def =
+    ( Def "lengtho'" ["x", "l"]
+      (
+        (x === nil &&& l === zero) |||
+        fresh ["h", "t", "z"]
+          (
+            x === h % t &&&
+            call "lengtho'" [t, z] &&&
+            l === succ z
+          )
+      )
+    )
+  where
+    [x, l, h, t, z] = map V ["x", "l", "h", "t", "z"]
+
+lengtho' :: [Def]
+lengtho' = [lengtho'Def]
+
 maxoDef :: Def
 maxoDef =
     ( Def "maxo" ["x", "m"] (call "maxo1" [x, zero, m]))

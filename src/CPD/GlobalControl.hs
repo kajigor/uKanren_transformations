@@ -4,6 +4,7 @@ module CPD.GlobalControl where
 
 import qualified CPD.LocalControl   as LC
 import           Data.List          (find, partition)
+import qualified Data.Map           as Map
 import           Data.Tuple
 import           Debug.Trace
 import           Embed
@@ -16,9 +17,9 @@ import           Util.Miscellaneous
 
 type Descend = LC.Descend
 
-data GlobalTree = Leaf  (Descend [G S]) Generalizer E.Sigma
+data GlobalTree = Leaf  (Descend [G S]) Generalizer E.MapSigma
                 | Node  (Descend [G S]) Generalizer LC.SldTree [GlobalTree]
-                | Prune (Descend [G S]) E.Sigma
+                | Prune (Descend [G S]) E.MapSigma
 
 sequence :: Descend a -> [a]
 sequence = LC.getAncs
@@ -44,7 +45,7 @@ part = LC.mcs
 abstract :: Descend [G S] -> [G S] -> E.Delta -> ([([G S], Generalizer)], E.Delta)
 abstract descend goals d =
   let qCurly = part goals in
-  let result = go (map (, []) qCurly) d in
+  let result = go (map (, Map.empty) qCurly) d in
   result
    where
     go [] d@(x:_) = ([], d)
@@ -69,12 +70,12 @@ generalize m b d =
   let genTrue = genOrig in
   --let (generalized, _, gen, delta') = D.generalizeGoals d m1 b in
   -- trace (printf "\nAfter split\n%s\n" (show' $ LC.mcs m1)) $
-  (map (project genTrue) (LC.mcs m1) ++ map (project []) (LC.mcs m2), delta)
+  (map (project genTrue) (LC.mcs m1) ++ map (project Map.empty) (LC.mcs m2), delta)
   -- (map (project genTrue) [m1] ++ map (project []) (LC.mcs m2), delta)
     where
       project gen goals = (goals, {- filter (\(x, _) -> (V x) `elem` concatMap LC.vars goals) -} gen)
 
-abstractChild :: [[G S]] -> (E.Sigma, [G S], Maybe E.Gamma) -> [(E.Sigma, [G S], Generalizer, E.Gamma)]
+abstractChild :: [[G S]] -> (E.MapSigma, [G S], Maybe E.Gamma) -> [(E.MapSigma, [G S], Generalizer, E.Gamma)]
 abstractChild _ (_, _, Nothing) = []
 abstractChild ancs (subst, g, Just env@(x, y, d)) =
   let (abstracted, delta) = abstract (LC.Descend g ancs) g d in
@@ -91,7 +92,7 @@ topLevel (Program defs goal) heuristic =
   let (logicGoal, gamma', names) = E.preEval gamma goal in
   trace (printf "\nGoal:\n%s\nNames:\n%s\n" (show goal) (show names)) $
   let nodes = [[logicGoal]] in
-  (fst $ go nodes (LC.Descend [logicGoal] []) gamma' E.s0 [], logicGoal, names) where
+  (fst $ go nodes (LC.Descend [logicGoal] []) gamma' E.s0 E.s0, logicGoal, names) where
     go nodes d@(LC.Descend goal ancs) gamma subst generalizer =
       -- if head (trd3 gamma) > 10
       -- then (Prune d subst, nodes)
@@ -105,7 +106,7 @@ topLevel (Program defs goal) heuristic =
 
         if null bodies
         then
-          (Node d [] sldTree [], nodes)
+          (Node d Map.empty sldTree [], nodes)
         else
           let ancs' = goal : ancs in
           let abstracted = map (abstractChild ancs') bodies in
@@ -126,8 +127,8 @@ topLevel (Program defs goal) heuristic =
                         )
                         ([], newNodes)
                         toUnfold in
-          let forgetEnv = map (\(x, y, _) -> (x, y, [])) in
+          let forgetEnv = map (\(x, y, _) -> (x, y, Map.empty)) in
           let forgetStuff = map (\(x, y, gen, _) -> (x,y, gen)) in
           let substLeaves = forgetEnv substs in
           let leaves = forgetStuff toNotUnfold in
-          (Node d generalizer sldTree (map (\(subst, g, gen) -> Leaf (LC.Descend g []) [] subst) (substLeaves ++ leaves) ++ ch), everythingSeenSoFar)
+          (Node d generalizer sldTree (map (\(subst, g, gen) -> Leaf (LC.Descend g []) Map.empty subst) (substLeaves ++ leaves) ++ ch), everythingSeenSoFar)

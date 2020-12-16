@@ -12,9 +12,9 @@ import Program.Sort
 import Program.Programs
 import Prelude hiding (succ)
 
-reify :: Eq a => [(a, Term a)] -> Term a -> Term a
+-- reify :: Eq a => [(a, Term a)] -> Term a -> Term a
 reify s x@(V v) =
-  case lookup v s of
+  case Eval.sLookup v s of
     Nothing -> x
     Just t  -> reify s t
 reify s (C n ts) = C n $ map (reify s) ts
@@ -24,7 +24,12 @@ toplevel n printer program =
   map (\s -> printer $ reify s (V 0)) $ takeS n $ run program
 
 main :: IO ()
-main =
+main = do
+  print (toplevel 1 show (Program lengtho (fresh ["l"] $ call "lengtho" [peanify 0 % (peanify 0 % (peanify 0 % (peanify 0 % (peanify 0 % nil)))), V "l"])))
+  print (toplevel 1 show (Program lengtho' (fresh ["l"] $ call "lengtho'" [peanify 0 % (peanify 0 % (peanify 0 % (peanify 0 % (peanify 0 % nil)))), V "l"])))
+
+main' :: IO ()
+main' =
   do
     print (toplevel 1 bool (Program nando $ fresh ["q"] (call "nando" [falso, falso, V "q"])))
     print (toplevel 1 bool (Program nando $ fresh ["q"] (call "nando" [V "q", V "q", V "q"])))

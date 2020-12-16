@@ -3,6 +3,7 @@ module Test.ConsPD where
 import           Test.Helper            (test, test2)
 
 import qualified ConsPD.Unfold          as ConsPD
+import qualified Data.Map               as Map
 import           Printer.ConsPDTree     ()
 import qualified Program.Bottles
 import qualified Program.Bridge
@@ -121,55 +122,57 @@ unit_printBottles = do
     Mk2Pl.transform "bottles.pl" Program.Bottles.bottles
 
 unit_isConflicting = do
-  test2 ConsPD.isConflicting [] [] False
-  test2 ConsPD.isConflicting [(1, V 2)] [(2, V 3)] False
-  test2 ConsPD.isConflicting [(1, V 2)] [(1, V 2)] False
-  test2 ConsPD.isConflicting [(1, V 4)] [(1, V 3), (3, V 4)] False
-  test2 ConsPD.isConflicting [(1, V 2)] [(1, V 2)] False
-  test2 ConsPD.isConflicting [(1, V 2)] [(1, V 3)] False
-  test2 ConsPD.isConflicting [(1, V 2)] [(1, C "" [])] False
-  test2 ConsPD.isConflicting [(1, V 9),  (6, nil), (7, V 9), (5, V 8), (3, V 8 % V 10), (4, V 5 % V 7), (0, V 5 % V 6)]
-                             [(2, V 10), (9, nil), (7, V 9), (5, V 8), (3, V 8 % V 10), (4, V 5 % V 7), (0, V 5 % V 6)]
-                             False
-  test2 ConsPD.isConflicting [(1, V 4), (0, nil)] [(2, V 3), (4, nil)] False
-  test2 ConsPD.isConflicting [(1, V 4), (0, nil)] [(3, V 8 % V 10), (4, V 8 % V 9)] False
-  test2 ConsPD.isConflicting [(4, V 5 % V 7), (0, V 5 % V 6)] [(3, V 8 % V 10), (4, V 8 % V 9)] False
+    test2' ConsPD.isConflicting [] [] False
+    test2' ConsPD.isConflicting [(1, V 2)] [(2, V 3)] False
+    test2' ConsPD.isConflicting [(1, V 2)] [(1, V 2)] False
+    test2' ConsPD.isConflicting [(1, V 4)] [(1, V 3), (3, V 4)] False
+    test2' ConsPD.isConflicting [(1, V 2)] [(1, V 2)] False
+    test2' ConsPD.isConflicting [(1, V 2)] [(1, V 3)] False
+    test2' ConsPD.isConflicting [(1, V 2)] [(1, C "" [])] False
+    test2' ConsPD.isConflicting [(1, V 9),  (6, nil), (7, V 9), (5, V 8), (3, V 8 % V 10), (4, V 5 % V 7), (0, V 5 % V 6)]
+                                [(2, V 10), (9, nil), (7, V 9), (5, V 8), (3, V 8 % V 10), (4, V 5 % V 7), (0, V 5 % V 6)]
+                                False
+    test2' ConsPD.isConflicting [(1, V 4), (0, nil)] [(2, V 3), (4, nil)] False
+    test2' ConsPD.isConflicting [(1, V 4), (0, nil)] [(3, V 8 % V 10), (4, V 8 % V 9)] False
+    test2' ConsPD.isConflicting [(4, V 5 % V 7), (0, V 5 % V 6)] [(3, V 8 % V 10), (4, V 8 % V 9)] False
 
-  test2 ConsPD.isConflicting [(4, V 5 % V 7), (0, V 5 % V 6)] [(2, V 3), (4, nil)] True
-  test2 ConsPD.isConflicting [(1, C "A" [])] [(1, C "B" [])] True
-  test2 ConsPD.isConflicting [(1, C "A" [C "A" []])] [(1, C "A" [C "B" []])] True
-  test2 ConsPD.isConflicting [(1, C "A" [])] [(1, C "A" [C "B" []])] True
+    test2' ConsPD.isConflicting [(4, V 5 % V 7), (0, V 5 % V 6)] [(2, V 3), (4, nil)] True
+    test2' ConsPD.isConflicting [(1, C "A" [])] [(1, C "B" [])] True
+    test2' ConsPD.isConflicting [(1, C "A" [C "A" []])] [(1, C "A" [C "B" []])] True
+    test2' ConsPD.isConflicting [(1, C "A" [])] [(1, C "A" [C "B" []])] True
+  where
+    test2' f g1 g2 r = test2 f (Map.fromList g1) (Map.fromList g2) r
 
 unit_findConflicting = do
-    test ConsPD.findConflicting
-         [[(1, V 2)], [(1, a)]]
-         [[[(1, V 2)]], [[(1, a)]]]
-    test ConsPD.findConflicting
-         [[(1, V 2)], [(1, a)], [(2, V 3)]]
-         [[[(1, V 2)]], [[(1, a)]], [[(2, V 3)]]]
-    test ConsPD.findConflicting
-         [[(1, V 2)], [(1, a), (2, b)], [(2, V 3)]]
-         [[[(1, V 2)]], [[(1, a), (2, b)]], [[(2, V 3)]]]
-    test ConsPD.findConflicting
-         [[(1, b)], [(1, a), (2, b)], [(2, V 3)]]
-         [[[(1, b)], [(1, a), (2, b)]], [[(2, V 3)]]]
-    test ConsPD.findConflicting
-         [[(1, b)], [(1, a), (2, b)], [(2, b)]]
-         [[[(1, b)], [(1, a), (2, b)]], [[(2, b)]]]
-    test ConsPD.findConflicting
-         [[(1, b)], [(1, a), (2, b)], [(2, a)]]
-         [[[(1, b)], [(1, a), (2, b)], [(2, a)]]]
-    test ConsPD.findConflicting
-         [[(1, b)], [(1, a), (2, c b)], [(2, c a)]]
-         [[[(1, b)], [(1, a), (2, c b)], [(2, c a)]]]
-    test ConsPD.findConflicting
-         [[(1, V 9),(6, nil),(7, V 9),(5, V 8),(3, V 8 % V 10),(4, V 5 % V 7),(0, V 5 % V 6)], [(2, V 10),(9, nil),(7, V 9),(5, V 8),(3, V 8 % V 10),(4, V 5 % V 7),(0, V 5 % V 6)]]
-         [[[(1, V 9),(6, nil),(7, V 9),(5, V 8),(3, V 8 % V 10),(4, V 5 % V 7),(0, V 5 % V 6)]], [[(2, V 10),(9, nil),(7, V 9),(5, V 8),(3, V 8 % V 10),(4, V 5 % V 7),(0, V 5 % V 6)]]]
-
+    test' ConsPD.findConflicting
+          [[(1, V 2)], [(1, a)]]
+          [[[(1, V 2)]], [[(1, a)]]]
+    test' ConsPD.findConflicting
+          [[(1, V 2)], [(1, a)], [(2, V 3)]]
+          [[[(1, V 2)]], [[(1, a)]], [[(2, V 3)]]]
+    test' ConsPD.findConflicting
+          [[(1, V 2)], [(1, a), (2, b)], [(2, V 3)]]
+          [[[(1, V 2)]], [[(1, a), (2, b)]], [[(2, V 3)]]]
+    test' ConsPD.findConflicting
+          [[(1, b)], [(1, a), (2, b)], [(2, V 3)]]
+          [[[(1, b)], [(1, a), (2, b)]], [[(2, V 3)]]]
+    test' ConsPD.findConflicting
+          [[(1, b)], [(1, a), (2, b)], [(2, b)]]
+          [[[(1, b)], [(1, a), (2, b)]], [[(2, b)]]]
+    test' ConsPD.findConflicting
+          [[(1, b)], [(1, a), (2, b)], [(2, a)]]
+          [[[(1, b)], [(1, a), (2, b)], [(2, a)]]]
+    test' ConsPD.findConflicting
+          [[(1, b)], [(1, a), (2, c b)], [(2, c a)]]
+          [[[(1, b)], [(1, a), (2, c b)], [(2, c a)]]]
+    test' ConsPD.findConflicting
+          [[(1, V 9),(6, nil),(7, V 9),(5, V 8),(3, V 8 % V 10),(4, V 5 % V 7),(0, V 5 % V 6)], [(2, V 10),(9, nil),(7, V 9),(5, V 8),(3, V 8 % V 10),(4, V 5 % V 7),(0, V 5 % V 6)]]
+          [[[(1, V 9),(6, nil),(7, V 9),(5, V 8),(3, V 8 % V 10),(4, V 5 % V 7),(0, V 5 % V 6)]], [[(2, V 10),(9, nil),(7, V 9),(5, V 8),(3, V 8 % V 10),(4, V 5 % V 7),(0, V 5 % V 6)]]]
   where
     a = C "a" []
     b = C "b" []
     c x = C "c" [x]
+    test' f g1 g2 = test f (map Map.fromList g1) (map (map Map.fromList) g2)
 
 unit_productList = do
     test ConsPD.productList [[]] ([] :: [[Int]])
@@ -202,18 +205,20 @@ unit_productList = do
 
 
 unit_unifySubsts = do
-  test ConsPD.unifySubsts [] (Just [])
-  test ConsPD.unifySubsts [ [(1, V 4), (0, nil)]
-                          , [(2, V 3), (4, nil)]
-                          ]
-                          (Just [(4, nil), (2, V 3), (1, V 4), (0, nil)])
-  test ConsPD.unifySubsts [ [(4, V 5 % V 7),  (0, V 5 % V 6)]
-                          , [(3, V 8 % V 10), (4, V 8 % V 9)]
-                          ]
-                          (Just [(7, V 9), (5, V 8), (3, V 8 % V 10), (4, V 5 % V 7), (0, V 5 % V 6)])
+  test' ConsPD.unifySubsts [] (Just [])
+  test' ConsPD.unifySubsts [ [(1, V 4), (0, nil)]
+                           , [(2, V 3), (4, nil)]
+                           ]
+                           (Just [(4, nil), (2, V 3), (1, V 4), (0, nil)])
+  test' ConsPD.unifySubsts [ [(4, V 5 % V 7),  (0, V 5 % V 6)]
+                           , [(3, V 8 % V 10), (4, V 8 % V 9)]
+                           ]
+                           (Just [(7, V 9), (5, V 8), (3, V 8 % V 10), (4, V 5 % V 7), (0, V 5 % V 6)])
+  where
+    test' f g1 g2 = test f (map Map.fromList g1) (Map.fromList <$> g2)
 
 unit_selectMin = do
-  test ConsPD.selectMin [(0,0)] ([], (0,0), [])
-  test ConsPD.selectMin [(0,0), (1,1), (2,2)] ([], (0,0), [(1,1), (2,2)])
-  test ConsPD.selectMin [(2,2), (1,1), (0,0)] ([(2,2), (1,1)], (0,0), [])
-  test ConsPD.selectMin [(1,2), (2,3), (3,0), (4,0), (5,2)] ([(1,2),(2,3)],(3,0),[(4,0),(5,2)])
+    test ConsPD.selectMin [(0,0)] ([], (0,0), [])
+    test ConsPD.selectMin [(0,0), (1,1), (2,2)] ([], (0,0), [(1,1), (2,2)])
+    test ConsPD.selectMin [(2,2), (1,1), (0,0)] ([(2,2), (1,1)], (0,0), [])
+    test ConsPD.selectMin [(1,2), (2,3), (3,0), (4,0), (5,2)] ([(1,2),(2,3)],(3,0),[(4,0),(5,2)])

@@ -35,7 +35,7 @@ residualizeGlobalTree tree =
   let definitions = foldl (\defs gs -> fst3 (renameGoals gs defs) ) [] $ map fst nodes  in
   mapMaybe (\(gs, sld) -> residualizeSldTree gs sld definitions) nodes
 
-unifyInvocationLists :: [G S] -> [G S] -> Maybe Eval.Sigma -> Maybe Eval.Sigma
+unifyInvocationLists :: [G S] -> [G S] -> Maybe Eval.MapSigma -> Maybe Eval.MapSigma
 unifyInvocationLists [] [] state = state
 unifyInvocationLists xs@(Invoke name args : gs) ys@(Invoke name' args' : gs') state | name == name' && length args == length args' = do
   let state' = unifyArgs args args' state
@@ -48,9 +48,14 @@ unifyInvocationLists xs@(Invoke name args : gs) ys@(Invoke name' args' : gs') st
     unifyArgs _ _ _ = Nothing
     -- just unification without occurs check.
     -- unify = unifyNoOccursCheck
-    unify (Just state) (V x) y | (x, y) `elem` state = Just state
-    unify (Just state) (V x) y | Just (_, z) <- find ((== x) . fst) state = if y /= z then Nothing else Just state
-    unify (Just state) (V x) y = Just $ (x, y) : state
+    unify (Just state) (V x) y =
+      case Map.lookup x state of
+        Just z | z == y -> Just state
+        Just z -> Nothing
+        Nothing -> Just $ Map.insert x y state
+    -- unify (Just state) (V x) y | (x, y) `elem` state = Just state
+    -- unify (Just state) (V x) y | Just (_, z) <- find ((== x) . fst) state = if y /= z then Nothing else Just state
+    -- unify (Just state) (V x) y = Just $ (x, y) : state
     unify (Just state) (C n _) (C m _) | n /= m = Nothing
     unify (Just state) (C n xargs) (C m yargs) | n == m = unifyArgs xargs yargs (Just state)
     unify _ (C _ _) (V _) = Nothing
@@ -63,7 +68,7 @@ generateInvocation goals defs = do
     (error "Residualization failed: invocation of the undefined relation.")
     (conj =<< conjInvocation goals defs)
   where
-    generate args subst = map (\a -> Res.toX $ fromMaybe (V a) (lookup a subst)) args
+    generate args subst = map (\a -> Res.toX $ fromMaybe (V a) (Map.lookup a subst)) args
     findDef goals defs =
       find (isJust . lst4) $
       map (\(g, n, args) -> (g, n, args, unifyInvocationLists g goals $ Just Eval.s0)) defs
@@ -148,8 +153,8 @@ residualizeSldTree rootGoals tree definitions = do
   then fail (printf "No resultants in the sld tree for %s" (show rootGoals))
   else return $ Def defName defArgs body
   where
-    go [] [] defs    = success
-    go [] gs defs    = residualizeGoals gs defs
+    go subst [] defs | Map.null subst = success
+    go subst gs defs | Map.null subst = residualizeGoals gs defs
     go subst [] defs = residualizeSubst subst
     go subst gs defs =
       let goal = residualizeGoals gs defs in
@@ -158,9 +163,9 @@ residualizeSldTree rootGoals tree definitions = do
 residualizeGoals :: [G S] -> Definitions -> G X
 residualizeGoals = generateInvocation
 
-residualizeSubst :: Eval.Sigma -> G X
+residualizeSubst :: Eval.MapSigma -> G X
 residualizeSubst subst =
-  unsafeConj $ map (\(s, ts) -> Res.toX (V s) === Res.toX ts) $ reverse subst
+  unsafeConj $ map (\(s, ts) -> Res.toX (V s) === Res.toX ts) $ reverse (Map.toList subst)
 
 class Ord b => UniqueVars a b | a -> b where
   getVars :: a -> Set b

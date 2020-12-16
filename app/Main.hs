@@ -141,10 +141,15 @@ runPropEval = do
 
 main :: IO ()
 main = do
-    Transformer.PrologToMk.transform "experiments/propEval" "originalLastPlain.pl"
-    Transformer.PrologToMk.transform "experiments/propEval" "etalonLastPlain.pl"
-    Transformer.PrologToMk.transform "experiments/propEval" "originalLastPlainLimited.pl"
-    Transformer.PrologToMk.transform "experiments/propEval" "etalonLastPlainLimited.pl"
+    runPropEval
+    -- mapM_ (Transformer.PrologToMk.transform "/home/ev/prj/geoff/cpd/examples/")
+    --   [ "len.pl"
+    --   ]
+
+    -- Transformer.PrologToMk.transform "/home/ev/prj/mk-transformers-bench/experiments/propEval" "perfectLastPlain.pl"
+    -- Transformer.PrologToMk.transform "/home/ev/prj/mk-transformers-bench/experiments/propEval" "etalonLastPlain.pl"
+    -- Transformer.PrologToMk.transform "/home/ev/prj/mk-transformers-bench/experiments/propEval" "originalLastPlainLimited.pl"
+    -- Transformer.PrologToMk.transform "/home/ev/prj/mk-transformers-bench/experiments/propEval" "etalonLastPlainLimited.pl"
 
 
     -- mapM_ (Transformer.PrologToMk.transform "/home/ev/prj/kajigor/cpd/examples")

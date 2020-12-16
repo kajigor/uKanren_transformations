@@ -12,12 +12,12 @@ import           Unfold             (oneStepUnfold, unifyStuff, normalize)
 import           Util.Miscellaneous (fst3)
 
 data PDTree = Fail
-            | Success E.Sigma
-            | Or [PDTree] (LC.Descend (G S)) E.Sigma
-            | Conj [PDTree] [G S] E.Sigma
+            | Success E.MapSigma
+            | Or [PDTree] (LC.Descend (G S)) E.MapSigma
+            | Conj [PDTree] [G S] E.MapSigma
             | Gen PDTree (G S)
-            | Leaf (G S) E.Sigma
-            | Split [PDTree] [G S] E.Sigma
+            | Leaf (G S) E.MapSigma
+            | Split [PDTree] [G S] E.MapSigma
             deriving (Show, Eq)
 
 topLevel :: Program -> (PDTree, G S, [S])
@@ -54,9 +54,8 @@ topLevel (Program defs goal) =
                     state
       in (treeResult, V 1 === V 2, [4, 5, 6, 7])
 
-leaf :: E.Sigma -> PDTree
-leaf [] = Fail
-leaf s  = Success s
+leaf :: E.MapSigma -> PDTree
+leaf x = if null x then Fail else Success x
 
 simplify :: PDTree -> PDTree
 simplify =

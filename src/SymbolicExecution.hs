@@ -18,10 +18,10 @@ import           Unfold             (oneStep)
 import           Util.Miscellaneous (fst3, show')
 
 data SymTree = Fail
-             | Success E.Sigma
-             | Disj [SymTree] [G S] E.Sigma
-             | Conj [SymTree] [G S] E.Sigma
-             | Prune [G S] E.Sigma
+             | Success E.MapSigma
+             | Disj [SymTree] [G S] E.MapSigma
+             | Conj [SymTree] [G S] E.MapSigma
+             | Prune [G S] E.MapSigma
              deriving (Show, Eq)
 
 topLevel :: Int -> Program -> SymTree
@@ -44,9 +44,8 @@ topLevel depth (Program defs goal) =
             (goal : ctx)
             state
 
-leaf :: E.Sigma -> SymTree
-leaf [] = Fail
-leaf s  = Success s
+leaf :: E.MapSigma -> SymTree
+leaf x = if null x then Fail else Success x
 
 simplify :: SymTree -> SymTree
 simplify =

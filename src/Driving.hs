@@ -118,7 +118,7 @@ embedGoals gs hs = coupleConj gs hs || diveConj gs hs where
 --   diveConj r as' (_:bs') = embedConj r as' bs'
 --   diveConj _ _ _         = Nothing
 
-substitute :: E.Sigma -> G S -> G S
+substitute :: E.MapSigma -> G S -> G S
 substitute s (t1 :=: t2  ) = E.substitute s t1 :=: E.substitute s t2
 substitute s (g1 :/\: g2 ) = substitute s g1 :/\: substitute s g2
 substitute s (g1 :\/: g2 ) = substitute s g1 :\/: substitute s g2
@@ -149,7 +149,7 @@ update :: (E.P, E.Delta) -> Def -> (E.P, E.Delta)
 update (p, d) def = let (p', _, d') = E.update (p, E.emptyIota, d) def in (p', d')
 
 
-invoke :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] -> (TreeContext, Tree, E.Delta)
+invoke :: TreeContext -> Stack -> E.Delta -> E.MapSigma -> Generalizer -> [Zeta] -> (TreeContext, Tree, E.Delta)
 invoke tc@(sr, args, ids) cs d s gen conjs =
   -- HERE WE HAVE TO SUBSTITUTE INTO THE CURRENT GOAL
  let qqq = map (\(a, b, g) -> (a, b, substitute s g)) conjs in
@@ -197,7 +197,7 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
 
 type Zeta = (E.Iota, E.P, G S)
 
-eval :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] -> Zeta -> [Zeta]  -> (TreeContext, Tree, E.Delta)
+eval :: TreeContext -> Stack -> E.Delta -> E.MapSigma -> Generalizer -> [Zeta] -> Zeta -> [Zeta]  -> (TreeContext, Tree, E.Delta)
 eval tc cs d s gen prev g@(i, p, t1 :=: t2) conjs =
   case takeS 1 $ E.eval (p, i, d) s (trd3 g) of
     []       -> (tc, Fail, d)
@@ -215,7 +215,7 @@ eval tc cs d s gen prev (i, p, g1 :/\: g2) conjs = eval tc cs d s gen prev (i, p
 eval tc cs d s gen prev g@(_, _, Invoke _ _) (g':conjs') = eval tc cs d s gen (g:prev) g' conjs'
 eval tc cs d s gen prev g@(_, _, Invoke _ _) []          = invoke tc cs d s gen (reverse $ g:prev)
 
-unfold :: TreeContext -> Stack -> E.Delta -> E.Sigma -> Generalizer -> [Zeta] -> (TreeContext, Tree, E.Delta)
+unfold :: TreeContext -> Stack -> E.Delta -> E.MapSigma -> Generalizer -> [Zeta] -> (TreeContext, Tree, E.Delta)
 unfold tc _ d s _ []            = (tc, Success s, d)
 unfold (sr, args, ids) cs e s gen conjs =
   let cs_conjs     = map (\ (_, _, Invoke f as) -> Invoke f $ map (E.substitute s) as) conjs in
@@ -234,4 +234,4 @@ unfold (sr, args, ids) cs e s gen conjs =
 drive :: G X -> (TreeContext, Tree, [Id])
 drive goal =
   let (goal', (g', i', d'), args) = E.preEval E.env0 goal in
-  let (x, y, _) = eval emptyContext [] d' E.s0 [] [] (i', g', goal') [] in (x, y, reverse args)
+  let (x, y, _) = eval emptyContext [] d' E.s0 E.s0 [] (i', g', goal') [] in (x, y, reverse args)

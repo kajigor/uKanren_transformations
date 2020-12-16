@@ -8,14 +8,14 @@ import Generalization
 
 type Id = Int
 data Tree =
-  Prune   [G S]                             |
-  Fail                                      |
-  Success E.Sigma                           |
-  Or      Tree Tree (G S) E.Sigma           |
-  Rename  Id (G S) E.Sigma Renaming E.Sigma |
-  Gen     Id Generalizer Tree (G S) E.Sigma |
-  Call    Id Tree (G S) E.Sigma             |
-  Split   Id [Tree] (G S) E.Sigma           deriving Show
+  Prune   [G S]                                   |
+  Fail                                            |
+  Success E.MapSigma                              |
+  Or      Tree Tree (G S) E.MapSigma              |
+  Rename  Id (G S) E.MapSigma Renaming E.MapSigma |
+  Gen     Id Generalizer Tree (G S) E.MapSigma    |
+  Call    Id Tree (G S) E.MapSigma                |
+  Split   Id [Tree] (G S) E.MapSigma              deriving Show
 
 -- Renaming
 type Renaming = [(S, S)]

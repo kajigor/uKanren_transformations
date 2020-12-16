@@ -9,18 +9,20 @@ import           Debug.Trace
 import           Stream
 import           Syntax
 import           Text.Printf
-
 import qualified Data.Map.Strict as Map
 
 class Substitution s where
   sEmpty  :: s
   sLookup :: S -> s -> Maybe Ts
   sInsert :: S -> Ts -> s -> s
+  sLength :: s -> Int
+  sLength _ = error "Length not implemented"
 
 instance Substitution Sigma where
   sEmpty = []
   sLookup a s = lookup a s
   sInsert a b s = (a, b) : s
+  sLength = length
 
 type MapSigma = Map.Map S Ts
 
@@ -28,6 +30,7 @@ instance Substitution MapSigma where
   sEmpty  = Map.empty
   sLookup = Map.lookup
   sInsert = Map.insert
+  sLength = Map.size
 
 -- States
 type Iota  = Map.Map X Ts
@@ -40,6 +43,7 @@ unifyG :: Substitution subst => (S -> Ts -> subst -> Bool)
           -> Maybe subst -> Ts -> Ts -> Maybe subst
 unifyG _ Nothing _ _ = Nothing
 unifyG f st@(Just subst) u v =
+  trace (printf "Subst length: %d" (sLength subst)) $
   unify' (walk u subst) (walk v subst)  where
     unify' (V u') (V v') | u' == v' = Just subst
     unify' (V u') (V v') = Just $ sInsert (min u' v') (V $ max u' v') subst
@@ -77,7 +81,7 @@ unify =
 
     -- occursCheck u' t s = if elem u' $ fv t then Nothing else s
 
-unifySubsts :: Sigma -> Sigma -> Maybe Sigma
+unifySubsts :: MapSigma -> MapSigma -> Maybe MapSigma
 unifySubsts one two =
     -- trace ("one: " ++ show one ++ "\ntwo: " ++ show two) $
     let maximumVar = max (findUpper one) (findUpper two) in
@@ -85,10 +89,12 @@ unifySubsts one two =
     let two' = manifactureTerm maximumVar two in
     unify (Just s0) one' two'
   where
-    findUpper []  = 0
-    findUpper lst = maximum $ map fst lst
+    findUpper subst =
+      if Map.null subst
+      then 0
+      else fst $ Map.findMax subst
     supplement upper lst = lst --  [(x, y) | x <- [0..upper], let y = maybe (V x) id (lookup x lst)]
-    manifactureTerm upper subst = C "ManifacturedTerm" $ map snd $ supplement upper subst
+    manifactureTerm upper subst = C "ManifacturedTerm" $ Map.elems $ supplement upper subst
 
 unifyNoOccursCheck :: Substitution subst => Maybe subst -> Ts -> Ts -> Maybe subst
 unifyNoOccursCheck = unifyG (\_ _ -> const False)
@@ -115,11 +121,11 @@ app iota x = iota Map.! x
 
 -- Applying substitution
 class Subst a where
-  substitute :: Sigma -> a -> a
+  substitute :: MapSigma -> a -> a
 
 instance Subst (Term S) where
   substitute s t@(V x) =
-    case lookup x s of
+    case sLookup x s of
       Just tx | tx /= t -> substitute s tx
       _                 -> t
   substitute s (C m ts) = C m $ map (substitute s) ts
@@ -132,20 +138,25 @@ instance Subst [G S] where
   substitute = map . substitute
 
 ---- Composing substitutions
-o :: Sigma -> Sigma -> Sigma
+o :: MapSigma -> MapSigma -> MapSigma
 o sigma theta =
-  case map fst sigma `intersect` map fst theta of
-    [] -> map (\ (s, ts) -> (s, substitute sigma ts)) theta ++ sigma
-    _  -> error "Non-disjoint domains in substitution composition"
+  if null $ Map.intersection sigma theta
+  then
+    Map.fromList $ map (\ (s, ts) -> (s, substitute sigma ts)) (Map.toList theta) ++ (Map.toList sigma)
+  else
+    error "Non-disjoint domains in substitution composition"
 
-dotSigma :: Sigma -> String
-dotSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (dot $ V x) (dot y)) s))
+dotSigma :: MapSigma -> String
+dotSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (dot $ V x) (dot y)) (Map.toList s)))
 
-showSigma :: Sigma -> String
-showSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (show $ V x) (show y)) s))
+instance Dot MapSigma where
+  dot = dotSigma
 
-showSigma' :: Sigma -> String
-showSigma' s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s -> %s" (show $ V x) (show y)) s))
+showSigma :: MapSigma -> String
+showSigma s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (show $ V x) (show y)) (Map.toList s)))
+
+showSigma' :: MapSigma -> String
+showSigma' s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s -> %s" (show $ V x) (show y)) (Map.toList s)))
 
 -- Pre-evaluation
 preEval :: Gamma -> G X -> (G S, Gamma, [S])
@@ -216,14 +227,14 @@ closeFresh as goal = goal
 
 
 
-topLevel :: Program -> Stream (Sigma, Delta)
+topLevel :: Program -> Stream (MapSigma, Delta)
 topLevel (Program defs goal) =
   let gamma = foldl update env0 defs in
   let (goal', gamma', _) = preEval gamma goal in
   eval gamma' s0 goal'
 
 -- Evaluation relation
-eval :: Gamma -> Sigma -> G S -> Stream (Sigma, Delta)
+eval :: Gamma -> MapSigma -> G S -> Stream (MapSigma, Delta)
 eval     (_, _, d) s (t1 :=:  t2)  = fmap (,d) (maybeToStream $ unify (Just s) t1 t2)
 eval env           s (g1 :\/: g2)  = eval env s g1 `mplus` eval env s g2
 eval env@(p, i, _) s (g1 :/\: g2)  = eval env s g1 >>= (\ (s', d') -> eval (p, i, d') s' g2)
@@ -249,10 +260,10 @@ gammaFromDefs = updateDefsInGamma env0
 getDef :: P -> Name -> Def
 getDef p n = p Map.! n
 
-s0 :: Sigma
-s0 = []
+s0 :: MapSigma
+s0 = Map.empty
 
-run :: Program -> Stream Sigma
+run :: Program -> Stream MapSigma
 run (Program defs goal) =
   let env = gammaFromDefs defs in
   let (goal', env', _) = preEval env goal in

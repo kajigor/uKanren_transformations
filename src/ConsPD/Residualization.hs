@@ -8,6 +8,7 @@ import qualified CPD.LocalControl    as LC
 import qualified CPD.Residualization as CpdR
 import           Data.List           (find, intercalate, nub, sort, union, (\\))
 import           Data.Maybe          (catMaybes, fromJust, fromMaybe)
+import qualified Data.Map            as Map
 import           Debug.Trace         (trace, traceM)
 import           Embed               (isInst)
 import qualified Eval                as E
@@ -62,7 +63,7 @@ generateInvocation defs (gs, v) =
     generateArgs xs =
       case CpdR.unifyInvocationLists v gs (Just E.s0) of
         Just subst ->
-          map (\a -> fromMaybe (V a) (lookup a subst)) xs
+          map (\a -> fromMaybe (V a) (Map.lookup a subst)) xs
         Nothing -> error (printf "Failed to generate invocation for %s" (show v))
     getArgs (Invoke _ args) = args
 
@@ -77,7 +78,7 @@ generateInvocation' defs gs v =
     generateArgs xs =
       case CpdR.unifyInvocationLists v gs (Just E.s0) of
         Just subst ->
-          map (\a -> fromMaybe (V a) (lookup a subst)) xs
+          map (\a -> fromMaybe (V a) (Map.lookup a subst)) xs
         Nothing -> error (printf "Failed to generate invocation for %s" (show v))
     getArgs (Invoke _ args) = args
 
@@ -125,9 +126,9 @@ generateGoalFromTree definitions invocations tree args =
       Nothing -> error $ printf "Failed to generate relation body for %s" (show $ nodeContent tree)
     -- Res.vident <$> (disj (map conj $ filter (not . null) $ go tree))
   where
-    residualizeState :: E.Sigma -> Maybe (G S)
+    residualizeState :: E.MapSigma -> Maybe (G S)
     residualizeState xs =
-      (conj $ map (\(s, ts) -> (V s) === ts) $ reverse xs) <|> return success
+      (conj $ map (\(s, ts) -> (V s) === ts) $ reverse (Map.toList xs)) <|> return success
 
     go :: [S] -> Bool -> ConsPDTree -> Maybe (G S)
     go seen r Fail           = Just failure

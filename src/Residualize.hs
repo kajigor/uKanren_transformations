@@ -12,12 +12,12 @@ import qualified Data.Map.Strict as Map
 toX :: Term S -> Term X
 toX = (vident <$>)
 
-residualizeSubst :: E.Sigma -> E.Sigma -> G X
-residualizeSubst g s = unsafeConj $ map (\ (s', ts) -> toX (V s') :=: toX (E.substitute g ts)) $ reverse s
+residualizeSubst :: E.MapSigma -> E.MapSigma -> G X
+residualizeSubst g s = unsafeConj $ map (\ (s', ts) -> toX (V s') :=: toX (E.substitute g ts)) $ reverse (Map.toList s)
 
-substCon :: E.Sigma -> [(S, Ts)] -> [(S, Ts)] -> G X -> G X
+substCon :: E.MapSigma -> E.MapSigma -> E.MapSigma -> G X -> G X
 substCon gen s ubst g =
-  let delta = s \\ ubst in
+  let delta = Map.difference s ubst in
   if null delta
   then g
   else residualizeSubst gen delta &&& g
