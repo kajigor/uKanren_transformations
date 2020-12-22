@@ -1,15 +1,11 @@
 module Main where
 
-import           ConsPD.Unfold
-import           CPD.LocalControl       (Heuristic (..))
-import           Debug.Trace            (traceM)
 import qualified Program.Bottles
 import qualified Program.Bridge
-import qualified Program.Bridge2
 import qualified Program.Desert
 import qualified Program.L
 import           Program.List           (appendo, maxLengtho, nil, revAcco,
-                                         reverso, (%))
+                                         reverso)
 import qualified Program.LLangType
 import           Program.Path
 import           Program.Programs       (doubleAppendo, rep)
@@ -21,10 +17,7 @@ import qualified Program.Typing
 import qualified Program.Unify
 import           Syntax
 import qualified Transformer.ConsPD
-import qualified Transformer.CPD
 import qualified Transformer.JustUnfold
-import qualified Transformer.PD
-import qualified Transformer.PrologToMk
 
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
 revAcco' = Program revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])

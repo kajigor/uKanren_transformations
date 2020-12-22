@@ -1,6 +1,6 @@
-module ResidualizeTest where
+module ResidualizationTest where
 
-import Residualize
+import Residualization
 import Syntax
 import Debug.Trace
 import Text.Printf

@@ -5,7 +5,7 @@ import           Program.List
 import           Program.Programs
 import qualified Subst
 import           Syntax
-import           Test.Helper      (manyAssert, test, test2)
+import           Test.Helper      (test2)
 import           Text.Printf
 import           Util.Check
 

@@ -1,7 +1,6 @@
 module Program.LLangType where
 
 import Syntax
-import Program.Num
 import Program.Bool
 import Program.List
 import Program.Option

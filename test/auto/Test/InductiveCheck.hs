@@ -4,8 +4,6 @@ module Test.InductiveCheck where
 
 import Syntax
 import InductiveCheck
-import Text.Printf
-
 import Program.List
 import Program.Num
 import Test.Helper ((@?=), test)

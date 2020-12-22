@@ -1,10 +1,8 @@
 module Test.SymExec where
 
-import           Test.Helper                   (manyAssert, test, test2)
 
-import           Program.List                  (nil, revAcco, reverso, (%))
+import           Program.List                  (nil, revAcco, reverso)
 import           Program.Programs              (doubleAppendo)
-import qualified Program.Prop
 import           Syntax
 import           Transformer.SymbolicExecution
 

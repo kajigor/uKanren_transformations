@@ -8,11 +8,10 @@ import Syntax
 import Text.Printf
 import Data.List
 import qualified Data.Set as Set
-import qualified Data.Map as Map
-import qualified Residualize as Res
+import qualified Residualization as Res
 import qualified CPD.LocalControl as LC
-import Debug.Trace
 import Eval
+import qualified FreshNames as FN
 import Data.Char
 import Data.Maybe
 import CPD.GlobalControl
@@ -20,9 +19,8 @@ import Util.Miscellaneous
 import qualified Subst
 
 type Set = Set.Set
-type Map = Map.Map
 
-type Definitions = [([G S], Name, [S])]
+type Definitions = [([G S], Name, FN.FreshNames)]
 
 residualizationTopLevel :: GlobalTree -> Program
 residualizationTopLevel test =
@@ -50,10 +48,10 @@ unifyInvocationLists xs@(Invoke name args : gs) ys@(Invoke name' args' : gs') st
     -- just unification without occurs check.
     -- unify = unifyNoOccursCheck
     unify (Just state) (V x) y =
-      case Map.lookup x state of
+      case Subst.lookup x state of
         Just z | z == y -> Just state
         Just z -> Nothing
-        Nothing -> Just $ Map.insert x y state
+        Nothing -> Just $ Subst.insert x y state
     -- unify (Just state) (V x) y | (x, y) `elem` state = Just state
     -- unify (Just state) (V x) y | Just (_, z) <- find ((== x) . fst) state = if y /= z then Nothing else Just state
     -- unify (Just state) (V x) y = Just $ (x, y) : state
@@ -69,7 +67,7 @@ generateInvocation goals defs = do
     (error "Residualization failed: invocation of the undefined relation.")
     (conj =<< conjInvocation goals defs)
   where
-    generate args subst = map (\a -> Res.toX $ fromMaybe (V a) (Map.lookup a subst)) args
+    generate args subst = map (\a -> Res.toX $ fromMaybe (V a) (Subst.lookup a subst)) (FN.unFreshNames args)
     findDef goals defs =
       find (isJust . lst4) $
       map (\(g, n, args) -> (g, n, args, unifyInvocationLists g goals $ Just Subst.empty)) defs
@@ -94,7 +92,7 @@ generateInvocation goals defs = do
         Nothing -> Nothing
 
 
-renameGoals :: [G S] -> Definitions -> (Definitions, Name, [S])
+renameGoals :: [G S] -> Definitions -> (Definitions, Name, FN.FreshNames)
 renameGoals gs definitions =
   let ns = map (\x -> case x of
                         Invoke name args -> (name, args)
@@ -108,20 +106,20 @@ renameGoals gs definitions =
 
 humanReadableName :: [String] -> String
 humanReadableName =
-  map (\x -> if x == '\'' then '_' else x) .
-  changeFirstLetter toLower .
-  concatMap (changeFirstLetter toUpper)
+    map (\x -> if x == '\'' then '_' else x) .
+    changeFirstLetter toLower .
+    concatMap (changeFirstLetter toUpper)
   where
     changeFirstLetter f s = f (head s) : tail s
 
 newName :: [Name] -> Definitions -> Name
 newName ns defs =
-  generateFreshName (humanReadableName ns) (getNames defs)
+    generateFreshName (humanReadableName ns) (getNames defs)
   where
     getNames = Set.fromList . map snd3
 
-uniqueArgs :: [[Term S]] -> [S]
-uniqueArgs args = Set.toList $ Set.unions $ concatMap (map getVars) args
+uniqueArgs :: [[Term S]] -> FN.FreshNames
+uniqueArgs args = FN.FreshNames $ Set.toList $ Set.unions $ concatMap (map getVars) args
 
 generateFreshName :: Name -> Set Name -> Name
 generateFreshName n names =
@@ -146,7 +144,7 @@ residualizeSldTree rootGoals tree definitions = do
                     )
                     []
                     resultants
-  let defArgs = map Res.vident rootVars
+  let defArgs = FN.unFreshNames $ Res.vident <$> rootVars
   let body = Eval.postEval defArgs $
                 unsafeDisj (reverse goals)
 
@@ -154,8 +152,8 @@ residualizeSldTree rootGoals tree definitions = do
   then fail (printf "No resultants in the sld tree for %s" (show rootGoals))
   else return $ Def defName defArgs body
   where
-    go subst [] defs | Map.null subst = success
-    go subst gs defs | Map.null subst = residualizeGoals gs defs
+    go subst [] defs | Subst.null subst = success
+    go subst gs defs | Subst.null subst = residualizeGoals gs defs
     go subst [] defs = residualizeSubst subst
     go subst gs defs =
       let goal = residualizeGoals gs defs in
@@ -166,7 +164,7 @@ residualizeGoals = generateInvocation
 
 residualizeSubst :: Subst.Subst -> G X
 residualizeSubst subst =
-  unsafeConj $ map (\(s, ts) -> Res.toX (V s) === Res.toX ts) $ reverse (Map.toList subst)
+  unsafeConj $ map (\(s, ts) -> Res.toX (V s) === Res.toX ts) $ reverse (Subst.toList subst)
 
 class Ord b => UniqueVars a b | a -> b where
   getVars :: a -> Set b

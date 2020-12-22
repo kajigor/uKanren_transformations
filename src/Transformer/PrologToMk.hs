@@ -3,7 +3,6 @@ module Transformer.PrologToMk where
 import qualified OCanrenize      as OC
 import           System.FilePath (replaceExtension, (</>))
 import           System.IO
-import           Text.Printf
 import           Util.ToProlog
 
 transform dirName file = do

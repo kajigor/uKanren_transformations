@@ -5,7 +5,7 @@ import DrivingTest
 import Syntax
 import Num
 import Sort
-import Residualize
+import Residualization
 import Driving
 import Stlc
 import Programs

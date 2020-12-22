@@ -2,10 +2,8 @@
 
 module InductiveCheck where
 
-import           CPD.LocalControl
 import           Data.Maybe
 import           Eval
-import           Purification
 import qualified Subst
 import           Syntax
 import           Unfold       (oneStepUnfold, unifyStuff, normalize)

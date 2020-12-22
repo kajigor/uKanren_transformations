@@ -5,25 +5,26 @@ module Eval where
 
 import           Control.Monad
 import           Data.List
-import           Debug.Trace
 import           Stream
 import           Syntax
-import           Text.Printf
 import qualified Data.Map.Strict as Map
 import qualified Subst as Subst
+import qualified VarInterpretation as VI
+import qualified Definitions as Defs
+import qualified FreshNames as FN
 
 -- States
-type Iota  = Map.Map X Ts
+-- type Iota  = Map.Map X Ts
 -- type Sigma = [(S, Ts)]
-type Delta = [S]
-type P     = Map.Map Name Def
-type Gamma = (P, Iota, Delta)
+-- type Delta = [S]
+-- type P     = Map.Map Name Def
+type Gamma = (Defs.Definitions, VI.Interpretation, FN.FreshNames)
 
 unifyG :: (S -> Ts -> Subst.Subst -> Bool)
           -> Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
 unifyG _ Nothing _ _ = Nothing
 unifyG f st@(Just subst) u v =
-  trace (printf "Subst length: %d" (Subst.length subst)) $
+  -- trace (printf "Subst length: %d" (Subst.size subst)) $
   unify' (walk u subst) (walk v subst)  where
     unify' (V u') (V v') | u' == v' = Just subst
     unify' (V u') (V v') = Just $ Subst.insert (min u' v') (V $ max u' v') subst
@@ -62,7 +63,7 @@ unify =
     -- occursCheck u' t s = if elem u' $ fv t then Nothing else s
 
 unifySubsts :: Subst.Subst -> Subst.Subst -> Maybe Subst.Subst
-unifySubsts one two =
+unifySubsts (Subst.Subst one) (Subst.Subst two) =
     -- trace ("one: " ++ show one ++ "\ntwo: " ++ show two) $
     let maximumVar = max (findUpper one) (findUpper two) in
     let one' = manifactureTerm maximumVar one in
@@ -79,33 +80,14 @@ unifySubsts one two =
 unifyNoOccursCheck :: Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
 unifyNoOccursCheck = unifyG (\_ _ -> const False)
 
----- Interpreting syntactic variables
-infix 9 <@>
-(<@>) :: Iota -> Tx -> Ts
-i <@> (V x) = app i x
-i <@> (C c ts) = C c $ map (i<@>) ts
-
-showInt :: Iota -> String
-showInt =
-    intercalate ", " . map (\(x, y) -> printf "%s -> %s" x (show y)) . Map.toList
-
----- Extending variable interpretation
-extend :: Iota -> X -> Ts -> Iota
-extend iota x ts = Map.insert x ts iota
-
-emptyIota :: Iota
-emptyIota = Map.empty
-
-app :: Iota -> X -> Ts
-app iota x = iota Map.! x
 
 -- Pre-evaluation
-preEval :: Gamma -> G X -> (G S, Gamma, [S])
+preEval :: Gamma -> G X -> (G S, Gamma, FN.FreshNames)
 preEval =
-    go []
+    go (FN.FreshNames [])
   where
     go vars g@(_, i, _) (t1 :=: t2) =
-      (i <@> t1 :=: i <@> t2, g, vars)
+      (i VI.<@> t1 :=: i VI.<@> t2, g, vars)
     go vars g (g1 :/\: g2) =
       let (g1', g' , vars' ) = go vars  g  g1 in
       let (g2', g'', vars'') = go vars' g' g2 in
@@ -114,10 +96,12 @@ preEval =
       let (g1', g' , vars')  = go vars  g  g1 in
       let (g2', g'', vars'') = go vars' g' g2 in
       (g1' :\/: g2', g'', vars'')
-    go vars (p, i , y : d') (Fresh x g') =
-      go (y : vars) (p, extend i x (V y), d') g'
+    go vars (p, i , d) (Fresh x g') =
+      let (y, d') = FN.getFreshName d in
+      go (FN.addName y vars) (p, VI.extend i x (V y), d') g'
     go vars g@(_, i, _) (Invoke f fs)  =
-      (Invoke f (map (i <@>) fs), g, vars)
+      (Invoke f (map (i VI.<@>) fs), g, vars)
+
 
 postEval :: [X] -> G X -> G X
 postEval as goal =
@@ -168,38 +152,35 @@ closeFresh as goal = goal
 
 
 
-topLevel :: Program -> Stream (Subst.Subst, Delta)
+topLevel :: Program -> Stream (Subst.Subst, FN.FreshNames)
 topLevel (Program defs goal) =
   let gamma = foldl update env0 defs in
   let (goal', gamma', _) = preEval gamma goal in
   eval gamma' Subst.empty goal'
 
 -- Evaluation relation
-eval :: Gamma -> Subst.Subst -> G S -> Stream (Subst.Subst, Delta)
+eval :: Gamma -> Subst.Subst -> G S -> Stream (Subst.Subst, FN.FreshNames)
 eval     (_, _, d) s (t1 :=:  t2)  = fmap (,d) (maybeToStream $ unify (Just s) t1 t2)
 eval env           s (g1 :\/: g2)  = eval env s g1 `mplus` eval env s g2
 eval env@(p, i, _) s (g1 :/\: g2)  = eval env s g1 >>= (\ (s', d') -> eval (p, i, d') s' g2)
 eval     (p, i, d) s (Invoke f as) =
-  let (Def _ fs g) = getDef p f in
-  let i'         = foldl (\ i'' (f', a) -> extend i'' f' a) i $ zip fs as in
+  let (Def _ fs g) = Defs.getDef p f in
+  let i'         = foldl (\ i'' (f', a) -> VI.extend i'' f' a) i $ zip fs as in
   let (g', env', _) = preEval (p, i', d) g in
   eval env' s g'
 eval _ _ _ = error "Impossible case in eval"
 
 env0 :: Gamma
-env0 = (Map.empty, emptyIota, [0 ..])
+env0 = (Defs.empty, VI.empty, FN.defaultNames)
 
 update :: Gamma -> Def -> Gamma
-update (p, i, d) def@(Def name _ _) = (Map.insert name def p, i, d)
+update (p, i, d) def@(Def name _ _) = (Defs.insert name def p, i, d)
 
 updateDefsInGamma :: Gamma -> [Def] -> Gamma
 updateDefsInGamma = foldl update
 
 gammaFromDefs :: [Def] -> Gamma
 gammaFromDefs = updateDefsInGamma env0
-
-getDef :: P -> Name -> Def
-getDef p n = p Map.! n
 
 run :: Program -> Stream Subst.Subst
 run (Program defs goal) =

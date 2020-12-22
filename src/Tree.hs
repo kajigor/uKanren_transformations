@@ -1,8 +1,6 @@
 module Tree where
 
-import qualified Eval as E
 import Syntax
-import Debug.Trace
 import Text.Printf
 import Generalization
 import qualified Subst

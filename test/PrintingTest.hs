@@ -7,7 +7,7 @@ import           Eval
 import           Program.List
 import           Program.Num
 import           Prelude     hiding (succ)
-import           Residualize
+import           Residualization
 import           Program.Sort
 import           Stream
 import           Syntax

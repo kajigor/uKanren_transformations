@@ -4,51 +4,31 @@ module Transformer.CPD where
 
 import           Control.Monad
 import qualified CPD.GlobalControl        as GC
-import           CPD.LocalControl
 import           CPD.Residualization
 import           Data.Foldable            (for_)
 import           Data.List
 import           Data.Maybe
-import qualified Data.Set                 as Set
 import           Debug.Trace
-import           Embed
-import qualified Eval                     as E
+import qualified FreshNames               as FN
 import qualified OCanrenize               as OC
 import           Prelude                  hiding (succ)
 import           Printer.Dot
-import           Printer.GlobalTree
-import           Printer.SldTree
-import           Program.Bool
+import Printer.GlobalTree ()
+import Printer.SldTree ()
 import qualified Program.Bottles
-import           Program.Bridge
-import qualified Program.Desert
-import           Program.List
-import           Program.LogicInterpreter
-import           Program.Num
-import           Program.Path             hiding (elem)
 import           Program.Programs
 import           Program.Prop
-import           Program.Sample1
-import           Program.Sort
-import           Program.SpecialProp
-import qualified Program.Sudoku4x4
 import           Program.Unify
 import           Purification
-import           Residualize
+import           Residualization
 import           Syntax
-import           System.CPUTime
 import           System.Directory
 import           System.FilePath          ((</>), (<.>))
-import           System.IO
 import           System.Process           (system)
-import           System.TimeIt
 import           Text.Printf
-import           Unfold
-import           Util.ConjRetriever
-import           Util.Miscellaneous
 
 transform filename goal env heuristic = do
-    let (tree, logicGoal, names) = GC.topLevel goal heuristic
+    let (tree, logicGoal, FN.FreshNames names) = GC.topLevel goal heuristic
     -- traceM ("\n\n NAMES \n\n" ++ show (vident <$> reverse names) )
     let path = "test/out" </> filename
     exists <- doesDirectoryExist path

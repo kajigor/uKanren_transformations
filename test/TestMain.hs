@@ -3,7 +3,7 @@ module TestMain (
 ) where
 
 import qualified OCanrenizeTest as OC
-import qualified ResidualizeTest as R
+import qualified ResidualizationTest as R
 import qualified DrivingTest as D
 import qualified BridgeTest as BT
 import qualified PrintingTest as PT

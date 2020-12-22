@@ -1,52 +1,27 @@
 module Test.CPD where
 
-import           Test.Helper (manyAssert, test, test2, assertCustom, manyAssertCustom)
+import           Test.Helper (manyAssert, test, test2, assertCustom)
 
-import           Control.Monad
 import qualified CPD.GlobalControl        as GC
 import           CPD.LocalControl
 import           CPD.Residualization
-import           Data.Foldable            (for_)
 import           Data.List
-import qualified Data.Map                 as Map
 import           Data.Maybe
 import qualified Data.Set                 as Set
-import           Debug.Trace
 import qualified Eval                     as E
-import qualified OCanrenize               as OC
+import qualified FreshNames               as FN
 import           Prelude                  hiding (succ)
-import           Printer.Dot
-import           Printer.GlobalTree
-import           Printer.SldTree
 import           Program.Bool
-import qualified Program.Bottles
-import           Program.Bridge
-import qualified Program.Desert
 import           Program.List
-import           Program.LogicInterpreter
 import           Program.Num
-import           Program.Path             hiding (elem)
-import           Program.Programs
-import           Program.Prop
-import           Program.Sample1
-import           Program.Sort
-import           Program.SpecialProp
-import qualified Program.Sudoku4x4
-import           Program.Unify
-import           Purification
-import           Residualize
 import           Syntax
-import           System.Directory
-import           Text.Printf
 import           Unfold
-import           Util.ConjRetriever
 import           Util.Miscellaneous
 import           Embed
 import qualified Subst
-import           System.CPUTime
-import           System.IO
-import           System.Process           (system)
-import           System.TimeIt
+
+fnames :: S -> FN.FreshNames
+fnames n = FN.FreshNames [n..]
 
 
 unit_select = do
@@ -114,7 +89,7 @@ unit_select = do
 unit_popingOutFreshes = do
     test (fst3 . E.preEval E.env0) (fresh ["x", "y"] goal) (callF x' y')
     test (fst3 . E.preEval (E.gammaFromDefs [fDef])) (fresh ["x", "y"] $ goal) (callF x' y')
-    test ((\(x, _, y) -> (x, y)) . E.preEval E.env0) (fresh ["m", "n"] body) (body', reverse [0..4])
+    test ((\(x, _, y) -> (x, y)) . E.preEval E.env0) (fresh ["m", "n"] body) (body', FN.FreshNames $ reverse [0..4])
   where
     x = V "x"
     y = V "y"
@@ -152,9 +127,9 @@ unit_normalization = do
 
 unit_unifyStuff = do
     test unifyStuff' [] (Just ([], Subst.empty))
-    test unifyStuff' [x === y, y === x] (Just ([], Map.fromList [(0, y)]))
-    test unifyStuff' [x === y, x === s] (Just ([], Map.fromList [(1, s), (0, y)]))
-    test unifyStuff' [f x y, x === y, g x, t === y, x === u] (Just ([f x y, g x], Map.fromList [(13, x), (1, t), (0, y)]))
+    test unifyStuff' [x === y, y === x] (Just ([], Subst.fromList [(0, y)]))
+    test unifyStuff' [x === y, x === s] (Just ([], Subst.fromList [(1, s), (0, y)]))
+    test unifyStuff' [f x y, x === y, g x, t === y, x === u] (Just ([f x y, g x], Subst.fromList [(13, x), (1, t), (0, y)]))
     test unifyStuff' inp (Just (inp, Subst.empty))
     test unifyStuff' [x === s, x === t] Nothing
   where
@@ -175,7 +150,7 @@ unit_unifySubsts = do
     test2' E.unifySubsts [(1, V 2)] [] Nothing
     test2' E.unifySubsts [(1, C "d" [])] [(1, C "c" [])] Nothing
   where
-    test2' f x y z = test2 f (Map.fromList x) (Map.fromList y) (Map.fromList <$> z)
+    test2' f x y z = test2 f (Subst.fromList x) (Subst.fromList y) (Subst.fromList <$> z)
 
 -- unit_localControl = do
 --   manyAssertCustom "local control" isVariant [[app x y z], [app x y t, app t z r]] (leaves $ topLevel (Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])))
@@ -313,17 +288,17 @@ unit_minimallyGeneral = do
     minimallyGeneral' = fst . minimallyGeneral . map (\x -> (x, Subst.empty))
 
 testSplit = do -- TODO more tests
-  assertCustom "split 0" checkVariant ([f x x], [g x]) (fst3 $ split [2..] [f x x] [f x x, g x] )
-  assertCustom "split 1" checkVariant ([f x x], [g x]) (fst3 $ split [2..] [f x x] [g x, f x x] )
-  assertCustom "split 2" checkVariant ([f x z], [g x]) (fst3 $ split [2..] [f x y] [g x, f x x] )
+  assertCustom "split 0" checkVariant ([f x x], [g x]) (fst3 $ split (fnames 2) [f x x] [f x x, g x] )
+  assertCustom "split 1" checkVariant ([f x x], [g x]) (fst3 $ split (fnames 2) [f x x] [g x, f x x] )
+  assertCustom "split 2" checkVariant ([f x z], [g x]) (fst3 $ split (fnames 2) [f x y] [g x, f x x] )
   assertCustom "split 3" checkVariant ([maxo1 (v150 % v153) (s v152) v1, lengtho v153 v154], [leo v121 v122])
                                       (fst3 $
-                                       split [150..]
+                                       split (fnames 150)
                                              [maxo1 (v51 % v52) (s v33) v1, lengtho v52 v53]
                                              [leo v121 v122, maxo1 (v126 % v127) (s (s (s (s (s v122))))) v1, lengtho v127 v128])
   assertCustom "split 4" checkVariant ([maxo1 v50 (s (s v51)) v1], [])
                                       (fst3 $
-                                       split [50..] [maxo1 v15 (s (s v20)) v1] [maxo1 v50 (s (s v51)) v1])
+                                       split (fnames 50) [maxo1 v15 (s (s v20)) v1] [maxo1 v50 (s (s v51)) v1])
   where
     checkVariant (x, x') (y, y') = isVariant x y && isVariant x' y'
 
@@ -356,7 +331,7 @@ testSplit = do -- TODO more tests
     v154 = V 154
 
 unit_abstract = do
-  test (\goal -> map fst $ fst $ GC.abstract (Descend goal []  ) goal [11..]) goal [goal]
+    test (\goal -> map fst $ fst $ GC.abstract (Descend goal []  ) goal (fnames 11)) goal [goal]
   where
     goal = [maxo1 v3 zero v1]
     maxo1 x y z = Invoke "maxo1" [x, y, z]
@@ -468,14 +443,14 @@ unit_generateFreshName = do
 
 
 unit_renameGoals = do
-    runTest [f [x], g [y]] [] "fG" [x, y]
-    runTest [f [x], g [y]] ["f", "g"] "fG" [x, y]
-    runTest [f [x], g [y]] ["fG"] "_fG" [x, y]
-    runTest [f [x], g [y, y]] [] "fG" [x, y]
-    runTest [f [x, y], g [y, y]] [] "fG" [x, y]
+    runTest [f [x], g [y]] [] "fG" names
+    runTest [f [x], g [y]] ["f", "g"] "fG" names
+    runTest [f [x], g [y]] ["fG"] "_fG" names
+    runTest [f [x], g [y, y]] [] "fG" names
+    runTest [f [x, y], g [y, y]] [] "fG" names
   where
     runTest goals names newName args =
-      let setNames = map (\x -> ([], x, [])) names in
+      let setNames = map (\x -> ([], x, FN.FreshNames [])) names in
       let insertName name defs = (goals, name, args) : defs in
       test (renameGoals goals)
            setNames
@@ -485,6 +460,7 @@ unit_renameGoals = do
     g = inv "g"
     x = 0
     y = 1
+    names = FN.FreshNames [x, y]
 
 unit_unifyInvocationsStuff = do
     runTest [] [] $ Just []
@@ -503,7 +479,7 @@ unit_unifyInvocationsStuff = do
     --      [f [c [c [z]], z], g [d [z], c [d [c [z]]]]]
     --      Nothing
   where
-    runTest gs hs expected = test (unifyInvocationLists gs hs) (Just Subst.empty) (Map.fromList <$> expected)
+    runTest gs hs expected = test (unifyInvocationLists gs hs) (Just Subst.empty) (Subst.fromList <$> expected)
     f = Invoke "f"
     g = Invoke "g"
     x = V 0

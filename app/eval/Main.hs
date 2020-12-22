@@ -3,8 +3,6 @@ module Main where
 import Syntax
 import Stream
 import Eval
-import Driving
-import Tree
 import qualified Subst
 import Program.List
 import Program.Num

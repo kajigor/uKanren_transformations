@@ -5,9 +5,8 @@ import Data.List
 import qualified Data.Set        as Set
 import qualified Data.Map.Strict as Map
 import Control.Monad.State
-import Debug.Trace (traceM, trace)
+import Debug.Trace (trace)
 import Text.Printf (printf)
-import Util.Miscellaneous (show')
 
 type Set = Set.Set
 type Map = Map.Map

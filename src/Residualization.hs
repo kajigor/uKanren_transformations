@@ -1,12 +1,8 @@
-module Residualize where
+module Residualization where
 
 import Syntax
 import Tree
 import Driving
-import qualified Eval as E
-import Data.List
-import qualified Data.Set        as Set
-import qualified Data.Map.Strict as Map
 import qualified Subst
 
 
@@ -14,12 +10,12 @@ toX :: Term S -> Term X
 toX = (vident <$>)
 
 residualizeSubst :: Subst.Subst -> Subst.Subst -> G X
-residualizeSubst g s = unsafeConj $ map (\ (s', ts) -> toX (V s') :=: toX (Subst.substitute g ts)) $ reverse (Map.toList s)
+residualizeSubst g s = unsafeConj $ map (\ (s', ts) -> toX (V s') :=: toX (Subst.substitute g ts)) $ reverse (Subst.toList s)
 
 substCon :: Subst.Subst -> Subst.Subst -> Subst.Subst -> G X -> G X
 substCon gen s ubst g =
-  let delta = Map.difference s ubst in
-  if null delta
+  let delta = Subst.difference s ubst in
+  if Subst.null delta
   then g
   else residualizeSubst gen delta &&& g
 

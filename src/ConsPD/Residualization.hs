@@ -6,25 +6,22 @@ import           ConsPD.Unfold
 import           Control.Applicative ((<|>))
 import qualified CPD.LocalControl    as LC
 import qualified CPD.Residualization as CpdR
-import           Data.List           (find, intercalate, nub, sort, union, (\\))
+import           Data.List ( find, intercalate, nub )
 import           Data.Maybe          (catMaybes, fromJust, fromMaybe)
-import qualified Data.Map            as Map
-import           Debug.Trace         (trace, traceM)
-import           Embed               (isInst)
 import qualified Eval                as E
-import qualified Residualize         as Res
+import qualified FreshNames          as FN
+import qualified Residualization     as Res
 import qualified Subst
 import           Syntax
 import           Text.Printf         (printf)
-import           Unfold              (normalize)
-import           Util.Miscellaneous  (fst3, show', snd3, trd3)
+import           Util.Miscellaneous  (fst3)
 
 topLevel :: Program -> Program
 topLevel input =
   residualize $ ConsPD.Unfold.topLevel (-1) input
 
 
-residualize :: (ConsPDTree, G S, [S]) -> Program
+residualize :: (ConsPDTree, G S, FN.FreshNames) -> Program
 residualize (Fail, goal, names) = Program [] (generateGoal goal names)
 residualize (tree, goal, names) =
   -- let restricted = restrictSubsts tree in
@@ -55,16 +52,16 @@ showDefinitions = intercalate "\n\n" . map go
 
 generateInvocation :: CpdR.Definitions -> ([G S], [G S]) -> ([G S], G S)
 generateInvocation defs (gs, v) =
-    let Just (goal, n, as) = find ((v ==) . (fst3)) defs in
+    let Just (goal, n, as) = find ((v ==) . fst3) defs in
     let name = n in
-    let args = generateArgs as in
+    let args = generateArgs (FN.unFreshNames as) in
     let res = call name args in
     (gs, call name args)
   where
     generateArgs xs =
       case CpdR.unifyInvocationLists v gs (Just Subst.empty) of
         Just subst ->
-          map (\a -> fromMaybe (V a) (Map.lookup a subst)) xs
+          map (\a -> fromMaybe (V a) (Subst.lookup a subst)) xs
         Nothing -> error (printf "Failed to generate invocation for %s" (show v))
     getArgs (Invoke _ args) = args
 
@@ -72,14 +69,14 @@ generateInvocation' :: CpdR.Definitions -> [G S] -> [G S] -> G S
 generateInvocation' defs gs v =
     let Just (goal, n, as) = find ((v ==) . (fst3)) defs in
     let name = n in
-    let args = generateArgs as in
+    let args = generateArgs (FN.unFreshNames as) in
     let res = call name args in
     (call name args)
   where
     generateArgs xs =
       case CpdR.unifyInvocationLists v gs (Just Subst.empty) of
         Just subst ->
-          map (\a -> fromMaybe (V a) (Map.lookup a subst)) xs
+          map (\a -> fromMaybe (V a) (Subst.lookup a subst)) xs
         Nothing -> error (printf "Failed to generate invocation for %s" (show v))
     getArgs (Invoke _ args) = args
 
@@ -111,14 +108,14 @@ nodeContent (Conj _ goal _)              = Just goal
 nodeContent (Split _ goal _)             = Just goal
 nodeContent x                            = Nothing -- error "Failed to get node content: unsupported node type"
 
-generateDef :: CpdR.Definitions -> [([G S], G S)] -> (([G S], Name, [S]), ConsPDTree) -> Def
+generateDef :: CpdR.Definitions -> [([G S], G S)] -> (([G S], Name, FN.FreshNames), ConsPDTree) -> Def
 generateDef defs invocations ((gs, n, args), tree) =
   let body = generateGoalFromTree defs invocations tree args in
-  let argsX = map Res.vident args in
+  let argsX = map Res.vident (FN.unFreshNames args) in
   Def n argsX (E.postEval argsX body)
 
--- generateGoalFromTree :: [([G S], G S)] -> ConsPDTree -> [S] -> G X
-generateGoalFromTree :: CpdR.Definitions -> [([G S], G S)] -> ConsPDTree -> [S] -> G X
+-- generateGoalFromTree :: [([G S], G S)] -> ConsPDTree -> FN.FreshNames -> G X
+generateGoalFromTree :: CpdR.Definitions -> [([G S], G S)] -> ConsPDTree -> FN.FreshNames -> G X
 generateGoalFromTree definitions invocations tree args =
     case go args True tree of
       Just goal ->
@@ -129,9 +126,9 @@ generateGoalFromTree definitions invocations tree args =
   where
     residualizeState :: Subst.Subst -> Maybe (G S)
     residualizeState xs =
-      (conj $ map (\(s, ts) -> (V s) === ts) $ reverse (Map.toList xs)) <|> return success
+      (conj $ map (\(s, ts) -> (V s) === ts) $ reverse (Subst.toList xs)) <|> return success
 
-    go :: [S] -> Bool -> ConsPDTree -> Maybe (G S)
+    go :: FN.FreshNames -> Bool -> ConsPDTree -> Maybe (G S)
     go seen r Fail           = Just failure
     go seen r (Success ss _) = residualizeState ss
     go seen r (Or ch (LC.Descend gs _) s) = do
@@ -223,7 +220,7 @@ renameAmbigousVars tree = tree
   --   getVarsTree (Leaf gs s _ _) = getVars gs s
   --   getVarsTree _ = []
 
-  --   renameTree :: Int -> [S] -> ConsPDTree -> ConsPDTree
+  --   renameTree :: Int -> FN.FreshNames -> ConsPDTree -> ConsPDTree
   --   renameTree n seen =
   --       go
   --     where
@@ -240,7 +237,7 @@ renameAmbigousVars tree = tree
 
   --       renameSubst = map (\(v,t) -> (f v, f <$> t))
 
-  --       renameVars :: Int -> [S] -> (S -> S)
+  --       renameVars :: Int -> FN.FreshNames -> (S -> S)
   --       renameVars n seen =
   --           rename
   --         where
@@ -254,7 +251,7 @@ renameAmbigousVars tree = tree
   --   conj xs = foldl1 (:/\:) xs
 
 
-generateGoal :: G S -> [S] -> G X
+generateGoal :: G S -> FN.FreshNames -> G X
 generateGoal g ns = (Res.vident <$> g)
 
 collectLeaves :: ConsPDTree -> [([G S], [G S])]

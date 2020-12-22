@@ -1,11 +1,10 @@
 module Test.Unfold where
 
-import           Test.Helper  (manyAssert, test, test2)
+import           Test.Helper  (test)
 
 import           Program.Bool (nandoDef, andoDef)
 import           Program.List (appendoDef, revAccoDef, reversoDef)
 import qualified Program.Prop
-import           Syntax
 import           Unfold       (maximumBranches)
 
 unit_maximumBranches = do

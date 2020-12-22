@@ -5,12 +5,12 @@ import           ConsPD.Residualization
 import qualified ConsPD.Unfold          as ConsPD
 import           Control.Applicative    ((<|>))
 import           Control.Monad          (guard)
-import           Debug.Trace            (traceM)
+import qualified FreshNames             as FN
 import qualified OCanrenize             as OC
 import           Printer.Dot
 import           Printer.ConsPDTree     ()
 import           Purification
-import           Residualize            (vident)
+import           Residualization        (vident)
 import           Syntax
 import           System.Directory
 import           System.FilePath        ((<.>), (</>))
@@ -26,7 +26,7 @@ toOcanren fileName (Program defs goal) names =
 runConsPD l = Transformer.ConsPD.transform "test/out/consPD" True Nothing (ConsPD.topLevel l)
 
 transform dirName cleanDir env function filename goal@(Program definitions _) = (do
-  let transformed@(tree, logicGoal, names) = function goal
+  let transformed@(tree, logicGoal, FN.FreshNames names) = function goal
   let tree' = ConsPD.simplify tree
   -- traceM (printf "\n========================================\nBefore:\n%s\n\nAfter:\n%s\n========================================\n" (show tree) (show $ ConsPD.simplify tree))
 

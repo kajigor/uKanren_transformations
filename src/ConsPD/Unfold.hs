@@ -4,22 +4,20 @@ module ConsPD.Unfold where
 
 import qualified CPD.LocalControl   as LC
 import           Data.Foldable      (foldlM)
-import           Data.List          (find, intersect, partition, sortBy, (\\), delete, nub)
+import           Data.List          (partition, sortBy, delete)
 import qualified Data.Map.Strict    as M
-import           Data.Maybe         (catMaybes, fromJust, fromMaybe, isJust,
+import           Data.Maybe         (catMaybes, fromJust, fromMaybe,
                                      isNothing, mapMaybe)
-import           Debug.Trace        (trace)
 import           Embed
 import qualified Eval               as E
-import           Generalization     (Generalizer, generalizeSplit, generalizeAllVarsToFree)
+import qualified FreshNames         as FN
+import           Generalization     (Generalizer, generalizeAllVarsToFree)
 import           Prelude            hiding (or)
 import qualified Subst
 import           Syntax
 import           Text.Printf        (printf)
-import           Unfold             (findBestByComplexity, notMaximumBranches,
-                                     oneStep, oneStepUnfold, unfoldComplexity, isGoalStatic)
-import           Util.Check         (checkConj)
-import           Util.Miscellaneous (fst3, fst4, show', snd3)
+import           Unfold             (findBestByComplexity, oneStep, isGoalStatic)
+import           Util.Miscellaneous (fst4)
 
 data ConsPDTree = Fail
                 | Success Subst.Subst E.Gamma
@@ -72,7 +70,7 @@ instance Eq ConsPDTree where
 --       let intersection = d `intersect` d' in
 --       if map f intersection /= map f' intersection
 --       then Nothing
---       else Just $ foldl (\interp x -> E.extend interp x (f x)) i dd'
+--       else Just $ foldl (\interp x -> VI.extend interp x (f x)) i dd'
 
 statesConcat :: [Subst.Subst] -> Maybe Subst.Subst
 statesConcat = unifySubsts
@@ -89,15 +87,15 @@ productList (xs:xss) = [ h : t | h <- xs, t <- productList xss]
 
 restrictSubsts :: ConsPDTree -> ConsPDTree
 restrictSubsts =
-    go M.empty
+    go Subst.empty
   where
-    go subst (Conj ch gs s)  = Conj (map (go s) ch) gs (M.difference s subst)
-    go subst (Or ch gs s)    = Or (map (go s) ch) gs (M.difference s subst)
-    go subst (Gen ch gs gs' gen s) = Gen (go subst ch) gs gs' gen (M.difference s subst)
-    go subst (Leaf gs s e v) = Leaf gs (M.difference s subst) e v
-    go subst (Split ch gs s) = Split (map (go s) ch) gs (M.difference s subst)
-    go subst (Prune gs s)    = Prune gs (M.difference s subst)
-    go subst (Success s e)   = Success (M.difference s subst) e
+    go subst (Conj ch gs s)  = Conj (map (go s) ch) gs (Subst.difference s subst)
+    go subst (Or ch gs s)    = Or (map (go s) ch) gs (Subst.difference s subst)
+    go subst (Gen ch gs gs' gen s) = Gen (go subst ch) gs gs' gen (Subst.difference s subst)
+    go subst (Leaf gs s e v) = Leaf gs (Subst.difference s subst) e v
+    go subst (Split ch gs s) = Split (map (go s) ch) gs (Subst.difference s subst)
+    go subst (Prune gs s)    = Prune gs (Subst.difference s subst)
+    go subst (Success s e)   = Success (Subst.difference s subst) e
     go _ Fail                = Fail
 
 
@@ -139,13 +137,13 @@ realIncrDeep globalLimit f x =
 
 leaf :: Subst.Subst -> E.Gamma -> ConsPDTree
 leaf s e =
-  if null s then Fail else Success s e
+  if Subst.null s then Fail else Success s e
 
 unifySubsts :: [Subst.Subst] -> Maybe Subst.Subst
-unifySubsts [] = return M.empty
+unifySubsts [] = return Subst.empty
 unifySubsts [s] = return s
 unifySubsts (x : y : xs) = do
-    s <- go x (M.toList y)
+    s <- go x (Subst.toList y)
     unifySubsts (s : xs)
   where
     go s [] = Just s
@@ -160,7 +158,7 @@ conjToList x          = [x]
 globalLimit :: Int
 globalLimit = 8
 
-justUnfold :: Int -> Program -> (ConsPDTree, G S, [S])
+justUnfold :: Int -> Program -> (ConsPDTree, G S, FN.FreshNames)
 justUnfold limit (Program defs goal) =
     let gamma = E.gammaFromDefs defs in
     let (logicGoal, gamma', names) = E.preEval gamma goal in
@@ -181,7 +179,7 @@ justUnfold limit (Program defs goal) =
       Or children d subst
 
 
-topLevel :: Int -> Program -> (ConsPDTree, G S, [S])
+topLevel :: Int -> Program -> (ConsPDTree, G S, FN.FreshNames)
 topLevel limit (Program defs goal) =
     let gamma = E.gammaFromDefs defs in
     let (logicGoal, gamma', names) = E.preEval gamma goal in
@@ -192,6 +190,7 @@ topLevel limit (Program defs goal) =
   where
     go :: LC.Descend [G S] -> E.Gamma -> [[G S]] -> Subst.Subst -> [[G S]] -> (ConsPDTree, [[G S]], [[G S]], E.Gamma)
     go (LC.Descend goal' ancs') env@(x,y,z) seen state failed =
+     let (hd, _) = FN.getFreshName z in
      let goal = Subst.substitute state goal' in
      let seen' = goal : seen in
      let addAnc x = LC.Descend x (goal : ancs') in
@@ -200,7 +199,7 @@ topLevel limit (Program defs goal) =
      then
        (Fail, seen, failed, env)
      else
-      if limit > 0 && head z > limit
+      if limit > 0 && hd > limit
       then
         (Prune goal state, seen, failed, env)
       else
@@ -308,7 +307,8 @@ topLevel limit (Program defs goal) =
                             unified in
       (reverse ch, allSeenGoals, actualFailed, actualEnv)
 
-    merge (_, _, d) newEnv@(x, y, z) = if head d > head z then (x, y, d) else newEnv
+    merge (_, _, d) newEnv@(x, y, z) =
+      if d > z then (x, y, d) else newEnv
 
 createLeafNode :: [[G S]] -> ([G S], Subst.Subst, E.Gamma) -> ConsPDTree
 createLeafNode seen = go
@@ -402,7 +402,7 @@ isConflicting :: Subst.Subst -> Subst.Subst -> Bool
 isConflicting s1 s2 =
     let m1 = s1 in
     let m2 = s2 in
-    let intersection = M.intersectionWith (\x y -> (E.walk x s1, E.walk y s2)) m1 m2 in
+    let intersection = Subst.intersectionWith (\x y -> (E.walk x s1, E.walk y s2)) m1 m2 in
     M.size intersection > 0 &&
     any (uncurry conflicting) intersection
   where

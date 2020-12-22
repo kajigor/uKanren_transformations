@@ -1,22 +1,22 @@
 module Unfold where
 
 import           Control.Applicative
-import           Data.List           (find)
 import           Data.Maybe          (mapMaybe)
 import qualified Data.Set            as Set
-import           Debug.Trace         (trace)
 import qualified Eval                as E
 import qualified Subst
 import           Syntax
 import           Text.Printf         (printf)
-import           Util.Miscellaneous  (fst3, show', pinpoint)
+import           Util.Miscellaneous  (fst3, pinpoint)
+import qualified VarInterpretation   as VI
+import qualified Definitions         as Defs
 
 oneStepUnfold :: G S -> E.Gamma -> (G S, E.Gamma)
 oneStepUnfold g@(Invoke f as) env@(p, i, d) =
-  let (Def n fs body) = E.getDef p f in
+  let (Def n fs body) = Defs.getDef p f in
   if length fs == length as
   then
-    let i' = foldl (\ interp (f, a) -> E.extend interp f a) i $ zip fs as in
+    let i' = foldl (\ interp (f, a) -> VI.extend interp f a) i $ zip fs as in
     let (g', env', _) = E.preEval (p, i', d) body in
     (g', env')
   else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
@@ -56,19 +56,18 @@ maximumBranches def@(Def _ args body) =
     succeed (Fresh name g)     = Fresh name (succeed g)
     succeed (Invoke name args) = success
     succeed (t :=: u)          = t :=: u
-    succeed x                  = error ("Failed to transform " ++ show x)
 
     success = C "" [] :=: C "" []
 
 getMaximumBranches :: E.Gamma -> G S -> Int
 getMaximumBranches (p,_,_) (Invoke name _) =
-    let def = E.getDef p name in
+    let def = Defs.getDef p name in
     maximumBranches def
 
 
 notMaximumBranches :: E.Gamma -> Subst.Subst -> G S -> Bool
 notMaximumBranches gamma@(p, _, _) state goal@(Invoke name args) =
-    let maxBranches = maximumBranches (E.getDef p name) in
+    let maxBranches = maximumBranches (Defs.getDef p name) in
     let (unfolded, _) = oneStep goal gamma state in
     length unfolded < maxBranches
     -- let result = length unfolded < maxBranches in
@@ -114,7 +113,7 @@ findBestByComplexity gamma sigma goals =
 unfoldComplexity :: E.Gamma -> Subst.Subst -> G S -> Complexity
 unfoldComplexity gamma@(p, _, _) sigma goal@(Invoke name _) =
   let (unfolded, _) = oneStep goal gamma sigma in
-  let max = maximumBranches (E.getDef p name) in
+  let max = maximumBranches (Defs.getDef p name) in
   -- trace (printf "\n%s is %s\n" name (if static gamma name then "static" else "not static")) $
   Complexity max (length unfolded) (length $ filter (null . fst) unfolded)
 
@@ -130,7 +129,7 @@ static (p, _, _) name =
     go _ _ = True
 
     getBody name =
-      let Def _ _ body = E.getDef p name in body
+      let Def _ _ body = Defs.getDef p name in body
 
 isGoalStatic :: E.Gamma -> G S -> Bool
 isGoalStatic gamma (Invoke name _) =

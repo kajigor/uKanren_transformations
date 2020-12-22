@@ -56,7 +56,7 @@ topLevel (Program defs goal) =
       in (treeResult, V 1 === V 2, [4, 5, 6, 7])
 
 leaf :: Subst.Subst -> PDTree
-leaf x = if null x then Fail else Success x
+leaf x = if Subst.null x then Fail else Success x
 
 simplify :: PDTree -> PDTree
 simplify =

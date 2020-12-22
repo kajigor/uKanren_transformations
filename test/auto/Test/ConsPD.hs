@@ -3,7 +3,6 @@ module Test.ConsPD where
 import           Test.Helper            (test, test2)
 
 import qualified ConsPD.Unfold          as ConsPD
-import qualified Data.Map               as Map
 import           Printer.ConsPDTree     ()
 import qualified Program.Bottles
 import qualified Program.Bridge
@@ -16,11 +15,11 @@ import           Program.Programs       (doubleAppendo, rep)
 import qualified Program.Prop
 import           Program.Stlc           (evalo)
 import qualified Program.Unify
+import qualified Subst
 import           Syntax
 import qualified Transformer.ConsPD     as ConsPD
 import qualified Transformer.JustUnfold as JU
 import qualified Transformer.MkToProlog as Mk2Pl
-import qualified Transformer.PrologToMk as Pl2Mk
 
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
 revAcco' = Program revAcco $ fresh ["x", "y"] (call "revacco" [V "x", nil, V "y"])
@@ -141,7 +140,7 @@ unit_isConflicting = do
     test2' ConsPD.isConflicting [(1, C "A" [C "A" []])] [(1, C "A" [C "B" []])] True
     test2' ConsPD.isConflicting [(1, C "A" [])] [(1, C "A" [C "B" []])] True
   where
-    test2' f g1 g2 r = test2 f (Map.fromList g1) (Map.fromList g2) r
+    test2' f g1 g2 r = test2 f (Subst.fromList g1) (Subst.fromList g2) r
 
 unit_findConflicting = do
     test' ConsPD.findConflicting
@@ -172,7 +171,7 @@ unit_findConflicting = do
     a = C "a" []
     b = C "b" []
     c x = C "c" [x]
-    test' f g1 g2 = test f (map Map.fromList g1) (map (map Map.fromList) g2)
+    test' f g1 g2 = test f (map Subst.fromList g1) (map (map Subst.fromList) g2)
 
 unit_productList = do
     test ConsPD.productList [[]] ([] :: [[Int]])
@@ -215,7 +214,7 @@ unit_unifySubsts = do
                            ]
                            (Just [(7, V 9), (5, V 8), (3, V 8 % V 10), (4, V 5 % V 7), (0, V 5 % V 6)])
   where
-    test' f g1 g2 = test f (map Map.fromList g1) (Map.fromList <$> g2)
+    test' f g1 g2 = test f (map Subst.fromList g1) (Subst.fromList <$> g2)
 
 unit_selectMin = do
     test ConsPD.selectMin [(0,0)] ([], (0,0), [])

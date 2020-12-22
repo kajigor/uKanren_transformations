@@ -2,11 +2,9 @@
 module Printer.PDTree where
 
 import Printer.Dot
-import qualified Eval as E
 import Syntax
 import PartialDeduction
 import Text.Printf
-import qualified Subst
 import CPD.LocalControl (getCurr)
 
 instance DotPrinter PDTree where
@@ -17,10 +15,10 @@ instance DotPrinter PDTree where
   labelNode t                = addLeaf     t
 
 instance Dot PDTree where
-  dot (Leaf gs s) = printf "Leaf <BR/> %s <BR/> %s" (dot gs) (Subst.dotSubst s)
+  dot (Leaf gs s) = printf "Leaf <BR/> %s <BR/> %s" (dot gs) (dot s)
   dot Fail = "_|_"
-  dot (Success s) = printf "S <BR/> %s" (Subst.dotSubst s)
+  dot (Success s) = printf "S <BR/> %s" (dot s)
   dot (Or _ g _) = printf "O <BR/> %s" (dot $ getCurr g)
-  dot (Conj _ gs s)  = printf "C <BR/> %s <BR/> %s" (dot gs) (Subst.dotSubst s)
+  dot (Conj _ gs s)  = printf "C <BR/> %s <BR/> %s" (dot gs) (dot s)
   dot (Gen _ g) = printf "G <BR/> %s" (dot g)
-  dot (Split _ gs s) = printf "Split <BR/> %s <BR/> %s" (dot gs) (Subst.dotSubst s)
+  dot (Split _ gs s) = printf "Split <BR/> %s <BR/> %s" (dot gs) (dot s)

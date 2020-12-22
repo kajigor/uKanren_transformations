@@ -11,13 +11,13 @@ import           Data.Maybe
 import           Debug.Trace
 import           Embed
 import qualified Eval               as E
+import qualified FreshNames         as FN
 import           Generalization
 import           Prelude            hiding (lookup, showList)
 import qualified Subst
 import           Syntax
 import           Text.Printf
 import           Unfold             (oneStepUnfold, normalize, unifyStuff, getMaximumBranches)
-import           Util.Miscellaneous
 
 -- trace :: String -> a -> a
 -- trace _ x = x
@@ -73,7 +73,8 @@ showList :: Show a => [a] -> String
 showList = unlines . map show
 
 sldResolutionStep :: [DescendGoal] -> E.Gamma -> Subst.Subst -> [[G S]] -> Bool -> Heuristic -> SldTree
-sldResolutionStep gs env@(p, i, d@(temp:_)) s seen isFirstTime heuristic =
+sldResolutionStep gs env@(p, i, d) s seen isFirstTime heuristic =
+  let (temp, _) = FN.getFreshName d in
   let curs = map getCurr gs in
   let prettySeen = showList seen  in
   -- if variantCheck curs seen
@@ -211,7 +212,7 @@ minimallyGeneral xs =
     go (x:xs) _  = x
     go [] _      = error "Empty list of best matching conjunctions"
 
-bmc :: E.Delta -> [G S] -> [[G S]] -> ([([G S], Generalizer)], E.Delta)
+bmc :: FN.FreshNames -> [G S] -> [[G S]] -> ([([G S], Generalizer)], FN.FreshNames)
 bmc d q [] = ([], d)
 bmc d q (q':qCurly) | msgExists q q' =
   let (generalized, _, gen, delta) = generalizeGoals d q q' in
@@ -227,7 +228,7 @@ bmc d q (q':qCurly) | msgExists q q' =
 bmc d q (q':qCurly) = trace "why msg does not exist?!" $ bmc d q qCurly
 -- bmc d q qCurly = [(\(x,_,_,_) -> x) $ D.generalizeGoals d q q' | q' <- qCurly, msgExists q q']
 
-split :: E.Delta -> [G S] -> [G S] -> (([G S], [G S]), Generalizer, E.Delta)
+split :: FN.FreshNames -> [G S] -> [G S] -> (([G S], [G S]), Generalizer, FN.FreshNames)
 split d q q' = -- q <= q'
   -- trace (printf "splitting\nq:  %s\nq': %s\n" (show q) (show q')) $
   let n = length q in

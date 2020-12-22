@@ -9,42 +9,28 @@ import           CPD.Residualization
 import           Data.Foldable            (for_)
 import           Data.List
 import           Data.Maybe
-import qualified Data.Set                 as Set
 import           Debug.Trace
-import qualified Eval                     as E
+import qualified FreshNames               as FN
 import qualified OCanrenize               as OC
 import           Prelude                  hiding (succ)
 import           Printer.Dot
-import           Printer.GlobalTree
-import           Printer.SldTree
-import           Program.Bool
+import           Printer.GlobalTree ()
+import           Printer.SldTree ()
 import qualified Program.Bottles
-import           Program.Bridge
-import qualified Program.Desert
 import           Program.List
-import           Program.LogicInterpreter
-import           Program.Num
-import           Program.Path             hiding (elem)
 import           Program.Programs
 import           Program.Prop
-import           Program.Sample1
-import           Program.Sort
-import           Program.SpecialProp
-import qualified Program.Sudoku4x4
 import           Program.Unify
 import           Purification
-import           Residualize
+import           Residualization
 import           Syntax
 import           System.Directory
 import           Text.Printf
-import           Unfold
 import           Util.ConjRetriever
 import           Util.Miscellaneous
 import           Embed
 import           System.CPUTime
-import           System.IO
 import           System.Process           (system)
-import           System.TimeIt
 
 
 main :: IO ()
@@ -247,7 +233,7 @@ doOcanrenize = do
   -}
     where
       ocanren filename goal env = do
-        let (tree, logicGoal, names) = GC.topLevel goal Deterministic
+        let (tree, logicGoal, FN.FreshNames names) = GC.topLevel goal Deterministic
         traceM ("\n\n NAMES \n\n" ++ show (vident <$> reverse names) )
         let path = printf "test/out/%s" filename
         exists <- doesDirectoryExist path

@@ -2,7 +2,6 @@ module Program.L where
 
 import Prelude hiding (succ)
 import Syntax
-import Program.Pair
 import Program.List
 import Program.Num
 

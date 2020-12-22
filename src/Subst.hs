@@ -4,23 +4,42 @@ module Subst where
 
 import Syntax
 import qualified Data.Map.Strict as Map
-import Text.Printf
+import Text.Printf ( printf )
 import Data.List ( intercalate )
-import Prelude hiding ( lookup )
+import Prelude hiding ( lookup, null )
 
-type Subst = Map.Map S Ts
+newtype Subst = Subst { getSubst :: Map.Map S Ts }
+              deriving Eq
 
 empty :: Subst
-empty = Map.empty
+empty = Subst Map.empty
 
 lookup :: S -> Subst -> Maybe Ts
-lookup = Map.lookup
+lookup k = Map.lookup k . getSubst
 
 insert :: S -> Ts -> Subst -> Subst
-insert = Map.insert
+insert k v (Subst s) = Subst $ Map.insert k v s
 
-length :: Subst -> Int
-length = Map.size
+size :: Subst -> Int
+size = Map.size . getSubst
+
+difference :: Subst -> Subst -> Subst
+difference (Subst x) (Subst y) = Subst $ Map.difference x y
+
+intersection :: Subst -> Subst -> Subst
+intersection (Subst x) (Subst y) = Subst $ Map.intersection x y
+
+intersectionWith :: (Ts -> Ts -> b) -> Subst -> Subst -> Map.Map S b
+intersectionWith f (Subst x) (Subst y) = Map.intersectionWith f x y
+
+toList :: Subst -> [(S, Ts)]
+toList = Map.toList . getSubst
+
+null :: Subst -> Bool
+null = Map.null . getSubst
+
+fromList :: [(S, Ts)] -> Subst
+fromList = Subst . Map.fromList
 
 -- Applying substitution
 class ApplySubst a where
@@ -43,22 +62,19 @@ instance ApplySubst [G S] where
 ---- Composing substitutions
 o :: Subst -> Subst -> Subst
 o sigma theta =
-  if null $ Map.intersection sigma theta
+  if null $ intersection sigma theta
   then
-    Map.fromList $ map (\ (s, ts) -> (s, substitute sigma ts)) (Map.toList theta) ++ (Map.toList sigma)
+    Subst $ Map.fromList $ map (\ (s, ts) -> (s, substitute sigma ts)) (toList theta) ++ toList sigma
   else
     error "Non-disjoint domains in substitution composition"
 
-dotSubst :: Subst -> String
-dotSubst s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (dot $ V x) (dot y)) (Map.toList s)))
-
 instance Dot Subst where
-  dot = dotSubst
+  dot (Subst s) = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (dot $ V x) (dot y)) (Map.toList s)))
 
-showSubst :: Subst -> String
-showSubst s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (show $ V x) (show y)) (Map.toList s)))
+instance Show Subst where
+  show (Subst s) = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s &rarr; %s" (show $ V x) (show y)) (Map.toList s)))
 
 showSubst' :: Subst -> String
-showSubst' s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s -> %s" (show $ V x) (show y)) (Map.toList s)))
+showSubst' s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s -> %s" (show $ V x) (show y)) (Map.toList (getSubst s))))
 
 

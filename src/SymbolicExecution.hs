@@ -2,21 +2,11 @@
 
 module SymbolicExecution where
 
-import qualified CPD.LocalControl   as LC
-import           Data.Foldable      (foldlM)
-import           Data.List          (find, intersect, partition, (\\))
-import qualified Data.Map.Strict    as M
-import           Data.Maybe         (fromMaybe, mapMaybe)
-import           Debug.Trace        (trace)
-import           Embed
 import qualified Eval               as E
-import           Generalization     (generalizeGoals, generalizeSplit)
 import           Prelude            hiding (or)
 import qualified Subst
 import           Syntax
-import           Text.Printf        (printf)
 import           Unfold             (oneStep)
-import           Util.Miscellaneous (fst3, show')
 
 data SymTree = Fail
              | Success Subst.Subst
@@ -46,7 +36,7 @@ topLevel depth (Program defs goal) =
             state
 
 leaf :: Subst.Subst -> SymTree
-leaf x = if null x then Fail else Success x
+leaf x = if Subst.null x then Fail else Success x
 
 simplify :: SymTree -> SymTree
 simplify =

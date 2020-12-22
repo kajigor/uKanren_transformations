@@ -4,16 +4,14 @@ module CPD.GlobalControl where
 
 import qualified CPD.LocalControl   as LC
 import           Data.List          (find, partition)
-import qualified Data.Map           as Map
 import           Data.Tuple
-import           Debug.Trace
 import           Embed
 import qualified Eval               as E
+import qualified FreshNames         as FN
 import           Generalization     (Generalizer)
 import           Prelude            hiding (sequence)
 import qualified Subst
 import           Syntax
-import           Text.Printf
 import           Util.Miscellaneous
 
 type Descend = LC.Descend
@@ -43,13 +41,13 @@ leaves (Node _ _ _ ch) =
 part :: [G S] -> [[G S]]
 part = LC.mcs
 
-abstract :: Descend [G S] -> [G S] -> E.Delta -> ([([G S], Generalizer)], E.Delta)
+abstract :: Descend [G S] -> [G S] -> FN.FreshNames -> ([([G S], Generalizer)], FN.FreshNames)
 abstract descend goals d =
   let qCurly = part goals in
-  let result = go (map (, Map.empty) qCurly) d in
+  let result = go (map (, Subst.empty) qCurly) d in
   result
    where
-    go [] d@(x:_) = ([], d)
+    go [] d = ([], d)
     go ((m, gen):gs) d =
       case whistle descend m of
         Nothing ->
@@ -65,13 +63,13 @@ whistle :: Descend [G S] -> [G S] -> Maybe [G S]
 whistle descend m =
   find (\b -> Embed.embed b m && not (Embed.isVariant b m)) (sequence descend)
 
-generalize :: [G S] -> [G S] -> E.Delta -> ([([G S], Generalizer)], E.Delta)
+generalize :: [G S] -> [G S] -> FN.FreshNames -> ([([G S], Generalizer)], FN.FreshNames)
 generalize m b d =
   let ((m1, m2), genOrig, delta) = LC.split d b m in -- TODO PCHM
   let genTrue = genOrig in
   --let (generalized, _, gen, delta') = D.generalizeGoals d m1 b in
   -- trace (printf "\nAfter split\n%s\n" (show' $ LC.mcs m1)) $
-  (map (project genTrue) (LC.mcs m1) ++ map (project Map.empty) (LC.mcs m2), delta)
+  (map (project genTrue) (LC.mcs m1) ++ map (project Subst.empty) (LC.mcs m2), delta)
   -- (map (project genTrue) [m1] ++ map (project []) (LC.mcs m2), delta)
     where
       project gen goals = (goals, {- filter (\(x, _) -> (V x) `elem` concatMap LC.vars goals) -} gen)
@@ -87,11 +85,11 @@ conjToList (g :/\: h)     = conjToList g ++ conjToList h
 conjToList x@(Invoke _ _) = [x]
 conjToList _              = error "This conjunction is not a list of calls"
 
-topLevel :: Program -> LC.Heuristic -> (GlobalTree, G S, [S])
+topLevel :: Program -> LC.Heuristic -> (GlobalTree, G S, FN.FreshNames)
 topLevel (Program defs goal) heuristic =
   let gamma = E.gammaFromDefs defs in
   let (logicGoal, gamma', names) = E.preEval gamma goal in
-  trace (printf "\nGoal:\n%s\nNames:\n%s\n" (show goal) (show names)) $
+  -- trace (printf "\nGoal:\n%s\nNames:\n%s\n" (show goal) (show names)) $
   let nodes = [[logicGoal]] in
   (fst $ go nodes (LC.Descend [logicGoal] []) gamma' Subst.empty Subst.empty, logicGoal, names) where
     go nodes d@(LC.Descend goal ancs) gamma subst generalizer =
@@ -107,7 +105,7 @@ topLevel (Program defs goal) heuristic =
 
         if null bodies
         then
-          (Node d Map.empty sldTree [], nodes)
+          (Node d Subst.empty sldTree [], nodes)
         else
           let ancs' = goal : ancs in
           let abstracted = map (abstractChild ancs') bodies in
@@ -128,8 +126,8 @@ topLevel (Program defs goal) heuristic =
                         )
                         ([], newNodes)
                         toUnfold in
-          let forgetEnv = map (\(x, y, _) -> (x, y, Map.empty)) in
+          let forgetEnv = map (\(x, y, _) -> (x, y, Subst.empty)) in
           let forgetStuff = map (\(x, y, gen, _) -> (x,y, gen)) in
           let substLeaves = forgetEnv substs in
           let leaves = forgetStuff toNotUnfold in
-          (Node d generalizer sldTree (map (\(subst, g, gen) -> Leaf (LC.Descend g []) Map.empty subst) (substLeaves ++ leaves) ++ ch), everythingSeenSoFar)
+          (Node d generalizer sldTree (map (\(subst, g, gen) -> Leaf (LC.Descend g []) Subst.empty subst) (substLeaves ++ leaves) ++ ch), everythingSeenSoFar)
