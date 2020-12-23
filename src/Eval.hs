@@ -82,9 +82,9 @@ unifyNoOccursCheck = unifyG (\_ _ -> const False)
 
 
 -- Pre-evaluation
-preEval :: Gamma -> G X -> (G S, Gamma, FN.FreshNames)
+preEval :: Gamma -> G X -> (G S, Gamma, [S])
 preEval =
-    go (FN.FreshNames [])
+    go []
   where
     go vars g@(_, i, _) (t1 :=: t2) =
       (i VI.<@> t1 :=: i VI.<@> t2, g, vars)
@@ -98,7 +98,7 @@ preEval =
       (g1' :\/: g2', g'', vars'')
     go vars (p, i , d) (Fresh x g') =
       let (y, d') = FN.getFreshName d in
-      go (FN.addName y vars) (p, VI.extend i x (V y), d') g'
+      go (y : vars) (p, VI.extend i x (V y), d') g'
     go vars g@(_, i, _) (Invoke f fs)  =
       (Invoke f (map (i VI.<@>) fs), g, vars)
 

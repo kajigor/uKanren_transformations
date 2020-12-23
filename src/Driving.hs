@@ -237,5 +237,5 @@ unfold (sr, args, ids) cs e s gen conjs =
 
 drive :: G X -> (TreeContext, Tree, [Id])
 drive goal =
-  let (goal', (g', i', d'), (FN.FreshNames args)) = E.preEval E.env0 goal in
+  let (goal', (g', i', d'), args) = E.preEval E.env0 goal in
   let (x, y, _) = eval emptyContext [] d' Subst.empty Subst.empty [] (i', g', goal') [] in (x, y, reverse args)

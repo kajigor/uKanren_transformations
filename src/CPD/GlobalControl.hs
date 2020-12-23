@@ -85,7 +85,7 @@ conjToList (g :/\: h)     = conjToList g ++ conjToList h
 conjToList x@(Invoke _ _) = [x]
 conjToList _              = error "This conjunction is not a list of calls"
 
-topLevel :: Program -> LC.Heuristic -> (GlobalTree, G S, FN.FreshNames)
+topLevel :: Program -> LC.Heuristic -> (GlobalTree, G S, [S])
 topLevel (Program defs goal) heuristic =
   let gamma = E.gammaFromDefs defs in
   let (logicGoal, gamma', names) = E.preEval gamma goal in

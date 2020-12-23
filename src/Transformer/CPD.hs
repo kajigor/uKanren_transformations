@@ -9,7 +9,6 @@ import           Data.Foldable            (for_)
 import           Data.List
 import           Data.Maybe
 import           Debug.Trace
-import qualified FreshNames               as FN
 import qualified OCanrenize               as OC
 import           Prelude                  hiding (succ)
 import           Printer.Dot
@@ -28,7 +27,7 @@ import           System.Process           (system)
 import           Text.Printf
 
 transform filename goal env heuristic = do
-    let (tree, logicGoal, FN.FreshNames names) = GC.topLevel goal heuristic
+    let (tree, logicGoal, names) = GC.topLevel goal heuristic
     -- traceM ("\n\n NAMES \n\n" ++ show (vident <$> reverse names) )
     let path = "test/out" </> filename
     exists <- doesDirectoryExist path

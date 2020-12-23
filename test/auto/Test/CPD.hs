@@ -89,7 +89,7 @@ unit_select = do
 unit_popingOutFreshes = do
     test (fst3 . E.preEval E.env0) (fresh ["x", "y"] goal) (callF x' y')
     test (fst3 . E.preEval (E.gammaFromDefs [fDef])) (fresh ["x", "y"] $ goal) (callF x' y')
-    test ((\(x, _, y) -> (x, y)) . E.preEval E.env0) (fresh ["m", "n"] body) (body', FN.FreshNames $ reverse [0..4])
+    test ((\(x, _, y) -> (x, y)) . E.preEval E.env0) (fresh ["m", "n"] body) (body', reverse [0..4])
   where
     x = V "x"
     y = V "y"

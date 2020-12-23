@@ -10,7 +10,6 @@ import           Data.Foldable            (for_)
 import           Data.List
 import           Data.Maybe
 import           Debug.Trace
-import qualified FreshNames               as FN
 import qualified OCanrenize               as OC
 import           Prelude                  hiding (succ)
 import           Printer.Dot
@@ -233,7 +232,7 @@ doOcanrenize = do
   -}
     where
       ocanren filename goal env = do
-        let (tree, logicGoal, FN.FreshNames names) = GC.topLevel goal Deterministic
+        let (tree, logicGoal, names) = GC.topLevel goal Deterministic
         traceM ("\n\n NAMES \n\n" ++ show (vident <$> reverse names) )
         let path = printf "test/out/%s" filename
         exists <- doesDirectoryExist path

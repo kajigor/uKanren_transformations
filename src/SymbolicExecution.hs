@@ -18,7 +18,7 @@ data SymTree = Fail
 topLevel :: Int -> Program -> SymTree
 topLevel depth (Program defs goal) =
     let gamma = E.gammaFromDefs defs in
-    let (logicGoal, gamma', names) = E.preEval gamma goal in
+    let (logicGoal, gamma', _) = E.preEval gamma goal in
     go logicGoal [] gamma' Subst.empty depth
   where
     go goal ctx _ state d | d <= 1 = Prune (goal : ctx) state

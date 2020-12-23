@@ -159,7 +159,7 @@ resultants Fail            = []
 topLevel :: Program -> Heuristic -> SldTree
 topLevel (Program defs goal) heuristic =
   let gamma = E.gammaFromDefs defs in
-  let (logicGoal, gamma', names) = E.preEval gamma goal in
+  let (logicGoal, gamma', _) = E.preEval gamma goal in
   sldResolutionStep [Descend logicGoal []] gamma' Subst.empty [] True heuristic
 
 mcs :: (Eq a, Show a) => [G a] -> [[G a]]

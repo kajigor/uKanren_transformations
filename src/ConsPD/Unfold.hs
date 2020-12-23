@@ -8,6 +8,7 @@ import           Data.List          (partition, sortBy, delete)
 import qualified Data.Map.Strict    as M
 import           Data.Maybe         (catMaybes, fromJust, fromMaybe,
                                      isNothing, mapMaybe)
+import           Data.Ord           (comparing)
 import           Embed
 import qualified Eval               as E
 import qualified FreshNames         as FN
@@ -40,7 +41,7 @@ instance Show ConsPDTree where
   show (Prune gs _) = printf "Prune %s" (show gs)
   show (Gen _ _ _ _ _) = "Gen"
 
-
+-- Ignores the state
 instance Eq ConsPDTree where
   Fail == Fail = True
   Success s _ == Success s' _ = s == s'
@@ -158,7 +159,7 @@ conjToList x          = [x]
 globalLimit :: Int
 globalLimit = 8
 
-justUnfold :: Int -> Program -> (ConsPDTree, G S, FN.FreshNames)
+justUnfold :: Int -> Program -> (ConsPDTree, G S, [S])
 justUnfold limit (Program defs goal) =
     let gamma = E.gammaFromDefs defs in
     let (logicGoal, gamma', names) = E.preEval gamma goal in
@@ -179,7 +180,7 @@ justUnfold limit (Program defs goal) =
       Or children d subst
 
 
-topLevel :: Int -> Program -> (ConsPDTree, G S, FN.FreshNames)
+topLevel :: Int -> Program -> (ConsPDTree, G S, [S])
 topLevel limit (Program defs goal) =
     let gamma = E.gammaFromDefs defs in
     let (logicGoal, gamma', names) = E.preEval gamma goal in
@@ -357,7 +358,7 @@ tryFindSubsts =
 
 selectMin :: (Eq a, Ord b) => [(a, b)] -> ([(a, b)], (a, b), [(a, b)])
 selectMin xs =
-    let minimal = head $ sortBy (\(x,n) (y,m) -> n `compare` m) xs in
+    let minimal = head $ sortBy (comparing snd) xs in
     let (ls, (h:rs)) = span (/= minimal) xs in
     (ls, h, rs)
 

@@ -21,7 +21,7 @@ topLevel input =
   residualize $ ConsPD.Unfold.topLevel (-1) input
 
 
-residualize :: (ConsPDTree, G S, FN.FreshNames) -> Program
+residualize :: (ConsPDTree, G S, [S]) -> Program
 residualize (Fail, goal, names) = Program [] (generateGoal goal names)
 residualize (tree, goal, names) =
   -- let restricted = restrictSubsts tree in
@@ -251,7 +251,7 @@ renameAmbigousVars tree = tree
   --   conj xs = foldl1 (:/\:) xs
 
 
-generateGoal :: G S -> FN.FreshNames -> G X
+generateGoal :: G S -> [S] -> G X
 generateGoal g ns = (Res.vident <$> g)
 
 collectLeaves :: ConsPDTree -> [([G S], [G S])]

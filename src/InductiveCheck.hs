@@ -24,7 +24,7 @@ instance Ord a => Ord (IndWrap (Term a)) where
 isInductive :: Program -> Bool
 isInductive (Program defs goal) =
   let gamma = gammaFromDefs defs in
-  let (logicGoal, gamma', names) = preEval gamma goal in
+  let (logicGoal, gamma', _) = preEval gamma goal in
   let (g', _) = oneStepUnfold (logicGoal) gamma' in
   let normalized = normalize g' in
   let unified = mapMaybe (unifyStuff Subst.empty) normalized in
