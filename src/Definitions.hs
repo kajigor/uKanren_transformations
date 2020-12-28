@@ -4,6 +4,7 @@ import qualified Data.Map as Map
 import Syntax
 
 newtype Definitions = Definitions { getDefinitions :: Map.Map Name Def }
+                    deriving (Show, Ord, Eq)
 
 empty :: Definitions
 empty = Definitions $ Map.empty

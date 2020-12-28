@@ -16,7 +16,6 @@ import           Generalization     (Generalizer, generalizeAllVarsToFree)
 import           Prelude            hiding (or)
 import qualified Subst
 import           Syntax
-import           Text.Printf        (printf)
 import           Unfold             (findBestByComplexity, oneStep, isGoalStatic)
 import           Util.Miscellaneous (fst4)
 import qualified Environment as Env
@@ -29,29 +28,8 @@ data ConsPDTree = Fail
                 | Leaf [G S] Subst.Subst Env.Env [G S] -- last argument is a goal renaming of which current node is
                 | Split [ConsPDTree] [G S] Subst.Subst
                 | Prune [G S] Subst.Subst
-                -- deriving (Show, Eq)
+                deriving (Show, Eq)
 
-
-instance Show ConsPDTree where
-  show Fail = "_|_"
-  show (Success _ _) = "Success"
-  show (Or ch (LC.Descend gs _) _) = printf "Or %s %s" (show gs) (show ch)
-  show (Conj ch gs _) = printf "Conj %s %s" (show gs) (show ch)
-  show (Leaf gs _ _ _) = printf "Leaf %s" (show gs)
-  show (Split ch gs _) = printf "Split %s %s" (show gs) (show ch)
-  show (Prune gs _) = printf "Prune %s" (show gs)
-  show (Gen _ _ _ _ _) = "Gen"
-
--- Ignores the state
-instance Eq ConsPDTree where
-  Fail == Fail = True
-  Success s _ == Success s' _ = s == s'
-  Or ch ds s == Or ch' ds' s' = ch == ch' && ds == ds' && s == s'
-  Conj ch gs s == Conj ch' gs' s' = ch == ch' && gs == gs' && s == s'
-  Leaf gs s _ r == Leaf gs' s' _ r' = gs == gs' && s == s' && r == r'
-  Split ch gs s == Split ch' gs' s' = ch == ch' && gs == gs' && s == s'
-  Prune gs s == Prune gs' s' = gs == gs' && s == s'
-  _ == _ = False
 
 -- conjConcat :: [([([G S], E.Sigma)], Env.Env)] -> Maybe ([([G S], E.Sigma)], Env.Env)
 -- conjConcat x = do

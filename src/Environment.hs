@@ -10,6 +10,7 @@ data Env = Env { getDefs :: Defs.Definitions
                , getInterp :: VI.Interpretation
                , getFreshNames :: FN.FreshNames
                }
+          deriving (Show, Ord, Eq)
 
 
 empty :: Env

@@ -6,6 +6,7 @@ import Data.List ( intercalate )
 import Text.Printf ( printf )
 
 newtype Interpretation = Interpretation { getInterpretation :: Map.Map X Ts }
+                       deriving (Ord, Eq)
 
 ---- Interpreting syntactic variables
 infix 9 <@>

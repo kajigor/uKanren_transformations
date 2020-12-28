@@ -4,11 +4,30 @@ module FreshNames where
 
 import Syntax
 import Prelude hiding ((<))
+import Text.Printf (printf)
 
 newtype PolyFreshNames a = FreshNames { unFreshNames :: [a] }
-                         deriving (Eq, Ord, Functor, Show)
+                         deriving (Ord, Functor)
 
 type FreshNames = PolyFreshNames Int
+
+-- Since there is no way to compare infinite lists, we'll only compare up to this depth
+depth :: Int
+depth = 20
+
+instance Show a => Show (PolyFreshNames a) where
+  show (FreshNames xs) =
+    if length (take depth xs) >= depth
+    then printf "[%s..]" (show $ head xs)
+    else show xs
+
+instance Eq a => Eq (PolyFreshNames a) where
+  FreshNames xs == FreshNames ys =
+    let xs' = take depth xs in
+    let ys' = take depth ys in
+    xs' == ys'
+
+
 
 getFreshName :: FreshNames -> (S, FreshNames)
 getFreshName (FreshNames (h:t)) = (h, FreshNames t)
