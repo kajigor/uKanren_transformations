@@ -7,6 +7,7 @@ import           Prelude            hiding (or)
 import qualified Subst
 import           Syntax
 import           Unfold             (oneStep)
+import qualified Environment as Env
 
 data SymTree = Fail
              | Success Subst.Subst
@@ -17,23 +18,23 @@ data SymTree = Fail
 
 topLevel :: Int -> Program -> SymTree
 topLevel depth (Program defs goal) =
-    let gamma = E.gammaFromDefs defs in
-    let (logicGoal, gamma', _) = E.preEval gamma goal in
-    go logicGoal [] gamma' Subst.empty depth
+    let env = Env.fromDefs defs in
+    let (logicGoal, env', _) = E.preEval env goal in
+    go logicGoal [] env' Subst.empty depth
   where
-    go goal ctx _ state d | d <= 1 = Prune (goal : ctx) state
-    go goal ctx env@(x, y, z) state depth =
-      let (unified, gamma) = oneStep goal env state in
+    go goal ctx _ subst d | d <= 1 = Prune (goal : ctx) subst
+    go goal ctx env@(Env.Env x y z) subst depth =
+      let (unified, env') = oneStep goal env subst in
       Disj (map (\(g, s') ->
                   if null g
                   then
                     leaf s'
                   else
-                    Conj [go (head g) (tail g) gamma s' (depth - 1)] g s'
+                    Conj [go (head g) (tail g) env' s' (depth - 1)] g s'
                 )
                 ((\(g, s) -> (g++ctx, s)) <$> unified))
             (goal : ctx)
-            state
+            subst
 
 leaf :: Subst.Subst -> SymTree
 leaf x = if Subst.null x then Fail else Success x

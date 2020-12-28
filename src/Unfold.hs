@@ -10,24 +10,25 @@ import           Text.Printf         (printf)
 import           Util.Miscellaneous  (fst3, pinpoint)
 import qualified VarInterpretation   as VI
 import qualified Definitions         as Defs
+import qualified Environment as Env
 
-oneStepUnfold :: G S -> E.Gamma -> (G S, E.Gamma)
-oneStepUnfold g@(Invoke f as) env@(p, i, d) =
+oneStepUnfold :: G S -> Env.Env -> (G S, Env.Env)
+oneStepUnfold g@(Invoke f as) env@(Env.Env p i d) =
   let (Def n fs body) = Defs.getDef p f in
   if length fs == length as
   then
     let i' = foldl (\ interp (f, a) -> VI.extend interp f a) i $ zip fs as in
-    let (g', env', _) = E.preEval (p, i', d) body in
+    let (g', env', _) = E.preEval (Env.Env p i' d) body in
     (g', env')
   else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
 oneStepUnfold g env = (g, env)
 
-oneStep :: G S -> E.Gamma -> Subst.Subst -> ([([G S], Subst.Subst)], E.Gamma)
+oneStep :: G S -> Env.Env -> Subst.Subst -> ([([G S], Subst.Subst)], Env.Env)
 oneStep goal env state =
-    let (unfolded, gamma) = oneStepUnfold goal env in
+    let (unfolded, env') = oneStepUnfold goal env in
     let normalized = normalize unfolded in
     let unified = mapMaybe (unifyStuff state) normalized in
-    (unified, gamma)
+    (unified, env')
 
 normalize :: G S -> [[G S]] -- disjunction of conjunctions of calls and unifications
 normalize (f :\/: g) = normalize f ++ normalize g
@@ -48,8 +49,8 @@ unifyStuff state gs =
 
 maximumBranches :: Def -> Int
 maximumBranches def@(Def _ args body) =
-    let goal = fst3 $ E.preEval E.env0 (fresh args body) in
-    length $ fst $ oneStep (succeed goal) E.env0 Subst.empty
+    let goal = fst3 $ E.preEval Env.empty (fresh args body) in
+    length $ fst $ oneStep (succeed goal) Env.empty Subst.empty
   where
     succeed (g :/\: h)         = succeed g :/\: succeed h
     succeed (g :\/: h)         = succeed g :\/: succeed h
@@ -59,30 +60,30 @@ maximumBranches def@(Def _ args body) =
 
     success = C "" [] :=: C "" []
 
-getMaximumBranches :: E.Gamma -> G S -> Int
-getMaximumBranches (p,_,_) (Invoke name _) =
+getMaximumBranches :: Env.Env -> G S -> Int
+getMaximumBranches (Env.Env p _ _) (Invoke name _) =
     let def = Defs.getDef p name in
     maximumBranches def
 
 
-notMaximumBranches :: E.Gamma -> Subst.Subst -> G S -> Bool
-notMaximumBranches gamma@(p, _, _) state goal@(Invoke name args) =
+notMaximumBranches :: Env.Env -> Subst.Subst -> G S -> Bool
+notMaximumBranches env@(Env.Env p _ _) state goal@(Invoke name args) =
     let maxBranches = maximumBranches (Defs.getDef p name) in
-    let (unfolded, _) = oneStep goal gamma state in
+    let (unfolded, _) = oneStep goal env state in
     length unfolded < maxBranches
     -- let result = length unfolded < maxBranches in
     -- trace (printf "\nGoal: %s\nNot maximum branches: %s\nUnfoldComplexity: %s\nUnfolded: %s\nMaxBranches: %s\n" (show goal) (show result) (show $ length $ filter (not . null . fst) unfolded) (show $ length unfolded) (show maxBranches)) $
     -- result
 notMaximumBranches _ _ _ = False
 
--- unfoldComplexity :: E.Gamma -> E.Sigma -> G S -> Int
--- unfoldComplexity gamma@(p, _, _) state goal@(Invoke name args) =
---     let (unfolded, _) = oneStep goal gamma state in
+-- unfoldComplexity :: Env.Env -> E.Sigma -> G S -> Int
+-- unfoldComplexity env@(p, _, _) state goal@(Invoke name args) =
+--     let (unfolded, _) = oneStep goal env state in
 --     (length $ filter (not . null . fst) unfolded)
 
--- unfoldComplexity :: E.Gamma -> E.Sigma -> G S -> (Int, Int)
--- unfoldComplexity gamma@(p, _, _) state goal@(Invoke name args) =
---     let (unfolded, _) = oneStep goal gamma state in
+-- unfoldComplexity :: Env.Env -> E.Sigma -> G S -> (Int, Int)
+-- unfoldComplexity env@(p, _, _) state goal@(Invoke name args) =
+--     let (unfolded, _) = oneStep goal env state in
 --     trace (printf "\nUnfolded:\nGoal: %s\n%s\n" (show goal) (show' unfolded)) $
 --     (length $ filter (not . null . fst) unfolded, length unfolded)
 
@@ -93,10 +94,10 @@ instance Ord Complexity where
   (Complexity max cur subst) <= (Complexity max' cur' subst') =
     cur < max || cur - subst >= cur' - subst' || cur <= cur'
 
-findBestByComplexity :: E.Gamma -> Subst.Subst -> [G S] -> Maybe ([G S], G S, [G S])
-findBestByComplexity gamma sigma goals =
-    let estimated = map (\g -> (g, unfoldComplexity gamma sigma g)) goals in
-    pinpoint (\(Invoke name _) -> static gamma name) goals
+findBestByComplexity :: Env.Env -> Subst.Subst -> [G S] -> Maybe ([G S], G S, [G S])
+findBestByComplexity env sigma goals =
+    let estimated = map (\g -> (g, unfoldComplexity env sigma g)) goals in
+    pinpoint (\(Invoke name _) -> static env name) goals
     <|> throwAwayComplexity (onlySubsts estimated
                              <|> deterministic estimated
                              <|> maxBranch estimated
@@ -110,15 +111,15 @@ findBestByComplexity gamma sigma goals =
       (ls, x, rs) <- input
       return (map fst ls, fst x, map fst rs)
 
-unfoldComplexity :: E.Gamma -> Subst.Subst -> G S -> Complexity
-unfoldComplexity gamma@(p, _, _) sigma goal@(Invoke name _) =
-  let (unfolded, _) = oneStep goal gamma sigma in
+unfoldComplexity :: Env.Env -> Subst.Subst -> G S -> Complexity
+unfoldComplexity env@(Env.Env p _ _) sigma goal@(Invoke name _) =
+  let (unfolded, _) = oneStep goal env sigma in
   let max = maximumBranches (Defs.getDef p name) in
-  -- trace (printf "\n%s is %s\n" name (if static gamma name then "static" else "not static")) $
+  -- trace (printf "\n%s is %s\n" name (if static env name then "static" else "not static")) $
   Complexity max (length unfolded) (length $ filter (null . fst) unfolded)
 
-static :: E.Gamma -> String -> Bool
-static (p, _, _) name =
+static :: Env.Env -> String -> Bool
+static (Env.Env p _ _) name =
     go (Set.fromList [name]) (getBody name)
   where
     go set (Invoke name _) | Set.member name set = False
@@ -131,7 +132,7 @@ static (p, _, _) name =
     getBody name =
       let Def _ _ body = Defs.getDef p name in body
 
-isGoalStatic :: E.Gamma -> G S -> Bool
-isGoalStatic gamma (Invoke name _) =
-  static gamma name
+isGoalStatic :: Env.Env -> G S -> Bool
+isGoalStatic env (Invoke name _) =
+  static env name
 isGoalStatic _ _ = False

@@ -6,8 +6,8 @@ import Prelude hiding (max)
 greater :: [Def]
 greater = [greaterDef]
 
-greaterDef :: Def 
-greaterDef = 
+greaterDef :: Def
+greaterDef =
     Def "greater" ["a0", "b0", "q146"] (
       ((V "a0" === C "o" []) &&&
       (V "q146" === C "false" [])) |||
@@ -24,7 +24,7 @@ grForPerson :: [Def]
 grForPerson = [grForPersonDef]
 
 grForPersonDef :: Def
-grForPersonDef = 
+grForPersonDef =
     Def "grForPerson" ["x", "y", "q129"] (
       ((V "x" === C "a" []) &&&
       (((V "y" === C "a" []) &&&
@@ -58,10 +58,10 @@ grForPersonDef =
     )
 
 max :: [Def]
-max = maxDef : greater 
+max = maxDef : greater
 
-maxDef :: Def 
-maxDef = 
+maxDef :: Def
+maxDef =
     Def "max" ["a0", "b0", "q125"] (
       fresh ["q126"] (
         (call "greater" [V "a0", V "b0", V "q126"]) &&&
@@ -75,7 +75,7 @@ add :: [Def]
 add = [addDef]
 
 addDef :: Def
-addDef = 
+addDef =
     Def "add" ["a0", "b0", "q123"] (
       ((V "a0" === C "o" []) &&&
       (V "b0" === V "q123")) |||
@@ -87,8 +87,8 @@ addDef =
 eqForBool :: [Def]
 eqForBool = [eqForBoolDef]
 
-eqForBoolDef :: Def 
-eqForBoolDef = 
+eqForBoolDef :: Def
+eqForBoolDef =
     Def "eqForBool" ["a", "b", "q109"] (
       fresh ["q107", "q108"] (
         (((V "a" === C "false" []) &&&
@@ -110,12 +110,12 @@ eqForBoolDef =
         (V "q109" === V "q108"))))
     )
 
-eqForState :: [Def]
-eqForState = eqForStateDef : eqForBool 
+eqForEnv :: [Def]
+eqForEnv = eqForEnvDef : eqForBool
 
-eqForStateDef :: Def
-eqForStateDef = 
-    Def "eqForState" ["x", "y", "q81"] (
+eqForEnvDef :: Def
+eqForEnvDef =
+    Def "eqForEnv" ["x", "y", "q81"] (
       fresh ["l1", "a1", "b1", "c1", "d1"] (
         (V "x" === C "st" [V "l1", V "a1", V "b1", V "c1", V "d1"]) &&&
         (fresh ["l2", "a2", "b2", "c2", "d2"] (
@@ -147,14 +147,14 @@ eqForStateDef =
               (V "q81" === V "q84"))))))))
     )
 
-checkPerson :: [Def] 
+checkPerson :: [Def]
 checkPerson = checkPersonDef : eqForBool
 
-checkPersonDef :: Def 
-checkPersonDef = 
-    Def "checkPerson" ["state", "person", "q79"] (
+checkPersonDef :: Def
+checkPersonDef =
+    Def "checkPerson" ["Env", "person", "q79"] (
       fresh ["l", "a0", "b0", "c0", "d0"] (
-        (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
+        (V "Env" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
         (((V "person" === C "a" []) &&&
         (call "eqForBool" [V "a0", V "l", V "q79"])) |||
         ((V "person" === C "b" []) &&&
@@ -166,20 +166,20 @@ checkPersonDef =
     )
 
 checkStep :: [Def]
-checkStep = checkStepDef : checkPerson ++ grForPerson 
+checkStep = checkStepDef : checkPerson ++ grForPerson
 
-checkStepDef :: Def 
-checkStepDef = 
-    Def "checkStep" ["state", "step", "q66"] (
+checkStepDef :: Def
+checkStepDef =
+    Def "checkStep" ["Env", "step", "q66"] (
       (fresh ["p"] (
         (V "step" === C "one" [V "p"]) &&&
-        (call "checkPerson" [V "state", V "p", V "q66"]))) |||
+        (call "checkPerson" [V "Env", V "p", V "q66"]))) |||
       (fresh ["p", "q"] (
         (V "step" === C "two" [V "p", V "q"]) &&&
         (fresh ["q67", "q68"] (
-            (call "checkPerson" [V "state", V "p", V "q67"]) &&&
+            (call "checkPerson" [V "Env", V "p", V "q67"]) &&&
             (fresh ["q73", "q74"] (
-              (call "checkPerson" [V "state", V "q", V "q73"]) &&&
+              (call "checkPerson" [V "Env", V "q", V "q73"]) &&&
               (call "grForPerson" [V "p", V "q", V "q74"]) &&&
               (((V "q73" === C "false" []) &&&
               (V "q68" === C "false" [])) |||
@@ -194,11 +194,11 @@ checkStepDef =
 moveLight :: [Def]
 moveLight = [moveLightDef]
 
-moveLightDef :: Def 
-moveLightDef = 
-    Def "moveLight" ["state", "q61"] (
+moveLightDef :: Def
+moveLightDef =
+    Def "moveLight" ["Env", "q61"] (
       fresh ["l", "a0", "b0", "c0", "d0"] (
-        (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
+        (V "Env" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
         (fresh ["q62"] (
           (V "q61" === C "st" [V "q62", V "a0", V "b0", V "c0", V "d0"]) &&&
           (((V "l" === C "true" []) &&&
@@ -210,11 +210,11 @@ moveLightDef =
 movePerson :: [Def]
 movePerson = [movePersonDef]
 
-movePersonDef :: Def 
-movePersonDef = 
-    Def "movePerson" ["state", "person", "q43"] (
+movePersonDef :: Def
+movePersonDef =
+    Def "movePerson" ["Env", "person", "q43"] (
       fresh ["l", "a0", "b0", "c0", "d0"] (
-        (V "state" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
+        (V "Env" === C "st" [V "l", V "a0", V "b0", V "c0", V "d0"]) &&&
         (((V "person" === C "a" []) &&&
         (fresh ["q45"] (
           (V "q43" === C "st" [V "l", V "q45", V "b0", V "c0", V "d0"]) &&&
@@ -248,19 +248,19 @@ movePersonDef =
 step :: [Def]
 step = stepDef : movePerson ++ moveLight
 
-stepDef :: Def 
-stepDef = 
-    Def "step" ["state", "step", "q36"] (
+stepDef :: Def
+stepDef =
+    Def "step" ["Env", "step", "q36"] (
       (fresh ["p"] (
         (V "step" === C "one" [V "p"]) &&&
         (fresh ["q37"] (
-            (call "movePerson" [V "state", V "p", V "q37"]) &&&
+            (call "movePerson" [V "Env", V "p", V "q37"]) &&&
             (call "moveLight" [V "q37", V "q36"]))))) |||
       (fresh ["p", "q"] (
         (V "step" === C "two" [V "p", V "q"]) &&&
         (fresh ["q39"] (
             (fresh ["q41"] (
-              (call "movePerson" [V "state", V "p", V "q41"]) &&&
+              (call "movePerson" [V "Env", V "p", V "q41"]) &&&
               (call "movePerson" [V "q41", V "q", V "q39"]))) &&&
             (call "moveLight" [V "q39", V "q36"])))))
     )
@@ -268,8 +268,8 @@ stepDef =
 times :: [Def]
 times = [timesDef]
 
-timesDef :: Def 
-timesDef = 
+timesDef :: Def
+timesDef =
     Def "times" ["p", "q31"] (
       ((V "p" === C "a" []) &&&
       (V "q31" === C "s" [C "o" []])) |||
@@ -285,13 +285,13 @@ getTime :: [Def]
 getTime = getTimeDef : times ++ max
 
 getTimeDef :: Def
-getTimeDef = 
-    Def "getTime" ["state", "q27"] (
+getTimeDef =
+    Def "getTime" ["Env", "q27"] (
       (fresh ["p"] (
-        (V "state" === C "one" [V "p"]) &&&
+        (V "Env" === C "one" [V "p"]) &&&
         (call "times" [V "p", V "q27"]))) |||
       (fresh ["p", "q"] (
-        (V "state" === C "two" [V "p", V "q"]) &&&
+        (V "Env" === C "two" [V "p", V "q"]) &&&
         (fresh ["q28", "q29"] (
             (call "times" [V "p", V "q28"]) &&&
             (call "times" [V "q", V "q29"]) &&&
@@ -301,31 +301,31 @@ getTimeDef =
 start :: [Def]
 start = [startDef]
 
-startDef :: Def 
-startDef = 
+startDef :: Def
+startDef =
     Def "start" ["q1"] (V "q1" === C "st" [C "true" [], C "true" [], C "true" [], C "true" [], C "true" []])
 
 finish :: [Def]
 finish = [finishDef]
 
-finishDef :: Def 
-finishDef = 
+finishDef :: Def
+finishDef =
     Def "finish" ["q2"] (V "q2" === C "st" [C "false" [], C "false" [], C "false" [], C "false" [], C "false" []])
 
 getAnswer' :: [Def]
-getAnswer' = getAnswer'Def : checkStep ++ step ++ getTime ++ add ++ finish ++ eqForState 
+getAnswer' = getAnswer'Def : checkStep ++ step ++ getTime ++ add ++ finish ++ eqForEnv
 
-getAnswer'Def :: Def 
-getAnswer'Def = 
-    Def "getAnswer'" ["answer", "state", "q3"] (
+getAnswer'Def :: Def
+getAnswer'Def =
+    Def "getAnswer'" ["answer", "Env", "q3"] (
       (fresh ["x", "xs"] (
         (V "answer" === C "%" [V "x", V "xs"]) &&&
         (fresh ["q5"] (
-            (call "checkStep" [V "state", V "x", V "q5"]) &&&
+            (call "checkStep" [V "Env", V "x", V "q5"]) &&&
             (((V "q5" === C "true" []) &&&
             (fresh ["q7"] (
               (fresh ["q13"] (
-                  (call "step" [V "state", V "x", V "q13"]) &&&
+                  (call "step" [V "Env", V "x", V "q13"]) &&&
                   (call "getAnswer'" [V "xs", V "q13", V "q7"]))) &&&
               (((V "q7" === C "none" []) &&&
               (V "q3" === C "none" [])) |||
@@ -342,7 +342,7 @@ getAnswer'Def =
       (fresh ["q17"] (
         (fresh ["q20"] (
             (call "finish" [V "q20"]) &&&
-            (call "eqForState" [V "state", V "q20", V "q17"]))) &&&
+            (call "eqForEnv" [V "Env", V "q20", V "q17"]))) &&&
         (((V "q17" === C "true" []) &&&
         (V "q3" === C "some" [C "o" []])) |||
         ((V "q17" === C "false" []) &&&
@@ -350,10 +350,10 @@ getAnswer'Def =
     )
 
 getAnswer :: [Def]
-getAnswer = getAnswerDef : start ++ getAnswer' 
+getAnswer = getAnswerDef : start ++ getAnswer'
 
-getAnswerDef :: Def 
-getAnswerDef = 
+getAnswerDef :: Def
+getAnswerDef =
     Def "getAnswer" ["answer", "q26"] (
       fresh ["q22"] (
         (call "start" [V "q22"]) &&&
@@ -363,19 +363,19 @@ result :: [Def]
 result = [resultDef]
 
 resultDef :: Def
-resultDef = 
+resultDef =
     Def "result" ["q0"] (
       V "q0" === C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]]]]]]]]
-    ) 
+    )
 
 tree1 :: [Def]
-tree1 = 
+tree1 =
     [ greaterDef
     , grForPersonDef
     , maxDef
     , addDef
     , eqForBoolDef
-    , eqForStateDef
+    , eqForEnvDef
     , checkPersonDef
     , checkStepDef
     , moveLightDef
@@ -387,6 +387,6 @@ tree1 =
     , resultDef
     ]
 
-env :: String 
-env = 
-  "open MiniKanren\nopen MiniKanrenStd\ntype 'a0 gpeano =\n  | O \n  | S of 'a0 \nlet rec fmap fa0 = function | O -> O | S a0 -> S (fa0 a0)\nmodule For_gpeano =\n  (Fmap)(struct\n           let rec fmap fa0 = function | O -> O | S a0 -> S (fa0 a0)\n           type 'a0 t = 'a0 gpeano\n         end)\nlet rec o () = inj (For_gpeano.distrib O)\nand s x__0 = inj (For_gpeano.distrib (S x__0))\ntype person =\n  | A \n  | B \n  | C \n  | D \nlet a () = !! A\nlet b () = !! B\nlet c () = !! C\nlet d () = !! D\ntype 'a0 gstep =\n  | One of 'a0 \n  | Two of 'a0 * 'a0 \nlet rec fmap fa0 =\n  function\n  | One a0 -> One (fa0 a0)\n  | Two (a0_0, a0_1) -> Two ((fa0 a0_0), (fa0 a0_1))\nmodule For_gstep =\n  (Fmap)(struct\n           let rec fmap fa0 =\n             function\n             | One a0 -> One (fa0 a0)\n             | Two (a0_0, a0_1) -> Two ((fa0 a0_0), (fa0 a0_1))\n           type 'a0 t = 'a0 gstep\n         end)\nlet rec one x__0 = inj (For_gstep.distrib (One x__0))\nand two x__0 x__1 = inj (For_gstep.distrib (Two (x__0, x__1)))\ntype 'a0 gstate =\n  | St of 'a0 * 'a0 * 'a0 * 'a0 * 'a0 \nlet rec fmap fa0 =\n  function\n  | St (a0_0, a0_1, a0_2, a0_3, a0_4) ->\n      St ((fa0 a0_0), (fa0 a0_1), (fa0 a0_2), (fa0 a0_3), (fa0 a0_4))\nmodule For_gstate =\n  (Fmap)(struct\n           let rec fmap fa0 =\n             function\n             | St (a0_0, a0_1, a0_2, a0_3, a0_4) ->\n                 St\n                   ((fa0 a0_0), (fa0 a0_1), (fa0 a0_2), (fa0 a0_3),\n                     (fa0 a0_4))\n           type 'a0 t = 'a0 gstate\n         end)\nlet rec st x__0 x__1 x__2 x__3 x__4 =\n  inj (For_gstate.distrib (St (x__0, x__1, x__2, x__3, x__4)))"
+env :: String
+env =
+  "open MiniKanren\nopen MiniKanrenStd\ntype 'a0 gpeano =\n  | O \n  | S of 'a0 \nlet rec fmap fa0 = function | O -> O | S a0 -> S (fa0 a0)\nmodule For_gpeano =\n  (Fmap)(struct\n           let rec fmap fa0 = function | O -> O | S a0 -> S (fa0 a0)\n           type 'a0 t = 'a0 gpeano\n         end)\nlet rec o () = inj (For_gpeano.distrib O)\nand s x__0 = inj (For_gpeano.distrib (S x__0))\ntype person =\n  | A \n  | B \n  | C \n  | D \nlet a () = !! A\nlet b () = !! B\nlet c () = !! C\nlet d () = !! D\ntype 'a0 gstep =\n  | One of 'a0 \n  | Two of 'a0 * 'a0 \nlet rec fmap fa0 =\n  function\n  | One a0 -> One (fa0 a0)\n  | Two (a0_0, a0_1) -> Two ((fa0 a0_0), (fa0 a0_1))\nmodule For_gstep =\n  (Fmap)(struct\n           let rec fmap fa0 =\n             function\n             | One a0 -> One (fa0 a0)\n             | Two (a0_0, a0_1) -> Two ((fa0 a0_0), (fa0 a0_1))\n           type 'a0 t = 'a0 gstep\n         end)\nlet rec one x__0 = inj (For_gstep.distrib (One x__0))\nand two x__0 x__1 = inj (For_gstep.distrib (Two (x__0, x__1)))\ntype 'a0 gEnv =\n  | St of 'a0 * 'a0 * 'a0 * 'a0 * 'a0 \nlet rec fmap fa0 =\n  function\n  | St (a0_0, a0_1, a0_2, a0_3, a0_4) ->\n      St ((fa0 a0_0), (fa0 a0_1), (fa0 a0_2), (fa0 a0_3), (fa0 a0_4))\nmodule For_gEnv =\n  (Fmap)(struct\n           let rec fmap fa0 =\n             function\n             | St (a0_0, a0_1, a0_2, a0_3, a0_4) ->\n                 St\n                   ((fa0 a0_0), (fa0 a0_1), (fa0 a0_2), (fa0 a0_3),\n                     (fa0 a0_4))\n           type 'a0 t = 'a0 gEnv\n         end)\nlet rec st x__0 x__1 x__2 x__3 x__4 =\n  inj (For_gEnv.distrib (St (x__0, x__1, x__2, x__3, x__4)))"

@@ -13,6 +13,7 @@ import           Prelude            hiding (sequence)
 import qualified Subst
 import           Syntax
 import           Util.Miscellaneous
+import qualified Environment as Env
 
 type Descend = LC.Descend
 
@@ -74,11 +75,11 @@ generalize m b d =
     where
       project gen goals = (goals, {- filter (\(x, _) -> (V x) `elem` concatMap LC.vars goals) -} gen)
 
-abstractChild :: [[G S]] -> (Subst.Subst, [G S], Maybe E.Gamma) -> [(Subst.Subst, [G S], Generalizer, E.Gamma)]
+abstractChild :: [[G S]] -> (Subst.Subst, [G S], Maybe Env.Env) -> [(Subst.Subst, [G S], Generalizer, Env.Env)]
 abstractChild _ (_, _, Nothing) = []
-abstractChild ancs (subst, g, Just env@(x, y, d)) =
+abstractChild ancs (subst, g, Just env@(Env.Env x y d)) =
   let (abstracted, delta) = abstract (LC.Descend g ancs) g d in
-  map (\(g, gen) -> (subst, g, gen, (x, y, delta))) abstracted
+  map (\(g, gen) -> (subst, g, gen, (Env.Env x y delta))) abstracted
 
 conjToList :: G a -> [G a]
 conjToList (g :/\: h)     = conjToList g ++ conjToList h
@@ -87,20 +88,20 @@ conjToList _              = error "This conjunction is not a list of calls"
 
 topLevel :: Program -> LC.Heuristic -> (GlobalTree, G S, [S])
 topLevel (Program defs goal) heuristic =
-  let gamma = E.gammaFromDefs defs in
-  let (logicGoal, gamma', names) = E.preEval gamma goal in
+  let env = Env.fromDefs defs in
+  let (logicGoal, env', names) = E.preEval env goal in
   -- trace (printf "\nGoal:\n%s\nNames:\n%s\n" (show goal) (show names)) $
   let nodes = [[logicGoal]] in
-  (fst $ go nodes (LC.Descend [logicGoal] []) gamma' Subst.empty Subst.empty, logicGoal, names) where
-    go nodes d@(LC.Descend goal ancs) gamma subst generalizer =
-      -- if head (trd3 gamma) > 10
+  (fst $ go nodes (LC.Descend [logicGoal] []) env' Subst.empty Subst.empty, logicGoal, names) where
+    go nodes d@(LC.Descend goal ancs) env subst generalizer =
+      -- if head (Env.getFreshNames env) > 10
       -- then (Prune d subst, nodes)
       -- else
         let subst = Subst.empty in
         -- let newNodes = (delete goal nodes) in
         let newNodes = filter (not . Embed.isVariant goal) nodes in
 
-        let sldTree = LC.sldResolution goal gamma subst newNodes heuristic in
+        let sldTree = LC.sldResolution goal env subst newNodes heuristic in
         let (substs, bodies) = partition (null . snd3) $ LC.resultants sldTree in
 
         if null bodies

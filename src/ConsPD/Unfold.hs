@@ -19,13 +19,14 @@ import           Syntax
 import           Text.Printf        (printf)
 import           Unfold             (findBestByComplexity, oneStep, isGoalStatic)
 import           Util.Miscellaneous (fst4)
+import qualified Environment as Env
 
 data ConsPDTree = Fail
-                | Success Subst.Subst E.Gamma
+                | Success Subst.Subst Env.Env
                 | Or [ConsPDTree] (LC.Descend [G S]) Subst.Subst
                 | Conj [ConsPDTree] [G S] Subst.Subst
                 | Gen ConsPDTree [G S] [G S] Generalizer Subst.Subst
-                | Leaf [G S] Subst.Subst E.Gamma [G S] -- last argument is a goal renaming of which current node is
+                | Leaf [G S] Subst.Subst Env.Env [G S] -- last argument is a goal renaming of which current node is
                 | Split [ConsPDTree] [G S] Subst.Subst
                 | Prune [G S] Subst.Subst
                 -- deriving (Show, Eq)
@@ -52,7 +53,7 @@ instance Eq ConsPDTree where
   Prune gs s == Prune gs' s' = gs == gs' && s == s'
   _ == _ = False
 
--- conjConcat :: [([([G S], E.Sigma)], E.Gamma)] -> Maybe ([([G S], E.Sigma)], E.Gamma)
+-- conjConcat :: [([([G S], E.Sigma)], Env.Env)] -> Maybe ([([G S], E.Sigma)], Env.Env)
 -- conjConcat x = do
 --     let (goals, envs) = unzip x
 --     cGoals <- mapM goalsConcat goals
@@ -100,30 +101,30 @@ restrictSubsts =
     go _ Fail                = Fail
 
 
-incrDeepOneStep :: Int -> Int -> G S -> E.Gamma -> Subst.Subst -> Maybe ([([G S], Subst.Subst)], E.Gamma)
+incrDeepOneStep :: Int -> Int -> G S -> Env.Env -> Subst.Subst -> Maybe ([([G S], Subst.Subst)], Env.Env)
 incrDeepOneStep limit depth _ _ _ | limit < depth = Nothing
 incrDeepOneStep limit depth goal env state =
-    let (unified, gamma) = oneStep goal env state in
+    let (unified, env') = oneStep goal env state in
     if all (not . null . fst) unified
     then do
       (goals, newEnv) <-
         foldlM
-          (\(acc, env) (gs, sigma) -> do
-            (x, env') <-
+          (\(acc, e) (gs, sigma) -> do
+            (x, e') <-
               foldlM
-                (\(acc, env) g -> do
-                    (x, env') <- incrDeepOneStep limit (depth + 1) g env sigma
-                    return (x : acc, env')
+                (\(acc, e) g -> do
+                    (x, e') <- incrDeepOneStep limit (depth + 1) g e sigma
+                    return (x : acc, e')
                 )
-                ([], env)
+                ([], e)
                 gs
-            return (acc ++ x, env')
+            return (acc ++ x, e')
           )
-          ([], gamma)
+          ([], env')
           unified
       return (mapMaybe goalsConcat $ productList goals, newEnv)
     else
-      return (unified, gamma)
+      return (unified, env')
 
 realIncrDeep :: Int -> (a -> a) -> a -> a
 realIncrDeep 0 _ x = x
@@ -136,7 +137,7 @@ realIncrDeep globalLimit f x =
     go localLimit curr f x =
       go localLimit (curr + 1) f (f x)
 
-leaf :: Subst.Subst -> E.Gamma -> ConsPDTree
+leaf :: Subst.Subst -> Env.Env -> ConsPDTree
 leaf s e =
   if Subst.null s then Fail else Success s e
 
@@ -161,36 +162,36 @@ globalLimit = 8
 
 justUnfold :: Int -> Program -> (ConsPDTree, G S, [S])
 justUnfold limit (Program defs goal) =
-    let gamma = E.gammaFromDefs defs in
-    let (logicGoal, gamma', names) = E.preEval gamma goal in
-    (go 0 (LC.Descend (conjToList logicGoal) []) gamma' Subst.empty, logicGoal, names)
+    let env = Env.fromDefs defs in
+    let (logicGoal, env', names) = E.preEval env goal in
+    (go 0 (LC.Descend (conjToList logicGoal) []) env' Subst.empty, logicGoal, names)
   where
-    go n (LC.Descend gs ancs) gamma subst | n > limit || length gs > 1 =
+    go n (LC.Descend gs ancs) env subst | n > limit || length gs > 1 =
       case findVariant gs ancs of
         Nothing -> Prune gs subst
-        Just v -> Leaf gs subst gamma v
-    go n d@(LC.Descend gs ancs) gamma subst =
+        Just v -> Leaf gs subst env v
+    go n d@(LC.Descend gs ancs) env subst =
       let [goal] = Subst.substitute subst gs in
       let addDescend g = LC.Descend g ([goal] : ancs) in
-      let (unified, gamma') = oneStep goal gamma subst in
+      let (unified, env') = oneStep goal env subst in
       let children = map (\(gs, s) -> if null gs
-                                      then Success s gamma'
-                                      else go (n+1) (addDescend gs) gamma' s
+                                      then Success s env'
+                                      else go (n+1) (addDescend gs) env' s
                          ) unified in
       Or children d subst
 
 
 topLevel :: Int -> Program -> (ConsPDTree, G S, [S])
 topLevel limit (Program defs goal) =
-    let gamma = E.gammaFromDefs defs in
-    let (logicGoal, gamma', names) = E.preEval gamma goal in
+    let env = Env.fromDefs defs in
+    let (logicGoal, env', names) = E.preEval env goal in
     let nodes = [] in
     let failed = [] in
     let descend = LC.Descend (conjToList logicGoal) [] in
-    (fst4 $ go descend gamma' nodes Subst.empty failed, logicGoal, names)
+    (fst4 $ go descend env' nodes Subst.empty failed, logicGoal, names)
   where
-    go :: LC.Descend [G S] -> E.Gamma -> [[G S]] -> Subst.Subst -> [[G S]] -> (ConsPDTree, [[G S]], [[G S]], E.Gamma)
-    go (LC.Descend goal' ancs') env@(x,y,z) seen state failed =
+    go :: LC.Descend [G S] -> Env.Env -> [[G S]] -> Subst.Subst -> [[G S]] -> (ConsPDTree, [[G S]], [[G S]], Env.Env)
+    go (LC.Descend goal' ancs') env@(Env.Env x y z) seen state failed =
      let (hd, _) = FN.getFreshName z in
      let goal = Subst.substitute state goal' in
      let seen' = goal : seen in
@@ -308,10 +309,11 @@ topLevel limit (Program defs goal) =
                             unified in
       (reverse ch, allSeenGoals, actualFailed, actualEnv)
 
-    merge (_, _, d) newEnv@(x, y, z) =
-      if d > z then (x, y, d) else newEnv
+    merge :: Env.Env -> Env.Env -> Env.Env
+    merge (Env.Env _ _ d) newEnv@(Env.Env x y z) =
+      if d > z then Env.Env x y d else newEnv
 
-createLeafNode :: [[G S]] -> ([G S], Subst.Subst, E.Gamma) -> ConsPDTree
+createLeafNode :: [[G S]] -> ([G S], Subst.Subst, Env.Env) -> ConsPDTree
 createLeafNode seen = go
   where
     go ([], state, env) = leaf state env
@@ -319,7 +321,7 @@ createLeafNode seen = go
       case findVariant gs seen of
         Just v -> Leaf  gs state env v
         Nothing -> Prune gs state
--- limitSubsts :: [([G S], E.Sigma, E.Gamma)] -> E.Sigma -> [([G S], E.Sigma, E.Gamma)]
+-- limitSubsts :: [([G S], E.Sigma, Env.Env)] -> E.Sigma -> [([G S], E.Sigma, Env.Env)]
 -- limitSubsts xs state =
 --     let varsToLeave = nub $ map fst state ++ concatMap (fv . snd) state in
 --     map (\(gs, st, env) -> (gs, go varsToLeave gs st, env)) xs
@@ -329,7 +331,7 @@ createLeafNode seen = go
 --       filter (\(v,t) -> any (`elem` varsToLeave) (v : fv t)) st
 
 
-computedAnswers :: ConsPDTree -> Maybe ([([G S], Subst.Subst, E.Gamma)])
+computedAnswers :: ConsPDTree -> Maybe ([([G S], Subst.Subst, Env.Env)])
 computedAnswers (Success s e) = Just [([], s, e)]
 computedAnswers Fail = Just []
 computedAnswers (Leaf g s e _) = Just [(g, s, e)]
@@ -343,18 +345,18 @@ computedAnswers _ = Nothing
 -- Finds a conjunct, for which at least one substitution exists in the unfolding.
 -- The result is the pair in which first element is list of conjuncts excluding the one which generates substitutions.
 -- The second element is the unfolding result for the selected conjunct.
-tryFindSubsts :: [G S] -> E.Gamma -> Subst.Subst -> Maybe ([G S], (([Subst.Subst], [([G S], Subst.Subst)]), E.Gamma), [G S])
+tryFindSubsts :: [G S] -> Env.Env -> Subst.Subst -> Maybe ([G S], (([Subst.Subst], [([G S], Subst.Subst)]), Env.Env), [G S])
 tryFindSubsts =
     -- TODO USE PINPOINT
     go []
   where
     go _ [] _ _ = Nothing
     go left (g:gs) env state =
-      let (unfolded, gamma) = doStep g env state in
+      let (unfolded, env') = doStep g env state in
       let (substs, notSubsts) = partition (null . fst) unfolded in
       if null substs
       then go (g:left) gs env state
-      else Just (reverse left, ((map snd substs, notSubsts), gamma), gs)
+      else Just (reverse left, ((map snd substs, notSubsts), env'), gs)
 
 selectMin :: (Eq a, Ord b) => [(a, b)] -> ([(a, b)], (a, b), [(a, b)])
 selectMin xs =
@@ -362,13 +364,13 @@ selectMin xs =
     let (ls, (h:rs)) = span (/= minimal) xs in
     (ls, h, rs)
 
-doStep :: G S -> E.Gamma -> Subst.Subst -> ([([G S], Subst.Subst)], E.Gamma)
+doStep :: G S -> Env.Env -> Subst.Subst -> ([([G S], Subst.Subst)], Env.Env)
 doStep goal env state =
     fromMaybe
       (oneStep goal env state)
       (incrDeepOneStep globalLimit 0 goal env state)
 
-or :: [ConsPDTree] -> LC.Descend [G S] -> Subst.Subst -> [[G S]] -> [[G S]] -> E.Gamma -> (ConsPDTree, [[G S]], [[G S]], E.Gamma)
+or :: [ConsPDTree] -> LC.Descend [G S] -> Subst.Subst -> [[G S]] -> [[G S]] -> Env.Env -> (ConsPDTree, [[G S]], [[G S]], Env.Env)
 or ch d@(LC.Descend gs _) state seen failed env =
   if null ch || all (\x -> case x of Fail -> True; _ -> False) ch
   then (Fail, (delete gs seen), (gs:failed), env)
@@ -377,7 +379,7 @@ or ch d@(LC.Descend gs _) state seen failed env =
     --   [x] -> (x, seen, failed)
     --   _ -> (Or ch d state, seen, failed)
 
-split :: [ConsPDTree] -> [G S] -> Subst.Subst -> [[G S]] -> [[G S]] -> E.Gamma -> (ConsPDTree, [[G S]], [[G S]], E.Gamma)
+split :: [ConsPDTree] -> [G S] -> Subst.Subst -> [[G S]] -> [[G S]] -> Env.Env -> (ConsPDTree, [[G S]], [[G S]], Env.Env)
 split [x] goal state seen failed env = (x, seen, failed, env)
 split ch goal state seen failed env = (Split ch goal state, seen, failed, env)
 

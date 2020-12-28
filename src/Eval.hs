@@ -8,17 +8,18 @@ import           Data.List
 import           Stream
 import           Syntax
 import qualified Data.Map.Strict as Map
-import qualified Subst as Subst
+import qualified Subst
 import qualified VarInterpretation as VI
 import qualified Definitions as Defs
 import qualified FreshNames as FN
+import qualified Environment as Env
 
--- States
+-- Envs
 -- type Iota  = Map.Map X Ts
 -- type Sigma = [(S, Ts)]
 -- type Delta = [S]
 -- type P     = Map.Map Name Def
-type Gamma = (Defs.Definitions, VI.Interpretation, FN.FreshNames)
+-- type Gamma = (Defs.Definitions, VI.Interpretation, FN.FreshNames)
 
 unifyG :: (S -> Ts -> Subst.Subst -> Bool)
           -> Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
@@ -82,11 +83,11 @@ unifyNoOccursCheck = unifyG (\_ _ -> const False)
 
 
 -- Pre-evaluation
-preEval :: Gamma -> G X -> (G S, Gamma, [S])
+preEval :: Env.Env -> G X -> (G S, Env.Env, [S])
 preEval =
     go []
   where
-    go vars g@(_, i, _) (t1 :=: t2) =
+    go vars g@(Env.Env _ i _) (t1 :=: t2) =
       (i VI.<@> t1 :=: i VI.<@> t2, g, vars)
     go vars g (g1 :/\: g2) =
       let (g1', g' , vars' ) = go vars  g  g1 in
@@ -96,10 +97,10 @@ preEval =
       let (g1', g' , vars')  = go vars  g  g1 in
       let (g2', g'', vars'') = go vars' g' g2 in
       (g1' :\/: g2', g'', vars'')
-    go vars (p, i , d) (Fresh x g') =
+    go vars (Env.Env p i d) (Fresh x g') =
       let (y, d') = FN.getFreshName d in
-      go (y : vars) (p, VI.extend i x (V y), d') g'
-    go vars g@(_, i, _) (Invoke f fs)  =
+      go (y : vars) (Env.Env p (VI.extend i x (V y)) d') g'
+    go vars g@(Env.Env _ i _) (Invoke f fs)  =
       (Invoke f (map (i VI.<@>) fs), g, vars)
 
 
@@ -154,36 +155,24 @@ closeFresh as goal = goal
 
 topLevel :: Program -> Stream (Subst.Subst, FN.FreshNames)
 topLevel (Program defs goal) =
-  let gamma = foldl update env0 defs in
-  let (goal', gamma', _) = preEval gamma goal in
-  eval gamma' Subst.empty goal'
+  let env = foldl Env.update Env.empty defs in
+  let (goal', env', _) = preEval env goal in
+  eval env' Subst.empty goal'
 
 -- Evaluation relation
-eval :: Gamma -> Subst.Subst -> G S -> Stream (Subst.Subst, FN.FreshNames)
-eval     (_, _, d) s (t1 :=:  t2)  = fmap (,d) (maybeToStream $ unify (Just s) t1 t2)
-eval env           s (g1 :\/: g2)  = eval env s g1 `mplus` eval env s g2
-eval env@(p, i, _) s (g1 :/\: g2)  = eval env s g1 >>= (\ (s', d') -> eval (p, i, d') s' g2)
-eval     (p, i, d) s (Invoke f as) =
+eval :: Env.Env -> Subst.Subst -> G S -> Stream (Subst.Subst, FN.FreshNames)
+eval env s (t1 :=:  t2) = fmap (, Env.getFreshNames env) (maybeToStream $ unify (Just s) t1 t2)
+eval env s (g1 :\/: g2) = eval env s g1 `mplus` eval env s g2
+eval env s (g1 :/\: g2) = eval env s g1 >>= (\ (s', d') -> eval (Env.updateNames env d') s' g2)
+eval (Env.Env p i d) s (Invoke f as) =
   let (Def _ fs g) = Defs.getDef p f in
-  let i'         = foldl (\ i'' (f', a) -> VI.extend i'' f' a) i $ zip fs as in
-  let (g', env', _) = preEval (p, i', d) g in
+  let i' = foldl (\ i'' (f', a) -> VI.extend i'' f' a) i $ zip fs as in
+  let (g', env', _) = preEval (Env.Env p i' d) g in
   eval env' s g'
 eval _ _ _ = error "Impossible case in eval"
 
-env0 :: Gamma
-env0 = (Defs.empty, VI.empty, FN.defaultNames)
-
-update :: Gamma -> Def -> Gamma
-update (p, i, d) def@(Def name _ _) = (Defs.insert name def p, i, d)
-
-updateDefsInGamma :: Gamma -> [Def] -> Gamma
-updateDefsInGamma = foldl update
-
-gammaFromDefs :: [Def] -> Gamma
-gammaFromDefs = updateDefsInGamma env0
-
 run :: Program -> Stream Subst.Subst
 run (Program defs goal) =
-  let env = gammaFromDefs defs in
+  let env = Env.fromDefs defs in
   let (goal', env', _) = preEval env goal in
   fmap fst $ eval env' Subst.empty goal'

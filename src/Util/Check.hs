@@ -1,9 +1,9 @@
 module Util.Check where
 
-import qualified Eval   as E
 import qualified Subst
 import           Syntax
 import           Unfold
+import qualified Environment as Env
 
 -- Checks if the first invocation is less than the second one.
 -- r x1 .. xn < r y1 .. yn <=> \exists i : xi -- strict subterm of yi
@@ -24,7 +24,7 @@ subTerm (V x) (V y)  = x == y
 subTerm _ _ = False
 
 -- Checks if the current goal should be unfolded more than once.
-checkWhenUnfolding :: G S -> E.Gamma -> Subst.Subst -> Bool
-checkWhenUnfolding g@(Invoke n xs) gamma@(p,_,_) state =
-  let (gs, gamma') = oneStep g gamma state in
+checkWhenUnfolding :: G S -> Env.Env -> Subst.Subst -> Bool
+checkWhenUnfolding g@(Invoke n xs) env subst =
+  let (gs, env') = oneStep g env subst in
   not $ any (\(goals, s) -> any (\g' -> check g (Subst.substitute s g')) goals) gs

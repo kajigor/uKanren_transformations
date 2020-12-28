@@ -9,12 +9,12 @@ import           Control.Exception.Base
 import           Data.List              hiding (group, groupBy)
 import qualified Data.Map               as Map
 import           Embed
-import qualified Eval                   as E
 import qualified Subst
 import           Syntax
 import           Text.Printf            (printf)
 import           Util.Miscellaneous     (map1in4)
 import qualified FreshNames             as FN
+import qualified Environment as Env
 
 type Generalizer = Subst.Subst
 
@@ -85,10 +85,10 @@ refine msg@(g, Subst.Subst s1, Subst.Subst s2, d) =
       assert (similar /= []) $ groupBy p rest (similar : acc)
     group x y = snd x == snd y
 
-generalizeAllVarsToFree :: [G S] -> E.Gamma -> ([G S], Generalizer, E.Gamma)
-generalizeAllVarsToFree goals env@(p,i,d) =
+generalizeAllVarsToFree :: [G S] -> Env.Env -> ([G S], Generalizer, Env.Env)
+generalizeAllVarsToFree goals env@(Env.Env p i d) =
     let (gs, gens, d') = foldl go ([], [], d) goals in
-    (reverse gs, Subst.Subst $ Map.fromList $ concat $ reverse gens, (p,i,d'))
+    (reverse gs, Subst.Subst $ Map.fromList $ concat $ reverse gens, Env.Env p i d')
   where
     go (acc, gens, vars) (Invoke n args) =
       let (vs, newVars) = FN.getNames (length args) vars in

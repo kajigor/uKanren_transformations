@@ -11,6 +11,7 @@ import qualified Subst
 import           Syntax
 import           Unfold             (oneStepUnfold, unifyStuff, normalize)
 import           Util.Miscellaneous (fst3)
+import qualified Environment as Env
 
 data PDTree = Fail
             | Success Subst.Subst
@@ -23,36 +24,36 @@ data PDTree = Fail
 
 topLevel :: Program -> (PDTree, G S, [S])
 topLevel (Program defs goal) =
-    let gamma = E.gammaFromDefs defs in
-    let (logicGoal, gamma', _) = E.preEval gamma goal in
+    let env = Env.fromDefs defs in
+    let (logicGoal, env', _) = E.preEval env goal in
     let nodes = [] in
     let descend = LC.Descend logicGoal [] in
-    go descend gamma' nodes Subst.empty
+    go descend env' nodes Subst.empty
   where
-    go d@(LC.Descend goal ancs) env@(x, y, z) seen state =
+    go d@(LC.Descend goal ancs) env@(Env.Env x y z) seen subst =
       let treeResult =
             if any (isRenaming goal) seen
             then
-              Leaf goal state
+              Leaf goal subst
             else
               case find (`embed` goal) ancs of
                 Just g ->
                   let ([newGoal], gen1, gen2, names) = generalizeGoals z [g] [goal] in
-                  let env' = (x, y, names) in
-                  let (ch, _, _) = go (LC.Descend newGoal ancs) env' seen state in
+                  let env' = Env.Env x y names in
+                  let (ch, _, _) = go (LC.Descend newGoal ancs) env' seen subst in
                   Gen ch newGoal
                 Nothing ->
-                  let (unfolded, gamma) = oneStepUnfold goal env in
+                  let (unfolded, env') = oneStepUnfold goal env in
                   let normalized = normalize unfolded in
-                  let unified = mapMaybe (unifyStuff state) normalized in
+                  let unified = mapMaybe (unifyStuff subst) normalized in
                   Or (map (\(g, s') ->
                         if null g
                         then
                           leaf s'
                         else
-                          Conj (map (\h -> fst3 $ go (LC.Descend h (goal : ancs)) gamma (goal : seen) s') g) g s') unified)
+                          Conj (map (\h -> fst3 $ go (LC.Descend h (goal : ancs)) env' (goal : seen) s') g) g s') unified)
                     d
-                    state
+                    subst
       in (treeResult, V 1 === V 2, [4, 5, 6, 7])
 
 leaf :: Subst.Subst -> PDTree

@@ -19,6 +19,7 @@ import           Unfold
 import           Util.Miscellaneous
 import           Embed
 import qualified Subst
+import qualified Environment as Env
 
 fnames :: S -> FN.FreshNames
 fnames n = FN.FreshNames [n..]
@@ -87,9 +88,9 @@ unit_select = do
         len2D = Descend len2 [len1]
 
 unit_popingOutFreshes = do
-    test (fst3 . E.preEval E.env0) (fresh ["x", "y"] goal) (callF x' y')
-    test (fst3 . E.preEval (E.gammaFromDefs [fDef])) (fresh ["x", "y"] $ goal) (callF x' y')
-    test ((\(x, _, y) -> (x, y)) . E.preEval E.env0) (fresh ["m", "n"] body) (body', reverse [0..4])
+    test (fst3 . E.preEval Env.empty) (fresh ["x", "y"] goal) (callF x' y')
+    test (fst3 . E.preEval (Env.fromDefs [fDef])) (fresh ["x", "y"] $ goal) (callF x' y')
+    test ((\(x, _, y) -> (x, y)) . E.preEval Env.empty) (fresh ["m", "n"] body) (body', reverse [0..4])
   where
     x = V "x"
     y = V "y"
@@ -101,7 +102,6 @@ unit_popingOutFreshes = do
     cT x = C "T" [x]
     callF x y = Invoke "f" [x, y]
     callT x = Invoke "t" [x]
-    gamma = []
     goal = callF x y
     body = fresh ["h"] (m === cS h &&& fresh ["t"] (n === cT t) &&& m === cS n) ||| fresh ["h"] (m === n &&& m === cT h &&& callT h)
     fDef = Def "f" ["m", "n"] body

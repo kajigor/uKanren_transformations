@@ -10,6 +10,7 @@ import qualified Data.Set               as Set
 import qualified Definitions            as Defs
 import qualified Eval                   as E
 import           Generalization         (Generalizer, generalizeGoals)
+import qualified Environment as Env
 import           Stream
 import qualified Subst
 import           Syntax
@@ -150,7 +151,9 @@ split gs1 gs2 = filter (not . null) $ split' gs1 gs2 where
 
 
 update :: (Defs.Definitions, FN.FreshNames) -> Def -> (Defs.Definitions, FN.FreshNames)
-update (p, d) def = let (p', _, d') = E.update (p, VI.empty, d) def in (p', d')
+update (p, d) def =
+  let (Env.Env p' _ d') = Env.update (Env.Env p VI.empty d) def
+  in  (p', d')
 
 
 invoke :: TreeContext -> Stack -> FN.FreshNames -> Subst.Subst -> Generalizer -> [Zeta] -> (TreeContext, Tree, FN.FreshNames)
@@ -203,7 +206,7 @@ type Zeta = (VI.Interpretation , Defs.Definitions, G S)
 
 eval :: TreeContext -> Stack -> FN.FreshNames -> Subst.Subst -> Generalizer -> [Zeta] -> Zeta -> [Zeta]  -> (TreeContext, Tree, FN.FreshNames)
 eval tc cs d s gen prev g@(i, p, t1 :=: t2) conjs =
-  case takeS 1 $ E.eval (p, i, d) s (trd3 g) of
+  case takeS 1 $ E.eval (Env.Env p i d) s (trd3 g) of
     []       -> (tc, Fail, d)
     [(s, _)] -> case conjs of
                   []       -> case prev of
@@ -226,7 +229,7 @@ unfold (sr, args, ids) cs e s gen conjs =
   let (e', conjs') = foldl (\ (d, conj) (i, p, zyz@(Invoke f as)) ->
                                let (Def _ fs g) = Defs.getDef p f in
                                let i'           = foldl (\ interp (f, a) -> VI.extend interp f a) i $ zip fs as in
-                               let (g', (p', i'', d'), _) = E.preEval (p, i', d) g in
+                               let (g', (Env.Env p' i'' d'), _) = E.preEval (Env.Env p i' d) g in
                                (d', (i'', p', g'):conj)
                            ) (e, []) conjs
   in
@@ -237,5 +240,5 @@ unfold (sr, args, ids) cs e s gen conjs =
 
 drive :: G X -> (TreeContext, Tree, [Id])
 drive goal =
-  let (goal', (g', i', d'), args) = E.preEval E.env0 goal in
+  let (goal', (Env.Env g' i' d'), args) = E.preEval Env.empty goal in
   let (x, y, _) = eval emptyContext [] d' Subst.empty Subst.empty [] (i', g', goal') [] in (x, y, reverse args)

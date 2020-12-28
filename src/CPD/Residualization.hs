@@ -35,28 +35,28 @@ residualizeGlobalTree tree =
   mapMaybe (\(gs, sld) -> residualizeSldTree gs sld definitions) nodes
 
 unifyInvocationLists :: [G S] -> [G S] -> Maybe Subst.Subst -> Maybe Subst.Subst
-unifyInvocationLists [] [] state = state
-unifyInvocationLists xs@(Invoke name args : gs) ys@(Invoke name' args' : gs') state | name == name' && length args == length args' = do
-  let state' = unifyArgs args args' state
-  unifyInvocationLists gs gs' state'
+unifyInvocationLists [] [] subst = subst
+unifyInvocationLists xs@(Invoke name args : gs) ys@(Invoke name' args' : gs') subst | name == name' && length args == length args' = do
+  let subst' = unifyArgs args args' subst
+  unifyInvocationLists gs gs' subst'
   where
-    unifyArgs [] [] state = state
-    unifyArgs (x:xs) (y:ys) state = do
-      let state' = unify state x y
-      unifyArgs xs ys state'
+    unifyArgs [] [] subst = subst
+    unifyArgs (x:xs) (y:ys) subst = do
+      let subst' = unify subst x y
+      unifyArgs xs ys subst'
     unifyArgs _ _ _ = Nothing
     -- just unification without occurs check.
     -- unify = unifyNoOccursCheck
-    unify (Just state) (V x) y =
-      case Subst.lookup x state of
-        Just z | z == y -> Just state
+    unify (Just subst) (V x) y =
+      case Subst.lookup x subst of
+        Just z | z == y -> Just subst
         Just z -> Nothing
-        Nothing -> Just $ Subst.insert x y state
-    -- unify (Just state) (V x) y | (x, y) `elem` state = Just state
-    -- unify (Just state) (V x) y | Just (_, z) <- find ((== x) . fst) state = if y /= z then Nothing else Just state
-    -- unify (Just state) (V x) y = Just $ (x, y) : state
-    unify (Just state) (C n _) (C m _) | n /= m = Nothing
-    unify (Just state) (C n xargs) (C m yargs) | n == m = unifyArgs xargs yargs (Just state)
+        Nothing -> Just $ Subst.insert x y subst
+    -- unify (Just subst) (V x) y | (x, y) `elem` subst = Just subst
+    -- unify (Just subst) (V x) y | Just (_, z) <- find ((== x) . fst) subst = if y /= z then Nothing else Just subst
+    -- unify (Just subst) (V x) y = Just $ (x, y) : subst
+    unify (Just subst) (C n _) (C m _) | n /= m = Nothing
+    unify (Just subst) (C n xargs) (C m yargs) | n == m = unifyArgs xargs yargs (Just subst)
     unify _ (C _ _) (V _) = Nothing
     unify Nothing _ _ = Nothing
 unifyInvocationLists _ _ _ = Nothing

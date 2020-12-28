@@ -124,33 +124,33 @@ generateGoalFromTree definitions invocations tree args =
       Nothing -> error $ printf "Failed to generate relation body for %s" (show $ nodeContent tree)
     -- Res.vident <$> (disj (map conj $ filter (not . null) $ go tree))
   where
-    residualizeState :: Subst.Subst -> Maybe (G S)
-    residualizeState xs =
+    residualizeEnv :: Subst.Subst -> Maybe (G S)
+    residualizeEnv xs =
       (conj $ map (\(s, ts) -> (V s) === ts) $ reverse (Subst.toList xs)) <|> return success
 
     go :: FN.FreshNames -> Bool -> ConsPDTree -> Maybe (G S)
     go seen r Fail           = Just failure
-    go seen r (Success ss _) = residualizeState ss
+    go seen r (Success ss _) = residualizeEnv ss
     go seen r (Or ch (LC.Descend gs _) s) = do
       -- let vs = getNewVars seen gs s
-      let unifs = residualizeState s
+      let unifs = residualizeEnv s
       let rest = getInvocation r gs <|> (disj $ catMaybes $ map (go seen False) ch)
       mkGoal unifs rest (:/\:)
     go seen r (Split ch gs s)  = do
       -- let vs = getNewVars seen gs s
-      let unifs = residualizeState s
+      let unifs = residualizeEnv s
       let rest = getInvocation r gs <|> (conj $ catMaybes $ map (go seen False) ch)
       mkGoal unifs rest (:/\:)
     go seen r (Leaf gs s _ vs) = do
-      let unifs = residualizeState s
+      let unifs = residualizeEnv s
       let rest = getInvocation' gs vs -- snd (fromJust $ find ((gs ==) . fst) invocations)
       mkGoal unifs rest (:/\:)
     go seen r (Conj ch gs s)   = do
-      let unifs = residualizeState s
+      let unifs = residualizeEnv s
       let rest = getInvocation r gs <|> (conj $ catMaybes $ map (go seen False) ch)
       mkGoal unifs rest (:/\:)
     go seen r (Gen ch gs gs' gen s) = do
-      let unifs = residualizeState s
+      let unifs = residualizeEnv s
       let rest = getInvocation r gs
       mkGoal unifs rest (:/\:)
     go seen r (Prune _ _)     = error "Failed to residualize: Prune node in tree"
@@ -175,11 +175,11 @@ generateGoalFromTree definitions invocations tree args =
   -- go :: ConsPDTree -> [[G S]]
     -- go Fail            = [[fail]]
     -- go (Success ss _) | null ss = [[success]]
-    -- go (Success ss _)  = [residualizeState ss]
-    -- go (Or ch _ s)     = let unifs = residualizeState s in concatMap (map (unifs ++) . go) ch
-    -- go (Conj ch _ s)   = let unifs = residualizeState s in map (unifs ++) $ concat $ productList $ map go ch
-    -- go (Split ch _ s)  = let unifs = residualizeState s in map (unifs ++) $ concat $ productList $ map go ch
-    -- go (Leaf gs s _ _) = [residualizeState s ++ [snd (fromJust $ find ((gs ==) . fst) invocations)]]
+    -- go (Success ss _)  = [residualizeEnv ss]
+    -- go (Or ch _ s)     = let unifs = residualizeEnv s in concatMap (map (unifs ++) . go) ch
+    -- go (Conj ch _ s)   = let unifs = residualizeEnv s in map (unifs ++) $ concat $ productList $ map go ch
+    -- go (Split ch _ s)  = let unifs = residualizeEnv s in map (unifs ++) $ concat $ productList $ map go ch
+    -- go (Leaf gs s _ _) = [residualizeEnv s ++ [snd (fromJust $ find ((gs ==) . fst) invocations)]]
     -- go (Gen _ _ _)     = error "Failed to residualize: Gen node in tree"
     -- go (Prune _ _)     = error "Failed to residualize: Prune node in tree"
 

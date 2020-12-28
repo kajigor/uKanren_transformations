@@ -7,6 +7,7 @@ import           Eval
 import qualified Subst
 import           Syntax
 import           Unfold       (oneStepUnfold, unifyStuff, normalize)
+import qualified Environment as Env
 
 newtype IndWrap a = IndWrap { unwrap :: a }
 
@@ -23,12 +24,12 @@ instance Ord a => Ord (IndWrap (Term a)) where
 
 isInductive :: Program -> Bool
 isInductive (Program defs goal) =
-  let gamma = gammaFromDefs defs in
-  let (logicGoal, gamma', _) = preEval gamma goal in
-  let (g', _) = oneStepUnfold (logicGoal) gamma' in
+  let subst = Env.fromDefs defs in
+  let (logicGoal, subst', _) = preEval subst goal in
+  let (g', _) = oneStepUnfold logicGoal subst' in
   let normalized = normalize g' in
   let unified = mapMaybe (unifyStuff Subst.empty) normalized in
-  let withCalls = filter (\(x,_) -> not $ null x) unified in
+  let withCalls = filter (not . null . fst) unified in
 
   let (Invoke name args) = logicGoal in
 

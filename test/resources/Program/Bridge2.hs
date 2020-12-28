@@ -110,12 +110,12 @@ eqForBoolDef =
         (V "q86" === V "q85"))))
     )
 
-eqForState :: [Def]
-eqForState = eqForStateDef : eqForBool
+eqForEnv :: [Def]
+eqForEnv = eqForEnvDef : eqForBool
 
-eqForStateDef :: Def
-eqForStateDef =
-    Def "eqForState" ["x", "y", "q70"] (
+eqForEnvDef :: Def
+eqForEnvDef =
+    Def "eqForEnv" ["x", "y", "q70"] (
       fresh ["l1", "a1", "b1"] (
         (V "x" === C "st" [V "l1", V "a1", V "b1"]) &&&
         (fresh ["l2", "a2", "b2"] (
@@ -140,9 +140,9 @@ checkPerson = checkPersonDef : eqForBool
 
 checkPersonDef :: Def
 checkPersonDef =
-    Def "checkPerson" ["state", "person", "q68"] (
+    Def "checkPerson" ["Env", "person", "q68"] (
       fresh ["l", "a0", "b0"] (
-        (V "state" === C "st" [V "l", V "a0", V "b0"]) &&&
+        (V "Env" === C "st" [V "l", V "a0", V "b0"]) &&&
         (((V "person" === C "a" []) &&&
         (call "eqForBool" [V "a0", V "l", V "q68"])) |||
         ((V "person" === C "b" []) &&&
@@ -154,16 +154,16 @@ checkStep = checkStepDef : grForPerson ++ checkPerson
 
 checkStepDef :: Def
 checkStepDef =
-    Def "checkStep" ["state", "step", "q55"] (
+    Def "checkStep" ["Env", "step", "q55"] (
       (fresh ["p"] (
           (V "step" === C "one" [V "p"]) &&&
-          (call "checkPerson" [V "state", V "p", V "q55"]))) |||
+          (call "checkPerson" [V "Env", V "p", V "q55"]))) |||
       (fresh ["p", "q"] (
           (V "step" === C "two" [V "p", V "q"]) &&&
           (fresh ["q56", "q57"] (
-            (call "checkPerson" [V "state", V "p", V "q56"]) &&&
+            (call "checkPerson" [V "Env", V "p", V "q56"]) &&&
             (fresh ["q62", "q63"] (
-                (call "checkPerson" [V "state", V "q", V "q62"]) &&&
+                (call "checkPerson" [V "Env", V "q", V "q62"]) &&&
                 (call "grForPerson" [V "p", V "q", V "q63"]) &&&
                 (((V "q62" === C "false" []) &&&
                 (V "q57" === C "false" [])) |||
@@ -180,9 +180,9 @@ moveLight = [moveLightDef]
 
 moveLightDef :: Def
 moveLightDef =
-    Def "moveLight" ["state", "q50"] (
+    Def "moveLight" ["Env", "q50"] (
       fresh ["l", "a0", "b0"] (
-        (V "state" === C "st" [V "l", V "a0", V "b0"]) &&&
+        (V "Env" === C "st" [V "l", V "a0", V "b0"]) &&&
         (fresh ["q51"] (
           (V "q50" === C "st" [V "q51", V "a0", V "b0"]) &&&
           (((V "l" === C "true" []) &&&
@@ -196,9 +196,9 @@ movePerson = [movePersonDef]
 
 movePersonDef :: Def
 movePersonDef =
-    Def "movePerson" ["state", "person", "q40"] (
+    Def "movePerson" ["Env", "person", "q40"] (
       fresh ["l", "a0", "b0"] (
-        (V "state" === C "st" [V "l", V "a0", V "b0"]) &&&
+        (V "Env" === C "st" [V "l", V "a0", V "b0"]) &&&
         (((V "person" === C "a" []) &&&
         (fresh ["q42"] (
           (V "q40" === C "st" [V "l", V "q42", V "b0"]) &&&
@@ -220,17 +220,17 @@ step = stepDef : movePerson ++ moveLight
 
 stepDef :: Def
 stepDef =
-    Def "step" ["state", "step", "q33"] (
+    Def "step" ["Env", "step", "q33"] (
       (fresh ["p"] (
         (V "step" === C "one" [V "p"]) &&&
         (fresh ["q34"] (
-            (call "movePerson" [V "state", V "p", V "q34"]) &&&
+            (call "movePerson" [V "Env", V "p", V "q34"]) &&&
             (call "moveLight" [V "q34", V "q33"]))))) |||
       (fresh ["p", "q"] (
         (V "step" === C "two" [V "p", V "q"]) &&&
         (fresh ["q36"] (
             (fresh ["q38"] (
-              (call "movePerson" [V "state", V "p", V "q38"]) &&&
+              (call "movePerson" [V "Env", V "p", V "q38"]) &&&
               (call "movePerson" [V "q38", V "q", V "q36"]))) &&&
             (call "moveLight" [V "q36", V "q33"])))))
     )
@@ -252,12 +252,12 @@ getTime = getTimeDef : times ++ max
 
 getTimeDef :: Def
 getTimeDef =
-    Def "getTime" ["state", "q26"] (
+    Def "getTime" ["Env", "q26"] (
       (fresh ["p"] (
-        (V "state" === C "one" [V "p"]) &&&
+        (V "Env" === C "one" [V "p"]) &&&
         (call "times" [V "p", V "q26"]))) |||
       (fresh ["p", "q"] (
-        (V "state" === C "two" [V "p", V "q"]) &&&
+        (V "Env" === C "two" [V "p", V "q"]) &&&
         (fresh ["q27", "q28"] (
             (call "times" [V "p", V "q27"]) &&&
             (call "times" [V "q", V "q28"]) &&&
@@ -283,19 +283,19 @@ finishDef =
     )
 
 getAnswer' :: [Def]
-getAnswer' = getAnswer'Def : checkStep ++ step ++ getTime ++ add ++ finish ++ eqForState
+getAnswer' = getAnswer'Def : checkStep ++ step ++ getTime ++ add ++ finish ++ eqForEnv
 
 getAnswer'Def :: Def
 getAnswer'Def =
-    Def "getAnswer'" ["answer", "state", "q2"] (
+    Def "getAnswer'" ["answer", "Env", "q2"] (
       (fresh ["x", "xs"] (
          (V "answer" === C "%" [V "x", V "xs"]) &&&
          (fresh ["q4"] (
-            (call "checkStep" [V "state", V "x", V "q4"]) &&&
+            (call "checkStep" [V "Env", V "x", V "q4"]) &&&
             (((V "q4" === C "true" []) &&&
             (fresh ["q6"] (
                (fresh ["q12"] (
-                  (call "step" [V "state", V "x", V "q12"]) &&&
+                  (call "step" [V "Env", V "x", V "q12"]) &&&
                   (call "getAnswer'" [V "xs", V "q12", V "q6"]))) &&&
                (((V "q6" === C "none" []) &&&
                (V "q2" === C "none" [])) |||
@@ -312,7 +312,7 @@ getAnswer'Def =
       (fresh ["q16"] (
          (fresh ["q19"] (
             (call "finish" [V "q19"]) &&&
-            (call "eqForState" [V "state", V "q19", V "q16"]))) &&&
+            (call "eqForEnv" [V "Env", V "q19", V "q16"]))) &&&
          (((V "q16" === C "true" []) &&&
          (V "q2" === C "some" [C "o" []])) |||
          ((V "q16" === C "false" []) &&&
@@ -337,7 +337,7 @@ game2 =
   , maxDef
   , addDef
   , eqForBoolDef
-  , eqForStateDef
+  , eqForEnvDef
   , checkPersonDef
   , checkStepDef
   , moveLightDef

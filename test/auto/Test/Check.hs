@@ -8,6 +8,7 @@ import           Syntax
 import           Test.Helper      (test2)
 import           Text.Printf
 import           Util.Check
+import qualified Environment as Env
 
 unit_checkConj = do
   test2 checkConj [call "f" [V 1, V 2], call "g" [V 2, V 3]] [call "f" [V 5, V 6], call "g" [C "" [V 2], V 3]] True
@@ -23,9 +24,9 @@ unit_checkConj = do
 
 checkTest :: Program -> Bool
 checkTest (Program defs goal) =
-    let gamma = E.gammaFromDefs defs in
-    let (logicGoal, gamma', names) = E.preEval gamma goal in
-    checkWhenUnfolding logicGoal gamma' Subst.empty
+    let env = Env.fromDefs defs in
+    let (logicGoal, env', names) = E.preEval env goal in
+    checkWhenUnfolding logicGoal env' Subst.empty
 
 app = Program appendo $ fresh ["x", "y", "z"] (call "appendo" [V "x", V "y", V "z"])
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])
