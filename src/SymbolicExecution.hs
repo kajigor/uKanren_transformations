@@ -23,7 +23,7 @@ topLevel depth (Program defs goal) =
     go logicGoal [] env' Subst.empty depth
   where
     go goal ctx _ subst d | d <= 1 = Prune (goal : ctx) subst
-    go goal ctx env@(Env.Env x y z) subst depth =
+    go goal ctx env subst depth =
       let (unified, env') = oneStep goal env subst in
       Disj (map (\(g, s') ->
                   if null g

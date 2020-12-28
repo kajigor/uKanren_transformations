@@ -30,7 +30,7 @@ topLevel (Program defs goal) =
     let descend = LC.Descend logicGoal [] in
     go descend env' nodes Subst.empty
   where
-    go d@(LC.Descend goal ancs) env@(Env.Env x y z) seen subst =
+    go d@(LC.Descend goal ancs) env seen subst =
       let treeResult =
             if any (isRenaming goal) seen
             then
@@ -38,8 +38,8 @@ topLevel (Program defs goal) =
             else
               case find (`embed` goal) ancs of
                 Just g ->
-                  let ([newGoal], gen1, gen2, names) = generalizeGoals z [g] [goal] in
-                  let env' = Env.Env x y names in
+                  let ([newGoal], gen1, gen2, names) = generalizeGoals (Env.getFreshNames env) [g] [goal] in
+                  let env' = Env.updateNames env names in
                   let (ch, _, _) = go (LC.Descend newGoal ancs) env' seen subst in
                   Gen ch newGoal
                 Nothing ->

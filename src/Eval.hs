@@ -10,7 +10,6 @@ import           Syntax
 import qualified Data.Map.Strict as Map
 import qualified Subst
 import qualified VarInterpretation as VI
-import qualified Definitions as Defs
 import qualified FreshNames as FN
 import qualified Environment as Env
 
@@ -155,7 +154,7 @@ closeFresh as goal = goal
 
 topLevel :: Program -> Stream (Subst.Subst, FN.FreshNames)
 topLevel (Program defs goal) =
-  let env = foldl Env.update Env.empty defs in
+  let env = Env.updateDefs Env.empty defs in
   let (goal', env', _) = preEval env goal in
   eval env' Subst.empty goal'
 
@@ -164,10 +163,10 @@ eval :: Env.Env -> Subst.Subst -> G S -> Stream (Subst.Subst, FN.FreshNames)
 eval env s (t1 :=:  t2) = fmap (, Env.getFreshNames env) (maybeToStream $ unify (Just s) t1 t2)
 eval env s (g1 :\/: g2) = eval env s g1 `mplus` eval env s g2
 eval env s (g1 :/\: g2) = eval env s g1 >>= (\ (s', d') -> eval (Env.updateNames env d') s' g2)
-eval (Env.Env p i d) s (Invoke f as) =
-  let (Def _ fs g) = Defs.getDef p f in
-  let i' = foldl (\ i'' (f', a) -> VI.extend i'' f' a) i $ zip fs as in
-  let (g', env', _) = preEval (Env.Env p i' d) g in
+eval env s (Invoke f as) =
+  let (Def _ fs g) = Env.getDef env f in
+  let i' = foldl (\ i'' (f', a) -> VI.extend i'' f' a) (Env.getInterp env) $ zip fs as in
+  let (g', env', _) = preEval (Env.updateInterp env i') g in
   eval env' s g'
 eval _ _ _ = error "Impossible case in eval"
 

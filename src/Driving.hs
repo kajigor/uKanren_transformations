@@ -152,7 +152,7 @@ split gs1 gs2 = filter (not . null) $ split' gs1 gs2 where
 
 update :: (Defs.Definitions, FN.FreshNames) -> Def -> (Defs.Definitions, FN.FreshNames)
 update (p, d) def =
-  let (Env.Env p' _ d') = Env.update (Env.Env p VI.empty d) def
+  let (Env.Env p' _ d') = Env.updateDef (Env.Env p VI.empty d) def
   in  (p', d')
 
 
@@ -241,4 +241,5 @@ unfold (sr, args, ids) cs e s gen conjs =
 drive :: G X -> (TreeContext, Tree, [Id])
 drive goal =
   let (goal', (Env.Env g' i' d'), args) = E.preEval Env.empty goal in
-  let (x, y, _) = eval emptyContext [] d' Subst.empty Subst.empty [] (i', g', goal') [] in (x, y, reverse args)
+  let (x, y, _) = eval emptyContext [] d' Subst.empty Subst.empty [] (i', g', goal') []
+  in (x, y, reverse args)

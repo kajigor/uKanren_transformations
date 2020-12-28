@@ -15,14 +15,20 @@ data Env = Env { getDefs :: Defs.Definitions
 empty :: Env
 empty = Env Defs.empty VI.empty FN.defaultNames
 
-update :: Env -> Def -> Env
-update (Env p i d) def@(Def name _ _) = Env (Defs.insert name def p) i d
+updateDef :: Env -> Def -> Env
+updateDef (Env p i d) def@(Def name _ _) = Env (Defs.insert name def p) i d
 
 updateDefs :: Env -> [Def] -> Env
-updateDefs = foldl update
+updateDefs = foldl updateDef
 
 fromDefs :: [Def] -> Env
 fromDefs = updateDefs empty
 
 updateNames :: Env -> FN.FreshNames -> Env
 updateNames (Env p i _) = Env p i
+
+updateInterp :: Env -> VI.Interpretation -> Env
+updateInterp (Env p _ d) i = Env p i d
+
+getDef :: Env -> Name -> Def
+getDef (Env p _ _) n = Defs.getDef p n

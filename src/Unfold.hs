@@ -9,16 +9,15 @@ import           Syntax
 import           Text.Printf         (printf)
 import           Util.Miscellaneous  (fst3, pinpoint)
 import qualified VarInterpretation   as VI
-import qualified Definitions         as Defs
 import qualified Environment as Env
 
 oneStepUnfold :: G S -> Env.Env -> (G S, Env.Env)
-oneStepUnfold g@(Invoke f as) env@(Env.Env p i d) =
-  let (Def n fs body) = Defs.getDef p f in
+oneStepUnfold g@(Invoke f as) env =
+  let (Def n fs body) = Env.getDef env f in
   if length fs == length as
   then
-    let i' = foldl (\ interp (f, a) -> VI.extend interp f a) i $ zip fs as in
-    let (g', env', _) = E.preEval (Env.Env p i' d) body in
+    let i' = foldl (\ interp (f, a) -> VI.extend interp f a) (Env.getInterp env) $ zip fs as in
+    let (g', env', _) = E.preEval (Env.updateInterp env i') body in
     (g', env')
   else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
 oneStepUnfold g env = (g, env)
@@ -61,14 +60,14 @@ maximumBranches def@(Def _ args body) =
     success = C "" [] :=: C "" []
 
 getMaximumBranches :: Env.Env -> G S -> Int
-getMaximumBranches (Env.Env p _ _) (Invoke name _) =
-    let def = Defs.getDef p name in
+getMaximumBranches env (Invoke name _) =
+    let def = Env.getDef env name in
     maximumBranches def
 
 
 notMaximumBranches :: Env.Env -> Subst.Subst -> G S -> Bool
-notMaximumBranches env@(Env.Env p _ _) state goal@(Invoke name args) =
-    let maxBranches = maximumBranches (Defs.getDef p name) in
+notMaximumBranches env state goal@(Invoke name args) =
+    let maxBranches = maximumBranches (Env.getDef env name) in
     let (unfolded, _) = oneStep goal env state in
     length unfolded < maxBranches
     -- let result = length unfolded < maxBranches in
@@ -112,14 +111,14 @@ findBestByComplexity env sigma goals =
       return (map fst ls, fst x, map fst rs)
 
 unfoldComplexity :: Env.Env -> Subst.Subst -> G S -> Complexity
-unfoldComplexity env@(Env.Env p _ _) sigma goal@(Invoke name _) =
+unfoldComplexity env sigma goal@(Invoke name _) =
   let (unfolded, _) = oneStep goal env sigma in
-  let max = maximumBranches (Defs.getDef p name) in
+  let max = maximumBranches (Env.getDef env name) in
   -- trace (printf "\n%s is %s\n" name (if static env name then "static" else "not static")) $
   Complexity max (length unfolded) (length $ filter (null . fst) unfolded)
 
 static :: Env.Env -> String -> Bool
-static (Env.Env p _ _) name =
+static env name =
     go (Set.fromList [name]) (getBody name)
   where
     go set (Invoke name _) | Set.member name set = False
@@ -130,7 +129,7 @@ static (Env.Env p _ _) name =
     go _ _ = True
 
     getBody name =
-      let Def _ _ body = Defs.getDef p name in body
+      let Def _ _ body = Env.getDef env name in body
 
 isGoalStatic :: Env.Env -> G S -> Bool
 isGoalStatic env (Invoke name _) =

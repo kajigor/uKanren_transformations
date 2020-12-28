@@ -74,8 +74,8 @@ showList :: Show a => [a] -> String
 showList = unlines . map show
 
 sldResolutionStep :: [DescendGoal] -> Env.Env -> Subst.Subst -> [[G S]] -> Bool -> Heuristic -> SldTree
-sldResolutionStep gs env@(Env.Env p i d) s seen isFirstTime heuristic =
-  let (temp, _) = FN.getFreshName d in
+sldResolutionStep gs env s seen isFirstTime heuristic =
+  let (temp, _) = FN.getFreshName (Env.getFreshNames env) in
   let curs = map getCurr gs in
   let prettySeen = showList seen  in
   -- if variantCheck curs seen

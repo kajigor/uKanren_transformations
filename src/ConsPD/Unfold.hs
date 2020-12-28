@@ -191,8 +191,8 @@ topLevel limit (Program defs goal) =
     (fst4 $ go descend env' nodes Subst.empty failed, logicGoal, names)
   where
     go :: LC.Descend [G S] -> Env.Env -> [[G S]] -> Subst.Subst -> [[G S]] -> (ConsPDTree, [[G S]], [[G S]], Env.Env)
-    go (LC.Descend goal' ancs') env@(Env.Env x y z) seen state failed =
-     let (hd, _) = FN.getFreshName z in
+    go (LC.Descend goal' ancs') env seen state failed =
+     let (hd, _) = FN.getFreshName (Env.getFreshNames env) in
      let goal = Subst.substitute state goal' in
      let seen' = goal : seen in
      let addAnc x = LC.Descend x (goal : ancs') in
@@ -310,8 +310,10 @@ topLevel limit (Program defs goal) =
       (reverse ch, allSeenGoals, actualFailed, actualEnv)
 
     merge :: Env.Env -> Env.Env -> Env.Env
-    merge (Env.Env _ _ d) newEnv@(Env.Env x y z) =
-      if d > z then Env.Env x y d else newEnv
+    merge (Env.Env _ _ d) env' =
+      if d > Env.getFreshNames env'
+      then Env.updateNames env' d
+      else env'
 
 createLeafNode :: [[G S]] -> ([G S], Subst.Subst, Env.Env) -> ConsPDTree
 createLeafNode seen = go
@@ -331,7 +333,7 @@ createLeafNode seen = go
 --       filter (\(v,t) -> any (`elem` varsToLeave) (v : fv t)) st
 
 
-computedAnswers :: ConsPDTree -> Maybe ([([G S], Subst.Subst, Env.Env)])
+computedAnswers :: ConsPDTree -> Maybe [([G S], Subst.Subst, Env.Env)]
 computedAnswers (Success s e) = Just [([], s, e)]
 computedAnswers Fail = Just []
 computedAnswers (Leaf g s e _) = Just [(g, s, e)]

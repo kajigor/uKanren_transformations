@@ -77,9 +77,9 @@ generalize m b d =
 
 abstractChild :: [[G S]] -> (Subst.Subst, [G S], Maybe Env.Env) -> [(Subst.Subst, [G S], Generalizer, Env.Env)]
 abstractChild _ (_, _, Nothing) = []
-abstractChild ancs (subst, g, Just env@(Env.Env x y d)) =
-  let (abstracted, delta) = abstract (LC.Descend g ancs) g d in
-  map (\(g, gen) -> (subst, g, gen, (Env.Env x y delta))) abstracted
+abstractChild ancs (subst, g, Just env) =
+  let (abstracted, d') = abstract (LC.Descend g ancs) g (Env.getFreshNames env) in
+  map (\(g, gen) -> (subst, g, gen, Env.updateNames env d')) abstracted
 
 conjToList :: G a -> [G a]
 conjToList (g :/\: h)     = conjToList g ++ conjToList h

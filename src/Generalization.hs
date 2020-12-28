@@ -86,9 +86,9 @@ refine msg@(g, Subst.Subst s1, Subst.Subst s2, d) =
     group x y = snd x == snd y
 
 generalizeAllVarsToFree :: [G S] -> Env.Env -> ([G S], Generalizer, Env.Env)
-generalizeAllVarsToFree goals env@(Env.Env p i d) =
-    let (gs, gens, d') = foldl go ([], [], d) goals in
-    (reverse gs, Subst.Subst $ Map.fromList $ concat $ reverse gens, Env.Env p i d')
+generalizeAllVarsToFree goals env =
+    let (gs, gens, d') = foldl go ([], [], Env.getFreshNames env) goals in
+    (reverse gs, Subst.Subst $ Map.fromList $ concat $ reverse gens, Env.updateNames env d')
   where
     go (acc, gens, vars) (Invoke n args) =
       let (vs, newVars) = FN.getNames (length args) vars in
