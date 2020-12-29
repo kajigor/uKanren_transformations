@@ -385,7 +385,7 @@ isConflicting :: Subst.Subst -> Subst.Subst -> Bool
 isConflicting s1 s2 =
     let m1 = s1 in
     let m2 = s2 in
-    let intersection = Subst.intersectionWith (\x y -> (E.walk x s1, E.walk y s2)) m1 m2 in
+    let intersection = Subst.intersectionWith (\x y -> (E.walk s1 x, E.walk s2 y)) m1 m2 in
     M.size intersection > 0 &&
     any (uncurry conflicting) intersection
   where

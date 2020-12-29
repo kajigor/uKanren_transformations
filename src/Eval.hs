@@ -20,51 +20,47 @@ import qualified Environment as Env
 -- type P     = Map.Map Name Def
 -- type Gamma = (Defs.Definitions, VI.Interpretation, FN.FreshNames)
 
-unifyG :: (S -> Ts -> Subst.Subst -> Bool)
+unifyG :: (Subst.Subst -> S -> Ts -> Bool)
           -> Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
 unifyG _ Nothing _ _ = Nothing
 unifyG f st@(Just subst) u v =
-  -- trace (printf "Subst length: %d" (Subst.size subst)) $
-  unify' (walk u subst) (walk v subst)  where
+    -- trace (printf "Subst length: %d" (Subst.size subst)) $
+    unify' (walk subst u) (walk subst v)
+  where
     unify' (V u') (V v') | u' == v' = Just subst
     unify' (V u') (V v') = Just $ Subst.insert (min u' v') (V $ max u' v') subst
     unify' (V u') t =
-      if f u' t subst
+      if f subst u' t
       then Nothing
       else return $ Subst.insert u' v subst
     unify' t (V v') =
-      if f v' t subst
+      if f subst v' t
       then Nothing
       else return $ Subst.insert v' u subst
     unify' (C a as) (C b bs) | a == b && length as == length bs =
       foldl (\ st' (u', v') -> unifyG f st' u' v') st $ zip as bs
     unify' _ _ = Nothing
 
-walk :: Ts -> Subst.Subst -> Ts
-walk x@(V v') s =
-  case Subst.lookup v' s of
-    Nothing -> x
-    Just t  -> walk t s
-walk u' _ = u'
+walk :: Subst.Subst -> Ts -> Ts
+walk s x@(V v) =
+  maybe x (walk s) $ Subst.lookup v s
+walk _ u = u
 
 -- Unification
 unify :: Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
 unify =
     unifyG occursCheck
   where
-    occursCheck :: S -> Ts -> Subst.Subst -> Bool
-    occursCheck u' t s =
-      let t' = walk t s in
-      case t' of
-        V v' | v' == u' -> True
-        V _             -> False
-        C _ as          -> any (\x -> occursCheck u' x s) as
+    occursCheck :: Subst.Subst -> S -> Ts -> Bool
+    occursCheck s u t =
+      case walk s t of
+        V v -> v == u
+        C _ as -> any (occursCheck s u) as
 
     -- occursCheck u' t s = if elem u' $ fv t then Nothing else s
 
 unifySubsts :: Subst.Subst -> Subst.Subst -> Maybe Subst.Subst
 unifySubsts (Subst.Subst one) (Subst.Subst two) =
-    -- trace ("one: " ++ show one ++ "\ntwo: " ++ show two) $
     let maximumVar = max (findUpper one) (findUpper two) in
     let one' = manifactureTerm maximumVar one in
     let two' = manifactureTerm maximumVar two in
@@ -79,7 +75,6 @@ unifySubsts (Subst.Subst one) (Subst.Subst two) =
 
 unifyNoOccursCheck :: Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
 unifyNoOccursCheck = unifyG (\_ _ -> const False)
-
 
 -- Pre-evaluation
 preEval :: Env.Env -> G X -> (G S, Env.Env, [S])
@@ -102,11 +97,10 @@ preEval =
     go vars g@(Env.Env _ i _) (Invoke f fs)  =
       (Invoke f (map (i VI.<@>) fs), g, vars)
 
-
 postEval :: [X] -> G X -> G X
 postEval as goal =
-  let freshs = fvg goal \\ as in
-  foldr Fresh (go (freshs ++ as) goal) freshs
+    let freshs = fvg goal \\ as in
+    foldr Fresh (go (freshs ++ as) goal) freshs
   where
     go vars (g1 :/\: g2) = go vars g1 :/\: go vars g2
     go vars (g1 :\/: g2) = go vars g1 :\/: go vars g2
@@ -174,4 +168,4 @@ run :: Program -> Stream Subst.Subst
 run (Program defs goal) =
   let env = Env.fromDefs defs in
   let (goal', env', _) = preEval env goal in
-  fmap fst $ eval env' Subst.empty goal'
+  fst <$> eval env' Subst.empty goal'
