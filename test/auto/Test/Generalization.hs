@@ -18,7 +18,7 @@ gen1' = []
 gen2' = []
 
 freshNames :: FN.FreshNames
-freshNames = FN.FreshNames [10..15]
+freshNames = FN.FreshNames 10
 
 vars :: [Ts]
 vars@[x, y, z] = map V [1, 2, 3]

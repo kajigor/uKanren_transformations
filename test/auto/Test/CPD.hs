@@ -22,7 +22,7 @@ import qualified Subst
 import qualified Environment as Env
 
 fnames :: S -> FN.FreshNames
-fnames n = FN.FreshNames [n..]
+fnames = FN.FreshNames
 
 
 unit_select = do
@@ -450,7 +450,7 @@ unit_renameGoals = do
     runTest [f [x, y], g [y, y]] [] "fG" names
   where
     runTest goals names newName args =
-      let setNames = map (\x -> ([], x, FN.FreshNames [])) names in
+      let setNames = map (\x -> ([], x, [])) names in
       let insertName name defs = (goals, name, args) : defs in
       test (renameGoals goals)
            setNames
@@ -460,7 +460,7 @@ unit_renameGoals = do
     g = inv "g"
     x = 0
     y = 1
-    names = FN.FreshNames [x, y]
+    names = [x, y]
 
 unit_unifyInvocationsStuff = do
     runTest [] [] $ Just []

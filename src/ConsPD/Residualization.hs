@@ -9,7 +9,6 @@ import qualified CPD.Residualization as CpdR
 import           Data.List ( find, intercalate, nub )
 import           Data.Maybe          (catMaybes, fromJust, fromMaybe)
 import qualified Eval                as E
-import qualified FreshNames          as FN
 import qualified Residualization     as Res
 import qualified Subst
 import           Syntax
@@ -54,7 +53,7 @@ generateInvocation :: CpdR.Definitions -> ([G S], [G S]) -> ([G S], G S)
 generateInvocation defs (gs, v) =
     let Just (goal, n, as) = find ((v ==) . fst3) defs in
     let name = n in
-    let args = generateArgs (FN.unFreshNames as) in
+    let args = generateArgs as in
     let res = call name args in
     (gs, call name args)
   where
@@ -69,7 +68,7 @@ generateInvocation' :: CpdR.Definitions -> [G S] -> [G S] -> G S
 generateInvocation' defs gs v =
     let Just (goal, n, as) = find ((v ==) . (fst3)) defs in
     let name = n in
-    let args = generateArgs (FN.unFreshNames as) in
+    let args = generateArgs as in
     let res = call name args in
     (call name args)
   where
@@ -108,14 +107,14 @@ nodeContent (Conj _ goal _)              = Just goal
 nodeContent (Split _ goal _)             = Just goal
 nodeContent x                            = Nothing -- error "Failed to get node content: unsupported node type"
 
-generateDef :: CpdR.Definitions -> [([G S], G S)] -> (([G S], Name, FN.FreshNames), ConsPDTree) -> Def
+generateDef :: CpdR.Definitions -> [([G S], G S)] -> (([G S], Name, [S]), ConsPDTree) -> Def
 generateDef defs invocations ((gs, n, args), tree) =
   let body = generateGoalFromTree defs invocations tree args in
-  let argsX = map Res.vident (FN.unFreshNames args) in
+  let argsX = map Res.vident args in
   Def n argsX (E.postEval argsX body)
 
 -- generateGoalFromTree :: [([G S], G S)] -> ConsPDTree -> FN.FreshNames -> G X
-generateGoalFromTree :: CpdR.Definitions -> [([G S], G S)] -> ConsPDTree -> FN.FreshNames -> G X
+generateGoalFromTree :: CpdR.Definitions -> [([G S], G S)] -> ConsPDTree -> [S] -> G X
 generateGoalFromTree definitions invocations tree args =
     case go args True tree of
       Just goal ->
@@ -128,7 +127,7 @@ generateGoalFromTree definitions invocations tree args =
     residualizeEnv xs =
       (conj $ map (\(s, ts) -> (V s) === ts) $ reverse (Subst.toList xs)) <|> return success
 
-    go :: FN.FreshNames -> Bool -> ConsPDTree -> Maybe (G S)
+    go :: [S] -> Bool -> ConsPDTree -> Maybe (G S)
     go seen r Fail           = Just failure
     go seen r (Success ss _) = residualizeEnv ss
     go seen r (Or ch (LC.Descend gs _) s) = do

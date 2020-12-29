@@ -11,7 +11,6 @@ import qualified Data.Set as Set
 import qualified Residualization as Res
 import qualified CPD.LocalControl as LC
 import Eval
-import qualified FreshNames as FN
 import Data.Char
 import Data.Maybe
 import CPD.GlobalControl
@@ -20,7 +19,7 @@ import qualified Subst
 
 type Set = Set.Set
 
-type Definitions = [([G S], Name, FN.FreshNames)]
+type Definitions = [([G S], Name, [S])]
 
 residualizationTopLevel :: GlobalTree -> Program
 residualizationTopLevel test =
@@ -67,7 +66,7 @@ generateInvocation goals defs = do
     (error "Residualization failed: invocation of the undefined relation.")
     (conj =<< conjInvocation goals defs)
   where
-    generate args subst = map (\a -> Res.toX $ fromMaybe (V a) (Subst.lookup a subst)) (FN.unFreshNames args)
+    generate args subst = map (\a -> Res.toX $ fromMaybe (V a) (Subst.lookup a subst)) args
     findDef goals defs =
       find (isJust . lst4) $
       map (\(g, n, args) -> (g, n, args, unifyInvocationLists g goals $ Just Subst.empty)) defs
@@ -92,7 +91,7 @@ generateInvocation goals defs = do
         Nothing -> Nothing
 
 
-renameGoals :: [G S] -> Definitions -> (Definitions, Name, FN.FreshNames)
+renameGoals :: [G S] -> Definitions -> (Definitions, Name, [S])
 renameGoals gs definitions =
   let ns = map (\x -> case x of
                         Invoke name args -> (name, args)
@@ -118,8 +117,8 @@ newName ns defs =
   where
     getNames = Set.fromList . map snd3
 
-uniqueArgs :: [[Term S]] -> FN.FreshNames
-uniqueArgs args = FN.FreshNames $ Set.toList $ Set.unions $ concatMap (map getVars) args
+uniqueArgs :: [[Term S]] -> [S]
+uniqueArgs args = Set.toList $ Set.unions $ concatMap (map getVars) args
 
 generateFreshName :: Name -> Set Name -> Name
 generateFreshName n names =
@@ -144,7 +143,7 @@ residualizeSldTree rootGoals tree definitions = do
                     )
                     []
                     resultants
-  let defArgs = FN.unFreshNames $ Res.vident <$> rootVars
+  let defArgs = Res.vident <$> rootVars
   let body = Eval.postEval defArgs $
                 unsafeDisj (reverse goals)
 
