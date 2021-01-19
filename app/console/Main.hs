@@ -4,9 +4,11 @@ import Options.Applicative
 import Data.Semigroup ((<>))
 import Data.Maybe (fromMaybe)
 import qualified Transformer.PrologToMk
+import qualified ConsPDApp
 
 data Action
   = Parse { dir :: Maybe FilePath, file :: FilePath}
+  | ConsPD
   | Default
 
 dirParser :: Parser FilePath
@@ -35,8 +37,18 @@ defaultAction = flag' Default
   <> help "Run the default action"
   )
 
+consPDAction :: Parser Action
+consPDAction = flag' ConsPD
+  (  long "conspd"
+  <> short 'c'
+  <> help "Run the consPD action"
+  )
+
 actionParser :: Parser Action
-actionParser = parseAction <|> defaultAction
+actionParser =
+  parseAction <|>
+  consPDAction <|>
+  defaultAction
 
 main :: IO ()
 main = runAction =<< execParser opts
@@ -51,4 +63,5 @@ runAction (Parse directory file) =
     Transformer.PrologToMk.transform (fromMaybe defaultDirectory directory) file
   where
     defaultDirectory = "/home/ev/prj/geoff/cpd/examples/"
+runAction ConsPD = ConsPDApp.run
 runAction Default = putStrLn "Default action"

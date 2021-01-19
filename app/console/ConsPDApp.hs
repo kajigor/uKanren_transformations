@@ -1,4 +1,4 @@
-module Main where
+module ConsPDApp where
 
 import qualified Program.Bottles
 import qualified Program.Bridge
@@ -131,6 +131,16 @@ runPropEval = do
     runConsPD (-1) "propFirstNando" Program.PropEval.nandoFirstQuery
     runConsPD (-1) "propLastPlain"  Program.PropEval.plainLastQuery
     runConsPD (-1) "propLastNando"  Program.PropEval.nandoLastQuery
+
+run :: IO ()
+run = do
+  runPath
+  runUnify
+  runL'
+  runPropEval
+  runDoubleApp
+  runMaxlen
+  runL
 
 main :: IO ()
 main = do
