@@ -1,26 +1,22 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module Syntax where
 
-import Data.List
-import Text.Printf
-import Data.Char
--- import qualified Data.Map as Map
+import Data.List ( intercalate, nub )
+import Text.Printf ( printf )
+import Data.Char ( toLower )
 
 type X    = String -- Syntactic variables
 type S    = Int    -- Semantic variables
 type Name = String -- Names of variables/definitions
 
 -- Terms
-data Term v = V v | C String [Term v] deriving (Eq, Ord)
+data Term v = V v | C String [Term v] deriving (Eq, Ord, Functor)
 type Tx     = Term X
 type Ts     = Term S
-
-instance Functor Term where
-  fmap f (V v)    = V $ f v
-  fmap f (C s ts) = C s $ map (fmap f) ts
 
 -- Definitions
 data Def = Def Name [Name] (G X)
@@ -29,36 +25,21 @@ data Def = Def Name [Name] (G X)
 instance Show Def where
   show (Def name args body) = printf "%s %s = %s" name (unwords args) (show body)
 
--- type DefMap = Map.Map (Name, Int) Def
-
--- insertDef :: Def -> DefMap -> DefMap
--- insertDef def@(Def n a _) = Map.insert (n, length a) def
-
--- defMapFromList :: [Def] -> DefMap
--- defMapFromList = foldr insertDef Map.empty
-
 data Program = Program [Def] (G X)
              deriving (Show, Eq)
 
 -- Goals
-data G a =
-    Term a :=: Term a
+data G a
+  = Term a :=: Term a
   | G a :/\: G a
   | G a :\/: G a
   | Fresh  Name (G a)
   | Invoke Name [Term a]
-  deriving (Eq, Ord)
-
-instance Functor G where
-  fmap f (t :=: u)          = (f <$> t) :=:  (f <$> u)
-  fmap f (g :/\: h)         = (f <$> g) :/\: (f <$> h)
-  fmap f (g :\/: h)         = (f <$> g) :\/: (f <$> h)
-  fmap f (Fresh name g)     = Fresh name (f <$> g)
-  fmap f (Invoke name args) = Invoke name $ map (f <$>) args
+  deriving (Eq, Ord, Functor)
 
 freshVars :: [Name] -> G t -> ([Name], G t)
 freshVars names (Fresh name goal) = freshVars (name : names) goal
-freshVars names goal = (names, goal)
+freshVars names goal = (reverse names, goal)
 
 infix  8 :=:
 infixr 7 :/\:
@@ -142,35 +123,36 @@ fvg = nub . go
   go (Invoke _ ts) = concatMap fv ts
   go (Fresh x g)   = filter (x /=) $ go g
 
-subst_in_term :: Eq v => v -> Term v -> Term v -> Term v
-subst_in_term v t t0@(V v0)     = if v == v0 then t else t0
-subst_in_term v t    (C n args) = C n $ map (subst_in_term v t) args
+substInTerm :: Eq v => v -> Term v -> Term v -> Term v
+substInTerm v t t0@(V v0)     = if v == v0 then t else t0
+substInTerm v t    (C n args) = C n $ map (substInTerm v t) args
 
-subst_in_goal :: X -> Term X -> G X -> G X
-subst_in_goal v t   (t1 :=:  t2)        = subst_in_term v t t1 === subst_in_term v t t2
-subst_in_goal v t   (g1 :/\: g2)        = subst_in_goal v t g1 &&& subst_in_goal v t g2
-subst_in_goal v t   (g1 :\/: g2)        = subst_in_goal v t g1 ||| subst_in_goal v t g2
-subst_in_goal v t g@(Fresh n g')        = if v == n then g else Fresh n $ subst_in_goal v t g'
-subst_in_goal v t   (Invoke n ts)       = Invoke n $ map (subst_in_term v t) ts
+substInGoal :: X -> Term X -> G X -> G X
+substInGoal v t   (t1 :=:  t2)  = substInTerm v t t1 === substInTerm v t t2
+substInGoal v t   (g1 :/\: g2)  = substInGoal v t g1 &&& substInGoal v t g2
+substInGoal v t   (g1 :\/: g2)  = substInGoal v t g1 ||| substInGoal v t g2
+substInGoal v t g@(Fresh n g')  = if v == n then g else Fresh n $ substInGoal v t g'
+substInGoal v t   (Invoke n ts) = Invoke n $ map (substInTerm v t) ts
 
 instance Show a => Show (Term a) where
   show (V v) = showVar v
   show (C name []) | isNil name = "[]"
   show (C name [h, t]) | isCons name = printf "(%s : %s)" (show h) (show t)
-  show c | isSucc c || isZero c = pretifyNum 0 c show showVar
+  show c | isSucc c || isZero c = prettifyNum 0 c show showVar
   show (C name ts) =
-            case ts of
-              [] -> name
-              _  -> printf "C %s [%s]" name (intercalate ", " $ map show ts)
+    case ts of
+      [] -> name
+      _  -> printf "C %s [%s]" name (intercalate ", " $ map show ts)
 
 instance Show a => Show (G a) where
-  show (t1 :=:  t2)               = printf "%s = %s" (show t1) (show t2)
-  show (g1 :/\: g2)               = printf "(%s /\\ %s)" (show g1) (show g2)
-  show (g1 :\/: g2)               = printf "(%s \\/ %s)" (show g1) (show g2)
-  show (Fresh name g)             =
+  show (t1 :=:  t2) = printf "%s = %s" (show t1) (show t2)
+  show (g1 :/\: g2) = printf "(%s /\\ %s)" (show g1) (show g2)
+  show (g1 :\/: g2) = printf "(%s \\/ %s)" (show g1) (show g2)
+  show (Fresh name g) =
     let (names, goal) = freshVars [name] g in
-    printf "fresh %s (%s)" (unwords $ map show $ reverse names) (show goal)
-  show (Invoke name ts)           = printf "%s %s" name (unwords $ map (\x -> if ' ' `elem` x then printf "(%s)" x else x) $ map show ts)
+    printf "fresh %s (%s)" (unwords $ map show names) (show goal)
+  show (Invoke name ts) =
+    printf "%s %s" name (unwords $ map (\x -> if ' ' `elem` x then printf "(%s)" x else x) $ map show ts)
 
 class Dot a where
   dot :: a -> String
@@ -192,19 +174,28 @@ instance Dot a => Dot (Term a) where
   dot (C name []) | isNil name = "[]"
   dot (C name [h, C t []]) | isCons name && isNil t = printf "[%s]" (dot h)
   dot (C name [h, t]) | isCons name = printf "%s : %s" (dot h) (dot t)
-  dot c | isSucc c || isZero c = pretifyNum' 0 c dot dotVar
+  dot c | isSucc c || isZero c = prettifyNum' 0 c dot dotVar
   dot (C name [x, y]) | isPair name = printf "(%s, %s)" (dot x) (dot y)
   dot (C name ts) =
           case ts of
             [] -> name
             _  -> printf "C %s [%s]" name (unwords $ map dot ts)
 
+isNil :: [Char] -> Bool
 isNil s = map toLower s == "nil" || s == "[]"
+
+isCons :: [Char] -> Bool
 isCons s = map toLower s == "cons" || s == "%"
+
+isZero :: Term v -> Bool
 isZero (C o []) = let l = map toLower o in l == "o" || l == "z"
 isZero _ = False
+
+isSucc :: Term v -> Bool
 isSucc (C s [n]) = map toLower s == "s"
 isSucc _ = False
+
+isPair :: [Char] -> Bool
 isPair s = map toLower s == "pair"
 
 dotVar :: Dot a => a -> String
@@ -217,26 +208,26 @@ predec :: Term a -> Term a
 predec c@(C _ [a]) | isSucc c = a
 predec c = error $ printf "Failed to get predecessor"
 
-pretifyNum :: Show a => Int -> Term a -> (Int->String) -> (a -> String) -> String
-pretifyNum acc (V v) intPrint varPrint = printf "(%s + %s)" (intPrint acc) (varPrint v)
-pretifyNum acc c intPrint varPrint | isSucc c = pretifyNum (1 + acc) (predec c ) intPrint varPrint
-pretifyNum acc c intPrint _ | isZero c = intPrint acc
-pretifyNum acc c intPrint varPrint = error (printf "Failed to pretifyNum: %s" (show c))
+prettifyNum :: Show a => Int -> Term a -> (Int->String) -> (a -> String) -> String
+prettifyNum acc (V v) intPrint varPrint = printf "(%s + %s)" (intPrint acc) (varPrint v)
+prettifyNum acc c intPrint varPrint | isSucc c = prettifyNum (1 + acc) (predec c ) intPrint varPrint
+prettifyNum acc c intPrint _ | isZero c = intPrint acc
+prettifyNum acc c intPrint varPrint = error (printf "Failed to prettifyNum: %s" (show c))
 
-pretifyNum' :: Dot a => Int -> Term a -> (Int->String) -> (a -> String) -> String
-pretifyNum' acc (V v) intPrint varPrint = printf "(%s + %s)" (intPrint acc) (varPrint v)
-pretifyNum' acc c intPrint varPrint | isSucc c = pretifyNum' (1 + acc) (predec c ) intPrint varPrint
-pretifyNum' acc c intPrint _ | isZero c = intPrint acc
-pretifyNum' acc c intPrint varPrint = error (printf "Failed to pretifyNum': %s" (dot c))
+prettifyNum' :: Dot a => Int -> Term a -> (Int->String) -> (a -> String) -> String
+prettifyNum' acc (V v) intPrint varPrint = printf "(%s + %s)" (intPrint acc) (varPrint v)
+prettifyNum' acc c intPrint varPrint | isSucc c = prettifyNum' (1 + acc) (predec c ) intPrint varPrint
+prettifyNum' acc c intPrint _ | isZero c = intPrint acc
+prettifyNum' acc c intPrint varPrint = error (printf "Failed to prettifyNum': %s" (dot c))
 
 instance Dot a => Dot (G a) where
-  dot (t1 :=:  t2)               = printf "%s = %s" (dot t1) (dot t2)
-  dot (g1 :/\: g2)               = printf "(%s /\\ %s)" (dot g1) (dot g2)
-  dot (g1 :\/: g2)               = printf "(%s \\/ %s)" (dot g1) (dot g2)
-  dot (Fresh name g)             =
+  dot (t1 :=:  t2) = printf "%s = %s" (dot t1) (dot t2)
+  dot (g1 :/\: g2) = printf "(%s /\\ %s)" (dot g1) (dot g2)
+  dot (g1 :\/: g2) = printf "(%s \\/ %s)" (dot g1) (dot g2)
+  dot (Fresh name g) =
     let (names, goal) = freshVars [name] g in
-    printf "fresh %s (%s)" (dot $ reverse names) (dot goal)
-  dot (Invoke name ts)           = printf "%s(%s)" name (dot ts)
+    printf "fresh %s (%s)" (dot names) (dot goal)
+  dot (Invoke name ts) = printf "%s(%s)" name (dot ts)
 
 instance {-# OVERLAPPING #-} Dot a => Dot [G a] where
   dot gs = intercalate " /\\ " (map dot gs)

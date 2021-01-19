@@ -124,10 +124,10 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
       purifyU :: Set X -> [G X] -> G X -> ([G X], G X)
       purifyU constrV conjs g@(l@(V x) :=: r@(V y)) = if Set.member y constrV then
                                                         if Set.member x constrV then (conjs, g)
-                                                        else (map (subst_in_goal x r) conjs, success)
-                                                      else (map (subst_in_goal y l) conjs, success)
+                                                        else (map (substInGoal x r) conjs, success)
+                                                      else (map (substInGoal y l) conjs, success)
       purifyU constrV conjs g@(V x :=: t)           = if Set.member x constrV then (conjs, g)
-                                                      else (map (subst_in_goal x t) conjs, success)
+                                                      else (map (substInGoal x t) conjs, success)
       purifyU constrV conjs g@(g1 :\/: g2)          = let constrV' = foldl (\s -> Set.union s . Set.fromList . fvg) constrV conjs in
                                                       let ([], g1') = purifyU constrV' [] g1 in
                                                       let ([], g2') = purifyU constrV' [] g2 in
@@ -358,7 +358,7 @@ termHasVars (C _ a) = any termHasVars a
 removeLinks :: Set X -> G X -> G X
 removeLinks a g = case getFstLink a id id id g of
                     Nothing                  -> g
-                    Just (disjC, conj, x, y) -> removeLinks a $ disjC $ subst_in_goal x y conj
+                    Just (disjC, conj, x, y) -> removeLinks a $ disjC $ substInGoal x y conj
 
 {-------------------------------------------}
 hasVar g x = elem x $ fvg g
@@ -378,8 +378,8 @@ removeUnifications _ g              = g
 
 renameFreshVars g =
   let (vars, g') = freshVars [] g in
-  let vars' = reverse $ map (toV "q") [1..length vars] in
-  let g'' = foldr (\(v, v') -> subst_in_goal v (V v')) g' $ zip vars vars' in
+  let vars' = map (toV "q") [1..length vars] in
+  let g'' = foldr (\(v, v') -> substInGoal v (V v')) g' $ zip vars vars' in
   fresh vars'   g''
 
 {-------------------------------------------}
