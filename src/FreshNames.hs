@@ -22,6 +22,3 @@ instance FreshName Int where
   getNames n (FreshNames x) =
     let (xs, h:_) = splitAt n $ enumFrom x
     in (xs, FreshNames h)
-
--- addName :: S -> FreshNames -> FreshNames
--- addName x (FreshNames d) = FreshNames (x:d)

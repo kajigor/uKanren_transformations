@@ -81,11 +81,6 @@ abstractChild ancs (subst, g, Just env) =
   let (abstracted, d') = abstract (LC.Descend g ancs) g (Env.getFreshNames env) in
   map (\(g, gen) -> (subst, g, gen, Env.updateNames env d')) abstracted
 
-conjToList :: G a -> [G a]
-conjToList (g :/\: h)     = conjToList g ++ conjToList h
-conjToList x@(Invoke _ _) = [x]
-conjToList _              = error "This conjunction is not a list of calls"
-
 topLevel :: Program -> LC.Heuristic -> (GlobalTree, G S, [S])
 topLevel (Program defs goal) heuristic =
   let env = Env.fromDefs defs in

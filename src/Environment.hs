@@ -32,4 +32,4 @@ updateInterp :: Env -> VI.Interpretation -> Env
 updateInterp (Env p _ d) i = Env p i d
 
 getDef :: Env -> Name -> Def
-getDef (Env p _ _) n = Defs.getDef p n
+getDef (Env p _ _) = Defs.getDef p

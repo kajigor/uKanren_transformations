@@ -8,6 +8,7 @@ module Syntax where
 import Data.List ( intercalate, nub )
 import Text.Printf ( printf )
 import Data.Char ( toLower )
+import Util.Miscellaneous ( parenthesize )
 
 type X    = String -- Syntactic variables
 type S    = Int    -- Semantic variables
@@ -152,7 +153,7 @@ instance Show a => Show (G a) where
     let (names, goal) = freshVars [name] g in
     printf "fresh %s (%s)" (unwords $ map show names) (show goal)
   show (Invoke name ts) =
-    printf "%s %s" name (unwords $ map (\x -> if ' ' `elem` x then printf "(%s)" x else x) $ map show ts)
+    printf "%s %s" name (unwords $ map (parenthesize . show) ts)
 
 class Dot a where
   dot :: a -> String

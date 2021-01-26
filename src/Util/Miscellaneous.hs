@@ -1,6 +1,7 @@
 module Util.Miscellaneous where
 
-import Data.List
+import Data.List ( (\\), intercalate, subsequences )
+import Text.Printf (printf)
 
 fst3 :: (a, b, c) -> a
 fst3 (x, _, _) = x
@@ -67,3 +68,6 @@ show' xs =
 
 escapeTick :: String -> String
 escapeTick = concatMap (\x -> if x == '\'' then "\\\'" else [x])
+
+parenthesize x | ' ' `elem` x = printf "(%s)" x
+parenthesize x = x

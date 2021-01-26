@@ -3,14 +3,15 @@
 
 module OCanrenize where
 
-import           Control.Applicative ((<|>))
-import           Data.Char
-import           Data.Maybe          (fromMaybe)
-import           Syntax
-import           System.IO
-import           System.IO.Temp
-import           System.Process
-import           Text.Printf
+import Control.Applicative ((<|>))
+import Data.Char ( toLower )
+import Data.Maybe (fromMaybe)
+import Syntax ( freshVars, Def(..), G(..), Term(..), X )
+import System.IO ( IOMode(WriteMode), hClose, openFile, hPutStrLn )
+import System.IO.Temp ( withSystemTempFile )
+import System.Process ( system )
+import Text.Printf ( printf )
+import Util.Miscellaneous ( parenthesize )
 
 class OCanren a where
   ocanren :: a -> String
@@ -33,9 +34,11 @@ instance OCanren v => OCanren (Term v) where
       consToString name args =
         printf "(%s %s)" (parenthesize $ getConsName name) (printArgs (map ocanren args))
 
-      getConsName name | name == "fst" || name == "snd" = printf "%s%s" name "_"
+      getConsName name | isReserved name = printf "%s%s" name "_"
       getConsName (h : t) = toLower h : t
-      getConsName ""      = "emptyCons"
+      getConsName "" = "emptyCons"
+
+      isReserved name = name == "fst" || name == "snd"
 
       getList "nil" [] = Just "(List.nil ())"
       getList name [h, t] | name == "cons" || name == "%" =
@@ -43,7 +46,7 @@ instance OCanren v => OCanren (Term v) where
       getList _ _ = Nothing
 
       getSucc name [] | name == "o" || name == "z" = Just "Nat.zero"
-      getSucc "s" [x] | name == "s" = Just $ printf "(Nat.succ %s)" (parenthesize $ ocanren x)
+      getSucc name [x] | name == "s" = Just $ printf "(Nat.succ %s)" (parenthesize $ ocanren x)
       getSucc _ _ = Nothing
 
       getBool "true" [] = Just "!!true"
@@ -59,31 +62,17 @@ instance OCanren v => OCanren (Term v) where
       getSome "none" [] = Just "(Option.none ())"
       getSome _ _ = Nothing
 
-instance {-OCanren v =>-} OCanren (G X) where
+instance OCanren (G X) where
   ocanren (t1 :=:  t2)  = printf "(%s === %s)" (ocanren t1) (ocanren t2)
   ocanren (g1 :/\: g2)  = printf "(%s &&& %s)" (ocanren g1) (ocanren g2)
   ocanren (g1 :\/: g2)  = printf "(%s ||| %s)" (ocanren g1) (ocanren g2)
   ocanren (Fresh x g )  = let (names, goal) = freshVars [x] g in printf "(fresh (%s) (%s))" (printArgs names) (ocanren goal)
---ocanren (Invoke f ts) = printf "(print_string \"%s\\n\";%s)" (f ++ concat [' ' : ocanren t | t <- ts]) (f ++ concat [' ' : ocanren t | t <- ts])
   ocanren (Invoke "success" []) = "success"
   ocanren (Invoke "fail" []) = "fail"
   ocanren (Invoke f ts) = printf "(%s %s)" f (printArgs $ map ocanren ts)
 
-
--- instance {-OCanren v =>-} OCanren (G X) where
--- --ocanren (t1 :=:  t2)  = printf "(print_string \"%s === %s\\n\"; %s === %s)" (ocanren t1) (ocanren t2) (ocanren t1) (ocanren t2)
---   ocanren (t1 :=:  t2)  = printf "(%s === %s)" (ocanren t1) (ocanren t2)
---   ocanren (g1 :/\: g2)  = printf "defer (%s &&& %s)" (ocanren g1) (ocanren g2)
---   ocanren (g1 :\/: g2)  = printf "defer (%s ||| %s)" (ocanren g1) (ocanren g2)
---   ocanren (Fresh x g )  = let (names, goal) = freshVars [x] g in printf "(fresh ((%s)) (%s))" (printArgs names) (ocanren goal)
--- --ocanren (Invoke f ts) = printf "(print_string \"%s\\n\";%s)" (f ++ concat [' ' : ocanren t | t <- ts]) (f ++ concat [' ' : ocanren t | t <- ts])
---   ocanren (Invoke f ts) = printf "defer (%s %s)" f (printArgs $ map ocanren ts)
-
 printArgs [] = "()"
 printArgs args = unwords $ map parenthesize args
-
-parenthesize x | ' ' `elem` x = printf "(%s)" x
-parenthesize x = x
 
 ocanrenize :: String -> (G X, [String]) -> String
 ocanrenize topLevelName (g, args) =
@@ -107,27 +96,21 @@ toOCanren = toOCanren' ocanrenize
 
 topLevel = toOCanren' ocanrenize'
 
-toOCanren' printer filename topLevelName environment prog =
-  do
+toOCanren' printer filename topLevelName environment prog = do
     let fn = filter (/= '/') filename
-    withSystemTempFile fn (\ tmp_name tmp ->
-                              do
+    withSystemTempFile fn (\ tmp_name tmp -> do
                                 hPutStrLn tmp (printer topLevelName prog)
                                 hClose tmp
                                 printEnvironment filename environment
                                 system $ "cat " ++ tmp_name ++ " >> " ++ filename
-                                --system $ "camlp5o pr_o.cmo " ++ tmp_name ++ " >> " ++ filename
-                                -- system $ "ocamlformat --enable-outside-detected-project " ++ filename ++ " -m 160 -i"
                                 return ()
                           )
   where
-    printEnvironment filename (Just env) =
-      do
+    printEnvironment filename (Just env) = do
         file <- openFile filename WriteMode
         hPutStrLn file env
         hClose file
-    printEnvironment filename Nothing =
-      do
+    printEnvironment filename Nothing = do
         file <- openFile filename WriteMode
         hPutStrLn file "open GT"
         hPutStrLn file "open OCanren"
