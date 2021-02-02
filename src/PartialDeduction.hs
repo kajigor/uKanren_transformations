@@ -3,6 +3,7 @@ module PartialDeduction where
 import qualified CPD.LocalControl   as LC
 import           Data.List          (find)
 import           Data.Maybe         (mapMaybe)
+import qualified Descend
 import           Embed
 import qualified Eval               as E
 import           Generalization     (generalizeGoals)
@@ -15,7 +16,7 @@ import qualified Environment as Env
 
 data PDTree = Fail
             | Success Subst.Subst
-            | Or [PDTree] (LC.Descend (G S)) Subst.Subst
+            | Or [PDTree] (Descend.Descend (G S)) Subst.Subst
             | Conj [PDTree] [G S] Subst.Subst
             | Gen PDTree (G S)
             | Leaf (G S) Subst.Subst
@@ -27,10 +28,10 @@ topLevel (Program defs goal) =
     let env = Env.fromDefs defs in
     let (logicGoal, env', _) = E.preEval env goal in
     let nodes = [] in
-    let descend = LC.Descend logicGoal [] in
+    let descend = Descend.Descend logicGoal [] in
     go descend env' nodes Subst.empty
   where
-    go d@(LC.Descend goal ancs) env seen subst =
+    go d@(Descend.Descend goal ancs) env seen subst =
       let treeResult =
             if any (isRenaming goal) seen
             then
@@ -40,7 +41,7 @@ topLevel (Program defs goal) =
                 Just g ->
                   let ([newGoal], gen1, gen2, names) = generalizeGoals (Env.getFreshNames env) [g] [goal] in
                   let env' = Env.updateNames env names in
-                  let (ch, _, _) = go (LC.Descend newGoal ancs) env' seen subst in
+                  let (ch, _, _) = go (Descend.Descend newGoal ancs) env' seen subst in
                   Gen ch newGoal
                 Nothing ->
                   let (unfolded, env') = oneStepUnfold goal env in
@@ -51,7 +52,7 @@ topLevel (Program defs goal) =
                         then
                           leaf s'
                         else
-                          Conj (map (\h -> fst3 $ go (LC.Descend h (goal : ancs)) env' (goal : seen) s') g) g s') unified)
+                          Conj (map (\h -> fst3 $ go (Descend.Descend h (goal : ancs)) env' (goal : seen) s') g) g s') unified)
                     d
                     subst
       in (treeResult, V 1 === V 2, [4, 5, 6, 7])

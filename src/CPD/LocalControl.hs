@@ -13,22 +13,21 @@ import           Embed
 import qualified Eval               as E
 import qualified FreshNames         as FN
 import           Generalization
-import           Prelude            hiding (lookup, showList)
+import           Prelude            hiding (lookup)
 import qualified Subst
 import           Syntax
 import           Text.Printf
 import           Unfold             (oneStepUnfold, normalize, unifyStuff, getMaximumBranches)
 import qualified Environment as Env
+import           Util.ListZipper
+import qualified Util.Miscellaneous as Util
+import           Descend
 
 -- trace :: String -> a -> a
 -- trace _ x = x
 
 data Heuristic = Deterministic | Branching
 
-data Descend a = Descend { getCurr :: a, getAncs :: [a] } deriving (Eq)
-
-instance (Show a) => Show (Descend a) where
-  show (Descend curr ancs) = printf "%s <-\n%s" (show curr) (showList ancs)
 
 type DescendGoal = Descend (G S)
 
@@ -41,19 +40,15 @@ data SldTree = Fail
 select :: [DescendGoal] -> Maybe DescendGoal
 select = find (\x -> isSelectable embed (getCurr x) (getAncs x))
 
-selecter :: [DescendGoal] -> ([DescendGoal], [DescendGoal])
-selecter gs =
-  span (\x ->
-    let res = isSelectable embed (getCurr x) (getAncs x) in
-    -- trace (printf "Selecter\ncurr:\n%s\nancs:%s\nrslt:%s\n" (show $ getCurr x) (showList (getAncs x)) (show res)) $
-    not $ isSelectable (\x y -> embed x y || isInst x y) (getCurr x) (getAncs x)) gs
+selecter :: Zipper DescendGoal -> Maybe (Zipper DescendGoal)
+selecter =
+  goRightWhile (\x -> not $ isSelectable (\x y -> embed x y || isInst x y) (getCurr x) (getAncs x))
     -- not $ isSelectable embed (getCurr x) (getAncs x)) gs
 
 -- TODO reconsider hardcoded list of basic function names
 isSelectable :: Show a => (G a -> G a -> Bool) -> G a -> [G a] -> Bool
 -- isSelectable _ _ ancs | Set.null ancs = True
 isSelectable emb goal ancs =
-  -- trace (printf "isSelectable: \nGoal: %s\nAncs: %s\n" (show goal) (show ancs)) $
   (not (any (`emb` goal) ancs) || null ancs) && fineToUnfold goal
   where
     fineToUnfold (Invoke f _) = f `notElem` basics
@@ -65,19 +60,17 @@ instance Subst.ApplySubst [Descend (G S)] where
     map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
 
 sldResolution :: [G S] -> Env.Env -> Subst.Subst -> [[G S]] -> Heuristic -> SldTree
-sldResolution goal env subst seen heuristic =
+sldResolution goal env subst seen =
   -- sldResolutionStep (map (\x -> Descend x Set.empty) goal) env subst Set.empty True
   -- trace "\n\nSLDRESOLUTION \n\n" $
-  sldResolutionStep (map (\x -> Descend x []) goal) env subst seen True heuristic
-
-showList :: Show a => [a] -> String
-showList = unlines . map show
+  sldResolutionStep (map (\x -> Descend x []) goal) env subst seen True
 
 sldResolutionStep :: [DescendGoal] -> Env.Env -> Subst.Subst -> [[G S]] -> Bool -> Heuristic -> SldTree
 sldResolutionStep gs env s seen isFirstTime heuristic =
+  trace (printf "Local control\n%s\n\n" (show gs))  $
   let (temp, _) = FN.getFreshName (Env.getFreshNames env) in
   let curs = map getCurr gs in
-  let prettySeen = showList seen  in
+  let prettySeen = Util.showList "" seen  in
   -- if variantCheck curs seen
   if instanceCheck curs seen
   then
@@ -87,29 +80,29 @@ sldResolutionStep gs env s seen isFirstTime heuristic =
     --   then Leaf gs s env
     --   else
         maybe (Leaf gs s env)
-              (\(ls, Descend g ancs, rs) ->
+              (\(Zipper (ls, Descend g ancs, rs)) ->
                   let (g', env') = oneStepUnfold g env in
                   go g' env' ls rs g ancs isFirstTime
               )
               (selectNext gs)
       where
 
-
-        selectNext gs =
-          let (ls, rs) = selecter gs in
-          if null rs then Nothing else Just (ls, head rs, tail rs)
+        selectNext :: [DescendGoal] -> Maybe (Zipper DescendGoal)
+        selectNext gs = do
+          z <- toZipper gs
+          traceM (printf "Zipper: %s\n" $ show z)
+          let r = selecter z
+          traceM (printf "Selecter: %s\n" $ show r)
+          r
 
         go g' env' ls rs g ancs isFirstTime =
-          -- trace (printf "\nGo:\ng': %s\ng:\n%s\nls:\n%s\nrs:\n%s\n" (show g') (show g) (showList ls) (showList rs)) $
           let normalized = normalize g' in
-          -- trace (printf "normalized:\n%s" $ showList normalized) $
           let unified = mapMaybe (unifyStuff s) normalized in
-          -- trace (printf "unified:\n%s" $ showList unified) $
           let addDescends xs s =
                 -- Subst.substitute s (ls ++ map (\x -> Descend x (g : ancs)) xs ++ rs) in
-                Subst.substitute s  ( map addDescendId ls ++
+                Subst.substitute s  (reverse ls ++
                                   map (\x -> Descend x (g : ancs)) xs ++
-                                  map addDescendId rs
+                                  rs
                                 )
                   where
                     addDescend goal (Descend cur ancs) = Descend goal (cur : ancs)
@@ -130,9 +123,9 @@ sldResolutionStep gs env s seen isFirstTime heuristic =
                        -- Conj (sldResolutionStep newDescends env' s' (Set.insert (map getCurr gs) seen) False newDescends s'
             ns | not $ null rs ->
               maybe (Leaf gs s env)
-                    (\(ls', Descend nextAtom nextAtomsAncs, rs')  ->
+                    (\(Zipper (ls', Descend nextAtom nextAtomsAncs, rs'))  ->
                             let (g'', env'') = oneStepUnfold nextAtom env in
-                            go g'' env'' (ls ++ (Descend g ancs : ls')) rs' nextAtom nextAtomsAncs False
+                            go g'' env'' (reverse ls ++ (Descend g ancs : reverse ls')) rs' nextAtom nextAtomsAncs False
                     )
                     (selectNext rs)
             ns ->

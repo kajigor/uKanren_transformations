@@ -1,11 +1,13 @@
 module Util.ConjRetriever where
 
+import qualified CPD.GlobalControl as GC
+import qualified CPD.LocalControl as LC
+import Data.List.Extra
+import qualified Data.Set as Set
+import           Descend
 import Syntax
 import Tree
-import qualified CPD.GlobalControl as GC
-import qualified Data.Set as Set
-import qualified CPD.LocalControl as LC 
-import Data.List.Extra
+
 
 retrieve :: Tree -> [[G S]]
 retrieve tree = map reverse $ Set.toList $ Set.fromList $ go tree [[]] where
@@ -21,5 +23,5 @@ retrieve tree = map reverse $ Set.toList $ Set.fromList $ go tree [[]] where
 globalTreeRetrieve :: GC.GlobalTree -> [[[G S]]]
 globalTreeRetrieve tree = map reverse $ filter notNull $ go tree [[]] where
   go (GC.Leaf _ _ _) acc = [[]]
-  go (GC.Node d _ _ ch) acc = concatMap (\x -> go x (map (LC.getCurr d : ) acc)) ch
-  go (GC.Prune d _) acc = map ((LC.getCurr d) :) acc
+  go (GC.Node d _ _ ch) acc = concatMap (\x -> go x (map (getCurr d : ) acc)) ch
+  go (GC.Prune d _) acc = map ((getCurr d) :) acc

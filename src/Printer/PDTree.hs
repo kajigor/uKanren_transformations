@@ -5,7 +5,7 @@ import Printer.Dot
 import Syntax
 import PartialDeduction
 import Text.Printf
-import CPD.LocalControl (getCurr)
+import Descend
 
 instance DotPrinter PDTree where
   labelNode t@(Conj ch _ _)  = addChildren t ch

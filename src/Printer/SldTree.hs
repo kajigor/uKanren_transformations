@@ -1,9 +1,10 @@
 
 module Printer.SldTree where
 
+import CPD.LocalControl
+import Descend
 import Printer.Dot
 import Syntax
-import CPD.LocalControl
 import Text.Printf
 
 instance DotPrinter SldTree where

@@ -9,6 +9,7 @@ import qualified Data.Map.Strict    as M
 import           Data.Maybe         (catMaybes, fromJust, fromMaybe,
                                      isNothing, mapMaybe)
 import           Data.Ord           (comparing)
+import           Descend
 import           Embed
 import qualified Eval               as E
 import qualified FreshNames         as FN
@@ -22,7 +23,7 @@ import qualified Environment as Env
 
 data ConsPDTree = Fail
                 | Success Subst.Subst Env.Env
-                | Or [ConsPDTree] (LC.Descend [G S]) Subst.Subst
+                | Or [ConsPDTree] (Descend [G S]) Subst.Subst
                 | Conj [ConsPDTree] [G S] Subst.Subst
                 | Gen ConsPDTree [G S] [G S] Generalizer Subst.Subst
                 | Leaf [G S] Subst.Subst Env.Env [G S] -- last argument is a goal renaming of which current node is
@@ -142,15 +143,15 @@ justUnfold :: Int -> Program -> (ConsPDTree, G S, [S])
 justUnfold limit (Program defs goal) =
     let env = Env.fromDefs defs in
     let (logicGoal, env', names) = E.preEval env goal in
-    (go 0 (LC.Descend (conjToList logicGoal) []) env' Subst.empty, logicGoal, names)
+    (go 0 (Descend (conjToList logicGoal) []) env' Subst.empty, logicGoal, names)
   where
-    go n (LC.Descend gs ancs) env subst | n > limit || length gs > 1 =
+    go n (Descend gs ancs) env subst | n > limit || length gs > 1 =
       case findVariant gs ancs of
         Nothing -> Prune gs subst
         Just v -> Leaf gs subst env v
-    go n d@(LC.Descend gs ancs) env subst =
+    go n d@(Descend gs ancs) env subst =
       let [goal] = Subst.substitute subst gs in
-      let addDescend g = LC.Descend g ([goal] : ancs) in
+      let addDescend g = Descend g ([goal] : ancs) in
       let (unified, env') = oneStep goal env subst in
       let children = map (\(gs, s) -> if null gs
                                       then Success s env'
@@ -165,15 +166,15 @@ topLevel limit (Program defs goal) =
     let (logicGoal, env', names) = E.preEval env goal in
     let nodes = [] in
     let failed = [] in
-    let descend = LC.Descend (conjToList logicGoal) [] in
+    let descend = Descend (conjToList logicGoal) [] in
     (fst4 $ go descend env' nodes Subst.empty failed, logicGoal, names)
   where
-    go :: LC.Descend [G S] -> Env.Env -> [[G S]] -> Subst.Subst -> [[G S]] -> (ConsPDTree, [[G S]], [[G S]], Env.Env)
-    go (LC.Descend goal' ancs') env seen state failed =
+    go :: Descend [G S] -> Env.Env -> [[G S]] -> Subst.Subst -> [[G S]] -> (ConsPDTree, [[G S]], [[G S]], Env.Env)
+    go (Descend goal' ancs') env seen state failed =
      let (hd, _) = FN.getFreshName (Env.getFreshNames env) in
      let goal = Subst.substitute state goal' in
      let seen' = goal : seen in
-     let addAnc x = LC.Descend x (goal : ancs') in
+     let addAnc x = Descend x (goal : ancs') in
     --  if goal `elem` failed
      if variantCheck goal failed
      then
@@ -350,8 +351,8 @@ doStep goal env state =
       (oneStep goal env state)
       (incrDeepOneStep globalLimit 0 goal env state)
 
-or :: [ConsPDTree] -> LC.Descend [G S] -> Subst.Subst -> [[G S]] -> [[G S]] -> Env.Env -> (ConsPDTree, [[G S]], [[G S]], Env.Env)
-or ch d@(LC.Descend gs _) state seen failed env =
+or :: [ConsPDTree] -> Descend [G S] -> Subst.Subst -> [[G S]] -> [[G S]] -> Env.Env -> (ConsPDTree, [[G S]], [[G S]], Env.Env)
+or ch d@(Descend gs _) state seen failed env =
   if null ch || all (\x -> case x of Fail -> True; _ -> False) ch
   then (Fail, (delete gs seen), (gs:failed), env)
   else (Or ch d state, seen, failed, env)
@@ -461,7 +462,7 @@ simplify tree =
 
 
     getGs :: ConsPDTree -> [G S]
-    getGs (Or    ch (LC.Descend g _) s) = g
+    getGs (Or    ch (Descend g _) s) = g
     getGs (Conj  ch g s) = g
     getGs (Split ch g s) = g
     getGs x = []

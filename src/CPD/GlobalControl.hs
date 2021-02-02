@@ -5,6 +5,8 @@ module CPD.GlobalControl where
 import qualified CPD.LocalControl   as LC
 import           Data.List          (find, partition)
 import           Data.Tuple
+import           Descend
+import           Debug.Trace        (trace)
 import           Embed
 import qualified Eval               as E
 import qualified FreshNames         as FN
@@ -12,21 +14,20 @@ import           Generalization     (Generalizer)
 import           Prelude            hiding (sequence)
 import qualified Subst
 import           Syntax
+import           Text.Printf        ( printf )
 import           Util.Miscellaneous
 import qualified Environment as Env
-
-type Descend = LC.Descend
 
 data GlobalTree = Leaf  (Descend [G S]) Generalizer Subst.Subst
                 | Node  (Descend [G S]) Generalizer LC.SldTree [GlobalTree]
                 | Prune (Descend [G S]) Subst.Subst
 
 sequence :: Descend a -> [a]
-sequence = LC.getAncs
+sequence = getAncs
 
 getNodes (Leaf _ _ _) = []
 getNodes (Node _ _ (LC.Leaf _ _ _) _) = [] -- This happens because of the instance check
-getNodes (Node d _ sld ch) = (LC.getCurr d, sld) : concatMap getNodes ch
+getNodes (Node d _ sld ch) = (getCurr d, sld) : concatMap getNodes ch
 
 {- branch :: GlobalTree -> Set [G S]
 branch (Leaf d _ _) = sequence d
@@ -78,7 +79,7 @@ generalize m b d =
 abstractChild :: [[G S]] -> (Subst.Subst, [G S], Maybe Env.Env) -> [(Subst.Subst, [G S], Generalizer, Env.Env)]
 abstractChild _ (_, _, Nothing) = []
 abstractChild ancs (subst, g, Just env) =
-  let (abstracted, d') = abstract (LC.Descend g ancs) g (Env.getFreshNames env) in
+  let (abstracted, d') = abstract (Descend.Descend g ancs) g (Env.getFreshNames env) in
   map (\(g, gen) -> (subst, g, gen, Env.updateNames env d')) abstracted
 
 topLevel :: Program -> LC.Heuristic -> (GlobalTree, G S, [S])
@@ -87,8 +88,8 @@ topLevel (Program defs goal) heuristic =
   let (logicGoal, env', names) = E.preEval env goal in
   -- trace (printf "\nGoal:\n%s\nNames:\n%s\n" (show goal) (show names)) $
   let nodes = [[logicGoal]] in
-  (fst $ go nodes (LC.Descend [logicGoal] []) env' Subst.empty Subst.empty, logicGoal, names) where
-    go nodes d@(LC.Descend goal ancs) env subst generalizer =
+  (fst $ go nodes (Descend.Descend [logicGoal] []) env' Subst.empty Subst.empty, logicGoal, names) where
+    go nodes d@(Descend.Descend goal ancs) env subst generalizer =
       -- if head (Env.getFreshNames env) > 10
       -- then (Prune d subst, nodes)
       -- else
@@ -117,7 +118,7 @@ topLevel (Program defs goal) heuristic =
           let (ch, everythingSeenSoFar) =
                   (swap . (reverse <$>) . swap) $
                   foldl (\(trees, seen) (subst, g, gen, env)  ->
-                            let (t, s) = go seen (LC.Descend g (goal : ancs)) env subst gen in
+                            let (t, s) = go seen (Descend.Descend g (goal : ancs)) env subst gen in
                             (t:trees, s)
                         )
                         ([], newNodes)
@@ -126,4 +127,4 @@ topLevel (Program defs goal) heuristic =
           let forgetStuff = map (\(x, y, gen, _) -> (x,y, gen)) in
           let substLeaves = forgetEnv substs in
           let leaves = forgetStuff toNotUnfold in
-          (Node d generalizer sldTree (map (\(subst, g, gen) -> Leaf (LC.Descend g []) Subst.empty subst) (substLeaves ++ leaves) ++ ch), everythingSeenSoFar)
+          (Node d generalizer sldTree (map (\(subst, g, gen) -> Leaf (Descend.Descend g []) Subst.empty subst) (substLeaves ++ leaves) ++ ch), everythingSeenSoFar)

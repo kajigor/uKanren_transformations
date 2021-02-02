@@ -8,6 +8,7 @@ import           CPD.Residualization
 import           Data.List
 import           Data.Maybe
 import qualified Data.Set                 as Set
+import           Descend
 import qualified Eval                     as E
 import qualified FreshNames               as FN
 import           Prelude                  hiding (succ)

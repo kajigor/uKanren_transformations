@@ -2,7 +2,7 @@
 module Printer.ConsPDTree where
 
 import           ConsPD.Unfold    (ConsPDTree (..), restrictSubsts)
-import qualified CPD.LocalControl as LC
+import           Descend
 import           Printer.Dot
 import           Syntax
 import           Text.Printf
@@ -20,7 +20,7 @@ instance Dot ConsPDTree where
   dot (Leaf gs s _ v) = printf "Leaf <BR/> %s <BR/> %s <BR/> %s" (dot gs) (dot s) (dot v)
   dot Fail = "_|_"
   dot (Success s _) = printf "Success <BR/> %s" (dot s)
-  dot (Or _ g s) = printf "Or <BR/> %s <BR/> %s" (dot $ LC.getCurr g) (dot s)
+  dot (Or _ g s) = printf "Or <BR/> %s <BR/> %s" (dot $ getCurr g) (dot s)
   dot (Conj _ gs s)  = printf "And <BR/> %s <BR/> %s" (dot gs) (dot s)
   dot (Gen _ g g' gen s) = printf "Gen <BR/> %s <BR/> %s <BR/> %s <BR/> %s"  (dot g) (dot g') (dot gen) (dot s)
   dot (Split _ gs s) = printf "Split <BR/> %s <BR/> %s" (dot gs) (dot s)

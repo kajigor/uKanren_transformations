@@ -8,6 +8,7 @@ import qualified CPD.LocalControl    as LC
 import qualified CPD.Residualization as CpdR
 import           Data.List ( find, intercalate, nub )
 import           Data.Maybe          (catMaybes, fromJust, fromMaybe)
+import           Descend
 import qualified Eval                as E
 import qualified Residualization     as Res
 import qualified Subst
@@ -88,7 +89,7 @@ findNode v tree =
       Just n -> (v, restrictSubsts $ simplify $ renameAmbigousVars n)
       Nothing -> error $ printf "Residualization error: no node for\n%s" (show v)
   where
-    go node@(Or _ (LC.Descend goal _) _) | goal == v = return node
+    go node@(Or _ (Descend goal _) _) | goal == v = return node
     go node@(Conj _ goal _)              | goal == v = return node
     go node@(Split _ goal _)             | goal == v = return node
     go node@(Gen ch _ goal _ _)          | goal == v = [node, ch]
@@ -102,7 +103,7 @@ nontrivial :: ConsPDTree -> Bool
 nontrivial (Leaf _ _ _ _) = False
 nontrivial _              = True
 
-nodeContent (Or _ (LC.Descend goal _) _) = Just goal
+nodeContent (Or _ (Descend goal _) _) = Just goal
 nodeContent (Conj _ goal _)              = Just goal
 nodeContent (Split _ goal _)             = Just goal
 nodeContent x                            = Nothing -- error "Failed to get node content: unsupported node type"
@@ -130,7 +131,7 @@ generateGoalFromTree definitions invocations tree args =
     go :: [S] -> Bool -> ConsPDTree -> Maybe (G S)
     go seen r Fail           = Just failure
     go seen r (Success ss _) = residualizeEnv ss
-    go seen r (Or ch (LC.Descend gs _) s) = do
+    go seen r (Or ch (Descend gs _) s) = do
       -- let vs = getNewVars seen gs s
       let unifs = residualizeEnv s
       let rest = getInvocation r gs <|> (disj $ catMaybes $ map (go seen False) ch)
@@ -187,7 +188,7 @@ renameAmbigousVars :: ConsPDTree -> ConsPDTree
 renameAmbigousVars tree = tree
   --   go (getVars (fromJust $ nodeContent tree) []) tree
   -- where
-  --   go seen (Or ch d@(LC.Descend gs _) s) =
+  --   go seen (Or ch d@(Descend gs _) s) =
   --     let vs = getNewVars seen gs s in
   --     (Or (map (go (seen ++ vs)) ch) d s)
   --   go seen t@(Split ch gs s) =
@@ -214,7 +215,7 @@ renameAmbigousVars tree = tree
   --   maxVar = maximum . getVarsTree
 
   --   getVarsTree (Success s _) = getVars [] s
-  --   getVarsTree (Or ch (LC.Descend gs y) s) = nub $ (concatMap getVarsTree ch) ++ getVars gs s
+  --   getVarsTree (Or ch (Descend gs y) s) = nub $ (concatMap getVarsTree ch) ++ getVars gs s
   --   getVarsTree (Split ch gs s) = nub $ (concatMap getVarsTree ch) ++ getVars gs s
   --   getVarsTree (Leaf gs s _ _) = getVars gs s
   --   getVarsTree _ = []
@@ -227,7 +228,7 @@ renameAmbigousVars tree = tree
 
   --       go Fail = Fail
   --       go (Success s g) = Success (renameSubst s) g
-  --       go (Or ch (LC.Descend x y) s) = Or (map go ch) (LC.Descend (renameGoals x) y) (renameSubst s)
+  --       go (Or ch (Descend x y) s) = Or (map go ch) (Descend (renameGoals x) y) (renameSubst s)
   --       go (Split ch gs s) = Split (map go ch) (renameGoals gs) (renameSubst s)
   --       go (Leaf gs s g v) = Leaf (renameGoals gs) (renameSubst s) g v
   --       go g = g

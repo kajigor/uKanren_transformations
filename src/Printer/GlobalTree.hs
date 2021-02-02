@@ -3,8 +3,8 @@ module Printer.GlobalTree where
 import Printer.Dot
 
 import Syntax
-import CPD.LocalControl hiding (Leaf)
 import CPD.GlobalControl
+import Descend
 import Text.Printf
 
 instance DotPrinter GlobalTree where

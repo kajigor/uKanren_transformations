@@ -157,7 +157,7 @@ parseFresh = boxBr $ do
   names <- some ident
   symbol ":"
   goal <- parseGoal
-  return $ foldr (\name acc -> Fresh name acc) goal names
+  return $ foldr Fresh goal names
 
 parseInvoke :: Parser (G X)
 parseInvoke = curvyBr $

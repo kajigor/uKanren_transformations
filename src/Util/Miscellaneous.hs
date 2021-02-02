@@ -71,3 +71,6 @@ escapeTick = concatMap (\x -> if x == '\'' then "\\\'" else [x])
 
 parenthesize x | ' ' `elem` x = printf "(%s)" x
 parenthesize x = x
+
+showList :: Show a => String -> [a] -> String
+showList padding = unlines . map (printf "%s%s" padding . show)
