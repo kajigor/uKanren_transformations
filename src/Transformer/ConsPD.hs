@@ -4,7 +4,7 @@ module Transformer.ConsPD where
 import           ConsPD.Residualization
 import qualified ConsPD.Unfold          as ConsPD
 import           Control.Applicative    ((<|>))
-import           Control.Monad          (guard)
+import           Control.Monad          (guard, when)
 import qualified OCanrenize             as OC
 import           Printer.Dot
 import           Printer.ConsPDTree     ()
@@ -31,9 +31,7 @@ transform dirName cleanDir env function filename goal@(Program definitions _) = 
 
   let path = dirName </> filename
   exists <- doesDirectoryExist path
-  if cleanDir && exists
-  then removeDirectoryRecursive path
-  else return ()
+  when (cleanDir && exists) (removeDirectoryRecursive path)
   createDirectoryIfMissing True path
   toOcanren (path </> "original.ml") goal (vident <$> reverse names)
   Transformer.MkToProlog.transform (path </> "original.pl") definitions

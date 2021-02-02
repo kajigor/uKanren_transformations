@@ -1,5 +1,6 @@
 module Transformer.SymbolicExecution where
 
+import           Control.Monad     (when)
 import           Printer.Dot
 import           Printer.SymTree   ()
 import           SymbolicExecution (topLevel)
@@ -12,9 +13,7 @@ transform n filename goal = do
   let tree = (topLevel n) goal
   let path = "test/out/sym" </> filename
   exists <- doesDirectoryExist path
-  if exists
-  then removeDirectoryRecursive path
-  else return ()
+  when exists (removeDirectoryRecursive path)
   createDirectoryIfMissing True path
   printTree (path </> "tree.dot") tree
   system (printf "dot -O -Tpdf %s/*.dot" path)

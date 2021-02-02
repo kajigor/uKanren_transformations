@@ -29,11 +29,9 @@ import           Text.Printf
 transform filename goal env heuristic = do
     let (tree, logicGoal, names) = GC.topLevel goal heuristic
     -- traceM ("\n\n NAMES \n\n" ++ show (vident <$> reverse names) )
-    let path = "test/out" </> filename
+    let path = "test/out/cpd" </> filename
     exists <- doesDirectoryExist path
-    if exists
-    then removeDirectoryRecursive path
-    else return ()
+    when exists (removeDirectoryRecursive path)
     let pathLocal = path </> "local"
     createDirectoryIfMissing True path
     printTree (path </> "global.dot") tree
