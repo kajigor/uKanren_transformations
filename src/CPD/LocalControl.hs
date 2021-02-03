@@ -79,57 +79,41 @@ sldResolutionStep gs env s seen isFirstTime heuristic =
     -- if temp > 13
     --   then Leaf gs s env
     --   else
-        maybe (Leaf gs s env)
-              (\(Zipper (ls, Descend g ancs, rs)) ->
-                  let (g', env') = oneStepUnfold g env in
-                  go g' env' ls rs g ancs isFirstTime
-              )
-              (selectNext gs)
+        unfoldNext (toZipper gs) isFirstTime gs s env
       where
-
-        selectNext :: [DescendGoal] -> Maybe (Zipper DescendGoal)
-        selectNext gs = do
-          z <- toZipper gs
-          traceM (printf "Zipper: %s\n" $ show z)
-          let r = selecter z
-          traceM (printf "Selecter: %s\n" $ show r)
-          r
-
-        go g' env' ls rs g ancs isFirstTime =
+        go g' env' zipper isFirstTime =
+          let Descend g ancs = cursor zipper in
           let normalized = normalize g' in
           let unified = mapMaybe (unifyStuff s) normalized in
           let addDescends xs s =
-                -- Subst.substitute s (ls ++ map (\x -> Descend x (g : ancs)) xs ++ rs) in
-                Subst.substitute s  (reverse ls ++
+                Subst.substitute s
+                                ( left zipper ++
                                   map (\x -> Descend x (g : ancs)) xs ++
-                                  rs
+                                  right zipper
                                 )
-                  where
-                    addDescend goal (Descend cur ancs) = Descend goal (cur : ancs)
-                    addDescendId d@(Descend cur _) = addDescend cur d
           in
           case unified of
-            [] ->
-              Fail
-            -- ns | length ns == 1 || isFirstTime -> -- unfold only if it's deterministic or hasn't been unfolded before
-            ns | needsUnfolding heuristic env' g ns isFirstTime -> -- getMaximumBranches env' g > length ns || isFirstTime ->
-              Or (map step ns) (Just g) s
+            [] -> Fail
+            ns | needsUnfolding heuristic env' g ns isFirstTime ->
+                Or (map step ns) (Just g) s
               where
                 step (xs, s') =
-                  if null xs && null rs && null ls
+                  if null xs && isLeftmost zipper && isRightmost zipper
                   then Success s'
                   else let newDescends = addDescends xs s' in
                        Conj (sldResolutionStep newDescends env' s' (map getCurr gs : seen) (isFirstTime && length ns == 1) heuristic) newDescends s'
-                       -- Conj (sldResolutionStep newDescends env' s' (Set.insert (map getCurr gs) seen) False newDescends s'
-            ns | not $ null rs ->
-              maybe (Leaf gs s env)
-                    (\(Zipper (ls', Descend nextAtom nextAtomsAncs, rs'))  ->
-                            let (g'', env'') = oneStepUnfold nextAtom env in
-                            go g'' env'' (reverse ls ++ (Descend g ancs : reverse ls')) rs' nextAtom nextAtomsAncs False
-                    )
-                    (selectNext rs)
+            ns | not $ isRightmost zipper ->
+              unfoldNext (goRight zipper) False gs s env
             ns ->
               Leaf gs s env
+
+        unfoldNext zipper isFirstTime gs s env =
+          maybe (Leaf gs s env)
+                (\z ->
+                    let (g', env') = oneStepUnfold (getCurr $ cursor z) env in
+                    go g' env' z isFirstTime
+                )
+                (zipper >>= selecter)
 
         needsUnfolding Branching env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
         needsUnfolding Deterministic _ _ ns isFirstTime = length ns == 1 || isFirstTime
