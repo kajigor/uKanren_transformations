@@ -25,8 +25,9 @@ import           System.Directory
 import           System.FilePath          ((</>), (<.>))
 import           System.Process           (system)
 import           Text.Printf
+import qualified Transformer.MkToProlog
 
-transform filename goal env heuristic = do
+transform filename goal@(Program definitions _) env heuristic = do
     let (tree, logicGoal, names) = GC.topLevel goal heuristic
     -- traceM ("\n\n NAMES \n\n" ++ show (vident <$> reverse names) )
     let path = "test/out/cpd" </> filename
@@ -36,6 +37,7 @@ transform filename goal env heuristic = do
     createDirectoryIfMissing True path
     printTree (path </> "global.dot") tree
     createDirectoryIfMissing True pathLocal
+    Transformer.MkToProlog.transform (path </> "original.pl") definitions
     let nodes = GC.getNodes tree
     for_
       nodes
@@ -47,6 +49,7 @@ transform filename goal env heuristic = do
     let prog = residualizationTopLevel tree
     writeFile (path </> (printf "%s.before.pur" filename)) (show prog)
     let pur@(goal, xs, defs) = purification (prog, vident <$> reverse names)
+    Transformer.MkToProlog.transform (path </> filename <.> "pl") defs
     traceM (show $ length defs)
     traceM (show goal)
     let prog = Program defs goal

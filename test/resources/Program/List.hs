@@ -129,6 +129,20 @@ maxLengthoDef =
 maxLengtho :: [Def]
 maxLengtho = maxLengthoDef : maxo ++ lengtho
 
+maxMinoDef :: Def
+maxMinoDef =
+    ( Def "maxMino" ["x", "m", "l"]
+      (
+        call "maxo" [x, m] &&&
+        call "mino" [x, l]
+      )
+    )
+  where
+    [x, m, l] = map V ["x", "m", "l"]
+
+maxMino :: [Def]
+maxMino = maxMinoDef : maxo ++ mino
+
 copyDef :: Def
 copyDef =
     ( Def "copy" ["l", "c"]
@@ -259,6 +273,49 @@ maxo1 = maxo1Def : leo ++ gto
 
 maxo :: [Def]
 maxo = maxoDef : maxo1
+
+minoDef :: Def
+minoDef =
+    ( Def "mino" ["x", "m"]
+      (
+        ( x === nil &&& m === zero) |||
+        fresh ["h", "t"]
+        (
+          x === h % t &&&
+          call "mino1" [t, h, m]
+        )
+      )
+    )
+  where
+    [x, m, h, t] = map V ["x", "m", "h", "t"]
+
+mino1Def :: Def
+mino1Def =
+    ( Def "mino1" ["x", "n", "m" ]
+      (
+        (x === nil &&& m === n) |||
+        fresh ["h", "t", "z"]
+          (
+            x === h % t &&&
+            call "leo" [h, n, trueo]  &&&
+            call "mino1" [t, h, m]
+          ) |||
+        fresh ["h", "t", "z"]
+          (
+            x === h % t &&&
+            call "gto" [h, n, trueo] &&&
+            call "mino1" [t, n, m]
+          )
+      )
+    )
+  where
+    [x, m, n, h, t, z] = map V ["x", "m", "n", "h", "t", "z"]
+
+mino1 :: [Def]
+mino1 = mino1Def : leo ++ gto
+
+mino :: [Def]
+mino = minoDef : mino1
 
 appLengthoDef :: Def
 appLengthoDef =
