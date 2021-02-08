@@ -4,11 +4,10 @@ module Transformer.CPD where
 
 import           Control.Monad
 import qualified CPD.GlobalControl        as GC
+import qualified CPD.LocalControl         as LC
 import           CPD.Residualization
-import           Data.Foldable            (for_)
 import           Data.List
 import           Data.Maybe
-import           Debug.Trace
 import qualified OCanrenize               as OC
 import           Prelude                  hiding (succ)
 import           Printer.Dot
@@ -21,43 +20,57 @@ import           Program.Unify
 import           Purification
 import           Residualization
 import           Syntax
-import           System.Directory
 import           System.FilePath          ((</>), (<.>))
 import           System.Process           (system)
 import           Text.Printf
 import qualified Transformer.MkToProlog
+import qualified GHC.IO.Exception
+import Util.File ( createDirRemoveExisting, shortenFileName )
 
+data TransformResult = Result { original :: [Def]
+                              , globalTree :: GC.GlobalTree
+                              , localTrees :: [([G S], LC.SldTree)]
+                              , beforePur :: Program
+                              , purified :: (G X, [X], [Def])
+                              }
+
+runTransformation :: Program -> LC.Heuristic -> TransformResult
+runTransformation goal@(Program original _) heuristic =
+  let (globalTree, logicGoal, names) = GC.topLevel goal heuristic in
+  let localTrees = GC.getNodes globalTree in
+  let beforePur = residualizationTopLevel globalTree in
+  let purified = purification (beforePur, vident <$> reverse names) in
+  Result original globalTree localTrees beforePur purified
+
+generatePdf :: FilePath -> IO GHC.IO.Exception.ExitCode
+generatePdf dir =
+  system (printf "dot -O -Tpdf %s/*.dot" dir)
+
+transform :: [Char] -> Program -> Maybe String -> LC.Heuristic -> IO ()
 transform filename goal@(Program definitions _) env heuristic = do
-    let (tree, logicGoal, names) = GC.topLevel goal heuristic
-    -- traceM ("\n\n NAMES \n\n" ++ show (vident <$> reverse names) )
-    let path = "test/out/cpd" </> filename
-    exists <- doesDirectoryExist path
-    when exists (removeDirectoryRecursive path)
-    let pathLocal = path </> "local"
-    createDirectoryIfMissing True path
-    printTree (path </> "global.dot") tree
-    createDirectoryIfMissing True pathLocal
+    let baseDir = "test/out/cpd"
+    let path = baseDir </> filename
+    let localDir = path </> "local"
+    let cpdFile = path </> "cpd"
+    mapM_ createDirRemoveExisting [path, localDir]
+
+    let result = runTransformation goal heuristic
     Transformer.MkToProlog.transform (path </> "original.pl") definitions
-    let nodes = GC.getNodes tree
-    for_
-      nodes
+    printTree (path </> "global.dot") (globalTree result)
+    mapM_
       (\(goal, tree) ->
-        printTree (pathLocal </> ((take 200 $ filter (/=' ') $ show goal) <.> "dot")) tree
+        printTree (localDir </> shortenFileName (show goal) <.> "dot") tree
       )
-    system (printf "dot -O -Tpdf %s/*.dot" path)
-    system (printf "dot -O -Tpdf %s/*.dot" pathLocal)
-    let prog = residualizationTopLevel tree
-    writeFile (path </> (printf "%s.before.pur" filename)) (show prog)
-    let pur@(goal, xs, defs) = purification (prog, vident <$> reverse names)
-    Transformer.MkToProlog.transform (path </> filename <.> "pl") defs
-    traceM (show $ length defs)
-    traceM (show goal)
-    let prog = Program defs goal
-    writeFile (path </> filename <.> "pur") (show prog)
-    let ocamlCodeFileName = path </> filename <.> "ml"
+      (localTrees result)
+    writeFile (cpdFile <.> "before.pur") (show $ beforePur result)
+    let pur@(goal,xs,defs) = purified result
+    Transformer.MkToProlog.transform (cpdFile <.> "pl") defs
+    let purified = Program defs goal
+    writeFile (cpdFile <.> "pur") (show purified)
+    let ocamlCodeFileName = cpdFile <.> "ml"
     OC.topLevel ocamlCodeFileName "topLevel" env pur
 
-
+    mapM_ generatePdf [path, localDir]
 
 doOcanrenize = do
   ocanren "unify" Program.Unify.query $ Just Program.Unify.env
