@@ -10,6 +10,7 @@ module Parser (
     , defsAsts
     , strDefAsts
     , defAst
+    , parseDefs
     ) where
 
 import           Control.Monad                  (void)
@@ -34,6 +35,12 @@ defAst :: String -> Maybe Def
 defAst = either (const Nothing) Just . runParser parseDef ""
 
 -----------------------------------------------------------------------------------------------------
+
+parseDefs :: String -> Either String [Def]
+parseDefs input =
+    mapLeft errorBundlePretty $ runParser (many parseDef) "" input
+  where
+    mapLeft f = either (Left . f) Right
 
 -- Parses the list of relation definitions, expects a goal to evaluate
 progAst :: String -> Maybe (G X -> Program)
@@ -65,12 +72,12 @@ symbol :: String -> Parser String
 symbol = L.symbol sc
 
 sugar :: [String]
-sugar = ["trueo", "falseo", "zero", "succ", "conde"]
+sugar = ["trueo", "falso", "zero", "succ", "conde"]
 
 ident :: Parser String
 ident = (lexeme . try) (p >>= check)
   where
-    p       = (:) <$> letterChar <*> many (char '_' <|> alphaNumChar)
+    p       = (:) <$> letterChar <*> many (char '_' <|> alphaNumChar <|> char '\'')
     check x = if x `elem` sugar
                 then fail $ show x ++ " cannot be an identifier"
                 else return x
@@ -124,7 +131,7 @@ succo = do
 
 
 parseBoolTerm :: Parser (Term X)
-parseBoolTerm = try falseo
+parseBoolTerm = try falso
   <|> try trueo
   <|> parseDesugarTerm
 
@@ -133,9 +140,9 @@ trueo = do
   symbol "trueo"
   return $ C "true" []
 
-falseo :: Parser (Term X)
-falseo = do
-  symbol "falseo"
+falso :: Parser (Term X)
+falso = do
+  symbol "falso"
   return $ C "false" []
 
 

@@ -6,6 +6,7 @@ import Data.Maybe (fromMaybe)
 import qualified Transformer.PrologToMk
 import qualified ConsPDApp
 import qualified CPDApp
+import qualified ParseApp
 
 data Action
   = Transform { dir :: Maybe FilePath, file :: FilePath }
@@ -86,7 +87,7 @@ runAction (Transform directory file) =
 runAction (Parse directory file False) =
     runAction (Transform directory file)
 runAction (Parse directory file True) =
-    print "Not implemented"
+    ParseApp.run directory file
 runAction ConsPD = ConsPDApp.run
 runAction CPD = CPDApp.run
 runAction Default = putStrLn "Default action"
