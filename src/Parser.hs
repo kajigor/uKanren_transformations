@@ -11,12 +11,14 @@ module Parser (
     , strDefAsts
     , defAst
     , parseDefs
+    , parseWholeProgram
     ) where
 
 import           Control.Monad                  (void)
 import           Control.Monad.Combinators.Expr
 import           Data.Void                      (Void(..))
-import           Data.Either                    (either)
+import           Data.Either                    (either, fromRight)
+import           Eval                           (postEval)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -26,7 +28,7 @@ import           Syntax
 -----------------------------------------------------------------------------------------------------
 
 defsAsts :: String -> [Def]
-defsAsts = either (const []) id . runParser (many parseDef) ""
+defsAsts = fromRight [] . runParser (many parseDef) ""
 
 strDefAsts :: String -> String
 strDefAsts = unlines . fmap ((++ "\n") . show) . defsAsts
@@ -36,21 +38,26 @@ defAst = either (const Nothing) Just . runParser parseDef ""
 
 -----------------------------------------------------------------------------------------------------
 
-parseDefs :: String -> Either String [Def]
-parseDefs input =
-    mapLeft errorBundlePretty $ runParser (many parseDef) "" input
+runBundlingParser :: (Stream s, ShowErrorComponent e) => Parsec e s b -> s -> Either String b
+runBundlingParser parser =
+    mapLeft errorBundlePretty . runParser parser ""
   where
     mapLeft f = either (Left . f) Right
 
+
+parseDefs :: String -> Either String [Def]
+parseDefs = runBundlingParser (many parseDef)
+
+
+parseWholeProgram :: String -> Either String Program
+parseWholeProgram = runBundlingParser parseProg
+
 -- Parses the list of relation definitions, expects a goal to evaluate
-progAst :: String -> Maybe (G X -> Program)
+progAst :: String -> Maybe Program
 progAst = either (const Nothing) Just . runParser parseProg ""
 
 strProgAstWithDefGoal :: String -> String
-strProgAstWithDefGoal = either errorBundlePretty (show . ($ defGoal)) . runParser parseProg ""
-  where
-    defGoal :: G X
-    defGoal = V "a" === V "b"
+strProgAstWithDefGoal = either errorBundlePretty show . runParser parseProg ""
 
 -----------------------------------------------------------------------------------------------------
 
@@ -205,7 +212,11 @@ parseDesugarGoal = sc
    *> try parseOp
   <|> try parseFresh
   <|> parseInvoke
-  -- <|> parseLet
+
+parseQuery :: Parser (G X)
+parseQuery = do
+  symbol "?"
+  parseGoal
 
 -----------------------------------------------------------------------------------------------------
 
@@ -221,25 +232,7 @@ parseDef = do
 
 -----------------------------------------------------------------------------------------------------
 
--- -- let
--- parseLet :: Parser (Program)
--- parseLet = curvyBr $ do
---   def  <- parseDef
---   symbol "$"
---   goal <- curvyBr $ try parseGoal <|> roundBr parseGoal
---   return $ Program [def] goal
-
-
--- -- let without last goal
--- parseLetDef :: Parser (G X -> G X)
--- parseLetDef = do
---   def <- parseDef
---   return $ Let def
-
-
 -- program
-parseProg :: Parser (G X -> Program)
-parseProg = do
-  defs <- many parseDef
-  return $ \mainGoal -> Program defs mainGoal
-
+parseProg :: Parser Program
+parseProg =
+  Program <$> many parseDef <*> (postEval [] <$> parseQuery)

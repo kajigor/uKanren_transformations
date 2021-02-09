@@ -6,9 +6,8 @@ import           System.IO
 import           Util.ToProlog
 import Util.File ( ocamlExt )
 
-transform :: FilePath -> FilePath -> IO ()
-transform dirName file = do
-  let fileName = dirName </> file
+transform :: FilePath -> IO ()
+transform fileName = do
   handle <- openFile fileName ReadMode
   contents <- hGetContents handle
   let ocamlCodeFileName = ocamlExt fileName

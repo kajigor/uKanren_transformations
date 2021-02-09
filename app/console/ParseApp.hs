@@ -1,18 +1,20 @@
 module ParseApp where
 
-import Parser (parseDefs)
+import Parser (parseWholeProgram)
+import Syntax
 import Text.Printf (printf)
-import Util.File (checkIfFileExists, prologExt)
+import Util.File (checkIfFileExists, failIfNotExist, prologExt)
 import qualified Transformer.MkToProlog
 
-run dir file = do
-  fileName <- checkIfFileExists dir file
+run fileName = do
+  failIfNotExist fileName
   program <- readFile fileName
-  case parseDefs program of
+  case parseWholeProgram program of
     Left err ->
       putStrLn err
-    Right defs -> do
+    Right (Program defs goal) -> do
       let prologFile = prologExt fileName
       Transformer.MkToProlog.transform prologFile defs
       prolog <- readFile prologFile
       putStrLn $ printf "\nProlog'ed:\n\n%s\n" prolog
+      putStrLn $ printf "\nGoal:\n\n%s\n" (show goal)

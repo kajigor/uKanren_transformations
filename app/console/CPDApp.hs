@@ -5,6 +5,8 @@ import qualified Program.PropEval
 import           Syntax
 import qualified Transformer.CPD
 import CPD.LocalControl
+import System.FilePath (takeBaseName)
+import Parser (parseWholeProgram)
 
 maxLen = Program maxLengtho $ fresh ["xs", "m", "l"] (call "maxLengtho" [V "xs", V "m", V "l"])
 maxMin = Program maxMino $ fresh ["xs", "m", "l"] (call "maxMino" [V "xs", V "m", V "l"])
@@ -32,3 +34,12 @@ run = do
   runMaxlen
   runMaxMin
   runPropEval
+
+runWithParser :: FilePath -> FilePath -> IO ()
+runWithParser outDir inputFile = do
+  program <- readFile inputFile
+  case parseWholeProgram program of
+    Left err ->
+      putStrLn err
+    Right program -> do
+      Transformer.CPD.transform' outDir (takeBaseName inputFile) program Nothing Deterministic

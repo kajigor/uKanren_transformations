@@ -46,10 +46,13 @@ generatePdf :: FilePath -> IO GHC.IO.Exception.ExitCode
 generatePdf dir =
   system (printf "dot -O -Tpdf %s/*.dot" dir)
 
-transform :: [Char] -> Program -> Maybe String -> LC.Heuristic -> IO ()
-transform filename goal@(Program definitions _) env heuristic = do
-    let baseDir = "test/out/cpd"
-    let path = baseDir </> filename
+renderLocalTree :: FilePath -> [G S] -> LC.SldTree -> IO ()
+renderLocalTree localDir goal =
+    printTree (localDir </> shortenFileName (show goal) <.> "dot")
+
+transform' :: FilePath -> FilePath -> Program -> Maybe String -> LC.Heuristic -> IO ()
+transform' outDir filename goal@(Program definitions _) env heuristic = do
+    let path = outDir </> filename
     let localDir = path </> "local"
     let cpdFile = path </> "cpd"
     mapM_ createDirRemoveExisting [path, localDir]
@@ -57,11 +60,7 @@ transform filename goal@(Program definitions _) env heuristic = do
     let result = runTransformation goal heuristic
     Transformer.MkToProlog.transform (path </> "original.pl") definitions
     printTree (path </> "global.dot") (globalTree result)
-    mapM_
-      (\(goal, tree) ->
-        printTree (localDir </> shortenFileName (show goal) <.> "dot") tree
-      )
-      (localTrees result)
+    mapM_ (uncurry (renderLocalTree localDir)) (localTrees result)
     writeFile (cpdFile <.> "before.pur") (show $ beforePur result)
     let pur@(goal,xs,defs) = purified result
     Transformer.MkToProlog.transform (cpdFile <.> "pl") defs
@@ -71,6 +70,9 @@ transform filename goal@(Program definitions _) env heuristic = do
     OC.topLevel ocamlCodeFileName "topLevel" env pur
 
     mapM_ generatePdf [path, localDir]
+
+transform :: FilePath -> Program -> Maybe String -> LC.Heuristic -> IO ()
+transform = transform' "test/out/cpd"
 
 doOcanrenize = do
   ocanren "unify" Program.Unify.query $ Just Program.Unify.env

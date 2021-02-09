@@ -2,8 +2,8 @@ module Util.File where
 
 import Control.Monad (unless, when)
 import Data.Maybe (fromMaybe)
-import System.Directory (doesFileExist, doesDirectoryExist, removeDirectoryRecursive, createDirectoryIfMissing)
-import System.FilePath ((</>), replaceExtension)
+import System.Directory (doesFileExist, doesDirectoryExist, doesPathExist, removeDirectoryRecursive, createDirectoryIfMissing, listDirectory)
+import System.FilePath ((</>), replaceExtension, isExtensionOf)
 import Text.Printf (printf)
 
 prologExt :: FilePath -> FilePath
@@ -28,3 +28,30 @@ createDirRemoveExisting path = do
 shortenFileName :: FilePath -> FilePath
 shortenFileName =
   take 200 . filter (/=' ')
+
+isDir :: FilePath -> IO Bool
+isDir path = do
+  d <- doesDirectoryExist path
+  f <- doesFileExist path
+  return $ d && not f
+
+isFile :: FilePath -> IO Bool
+isFile path = do
+  d <- doesDirectoryExist path
+  f <- doesFileExist path
+  return $ f && not d
+
+failIfNotExist :: FilePath -> IO ()
+failIfNotExist path = do
+  exist <- doesPathExist path
+  unless exist (fail $ printf "%s does not exist" path)
+
+failIfNotDir :: FilePath -> IO ()
+failIfNotDir path = do
+  d <- isDir path
+  unless d (fail $ printf "%s is not a directory" path)
+
+getFiles :: String -> FilePath -> IO [FilePath]
+getFiles ext dir = do
+  files <- listDirectory dir
+  return $ filter (isExtensionOf ext) files
