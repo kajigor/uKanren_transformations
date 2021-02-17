@@ -2,6 +2,7 @@ module Util.Miscellaneous where
 
 import Data.List ( (\\), intercalate, subsequences )
 import Text.Printf (printf)
+import Util.ListZipper
 
 fst3 :: (a, b, c) -> a
 fst3 (x, _, _) = x
@@ -53,14 +54,10 @@ generateSplits xs n =
   let sub = filter (\x -> n == length x) $ subsequences xs in
   [ (x, xs \\ x) | x <- sub ]
 
-pinpoint :: (a -> Bool) -> [a] -> Maybe ([a], a, [a])
-pinpoint =
-    go []
-  where
-    go _ p [] = Nothing
-    go left p (h:t) | p h = Just (reverse left, h, t)
-    go left p (h:t) = go (h:left) p t
-
+pinpoint :: (a -> Bool) -> [a] -> Maybe (Zipper a)
+pinpoint p l = do
+    z <- toZipper l
+    goRightUntil p z
 
 show' :: Show a => [a] -> String
 show' xs =

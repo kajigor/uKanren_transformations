@@ -10,6 +10,7 @@ import           Text.Printf         (printf)
 import           Util.Miscellaneous  (fst3, pinpoint)
 import qualified VarInterpretation   as VI
 import qualified Environment as Env
+import Util.ListZipper
 
 oneStepUnfold :: G S -> Env.Env -> (G S, Env.Env)
 oneStepUnfold g@(Invoke f as) env =
@@ -93,22 +94,20 @@ instance Ord Complexity where
   (Complexity max cur subst) <= (Complexity max' cur' subst') =
     cur < max || cur - subst >= cur' - subst' || cur <= cur'
 
-findBestByComplexity :: Env.Env -> Subst.Subst -> [G S] -> Maybe ([G S], G S, [G S])
+findBestByComplexity :: Env.Env -> Subst.Subst -> [G S] -> Maybe (Zipper (G S))
 findBestByComplexity env sigma goals =
     let estimated = map (\g -> (g, unfoldComplexity env sigma g)) goals in
     pinpoint (\(Invoke name _) -> static env name) goals
     <|> throwAwayComplexity (onlySubsts estimated
-                             <|> deterministic estimated
-                             <|> maxBranch estimated
-                             <|> partialSubst estimated)
+                            <|> deterministic estimated
+                            <|> maxBranch estimated
+                            <|> partialSubst estimated)
   where
     onlySubsts xs = pinpoint (\(g, compl) -> curBranches compl == substs compl) xs
     deterministic = pinpoint (\(g, compl) -> curBranches compl == 1)
     maxBranch  xs = pinpoint (\(g, compl) -> maxBranches compl > curBranches compl) xs
     partialSubst xs = pinpoint (\(g, compl) -> substs compl > 0) xs
-    throwAwayComplexity input = do
-      (ls, x, rs) <- input
-      return (map fst ls, fst x, map fst rs)
+    throwAwayComplexity z = (fst <$>) <$> z
 
 unfoldComplexity :: Env.Env -> Subst.Subst -> G S -> Complexity
 unfoldComplexity env sigma goal@(Invoke name _) =

@@ -3,55 +3,76 @@ module Transformer.ConsPD where
 
 import           ConsPD.Residualization
 import qualified ConsPD.Unfold          as ConsPD
-import           Control.Applicative    ((<|>))
-import           Control.Monad          (guard, when)
+import           Control.Monad          (guard)
+import           Data.Maybe             (isJust, fromJust)
 import qualified OCanrenize             as OC
 import           Printer.Dot
 import           Printer.ConsPDTree     ()
 import           Purification
 import           Residualization        (vident)
 import           Syntax
-import           System.Directory
 import           System.FilePath        ((<.>), (</>))
 import           System.Process         (system)
 import           Text.Printf
 import qualified Transformer.MkToProlog
 import           Util.Miscellaneous     (escapeTick)
+import           Util.File              (createDirRemoveExisting)
 
+data TransformResult = Result { original :: [Def]
+                              , tree :: ConsPD.ConsPDTree
+                              , simplifiedTree :: ConsPD.ConsPDTree
+                              , names :: [X]
+                              , beforePurification :: Maybe (G X, [X], [Def])
+                              , purified :: Maybe (G X, [X], [Def])
+                              }
 
+type Transformer = Program -> (ConsPD.ConsPDTree, G S, [S])
+
+runTransformation :: Program -> Transformer -> TransformResult
+runTransformation goal@(Program original _) transformer =
+  let transformed@(tree, logicGoal, names) = transformer goal in
+  let namesX = vident <$> reverse names in
+  let simplifiedTree = ConsPD.simplify tree in
+  if ConsPD.noPrune tree
+  then
+    let residualized = residualize transformed in
+    let beforePur = justTakeOutLetsProgram residualized namesX in
+    let purified = purification (residualized, namesX) in
+    Result original tree simplifiedTree namesX (Just beforePur) (Just purified)
+  else
+    Result original tree simplifiedTree namesX Nothing Nothing
+
+toOcanren :: FilePath -> Program -> [String] -> IO ()
 toOcanren fileName (Program defs goal) names =
   OC.topLevel fileName "topLevel" Nothing (goal, names, defs)
 
-runConsPD l = Transformer.ConsPD.transform "test/out/consPD" True Nothing (ConsPD.topLevel l)
+runConsPD l = Transformer.ConsPD.transform "test/out/consPD" Nothing (ConsPD.topLevel l)
 
-transform dirName cleanDir env function filename goal@(Program definitions _) = (do
-  let transformed@(tree, logicGoal, names) = function goal
-  let tree' = ConsPD.simplify tree
-  -- traceM (printf "\n========================================\nBefore:\n%s\n\nAfter:\n%s\n========================================\n" (show tree) (show $ ConsPD.simplify tree))
+runConsPD' :: [Char] -> FilePath -> Program -> IO ()
+runConsPD' outDir = Transformer.ConsPD.transform outDir Nothing (ConsPD.topLevel (-1))
 
-  let path = dirName </> filename
-  exists <- doesDirectoryExist path
-  when (cleanDir && exists) (removeDirectoryRecursive path)
-  createDirectoryIfMissing True path
-  toOcanren (path </> "original.ml") goal (vident <$> reverse names)
+transform :: [Char] -> Maybe String -> (Program -> (ConsPD.ConsPDTree, G S, [S])) -> FilePath -> Program -> IO ()
+transform outDir env function filename goal@(Program definitions _) = do
+  let path = outDir </> filename
+  createDirRemoveExisting path
+  let consPdFile = path </> "conspd"
+
+  let result = runTransformation goal function
+
+  toOcanren (path </> "original.ml") goal (names result)
   Transformer.MkToProlog.transform (path </> "original.pl") definitions
-  printTree (path </> "tree.dot") tree
-  printTree (path </> "tree.after.dot") tree'
+  printTree (path </> "tree.dot") (tree result)
+  printTree (path </> "tree.after.dot") (simplifiedTree result)
   system (printf "dot -O -Tpdf %s/*.dot" (escapeTick path))
-  guard (ConsPD.noPrune tree)
-  let prog = residualize transformed
-  writeFile (path </> (printf "%s.before.pur" filename)) (show prog)
 
-  let beforePur = justTakeOutLetsProgram prog (vident <$> reverse names)
-  let ocamlCodeFileName = path </> (printf "%s.before.ml" filename)
-  OC.topLevel ocamlCodeFileName "topLevel" env beforePur
+  guard (isJust $ beforePurification result)
+  let ocamlCodeFileName = path </> filename <.> "before.ml"
+  OC.topLevel ocamlCodeFileName "topLevel" env (fromJust $ beforePurification result)
 
-  let pur@(goal', xs, defs') = purification (prog, vident <$> reverse names)
-  -- let pur = (goal, xs, map (\(Def n as b) -> Def n as (E.closeFresh as b)) defs)
+  guard (isJust $ purified result )
+  let pur@(goal', _, defs') = fromJust $ purified result
   let prog = Program defs' goal'
   Transformer.MkToProlog.transform (path </> filename <.> "pl") defs'
   writeFile (path </> filename <.> "pur") (show prog)
   let ocamlCodeFileName = path </> filename <.> "ml"
   OC.topLevel ocamlCodeFileName "topLevel" env pur
-  ) <|>
-  return ()

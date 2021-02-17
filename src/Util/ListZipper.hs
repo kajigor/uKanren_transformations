@@ -1,7 +1,9 @@
+{-# LANGUAGE DeriveFunctor #-}
+
 module Util.ListZipper where
 
 newtype Zipper a = Zipper { getZipper :: ([a], a, [a]) }
-                 deriving (Show, Eq)
+                 deriving (Show, Eq, Functor)
 
 left :: Zipper a -> [a]
 left (Zipper (ls, _, _)) = reverse ls

@@ -4,7 +4,6 @@ module ConsPD.Residualization where
 
 import           ConsPD.Unfold
 import           Control.Applicative ((<|>))
-import qualified CPD.LocalControl    as LC
 import qualified CPD.Residualization as CpdR
 import           Data.List ( find, intercalate, nub )
 import           Data.Maybe          (catMaybes, fromJust, fromMaybe)

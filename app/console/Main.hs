@@ -9,7 +9,7 @@ import System.Directory (getCurrentDirectory)
 import qualified ConsPDApp
 import qualified CPDApp
 import qualified ParseApp
-import Util.File (failIfNotExist, isDir, failIfNotDir, getFiles, createDirRemoveExisting)
+import Util.File (failIfNotExist, isDir, getFiles, createDirRemoveExisting)
 
 -- data Action
 --   = Transform { dir :: Maybe FilePath, file :: FilePath }
@@ -112,17 +112,19 @@ runAction :: Args -> IO ()
 runAction args = do
   action <- transform args
   case transformation action of
-    CPD | useIrinaParser action -> do
+    x | useIrinaParser action -> do
+      let transformer = case x of CPD -> CPDApp.runWithParser; ConsPD -> CPDApp.runWithParser
       let out = fromMaybe "test/out/cpd" (output action)
       if isInputADir action
       then do
         files <- getFiles "mk" (input action)
-        mapM_ (CPDApp.runWithParser out) files
+        mapM_ (transformer out) files
       else
-        CPDApp.runWithParser out (input action)
+        transformer out (input action)
     CPD ->
       CPDApp.run
-    ConsPD -> ConsPDApp.run
+    ConsPD ->
+      ConsPDApp.run
     Parser ->
       if useIrinaParser action
       then ParseApp.run (input action)
