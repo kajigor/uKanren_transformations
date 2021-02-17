@@ -29,7 +29,7 @@ lambda = Program evalo $ fresh ["m", "n"] (call "evalo" [V "m", V "n"])
 
 runJu = JU.transform
 
-runConsPD l = ConsPD.transform "test/out/nc" True Nothing (ConsPD.topLevel l)
+runConsPD = ConsPD.runConsPD
 
 runRep = do
     runJu 100 "rep" rep
