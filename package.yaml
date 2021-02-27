@@ -76,12 +76,6 @@ executables:
   #   - app/bench/
   #   - test/resources/
   #   dependencies: uKanren-transformation
-  # eval:
-  #   main: Main.hs
-  #   source-dirs:
-  #   - app/eval/
-  #   - test/resources/
-  #   dependencies: uKanren-transformation
 
 
 tests:

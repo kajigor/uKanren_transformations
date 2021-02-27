@@ -5,11 +5,10 @@ module ConsPD.Unfold where
 
 import           Control.Monad.State
 import           Data.Foldable      (foldlM)
-import           Data.List          (partition, sortBy, delete)
+import           Data.List          (partition, delete)
 import qualified Data.Map.Strict    as M
 import           Data.Maybe         (catMaybes, fromJust, fromMaybe,
                                      isNothing, mapMaybe)
-import           Data.Ord           (comparing)
 import           Descend
 import           Embed
 import qualified Eval               as E
@@ -19,7 +18,6 @@ import           Prelude            hiding (or)
 import qualified Subst
 import           Syntax
 import           Unfold             (findBestByComplexity, oneStep, isGoalStatic)
-import           Util.Miscellaneous (fst4)
 import           Util.ListZipper
 import qualified Environment as Env
 
@@ -198,10 +196,10 @@ topLevel limit (Program defs goal) =
                   Just v ->
                     return $ Leaf goal state env v
                   Nothing -> do
-                      let (allFree, generalizer, env') = generalizeAllVarsToFree goal env
-                      put (seen', failed, env')
-                      ch <- go (addAnc allFree) state
-                      return $ Gen ch goal allFree generalizer state
+                    let (allFree, generalizer, env') = generalizeAllVarsToFree goal env
+                    put (seen', failed, env')
+                    ch <- go (addAnc allFree) state
+                    return $ Gen ch goal allFree generalizer state
               else do
                 put (seen', failed, env)
                 let unified = zip (map (:[]) goal) (repeat state)
@@ -467,21 +465,19 @@ tryFindSubsts =
       then go (g:left) gs env state
       else Just (reverse left, ((map snd substs, notSubsts), env'), gs)
 
-selectMin :: (Eq a, Ord b) => [(a, b)] -> ([(a, b)], (a, b), [(a, b)])
-selectMin xs =
-    let minimal = head $ sortBy (comparing snd) xs in
-    let (ls, (h:rs)) = span (/= minimal) xs in
-    (ls, h, rs)
-
 doStep :: G S -> Env.Env -> Subst.Subst -> ([([G S], Subst.Subst)], Env.Env)
 doStep goal env state =
     fromMaybe
       (oneStep goal env state)
       (incrDeepOneStep globalLimit 0 goal env state)
 
+isFail :: ConsPDTree -> Bool
+isFail Fail = True
+isFail _ = False
+
 or :: [ConsPDTree] -> Descend [G S] -> Subst.Subst -> State ([[G S]], [[G S]], Env.Env) ConsPDTree
 or ch d@(Descend gs _) state =
-  if null ch || all (\case Fail -> True; _ -> False) ch
+  if null ch || all isFail ch
   then do
     (seen, failed, env) <- get
     put (delete gs seen, gs : failed, env)
@@ -607,7 +603,7 @@ simplify tree =
     go (Gen   ch g g' gen s) = failOr [ch] (\[x] -> Gen x g g' gen s)
     go x                = x
     failOr ch f =
-      let simplified = filter (/= Fail) $ map go ch in
+      let simplified = filter (not . isFail) $ map go ch in
       if null simplified
       then Fail
       else f simplified

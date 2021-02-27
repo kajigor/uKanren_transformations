@@ -124,6 +124,12 @@ fvg = nub . go
   go (Invoke _ ts) = concatMap fv ts
   go (Fresh x g)   = filter (x /=) $ go g
 
+topLevelFreshVars :: G X -> ([X], G X)
+topLevelFreshVars (Fresh x g) =
+  let (vs, goal) = topLevelFreshVars g in
+  (x:vs, goal)
+topLevelFreshVars g = ([], g)
+
 substInTerm :: Eq v => v -> Term v -> Term v -> Term v
 substInTerm v t t0@(V v0)     = if v == v0 then t else t0
 substInTerm v t    (C n args) = C n $ map (substInTerm v t) args

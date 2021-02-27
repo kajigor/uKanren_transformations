@@ -215,9 +215,3 @@ unit_unifySubsts = do
                            (Just [(7, V 9), (5, V 8), (3, V 8 % V 10), (4, V 5 % V 7), (0, V 5 % V 6)])
   where
     test' f g1 g2 = test f (map Subst.fromList g1) (Subst.fromList <$> g2)
-
-unit_selectMin = do
-    test ConsPD.selectMin [(0,0)] ([], (0,0), [])
-    test ConsPD.selectMin [(0,0), (1,1), (2,2)] ([], (0,0), [(1,1), (2,2)])
-    test ConsPD.selectMin [(2,2), (1,1), (0,0)] ([(2,2), (1,1)], (0,0), [])
-    test ConsPD.selectMin [(1,2), (2,3), (3,0), (4,0), (5,2)] ([(1,2),(2,3)],(3,0),[(4,0),(5,2)])

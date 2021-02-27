@@ -1,4 +1,4 @@
-module Main where
+module EvalApp where
 
 import Syntax
 import Stream
@@ -10,6 +10,8 @@ import Program.Bool
 import Program.Sort
 import Program.Programs
 import Prelude hiding (succ)
+import Parser (parseWholeProgram)
+import Debug.Trace (trace)
 
 -- reify :: Eq a => [(a, Term a)] -> Term a -> Term a
 reify s x@(V v) =
@@ -18,9 +20,28 @@ reify s x@(V v) =
     Just t  -> reify s t
 reify s (C n ts) = C n $ map (reify s) ts
 
-toplevel :: Integer -> (Term S -> String) -> Program -> [String]
+toplevel :: Int -> (Term S -> String) -> Program -> [String]
 toplevel n printer program =
   map (\s -> printer $ reify s (V 0)) $ takeS n $ run program
+
+addVar p@(Program defs goal) =
+  let (vars, g) = topLevelFreshVars goal in
+  if length vars <= 1
+  then p
+  else
+    let newVar = concat vars in
+    Program defs (fresh (newVar:vars) (V newVar === C "tuple" (map V vars)) &&& g)
+
+
+runWithParser :: FilePath -> Int -> IO ()
+runWithParser inputFile num = do
+  program <- readFile inputFile
+  case parseWholeProgram program of
+    Left err ->
+      putStrLn err
+    Right p ->
+      mapM_ print (toplevel num show (addVar p))
+
 
 main :: IO ()
 main = do
@@ -71,4 +92,5 @@ main' =
     print (toplevel 10 show (Program oddo (fresh ["q"] $ call "oddo" [V "q"])))
 
     -- print (toplevel 1 show (Program sorto (fresh ["q"] $ call "sorto" [peanify 0 % (peanify 1 % (peanify 1 % (peanify 0 % nil))), V "q"])))
+
 
