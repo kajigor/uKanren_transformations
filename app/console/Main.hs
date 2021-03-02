@@ -10,6 +10,7 @@ import System.Directory (getCurrentDirectory)
 import qualified ConsPDApp
 import qualified CPDApp
 import qualified ParseApp
+import qualified NormalizeApp
 import Util.File (failIfNotExist, isDir, getFiles, createDirRemoveExisting)
 
 data Transformation
@@ -17,6 +18,7 @@ data Transformation
   | ConsPD
   | Parser
   | Eval
+  | Normalize
 
 data Action = Action { transformation :: Transformation
                      , input :: FilePath
@@ -83,7 +85,13 @@ kindOfParserParser = flag' True
 
 parseTransformation :: Parser Transformation
 parseTransformation =
-  consPDParser <|> cpdParser <|> parserParser <|> evalParser
+  consPDParser <|> cpdParser <|> parserParser <|> evalParser <|> normalizeParser
+
+normalizeParser :: Parser Transformation
+normalizeParser = flag' Normalize
+  (  long "norm"
+  <> help "Normalize the program"
+  )
 
 consPDParser :: Parser Transformation
 consPDParser = flag' ConsPD
@@ -125,6 +133,8 @@ runAction args = do
   case transformation action of
     Eval | useIrinaParser action ->
       EvalApp.runWithParser (input action) (numAnswers action)
+    Normalize | useIrinaParser action ->
+      NormalizeApp.run (input action)
     x | useIrinaParser action -> do
       let transformer = case x of CPD -> CPDApp.runWithParser; ConsPD -> CPDApp.runWithParser
       let out = fromMaybe "test/out/cpd" (output action)
