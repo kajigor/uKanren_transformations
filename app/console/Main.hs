@@ -37,7 +37,7 @@ transform (Args transformation input output useIrinaParser numAnswers) = do
     failIfNotExist i
     isInputADir <- isDir i
 
-    forM_ output createDirRemoveExisting
+    -- forM_ output createDirRemoveExisting
 
     return $ Action transformation i output isInputADir (toBool useIrinaParser) numAnswers
   where
@@ -136,7 +136,7 @@ runAction args = do
     Normalize | useIrinaParser action ->
       NormalizeApp.run (input action)
     x | useIrinaParser action -> do
-      let transformer = case x of CPD -> CPDApp.runWithParser; ConsPD -> CPDApp.runWithParser
+      let transformer = case x of CPD -> CPDApp.runWithParser; ConsPD -> ConsPDApp.runWithParser
       let out = fromMaybe "test/out/cpd" (output action)
       if isInputADir action
       then do

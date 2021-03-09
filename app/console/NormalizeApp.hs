@@ -17,4 +17,7 @@ run fileName = do
       putStrLn "Initial program\n"
       putStrLn program
       putStrLn "\nTransformed\n"
-      print $ normalizeProg p
+      let normalized = normalizeProg p
+      print normalized
+      putStrLn "\nAnd back\n"
+      print $ toSyntax normalized

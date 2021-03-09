@@ -1,12 +1,15 @@
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE TupleSections #-}
 module NormalizedSyntax where
 
-import Data.List.NonEmpty (NonEmpty (..))
+import Data.List.NonEmpty (NonEmpty (..), toList)
 import Syntax
 import Text.Printf
 import Control.Monad.State
 import Data.List.NonEmpty.Extra (fromList)
 import Data.List (intercalate)
+import Debug.Trace (trace)
+
 
 data Goal a = Goal (Disj a)
             deriving (Eq, Ord, Functor, Show)
@@ -15,7 +18,7 @@ data Goal a = Goal (Disj a)
 data Disj a = Disj [Name] (NonEmpty (Conj a))
             deriving (Eq, Ord, Functor, Show)
 
-data Conj a = Conj (NonEmpty (Base a))
+data Conj a = Conj [Name] (NonEmpty (Base a))
             deriving (Eq, Ord, Functor, Show)
 
 data Base a = Unif (Term a) (Term a)
@@ -44,18 +47,30 @@ toBase (Invoke name args) = Right $ Call name args
 toBase (t1 :=: t2) = Right $ Unif t1 t2
 toBase g = Left g
 
-norm :: G X -> [[Either (G X) (Base X)]] -- disjunction of conjunctions of calls and unifications
-norm (f :\/: g) = norm f ++ norm g
-norm g = [norm' g]
-norm' :: G X -> [Either (G X) (Base X)]
-norm' (f :/\: g) = norm' f ++ norm' g
-norm' (Fresh _ g) = norm' g
-norm' g = [norm'' g]
+norm :: G X -> State [Name] [State [Name] [Either (G X) (Base X)]] -- disjunction of conjunctions of calls and unifications
+norm (Fresh x g) = do
+  modify (x:)
+  norm g
+norm (f :\/: g) = do
+  f' <- norm f
+  g' <- norm g
+  return (f' ++ g')
+norm g = return [norm' g]
+
+norm' :: G X -> State [Name] [Either (G X) (Base X)]
+norm' (f :/\: g) = do
+  f' <- norm' f
+  g' <- norm' g
+  return (f' ++ g')
+norm' (Fresh x g) = do
+  modify (x:)
+  norm' g
+norm' g = return [norm'' g]
 norm'' :: G X -> Either (G X) (Base X)
 norm'' g@(Invoke _ _) = toBase g
 norm'' g@(_ :=: _) = toBase g
 -- !!!
-norm'' (Fresh _ g) = norm'' g
+norm'' (Fresh _ g) = error "Fresh on the base level"
 norm'' g = Left g
 
 normalizeProg :: Program -> Prg
@@ -71,11 +86,26 @@ normalizeProg (Program defs goal) =
 
 normalize :: G X -> State ([Definition], Int) (Goal X)
 normalize goal = do
-  let normalized = norm goal
-  let transformed = mapM (mapM generateNewDef) normalized
+  let (normalized, topLevelFresh) = runState (norm goal) []
+  let transformed = mapM (\ state ->
+        let (bases, fresh) = runState state [] in
+        ((fresh,) <$> mapM generateNewDef bases)) normalized
   goals <- transformed
-  let result = Goal $ Disj [] $ fromList $ map (\g -> Conj $ fromList g) goals
+  let conjs = map (\(fresh, gs) -> Conj (reverse fresh) $ fromList gs) goals
+  let disj = Disj (reverse topLevelFresh) (fromList conjs)
+  let result = Goal disj
+  -- let result = undefined -- Goal topLevelFresh $ map (\(fresh, gs) -> Disj fresh (fromList (Conj $ fromList gs)) goals
   return result
+
+-- normalize :: G X -> State ([Definition], Int) (Goal X)
+-- normalize goal = do
+--   let (normalized, topLevelFresh) = runState (norm goal) []
+--   let transformed = mapM (\ state ->
+--         let (bases, fresh) = runState state [] in
+--         ((fresh,) <$> mapM generateNewDef bases)) normalized
+--   goals <- transformed
+--   let result = Goal topLevelFresh $ map  Disj [] $ fromList $ map (\g -> Conj $ fromList g) goals
+--   return result
 
 generateFreshName :: Name -> [Name] -> Name
 generateFreshName n names =
@@ -87,9 +117,10 @@ generateNewDef :: Either (G X) (Base X) -> State ([Definition], Int) (Base X)
 generateNewDef (Right b) = return b
 generateNewDef (Left g) = do
     newName <- generateNewName
+    modify (\(ds, n) -> (ds, n+1))
     body <- normalize g
     let def = Definition newName args body
-    modify (\(ds, n) -> (def:ds, n+1))
+    modify (\(ds, n) -> (def:ds, n))
     return $ Call newName (map V args)
   where
     generateNewName = do
@@ -97,3 +128,31 @@ generateNewDef (Left g) = do
       let potentialName = printf "rel_%d" n
       return (generateFreshName potentialName (map (\(Definition n _ _) -> n) defs))
     args = fvg g
+
+
+toSyntax :: Prg -> Program
+toSyntax (Prg defs g) =
+    Program definitions goal
+  where
+    goal = go g
+
+    definitions = map (\(Definition name args g) -> Def name args (go g)) defs
+
+    baseToG :: Base a -> G a
+    baseToG (Unif t1 t2) = t1 :=: t2
+    baseToG (Call name args) = Invoke name args
+
+    conjToG :: Conj a -> G a
+    conjToG (Conj names bases) =
+      let conj = foldr1 (:/\:) (map baseToG $ toList bases) in
+      fresh names conj
+
+    disjToG :: Disj a -> G a
+    disjToG (Disj names conjs) =
+      let disj = foldr1 (:\/:) (map conjToG $ toList conjs) in
+      fresh names disj
+
+    go (Goal disj) = disjToG disj
+
+makeNormal :: Program -> Program
+makeNormal = toSyntax . normalizeProg
