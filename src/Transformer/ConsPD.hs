@@ -17,6 +17,7 @@ import           Text.Printf
 import qualified Transformer.MkToProlog
 import           Util.Miscellaneous     (escapeTick)
 import           Util.File              (createDirRemoveExisting)
+import NormalizedSyntax (makeNormal, normalizeProg)
 
 data TransformResult = Result { original :: [Def]
                               , tree :: ConsPD.ConsPDTree
@@ -52,10 +53,17 @@ runConsPD' :: [Char] -> FilePath -> Program -> IO ()
 runConsPD' outDir = Transformer.ConsPD.transform outDir Nothing (ConsPD.topLevel (-1))
 
 transform :: [Char] -> Maybe String -> (Program -> (ConsPD.ConsPDTree, G S, [S])) -> FilePath -> Program -> IO ()
-transform outDir env function filename goal@(Program definitions _) = do
+transform outDir env function filename prg = do
+  let norm = normalizeProg prg
+  print norm
+
+  let goal@(Program definitions _) = makeNormal prg
   let path = outDir </> filename
   createDirRemoveExisting path
   let consPdFile = path </> "conspd"
+
+  Transformer.MkToProlog.transform (path </> "original.pl") definitions
+
 
   let result = runTransformation goal function
 

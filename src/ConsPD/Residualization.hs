@@ -8,12 +8,14 @@ import qualified CPD.Residualization as CpdR
 import           Data.List ( find, intercalate, nub )
 import           Data.Maybe          (catMaybes, fromJust, fromMaybe)
 import           Descend
+import           Embed (isVariant)
 import qualified Eval                as E
 import qualified Residualization     as Res
 import qualified Subst
 import           Syntax
 import           Text.Printf         (printf)
 import           Util.Miscellaneous  (fst3)
+import Debug.Trace
 
 topLevel :: Program -> Program
 topLevel input =
@@ -35,6 +37,7 @@ generateDefs tree =
   let gens = collectGens tree in
   let distinct = nub $ map snd leaves in
   let simplified = restrictSubsts $ simplify $ renameAmbigousVars $ tree in
+  trace (printf "\n\nSimplified tree:\n%s\n\n" $ show simplified) $
   let nodes = (toplevel, simplified) : map (\(_,x) -> findNode x tree) gens ++ map (`findNode` tree) distinct in
   let definitions = foldl (\defs gs -> fst3 (CpdR.renameGoals gs defs) ) [] $ map fst nodes in
   let defWithTree = zip (reverse definitions) (map snd nodes) in
@@ -84,19 +87,24 @@ generateInvocation' defs gs v =
 findNode :: [G S] -> ConsPDTree -> ([G S], ConsPDTree)
 findNode v tree =
     let nodes = go tree in
+    -- trace (printf "\n\nNodes\n%s\n\n" (show nodes)) $
     case find nontrivial nodes of
       Just n -> (v, restrictSubsts $ simplify $ renameAmbigousVars n)
       Nothing -> error $ printf "Residualization error: no node for\n%s" (show v)
   where
     go node@(Or _ (Descend goal _) _) | goal == v = return node
-    go node@(Conj _ goal _)              | goal == v = return node
-    go node@(Split _ goal _)             | goal == v = return node
-    go node@(Gen ch _ goal _ _)          | goal == v = [node, ch]
-    go (Or ch _ _)                       = concatMap go ch
-    go (Conj ch _ _)                     = concatMap go ch
-    go (Split ch _ _)                    = concatMap go ch
-    go (Gen ch _ _ _ _)                  = go ch
-    go _                                 = []
+    go node@(Conj _ goal _)           | goal == v = return node
+    go node@(Split _ goal _)          | goal == v = return node
+    go node@(Gen ch _ goal _ _)       | goal == v = [node, ch]
+    go node@(Or _ (Descend goal _) _) | goal `isVariant` v = return node
+    go node@(Conj _ goal _)           | goal `isVariant` v = return node
+    go node@(Split _ goal _)          | goal `isVariant` v = return node
+    go node@(Gen ch _ goal _ _)       | goal `isVariant` v = [node, ch]
+    go (Or ch _ _)                    = concatMap go ch
+    go (Conj ch _ _)                  = concatMap go ch
+    go (Split ch _ _)                 = concatMap go ch
+    go (Gen ch _ _ _ _)               = go ch
+    go _                              = []
 
 nontrivial :: ConsPDTree -> Bool
 nontrivial (Leaf _ _ _ _) = False
@@ -109,6 +117,7 @@ nodeContent x                            = Nothing -- error "Failed to get node 
 
 generateDef :: CpdR.Definitions -> [([G S], G S)] -> (([G S], Name, [S]), ConsPDTree) -> Def
 generateDef defs invocations ((gs, n, args), tree) =
+  trace (printf "\n\nGenerateDef\n\nDefs\n%s\n\nInvoks\n%s\n\nGs\n%s\n\nName\n%s\n\nArgs\n%s\n\n" (show defs) (show invocations) (show gs) (show n) (show args)) $
   let body = generateGoalFromTree defs invocations tree args in
   let argsX = map Res.vident args in
   Def n argsX (E.postEval argsX body)
@@ -150,8 +159,9 @@ generateGoalFromTree definitions invocations tree args =
       mkGoal unifs rest (:/\:)
     go seen r (Gen ch gs gs' gen s) = do
       let unifs = residualizeEnv s
-      let rest = getInvocation r gs
-      mkGoal unifs rest (:/\:)
+      let generalizer = residualizeEnv gen
+      let rest = getInvocation r gs <|> (conj $ catMaybes [go seen False ch])
+      mkGoal (mkGoal unifs generalizer (:/\:)) rest (:/\:)
     go seen r (Prune _ _)     = error "Failed to residualize: Prune node in tree"
 
     mkGoal (Just u) (Just r) f = Just (f u r)

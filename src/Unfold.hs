@@ -11,6 +11,7 @@ import           Util.Miscellaneous  (fst3, pinpoint)
 import qualified VarInterpretation   as VI
 import qualified Environment as Env
 import Util.ListZipper
+import Debug.Trace
 
 oneStepUnfold :: G S -> Env.Env -> (G S, Env.Env)
 oneStepUnfold g@(Invoke f as) env =

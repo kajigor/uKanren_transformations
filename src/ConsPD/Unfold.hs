@@ -20,6 +20,8 @@ import           Syntax
 import           Unfold             (findBestByComplexity, oneStep, isGoalStatic)
 import           Util.ListZipper
 import qualified Environment as Env
+import Debug.Trace (trace, traceM, traceShowM, traceShow)
+import Text.Printf (printf)
 
 data ConsPDTree = Fail
                 | Success Subst.Subst Env.Env
@@ -209,6 +211,7 @@ topLevel limit (Program defs goal) =
               if length goal == 1
               then do
                 let (unified, env') = oneStep (head goal) env state
+                put (seen', failed, env')
                 ch <- unfoldSequentially unified addAnc
                 or ch (addAnc goal) state
               else
