@@ -26,9 +26,9 @@ instance Ground (Term a) where
   isGround (C _ args) = isGround args
 
 instance Ground (G a) where
-  isGround (g :/\: h) = isGround g && isGround h
-  isGround (g :\/: h) = isGround g && isGround h
-  isGround (u :=:  v) = isGround u && isGround v
+  isGround (Conjunction x y gs) = all isGround (x : y : gs)
+  isGround (Disjunction x y gs) = all isGround (x : y : gs)
+  isGround (u :=: v) = isGround u && isGround v
   isGround (Invoke _ args) = isGround args
 
 class AlwaysEmbeddable a => Homeo a where

@@ -15,7 +15,7 @@ module Parser (
     ) where
 
 import           Control.Monad                  (void)
-import           Control.Monad.Combinators.Expr
+import qualified Control.Applicative.Combinators.NonEmpty as NE
 import           Data.Void                      (Void(..))
 import           Data.Either                    (either, fromRight)
 import           Eval                           (postEval)
@@ -190,12 +190,15 @@ parsePat = try $ do
   <|> parseInvoke
 
 parseOp :: Parser (G X)
-parseOp = makeExprParser parsePat ops
-  where
-    go assoc op f = assoc (f <$ symbol op)
-    ops = [ [ go InfixR "/\\" (:/\:) ]
-          , [ go InfixR "\\/" (:\/:) ]
-          ]
+parseOp =
+  (unsafeDisj') <$> NE.sepBy1 (unsafeConj' <$> NE.sepBy1 parsePat (symbol "/\\")) (symbol "\\/")
+
+  -- makeExprParser parsePat ops
+  -- where
+  --   go assoc op f = assoc (f <$ symbol op)
+  --   ops = [ [ go InfixR "/\\" (:/\:) ]
+  --         , [ go InfixR "\\/" (:\/:) ]
+  --         ]
 
 parseGoal :: Parser (G X)
 parseGoal = try parseConde
@@ -205,7 +208,7 @@ parseConde :: Parser (G X)
 parseConde = do
   symbol "conde"
   goals <- some (roundBr parseDesugarGoal)
-  return $ foldr1 (\goal acc -> goal :\/: acc) goals
+  return $ unsafeDisj goals
 
 parseDesugarGoal :: Parser (G X)
 parseDesugarGoal = sc

@@ -5,6 +5,7 @@ import Purification
 
 import Data.Char
 import Data.List
+import Data.List.NonEmpty (NonEmpty (..))
 
 import Text.ParserCombinators.Parsec
 
@@ -38,8 +39,9 @@ goalToDNF g = toDNF [] g where
                          Just s' -> [(s', [])]
   toDNF s (Invoke n a) = [(s, [(n, a)])]
   toDNF s (Fresh _ g') = toDNF s g'
-  toDNF s (g1 :\/: g2) = toDNF s g1 ++ toDNF s g2
-  toDNF s (g1 :/\: g2) = [(s2, f1 ++ f2) | (s1, f1) <- toDNF s g1, (s2, f2) <- toDNF s1 g2]
+  toDNF s (Disjunction gs) = concatMap (toDNF s) gs
+  toDNF s (Conjunction (g1 :| [])) = toDNF s g1
+  toDNF s (Conjunction (g1 :| g2)) = [(s2, f1 ++ f2) | (s1, f1) <- toDNF s g1, (s2, f2) <- toDNF s1 (unsafeConj g2)]
 
 {-------------------------------------------}
 applySigma :: Subst -> Term X -> Term X

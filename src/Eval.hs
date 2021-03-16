@@ -13,6 +13,7 @@ import qualified VarInterpretation as VI
 import qualified FreshNames as FN
 import qualified Environment as Env
 import Control.Monad.State
+import Data.List.NonEmpty (NonEmpty (..), fromList)
 
 -- Envs
 -- type Iota  = Map.Map X Ts
@@ -97,14 +98,8 @@ preEval goal = do
     go (Invoke f fs) = do
       i <- getInterp
       return (Invoke f (map (i VI.<@>) fs))
-    go (g1 :/\: g2) = do
-      g1' <- go g1
-      g2' <- go g2
-      return (g1' :/\: g2')
-    go (g1 :\/: g2) = do
-      g1' <- go g1
-      g2' <- go g2
-      return (g1' :\/: g2')
+    go (Conjunction x y gs) = unsafeConj <$> mapM go (x : y : gs)
+    go (Disjunction x y gs) = unsafeDisj <$> mapM go (x : y : gs)
     getInterp :: State ([S], Env.Env) VI.Interpretation
     getInterp = do
       Env.Env _ i _ <- gets snd
@@ -115,9 +110,9 @@ postEval as goal =
     let freshs = fvg goal \\ as in
     foldr Fresh (go (freshs ++ as) goal) freshs
   where
-    go vars (g1 :/\: g2) = go vars g1 :/\: go vars g2
-    go vars (g1 :\/: g2) = go vars g1 :\/: go vars g2
-    go _ g               = g
+    go vars (Conjunction x y gs) = unsafeConj $ go vars <$> (x : y : gs)
+    go vars (Disjunction x y gs) = unsafeDisj $ go vars <$> (x : y : gs)
+    go _ g = g
 
 closeFresh :: [X] -> G X -> G X
 closeFresh as goal = goal
@@ -168,8 +163,13 @@ topLevel (Program defs goal) =
 -- Evaluation relation
 eval :: Env.Env -> Subst.Subst -> G S -> Stream (Subst.Subst, FN.FreshNames)
 eval env s (t1 :=:  t2) = fmap (, Env.getFreshNames env) (maybeToStream $ unify (Just s) t1 t2)
-eval env s (g1 :\/: g2) = eval env s g1 `mplus` eval env s g2
-eval env s (g1 :/\: g2) = eval env s g1 >>= (\ (s', d') -> eval (Env.updateNames env d') s' g2)
+-- eval env s (g1 :\/: g2) = eval env s g1 `mplus` eval env s g2
+eval env s (Conjunction x y gs) =
+  foldr1 mplus (eval env s <$> (x : y : gs))
+-- eval env s (g1 :/\: g2) = eval env s g1 >>= (\ (s', d') -> eval (Env.updateNames env d') s' g2)
+eval env s (Disjunction x y gs) =
+  eval env s x >>= \(s', d') ->
+  eval (Env.updateNames env d') s' (unsafeDisj $ y : gs)
 eval env s (Invoke f as) =
   let (Def _ fs g) = Env.getDef env f in
   let i' = foldl (\ i'' (f', a) -> VI.extend i'' f' a) (Env.getInterp env) $ zip fs as in

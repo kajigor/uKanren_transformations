@@ -13,6 +13,7 @@ import qualified VarInterpretation   as VI
 import qualified Environment as Env
 import Util.ListZipper
 import Debug.Trace
+import Data.List.NonEmpty (NonEmpty (..), fromList)
 
 oneStepUnfold :: G S -> State Env.Env (G S)
 oneStepUnfold g@(Invoke f as) = do
@@ -35,8 +36,8 @@ oneStep goal state = do
     return unified
 
 normalize :: G S -> [[G S]] -- disjunction of conjunctions of calls and unifications
-normalize (f :\/: g) = normalize f ++ normalize g
-normalize (f :/\: g) = (++) <$> normalize f <*> normalize g
+normalize (Disjunction x y gs) = concatMap normalize (x : y : gs)
+normalize (Conjunction x y gs) = normalize x ++ normalize (unsafeConj (y : gs))
 normalize g@(Invoke _ _) = [[g]]
 normalize g@(_ :=: _) = [[g]]
 normalize g = error ("Unexpected goal type in normalization\n" ++ show g)
@@ -56,11 +57,11 @@ maximumBranches def@(Def _ args body) =
     let goal = fst $ evalState (E.preEval (fresh args body)) Env.empty in
     length $ evalState (oneStep (succeed goal) Subst.empty) Env.empty
   where
-    succeed (g :/\: h)         = succeed g :/\: succeed h
-    succeed (g :\/: h)         = succeed g :\/: succeed h
-    succeed (Fresh name g)     = Fresh name (succeed g)
     succeed (Invoke name args) = success
-    succeed (t :=: u)          = t :=: u
+    succeed (t :=: u) = t :=: u
+    succeed (Conjunction x y g) = unsafeConj $ succeed <$> (x : y : g)
+    succeed (Disjunction x y g) = unsafeDisj $ succeed <$> (x : y : g)
+    succeed (Fresh name g) = Fresh name $ succeed g
 
     success = C "" [] :=: C "" []
 
@@ -125,8 +126,8 @@ static env name =
   where
     go set (Invoke name _) | Set.member name set = False
     go set (Invoke name _) = go (Set.insert name set) (getBody name)
-    go set (g :/\: h) = go set g && go set h
-    go set (g :\/: h) = go set g && go set h
+    go set (Conjunction x y gs) = all (go set) (x : y : gs)
+    go set (Disjunction x y gs) = all (go set) (x : y : gs)
     go set (Fresh _ g) = go set g
     go _ _ = True
 

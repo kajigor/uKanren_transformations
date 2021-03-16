@@ -6,6 +6,7 @@ module OCanrenize where
 import Control.Applicative ((<|>))
 import Data.Char ( toLower )
 import Data.Maybe (fromMaybe)
+import Data.List (intercalate)
 import Syntax ( freshVars, Def(..), G(..), Term(..), X )
 import System.IO ( IOMode(WriteMode), hClose, openFile, hPutStrLn )
 import System.IO.Temp ( withSystemTempFile )
@@ -63,10 +64,10 @@ instance OCanren v => OCanren (Term v) where
       getSome _ _ = Nothing
 
 instance OCanren (G X) where
-  ocanren (t1 :=:  t2)  = printf "(%s === %s)" (ocanren t1) (ocanren t2)
-  ocanren (g1 :/\: g2)  = printf "(%s &&& %s)" (ocanren g1) (ocanren g2)
-  ocanren (g1 :\/: g2)  = printf "(%s ||| %s)" (ocanren g1) (ocanren g2)
-  ocanren (Fresh x g )  = let (names, goal) = freshVars [x] g in printf "(fresh (%s) (%s))" (printArgs names) (ocanren goal)
+  ocanren (t1 :=:  t2) = printf "(%s === %s)" (ocanren t1) (ocanren t2)
+  ocanren (Conjunction x y gs) = printf "(%s)" $ intercalate " &&& " $ ocanren <$> (x : y : gs)
+  ocanren (Disjunction x y gs) = printf "(%s)" $ intercalate " ||| " $ ocanren <$> (x : y : gs)
+  ocanren (Fresh x g ) = let (names, goal) = freshVars [x] g in printf "(fresh (%s) (%s))" (printArgs names) (ocanren goal)
   ocanren (Invoke "success" []) = "success"
   ocanren (Invoke "fail" []) = "fail"
   ocanren (Invoke f ts) = printf "(%s %s)" f (printArgs $ map ocanren ts)

@@ -1,6 +1,7 @@
 module Util.Miscellaneous where
 
 import Data.List ( (\\), intercalate, subsequences )
+import Data.List.NonEmpty ( NonEmpty (..), nonEmpty )
 import Text.Printf (printf)
 import Util.ListZipper
 

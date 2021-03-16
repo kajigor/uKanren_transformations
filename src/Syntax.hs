@@ -6,6 +6,7 @@
 module Syntax where
 
 import Data.List ( intercalate, nub )
+import Data.List.NonEmpty ( toList, NonEmpty (..) )
 import Text.Printf ( printf )
 import Data.Char ( toLower )
 import Util.Miscellaneous ( parenthesize )
@@ -32,8 +33,8 @@ data Program = Program [Def] (G X)
 -- Goals
 data G a
   = Term a :=: Term a
-  | G a :/\: G a
-  | G a :\/: G a
+  | Conjunction (G a) (G a) [G a] -- a list of conjuncts: at least 2 conjuncts should be present
+  | Disjunction (G a) (G a) [G a] -- a list of disjuncts: at least 2 disjuncts should be present
   | Fresh  Name (G a)
   | Invoke Name [Term a]
   deriving (Eq, Ord, Functor)
@@ -43,8 +44,6 @@ freshVars names (Fresh name goal) = freshVars (name : names) goal
 freshVars names goal = (reverse names, goal)
 
 infix  8 :=:
-infixr 7 :/\:
-infixr 6 :\/:
 
 infixr 7 &&&
 infixr 6 |||
@@ -54,11 +53,44 @@ infix  8 ===
 (===) = (:=:)
 
 (|||) :: G a -> G a -> G a
-(|||) = (:\/:)
+(|||) g1 g2 = goalFromList Disjunction [g1, g2]
 
 (&&&) :: G a -> G a -> G a
-(&&&) = (:/\:)
+(&&&) g1 g2 = goalFromList Conjunction [g1, g2]
 
+goalFromList :: (G a -> G a -> [G a] -> G a) -> [G a] -> G a
+goalFromList f (x : y : xs) = f x y xs
+goalFromList _ [x] = x
+
+flatConj :: G a -> G a -> G a
+flatConj g1 g2 =
+    case (getFirstNonConj g1, getFirstNonConj g2) of
+      (Just (x1, y1, gs1), Just (x2, y2, gs2)) ->
+        Conjunction x1 x2 $ gs1 ++ (x2 : y2 : gs2)
+      (Just (x1, y1, gs1), Nothing) ->
+        Conjunction x1 y1 (gs1 ++ [g2])
+      (Nothing, Just (x2, y2, gs2)) ->
+        Conjunction g1 x2 (y2 : gs2)
+      (Nothing, Nothing) ->
+        Conjunction g1 g2 []
+  where
+    getFirstNonConj (Conjunction x y gs) = Just (x, y, gs)
+    getFirstNonConj _ = Nothing
+
+flatDisj :: G a -> G a -> G a
+flatDisj g1 g2 =
+    case (getFirstNonDisj g1, getFirstNonDisj g2) of
+      (Just (x1, y1, gs1), Just (x2, y2, gs2)) ->
+        Disjunction x1 x2 $ gs1 ++ x2 : y2 : gs2
+      (Just (x1, y1, gs1), Nothing) ->
+        Disjunction x1 y1 (gs1 ++ [g2])
+      (Nothing, Just (x2, y2, gs2)) ->
+        Disjunction g1 x2 (y2 : gs2)
+      (Nothing, Nothing) ->
+        Disjunction g1 g2 []
+  where
+    getFirstNonDisj (Disjunction x y gs) = Just (x, y, gs)
+    getFirstNonDisj _ = Nothing
 
 fresh :: [Name] -> G a -> G a
 fresh xs g = foldr Fresh g xs
@@ -67,18 +99,24 @@ call :: Name -> [Term a] -> G a
 call = Invoke
 
 disj :: [G a] -> Maybe (G a)
-disj [] = Nothing
-disj xs = Just $ foldr1 (:\/:) xs
+disj gs | length gs >= 2 = return $ unsafeDisj gs
+disj _ = Nothing
 
 conj :: [G a] -> Maybe (G a)
-conj [] = Nothing
-conj xs = Just $ foldr1 (:/\:) xs
+conj gs | length gs >= 2 = return $ unsafeConj gs
+conj _ = Nothing
 
 unsafeConj :: [G a] -> G a
-unsafeConj = foldr1 (:/\:)
+unsafeConj = goalFromList Conjunction
 
 unsafeDisj :: [G a] -> G a
-unsafeDisj = foldr1 (:\/:)
+unsafeDisj = goalFromList Disjunction
+
+unsafeConj' :: NonEmpty (G a) -> G a
+unsafeConj' = goalFromList Conjunction . toList
+
+unsafeDisj' :: NonEmpty (G a) -> G a
+unsafeDisj' = goalFromList Disjunction . toList
 
 successName :: String
 successName = "success"
@@ -110,8 +148,8 @@ fvgs :: G S -> [S]
 fvgs = nub . go
  where
   go (t1 :=:  t2) = fv t1 ++ fv t2
-  go (g1 :/\: g2) = go g1 ++ go g2
-  go (g1 :\/: g2) = go g1 ++ go g2
+  go (Conjunction x y gs) = concatMap go (x : y : gs)
+  go (Disjunction x y gs) = concatMap go (x : y : gs)
   go (Invoke _ ts) = concatMap fv ts
   -- go (Fresh x g)   = filter (x /=) $ go g
 
@@ -119,8 +157,8 @@ fvg :: G X -> [X]
 fvg = nub . go
  where
   go (t1 :=:  t2) = fv t1 ++ fv t2
-  go (g1 :/\: g2) = go g1 ++ go g2
-  go (g1 :\/: g2) = go g1 ++ go g2
+  go (Conjunction x y gs) = concatMap go (x : y : gs)
+  go (Disjunction x y gs) = concatMap go (x : y : gs)
   go (Invoke _ ts) = concatMap fv ts
   go (Fresh x g)   = filter (x /=) $ go g
 
@@ -135,11 +173,11 @@ substInTerm v t t0@(V v0)     = if v == v0 then t else t0
 substInTerm v t    (C n args) = C n $ map (substInTerm v t) args
 
 substInGoal :: X -> Term X -> G X -> G X
-substInGoal v t   (t1 :=:  t2)  = substInTerm v t t1 === substInTerm v t t2
-substInGoal v t   (g1 :/\: g2)  = substInGoal v t g1 &&& substInGoal v t g2
-substInGoal v t   (g1 :\/: g2)  = substInGoal v t g1 ||| substInGoal v t g2
-substInGoal v t g@(Fresh n g')  = if v == n then g else Fresh n $ substInGoal v t g'
-substInGoal v t   (Invoke n ts) = Invoke n $ map (substInTerm v t) ts
+substInGoal v t (t1 :=:  t2) = substInTerm v t t1 === substInTerm v t t2
+substInGoal v t (Conjunction x y gs) = unsafeConj $ substInGoal v t <$> (x : y : gs)
+substInGoal v t (Disjunction x y gs) = unsafeDisj $ substInGoal v t <$> (x : y : gs)
+substInGoal v t g@(Fresh n g') = if v == n then g else Fresh n $ substInGoal v t g'
+substInGoal v t (Invoke n ts) = Invoke n $ map (substInTerm v t) ts
 
 instance Show a => Show (Term a) where
   show (V v) = showVar v
@@ -153,8 +191,8 @@ instance Show a => Show (Term a) where
 
 instance Show a => Show (G a) where
   show (t1 :=:  t2) = printf "%s = %s" (show t1) (show t2)
-  show (g1 :/\: g2) = printf "(%s /\\ %s)" (show g1) (show g2)
-  show (g1 :\/: g2) = printf "(%s \\/ %s)" (show g1) (show g2)
+  show (Conjunction x y gs) = printf "(%s)" (intercalate " /\\ " $ show <$> (x : y : gs))
+  show (Disjunction x y gs) = printf "(%s)" (intercalate " \\/ " $ show <$> (x : y : gs))
   show (Fresh name g) =
     let (names, goal) = freshVars [name] g in
     printf "fresh %s (%s)" (unwords $ map show names) (show goal)
@@ -229,8 +267,8 @@ prettifyNum' acc c intPrint varPrint = error (printf "Failed to prettifyNum': %s
 
 instance Dot a => Dot (G a) where
   dot (t1 :=:  t2) = printf "%s = %s" (dot t1) (dot t2)
-  dot (g1 :/\: g2) = printf "(%s /\\ %s)" (dot g1) (dot g2)
-  dot (g1 :\/: g2) = printf "(%s \\/ %s)" (dot g1) (dot g2)
+  dot (Conjunction x y gs) = printf "(%s)" (intercalate " /\\ " $ dot <$> (x : y : gs))
+  dot (Disjunction x y gs) = printf "(%s)" (intercalate " \\/ " $ dot <$> (x : y : gs))
   dot (Fresh name g) =
     let (names, goal) = freshVars [name] g in
     printf "fresh %s (%s)" (dot names) (dot goal)

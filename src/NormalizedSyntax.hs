@@ -51,17 +51,17 @@ norm :: G X -> State [Name] [State [Name] [Either (G X) (Base X)]] -- disjunctio
 norm (Fresh x g) = do
   modify (x:)
   norm g
-norm (f :\/: g) = do
-  f' <- norm f
-  g' <- norm g
-  return (f' ++ g')
+norm (Conjunction x y gs) = do
+  x' <- norm x
+  y' <- norm (unsafeConj (y : gs))
+  return (x' ++ y')
 norm g = return [norm' g]
 
 norm' :: G X -> State [Name] [Either (G X) (Base X)]
-norm' (f :/\: g) = do
-  f' <- norm' f
-  g' <- norm' g
-  return (f' ++ g')
+norm' (Disjunction x y gs) = do
+  x' <- norm' x
+  y' <- norm' (unsafeDisj (y : gs))
+  return (x' ++ y')
 norm' (Fresh x g) = do
   modify (x:)
   norm' g
@@ -144,12 +144,12 @@ toSyntax (Prg defs g) =
 
     conjToG :: Conj a -> G a
     conjToG (Conj names bases) =
-      let conj = foldr1 (:/\:) (map baseToG $ toList bases) in
+      let conj = unsafeConj $ baseToG <$> toList bases in
       fresh names conj
 
     disjToG :: Disj a -> G a
     disjToG (Disj names conjs) =
-      let disj = foldr1 (:\/:) (map conjToG $ toList conjs) in
+      let disj = unsafeConj $ conjToG <$> toList conjs in
       fresh names disj
 
     go (Goal disj) = disjToG disj

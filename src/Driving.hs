@@ -4,6 +4,7 @@ module Driving where
 
 import           Data.Foldable
 import           Data.List              hiding (group, groupBy)
+import           Data.List.NonEmpty     (NonEmpty (..), fromList)
 import qualified Data.Map.Strict        as Map
 import           Data.Maybe
 import qualified Data.Set               as Set
@@ -32,25 +33,20 @@ type Stack = [(Id, [G S])]
 
 rename :: G S -> G S -> Maybe Renaming
 rename g1 g2 = rename' (Just []) (g1, g2) where
-  rename' r (s1 :=:  s2, t1 :=:  t2)                                      = renameTerms r [s1, s2] [t1, t2]
-  rename' r (g1 :/\: g2, h1 :/\: h2)                                      = renameGoals r [g1, g2] [h1, h2]
-  rename' r (g1 :\/: g2, h1 :\/: h2)                                      = renameGoals r [g1, g2] [h1, h2]
+  rename' r (s1 :=: s2, t1 :=: t2) = renameTerms r [s1, s2] [t1, t2]
+  rename' r (Conjunction x y gs, Conjunction x' y' hs) = renameGoals r (x : y : gs) (x' : y' : hs)
+  rename' r (Disjunction x y gs, Disjunction x' y' hs) = renameGoals r (x : y : gs) (x' : y' : hs)
   rename' r (Invoke f as, Invoke g bs) | f == g && length as == length bs = renameTerms r as bs
---  rename' r (Zzz f, Zzz g) = rename' r (f, g)
-  rename' _  _                                                            = Nothing
+  rename' _  _ = Nothing
   renameTerm r (C m ms, C n ns) | m == n && length ms == length ns = renameTerms r ms ns
   renameTerm r (V x, V y) = r >>= (\r -> case lookup x r of
                                            Nothing -> Just $ (x, y) : r
                                            Just z  -> if z == y then Just r else Nothing
                                   )
- {- renameTerm r (V x, C n ns) = r >>= ( \r -> case lookup x r of
-                                               Nothing -> Just $ (x, x) : r
-                                               Just z -> Nothing
-                                     ) -}
-  renameTerm  _ _       = Nothing
-  renameTerms           = renames renameTerm
-  renameGoals           = renames rename'
-  renames     f r ms ns = foldl f r $ zip ms ns
+  renameTerm  _ _ = Nothing
+  renameTerms = renames renameTerm
+  renameGoals = renames rename'
+  renames f r ms ns = foldl f r $ zip ms ns
 
 renameGoals :: [G S] -> [G S] -> Maybe Renaming
 renameGoals as bs = do
@@ -125,9 +121,9 @@ embedGoals gs hs = coupleConj gs hs || diveConj gs hs where
 --   diveConj _ _ _         = Nothing
 
 substitute :: Subst.Subst -> G S -> G S
-substitute s (t1 :=: t2  ) = Subst.substitute s t1 :=: Subst.substitute s t2
-substitute s (g1 :/\: g2 ) = substitute s g1 :/\: substitute s g2
-substitute s (g1 :\/: g2 ) = substitute s g1 :\/: substitute s g2
+substitute s (t1 :=: t2) = Subst.substitute s t1 :=: Subst.substitute s t2
+substitute s (Conjunction x y gs) = unsafeConj $ substitute s <$> (x : y : gs)
+substitute s (Disjunction x y gs) = unsafeDisj $ substitute s <$> (x : y : gs)
 substitute s (Invoke f as) = Invoke f $ map (Subst.substitute s) as
 
 weakCouple :: (G S, G S) -> Bool
@@ -214,12 +210,12 @@ eval tc cs d s gen prev g@(i, p, t1 :=: t2) conjs =
                                 [] -> unfold tc cs d s gen []
                                 _  -> invoke tc cs d s gen $ reverse prev
                   g':conj' -> eval tc cs d s gen prev g' conj'
-eval tc cs d s gen prev g@(i, p, g1 :\/: g2) conjs =
-  let (tc',  node' , d' ) = eval tc  cs d  s gen prev (i, p, g1) conjs in
-  let (tc'', node'', d'') = eval tc' cs d' s gen prev (i, p, g2) conjs in
+eval tc cs d s gen prev g@(i, p, Disjunction x y gs) conjs =
+  let (tc',  node' , d' ) = eval tc  cs d  s gen prev (i, p, x) conjs in
+  let (tc'', node'', d'') = eval tc' cs d' s gen prev (i, p, (unsafeDisj (y : gs))) conjs in
   (tc'', Or node' node'' (unsafeConj $ map trd3 $ (reverse prev) ++ g:conjs) s, d'')
-eval tc cs d s gen prev (i, p, g1 :/\: g2) conjs = eval tc cs d s gen prev (i, p, g1) ((i, p, g2):conjs)
---eval tc cs d s gen prev (i,p,Zzz g) conjs = eval tc cs d s gen prev (i,p,g) conjs
+eval tc cs d s gen prev (i, p, Conjunction x y gs) conjs =
+  eval tc cs d s gen prev (i, p, x) ((i, p, unsafeConj (y : gs)) : conjs)
 eval tc cs d s gen prev g@(_, _, Invoke _ _) (g':conjs') = eval tc cs d s gen (g:prev) g' conjs'
 eval tc cs d s gen prev g@(_, _, Invoke _ _) []          = invoke tc cs d s gen (reverse $ g:prev)
 

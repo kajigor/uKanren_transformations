@@ -5,7 +5,8 @@ module ConsPD.Residualization where
 import           ConsPD.Unfold
 import           Control.Applicative ((<|>))
 import qualified CPD.Residualization as CpdR
-import           Data.List ( find, intercalate, nub )
+import           Data.List           (find, intercalate, nub)
+import           Data.List.NonEmpty  (NonEmpty (..), toList)
 import           Data.Maybe          (catMaybes, fromJust, fromMaybe)
 import           Descend
 import           Embed (isVariant)
@@ -143,31 +144,37 @@ generateGoalFromTree definitions invocations tree args =
       -- let vs = getNewVars seen gs s
       let unifs = residualizeEnv s
       let rest = getInvocation r gs <|> (disj $ catMaybes $ map (go seen False) ch)
-      mkGoal unifs rest (:/\:)
+      mkGoal unifs rest
     go seen r (Split ch gs s)  = do
       -- let vs = getNewVars seen gs s
       let unifs = residualizeEnv s
       let rest = getInvocation r gs <|> (conj $ catMaybes $ map (go seen False) ch)
-      mkGoal unifs rest (:/\:)
+      mkGoal unifs rest
     go seen r (Leaf gs s _ vs) = do
       let unifs = residualizeEnv s
       let rest = getInvocation' gs vs -- snd (fromJust $ find ((gs ==) . fst) invocations)
-      mkGoal unifs rest (:/\:)
+      mkGoal unifs rest
     go seen r (Conj ch gs s)   = do
       let unifs = residualizeEnv s
       let rest = getInvocation r gs <|> (conj $ catMaybes $ map (go seen False) ch)
-      mkGoal unifs rest (:/\:)
+      mkGoal unifs rest
     go seen r (Gen ch gs gs' gen s) = do
       let unifs = residualizeEnv s
       let generalizer = residualizeEnv gen
       let rest = getInvocation r gs <|> (conj $ catMaybes [go seen False ch])
-      mkGoal (mkGoal unifs generalizer (:/\:)) rest (:/\:)
+      mkGoal (mkGoal unifs generalizer) rest
     go seen r (Prune _ _)     = error "Failed to residualize: Prune node in tree"
 
-    mkGoal (Just u) (Just r) f = Just (f u r)
-    mkGoal (Just u) Nothing _  = Just u
-    mkGoal Nothing (Just r) _  = Just r
-    mkGoal _ _ _               = Nothing
+    mkGoal (Just u) (Just r) =
+        Just (f u r)
+      where
+        f (Conjunction x x' xs) (Conjunction y y' ys) = Conjunction x x' (xs ++ y : y' : ys)
+        f g (Conjunction y y' ys) = Conjunction g y (y' : ys)
+        f (Conjunction x x' xs) g = Conjunction x x' (xs ++ [g])
+        f g h = Conjunction g h []
+    mkGoal (Just u) Nothing = Just u
+    mkGoal Nothing (Just r) = Just r
+    mkGoal _ _ = Nothing
 
     -- getNewVars seen goal subst =
     --   let vg = concatMap fvgs goal in

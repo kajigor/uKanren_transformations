@@ -6,6 +6,7 @@ module ConsPD.Unfold where
 import           Control.Monad.State
 import           Data.Foldable      (foldlM)
 import           Data.List          (partition, delete)
+import           Data.List.NonEmpty (NonEmpty (..), toList)
 import qualified Data.Map.Strict    as M
 import           Data.Maybe         (catMaybes, fromJust, fromMaybe,
                                      isNothing, mapMaybe)
@@ -135,8 +136,8 @@ unifySubsts (x : y : xs) = do
       go s' rest
 
 conjToList :: G a -> [G a]
-conjToList (g :/\: h) = conjToList g ++ conjToList h
-conjToList x          = [x]
+conjToList (Conjunction x y gs) = (x : y : gs)
+conjToList x = [x]
 
 globalLimit :: Int
 globalLimit = 8

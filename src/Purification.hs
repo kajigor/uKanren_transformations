@@ -2,6 +2,7 @@ module Purification where
 
 import Syntax
 import Data.List
+import Data.List.NonEmpty (NonEmpty (..), fromList, toList)
 import qualified Data.Set        as Set
 import qualified Data.Map.Strict as Map
 import Control.Monad.State
@@ -122,29 +123,51 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
     purifyUni :: [X] -> G X -> G X
     purifyUni a g = snd $ purifyU (Set.fromList a) [] g where
       purifyU :: Set X -> [G X] -> G X -> ([G X], G X)
-      purifyU constrV conjs g@(l@(V x) :=: r@(V y)) = if Set.member y constrV then
-                                                        if Set.member x constrV then (conjs, g)
-                                                        else (map (substInGoal x r) conjs, success)
-                                                      else (map (substInGoal y l) conjs, success)
-      purifyU constrV conjs g@(V x :=: t)           = if Set.member x constrV then (conjs, g)
-                                                      else (map (substInGoal x t) conjs, success)
-      purifyU constrV conjs g@(g1 :\/: g2)          = let constrV' = foldl (\s -> Set.union s . Set.fromList . fvg) constrV conjs in
-                                                      let ([], g1') = purifyU constrV' [] g1 in
-                                                      let ([], g2') = purifyU constrV' [] g2 in
-                                                      case (g1', g2') of
-                                                        _ | isSuccess g1' && isSuccess g2' -> (conjs, success)
-                                                        _ | isSuccess g2' -> (conjs, g1')
-                                                        _ | isSuccess g1' -> (conjs, g2')
-                                                        _ -> (conjs, g1' ||| g2')
-                                                      -- (conjs, g1' ||| g2')
-      purifyU constrV conjs g@(g1 :/\: g2)          = let (g2' :conjs' , g1' ) = purifyU constrV (g2 :conjs ) g1  in
-                                                      let (g1'':conjs'', g2'') = purifyU constrV (g1':conjs') g2' in
-                                                      case (g1'', g2'') of
-                                                        _ | isSuccess g1'' && isSuccess g2'' -> (conjs'', success      )
-                                                        _ | isSuccess g1'' -> (conjs'', g2''         )
-                                                        _ | isSuccess g2'' -> (conjs'', g1''         )
-                                                        _ -> (conjs'', g1'' &&& g2'')
-      purifyU constrV conjs g                       = (conjs, g)
+      purifyU constrV conjs g@(l@(V x) :=: r@(V y)) =
+        if Set.member y constrV
+        then
+          if Set.member x constrV
+          then (conjs, g)
+          else (map (substInGoal x r) conjs, success)
+        else (map (substInGoal y l) conjs, success)
+      purifyU constrV conjs g@(V x :=: t) =
+        if Set.member x constrV
+        then (conjs, g)
+        else (map (substInGoal x t) conjs, success)
+      purifyU constrV conjs (Disjunction gs) =
+        let constrV' = foldl (\s -> Set.union s . Set.fromList . fvg) constrV conjs in
+        let gs' = map snd $ toList $ purifyU constrV' [] <$> gs in
+        let filtered = filter (not . isSuccess) gs' in
+        if null gs'
+        then (conjs, success)
+        else
+          if length gs' == 1
+          then (conjs, head gs')
+          else (conjs, unsafeDisj gs')
+      purifyU constrV conjs (Conjunction (g1 :| [])) =
+        let (g2':conjs', g1') = purifyU constrV conjs g1 in
+        case (g1', g2') of
+          _ | isSuccess g1' && isSuccess g2' -> (conjs', success)
+          _ | isSuccess g1' -> (conjs', g2')
+          _ | isSuccess g2' -> (conjs', g1')
+          _ -> (conjs', flatConj g1' g2')
+      purifyU constrV conjs (Conjunction (g1 :| g2)) =
+        let (g2' :conjs' , g1' ) = purifyU constrV (g2++conjs ) g1  in
+        let (g1'':conjs'', g2'') = purifyU constrV (g1':conjs') g2' in
+        case (g1'', g2'') of
+          _ | isSuccess g1'' && isSuccess g2'' -> (conjs'', success)
+          _ | isSuccess g1'' -> (conjs'', g2'' )
+          _ | isSuccess g2'' -> (conjs'', g1'' )
+          _ -> (conjs'', flatConj g1'' g2'')
+      -- purifyU constrV conjs (g1 :/\: g2) =
+      --   let (g2' :conjs' , g1' ) = purifyU constrV (g2 :conjs ) g1  in
+      --   let (g1'':conjs'', g2'') = purifyU constrV (g1':conjs') g2' in
+      --   case (g1'', g2'') of
+      --     _ | isSuccess g1'' && isSuccess g2'' -> (conjs'', success      )
+      --     _ | isSuccess g1'' -> (conjs'', g2'' )
+      --     _ | isSuccess g2'' -> (conjs'', g1'' )
+      --     _ -> (conjs'', g1'' &&& g2'')
+      purifyU constrV conjs g = (conjs, g)
 
 {-------------------------------------------}
 {-------------------------------------------}
@@ -205,10 +228,10 @@ applyErasureToFunc e f@(n, args) = (n, applyErasure e n args)
 {-------------------------------------------}
 applyErasureToG :: Erasure -> G X -> G X
 applyErasureToG e (Invoke n a) = Invoke n $ applyErasure e n a
-applyErasureToG e (g1 :/\: g2) = applyErasureToG e g1 &&& applyErasureToG e g2
-applyErasureToG e (g1 :\/: g2) = applyErasureToG e g1 ||| applyErasureToG e g2
-applyErasureToG e (Fresh n g)  = Fresh n $ applyErasureToG e g
-applyErasureToG e g            = g
+applyErasureToG e (Conjunction gs) = Conjunction $ applyErasureToG e <$> gs
+applyErasureToG e (Disjunction gs) = Disjunction $ applyErasureToG e <$> gs
+applyErasureToG e (Fresh n g) = Fresh n $ applyErasureToG e g
+applyErasureToG e g = g
 
 {-------------------------------------------}
 applyErasure :: Erasure -> Name -> [a] -> [a]
@@ -220,9 +243,9 @@ applyErasure e n a =
 {-------------------------------------------}
 removeElems :: [Int] -> [a] -> [a]
 removeElems rs es = remove 1 rs es where
-  remove _   []     es     = es
+  remove _ [] es = es
   remove i l@(r:rs) (e:es) = if i == r then remove (i+1) rs es else e : remove (i+1) l es
-  remove _ _      _        = error "Index is out of elements."
+  remove _ _ _ = error "Index is out of elements."
 
 {-------------------------------------------}
 defToRules :: Def -> Rules
@@ -232,9 +255,12 @@ defToRules (Def n a g) = map (\(s, f) -> (applyInFunc s (n, ta), map (applyInFun
   gToRules :: G X -> [(Subst, Funcs)]
   gToRules ((V v) :=: t) = [([(v, t)], [])]
   gToRules (Invoke n a)  = [([], [(n, a)])]
-  gToRules (Fresh _ g)   = gToRules g
-  gToRules (g1 :\/: g2)  = gToRules g1 ++ gToRules g2
-  gToRules (g1 :/\: g2)  = [(s1 ++ s2, f1 ++ f2) | (s1, f1) <- gToRules g1, (s2, f2) <- gToRules g2]
+  gToRules (Fresh _ g) = gToRules g
+  gToRules (Disjunction gs) = concatMap gToRules gs
+  gToRules (Conjunction (g1 :| [])) =
+    gToRules g1
+  gToRules (Conjunction (g1 :| g2)) =
+    [(s1 ++ s2, f1 ++ f2) | (s1, f1) <- gToRules g1, (s2, f2) <- gToRules (unsafeConj g2)]
 
   applySubst :: Subst -> Term X -> Term X
   applySubst s t@(V v) = case lookup v s of
@@ -305,8 +331,8 @@ addArgsInInvocations mapping =
         Invoke name (pref ++ args)
       where
         pref = maybe [] (map V) (Map.lookup name mapping)
-    go (g1 :/\: g2) = go g1 :/\: go g2
-    go (g1 :\/: g2) = go g1 :\/: go g2
+    go (Conjunction gs) = Conjunction $ go <$> gs
+    go (Disjunction gs) = Disjunction $ go <$> gs
     go (Fresh n g) = Fresh n $ go g
     go g = g
 
@@ -316,36 +342,44 @@ escapeFreeVars fvs x = (x, fvs)
 
 {-------------------------------------------}
 addArgsInCall :: Name -> [Term X] -> G X -> G X
-addArgsInCall n na   (g1 :/\: g2)         = addArgsInCall n na g1 &&& addArgsInCall n na g2
-addArgsInCall n na   (g1 :\/: g2)         = addArgsInCall n na g1 ||| addArgsInCall n na g2
-addArgsInCall n na   (Fresh v g)          = Fresh v $ addArgsInCall n na g
-addArgsInCall n na g@(Invoke n' a)        = if n == n' then Invoke n (na ++ a) else g
-addArgsInCall _ _  g                      = g
+addArgsInCall n na (Conjunction gs) = Conjunction $ addArgsInCall n na <$> gs
+addArgsInCall n na (Disjunction gs) = Disjunction $ addArgsInCall n na <$> gs
+addArgsInCall n na (Fresh v g) = Fresh v $ addArgsInCall n na g
+addArgsInCall n na g@(Invoke n' a) = if n == n' then Invoke n (na ++ a) else g
+addArgsInCall _ _ g = g
 
 {-------------------------------------------}
 toV :: Show a => String -> a -> String
 toV pref = (pref++) . show
+
+toMaybe :: Bool -> a -> Maybe a
+toMaybe True x = Just x
+toMaybe False _ = Nothing
 
 {-------------------------------------------}
 {-------------------------------------------}
 {-------------------------------------------}
 getFstLink :: Set X -> (G X -> G X) -> (G X -> G X) -> (G X -> G X) -> G X -> Maybe (G X -> G X, G X, X, Term X)
 getFstLink a disjC conjC branch g@(t1@(V x1) :=: t2@(V x2)) =
-  if x1 == x2 then Nothing else
+  if (x1 == x2)
+  then Nothing
+  else
     case (Set.member x1 a, Set.member x2 a) of
-      (_,     False) -> if hasVar (branch success) x2 then Nothing else Just (disjC, conjC success, x2, t1)
-      (False, True)  -> if hasVar (branch success) x1 then Nothing else Just (disjC, conjC success, x1, t2)
+      (_,     False) -> if (hasVar (branch success) x2) then Nothing else Just (disjC, conjC success, x2, t1)
+      (False, True)  -> if (hasVar (branch success) x1) then Nothing else Just (disjC, conjC success, x1, t2)
       _              -> Nothing
 getFstLink a disjC conjC branch g@((V x) :=: t@(C _ _)) =
-  if Set.member x a || hasVar (branch success) x || termHasVars t then Nothing else Just (disjC, conjC success, x, t)
-getFstLink a disjC conjC branch (g1 :\/: g2) =
-  case getFstLink a (disjC . conjC . (||| g2)) id (branch . conjC . (||| success)) g1 of
+  if (Set.member x a || hasVar (branch success) x || termHasVars t)
+  then Nothing
+  else Just (disjC, conjC success, x, t)
+getFstLink a disjC conjC branch (Disjunction (g1 :| g2)) =
+  case getFstLink a (disjC . conjC . (`flatDisj` (unsafeDisj g2))) id (branch . conjC . (`flatDisj` success)) g1 of
     v@(Just x) -> v
-    Nothing    -> getFstLink a (disjC . conjC . (g1 |||)) id (branch . conjC . (success |||)) g2
-getFstLink a disjC conjC branch (g1 :/\: g2) =
-  case getFstLink a disjC (conjC . (&&& g2)) branch g1 of
+    Nothing    -> getFstLink a (disjC . conjC . (g1 `flatDisj`)) id (branch . conjC . (success `flatDisj`)) (unsafeDisj g2)
+getFstLink a disjC conjC branch (Conjunction (g1 :| g2)) =
+  case getFstLink a disjC (conjC . (`flatConj` (unsafeDisj g2))) branch g1 of
     v@(Just x) -> v
-    Nothing    -> getFstLink a disjC (conjC . (g1 &&&)) branch g2
+    Nothing    -> getFstLink a disjC (conjC . (g1 `flatConj`)) branch (unsafeDisj g2)
 getFstLink a disjC conjC branch (Fresh n g) = getFstLink a disjC (conjC . Fresh n) branch g
 getFstLink _ _     _     _      _           = Nothing
 
@@ -365,15 +399,15 @@ hasVar g x = elem x $ fvg g
 
 {-------------------------------------------}
 removeUnifications :: (Term X -> Term X -> Bool) -> G X -> G X
-removeUnifications p g@(t1 :=:  t2) = if p t1 t2 then success else g
-removeUnifications p   (g1 :\/: g2) = removeUnifications p g1 :\/: removeUnifications p g2
-removeUnifications p   (g1 :/\: g2) = case (removeUnifications p g1, removeUnifications p g2) of
-                                        (x, y) | isSuccess x && isSuccess y -> success
-                                        (g, y) | isSuccess y -> g
-                                        (x, g) | isSuccess x -> g
-                                        (g1, g2) -> g1 :/\: g2
-removeUnifications p   (Fresh v g)  = Fresh v $ removeUnifications p g
-removeUnifications _ g              = g
+removeUnifications p g@(t1 :=: t2) = if p t1 t2 then success else g
+removeUnifications p (Disjunction gs) = Disjunction $ removeUnifications p <$> gs
+removeUnifications p (Conjunction gs) =
+  let gs' = filter (not . isSuccess) $ toList $ removeUnifications p <$> gs in
+  if null gs'
+  then success
+  else unsafeConj gs'
+removeUnifications p (Fresh v g)  = Fresh v $ removeUnifications p g
+removeUnifications _ g = g
 
 
 renameFreshVars g =
@@ -401,12 +435,12 @@ trace_pur (Program defs1 g1, _) result@(g2, _, defs2) =
     vars (C _ a) = sum (map constrs a)
     vars _       = 1
 
-    calc (g1 :/\: g2)          = calc g1 <+> calc g2
-    calc (g1 :\/: g2)          = calc g1 <+> calc g2
-    calc (Fresh _ g)           = (1, 0, 0, 0, 0, 0) <+> calc g
-    calc (t1 :=: t2)           = (0, 1, 0, constrs t1 + constrs t2, vars t1 + vars t2, 0)
-    calc g | isSuccess g       = (0, 0, 0, 0, 0, 0)
-    calc (Invoke _ a)          = (0, 0, 0, sum $ map constrs a, sum $ map vars a, 1)
+    calc (Conjunction gs) = foldr1 (<+>) (calc <$> gs)
+    calc (Disjunction gs) = foldr1 (<+>) (calc <$> gs)
+    calc (Fresh _ g) = (1, 0, 0, 0, 0, 0) <+> calc g
+    calc (t1 :=: t2) = (0, 1, 0, constrs t1 + constrs t2, vars t1 + vars t2, 0)
+    calc g | isSuccess g = (0, 0, 0, 0, 0, 0)
+    calc (Invoke _ a) = (0, 0, 0, sum $ map constrs a, sum $ map vars a, 1)
 
     calcDef (Def _ a g) = (0, 0, length a, 0, 0, 0) <+> calc g
 
