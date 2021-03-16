@@ -8,6 +8,7 @@ import qualified Subst
 import           Syntax
 import           Unfold             (oneStep)
 import qualified Environment as Env
+import Control.Monad.State
 
 data SymTree = Fail
              | Success Subst.Subst
@@ -19,12 +20,12 @@ data SymTree = Fail
 topLevel :: Int -> Program -> SymTree
 topLevel depth (Program defs goal) =
     let env = Env.fromDefs defs in
-    let (logicGoal, env', _) = E.preEval env goal in
+    let ((logicGoal, _), env') = runState (E.preEval goal) env in
     go logicGoal [] env' Subst.empty depth
   where
     go goal ctx _ subst d | d <= 1 = Prune (goal : ctx) subst
     go goal ctx env subst depth =
-      let (unified, env') = oneStep goal env subst in
+      let (unified, env') = runState (oneStep goal subst) env in
       Disj (map (\(g, s') ->
                   if null g
                   then

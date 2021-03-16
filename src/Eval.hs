@@ -12,6 +12,7 @@ import qualified Subst
 import qualified VarInterpretation as VI
 import qualified FreshNames as FN
 import qualified Environment as Env
+import Control.Monad.State
 
 -- Envs
 -- type Iota  = Map.Map X Ts
@@ -77,25 +78,37 @@ unifyNoOccursCheck :: Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
 unifyNoOccursCheck = unifyG (\_ _ -> const False)
 
 -- Pre-evaluation
-preEval :: Env.Env -> G X -> (G S, Env.Env, [S])
-preEval =
-    go []
+preEval :: G X -> State Env.Env (G S, [S])
+preEval goal = do
+    env <- get
+    let (g, (vars, env')) = runState (go goal) ([], env)
+    put env'
+    return (g, vars)
   where
-    go vars g@(Env.Env _ i _) (t1 :=: t2) =
-      (i VI.<@> t1 :=: i VI.<@> t2, g, vars)
-    go vars g (g1 :/\: g2) =
-      let (g1', g' , vars' ) = go vars  g  g1 in
-      let (g2', g'', vars'') = go vars' g' g2 in
-      (g1' :/\: g2', g'', vars'')
-    go vars g (g1 :\/: g2) =
-      let (g1', g' , vars')  = go vars  g  g1 in
-      let (g2', g'', vars'') = go vars' g' g2 in
-      (g1' :\/: g2', g'', vars'')
-    go vars (Env.Env p i d) (Fresh x g') =
-      let (y, d') = FN.getFreshName d in
-      go (y : vars) (Env.Env p (VI.extend i x (V y)) d') g'
-    go vars g@(Env.Env _ i _) (Invoke f fs)  =
-      (Invoke f (map (i VI.<@>) fs), g, vars)
+    go :: G X -> State ([S], Env.Env) (G S)
+    go (Fresh x g') = do
+      (vars, Env.Env p i d) <- get
+      let (y, d') = FN.getFreshName d
+      put (y:vars, Env.Env p (VI.extend i x (V y)) d')
+      go g'
+    go (t1 :=: t2) = do
+      i <- getInterp
+      return (i VI.<@> t1 :=: i VI.<@> t2)
+    go (Invoke f fs) = do
+      i <- getInterp
+      return (Invoke f (map (i VI.<@>) fs))
+    go (g1 :/\: g2) = do
+      g1' <- go g1
+      g2' <- go g2
+      return (g1' :/\: g2')
+    go (g1 :\/: g2) = do
+      g1' <- go g1
+      g2' <- go g2
+      return (g1' :\/: g2')
+    getInterp :: State ([S], Env.Env) VI.Interpretation
+    getInterp = do
+      Env.Env _ i _ <- gets snd
+      return i
 
 postEval :: [X] -> G X -> G X
 postEval as goal =
@@ -149,7 +162,7 @@ closeFresh as goal = goal
 topLevel :: Program -> Stream (Subst.Subst, FN.FreshNames)
 topLevel (Program defs goal) =
   let env = Env.updateDefs Env.empty defs in
-  let (goal', env', _) = preEval env goal in
+  let ((goal', _), env') = runState (preEval goal) env in
   eval env' Subst.empty goal'
 
 -- Evaluation relation
@@ -160,12 +173,12 @@ eval env s (g1 :/\: g2) = eval env s g1 >>= (\ (s', d') -> eval (Env.updateNames
 eval env s (Invoke f as) =
   let (Def _ fs g) = Env.getDef env f in
   let i' = foldl (\ i'' (f', a) -> VI.extend i'' f' a) (Env.getInterp env) $ zip fs as in
-  let (g', env', _) = preEval (Env.updateInterp env i') g in
+  let ((g', _), env') = runState (preEval g) (Env.updateInterp env i') in
   eval env' s g'
 eval _ _ _ = error "Impossible case in eval"
 
 run :: Program -> Stream Subst.Subst
 run (Program defs goal) =
   let env = Env.fromDefs defs in
-  let (goal', env', _) = preEval env goal in
+  let ((goal',_), env') = runState (preEval goal) env in
   fst <$> eval env' Subst.empty goal'

@@ -9,6 +9,7 @@ import           Test.Helper      (test2)
 import           Text.Printf
 import           Util.Check
 import qualified Environment as Env
+import Control.Monad.State
 
 unit_checkConj = do
   test2 checkConj [call "f" [V 1, V 2], call "g" [V 2, V 3]] [call "f" [V 5, V 6], call "g" [C "" [V 2], V 3]] True
@@ -25,7 +26,7 @@ unit_checkConj = do
 checkTest :: Program -> Bool
 checkTest (Program defs goal) =
     let env = Env.fromDefs defs in
-    let (logicGoal, env', names) = E.preEval env goal in
+    let ((logicGoal, names), env') = runState (E.preEval goal) env in
     checkWhenUnfolding logicGoal env' Subst.empty
 
 app = Program appendo $ fresh ["x", "y", "z"] (call "appendo" [V "x", V "y", V "z"])

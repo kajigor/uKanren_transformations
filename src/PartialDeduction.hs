@@ -13,6 +13,7 @@ import           Syntax
 import           Unfold             (oneStepUnfold, unifyStuff, normalize)
 import           Util.Miscellaneous (fst3)
 import qualified Environment as Env
+import Control.Monad.State
 
 data PDTree = Fail
             | Success Subst.Subst
@@ -26,7 +27,7 @@ data PDTree = Fail
 topLevel :: Program -> (PDTree, G S, [S])
 topLevel (Program defs goal) =
     let env = Env.fromDefs defs in
-    let (logicGoal, env', _) = E.preEval env goal in
+    let ((logicGoal, _), env') = runState (E.preEval goal) env in
     let nodes = [] in
     let descend = Descend.Descend logicGoal [] in
     go descend env' nodes Subst.empty
@@ -44,7 +45,7 @@ topLevel (Program defs goal) =
                   let (ch, _, _) = go (Descend.Descend newGoal ancs) env' seen subst in
                   Gen ch newGoal
                 Nothing ->
-                  let (unfolded, env') = oneStepUnfold goal env in
+                  let (unfolded, env') = runState (oneStepUnfold goal) env in
                   let normalized = normalize unfolded in
                   let unified = mapMaybe (unifyStuff subst) normalized in
                   Or (map (\(g, s') ->

@@ -22,6 +22,7 @@ import qualified Environment as Env
 import           Util.ListZipper
 import qualified Util.Miscellaneous as Util
 import           Descend
+import Control.Monad.State
 
 -- trace :: String -> a -> a
 -- trace _ x = x
@@ -110,7 +111,7 @@ sldResolutionStep gs env s seen isFirstTime heuristic =
         unfoldNext zipper isFirstTime gs s env =
           maybe (Leaf gs s env)
                 (\z ->
-                    let (g', env') = oneStepUnfold (getCurr $ cursor z) env in
+                    let (g', env') = runState (oneStepUnfold (getCurr $ cursor z)) env in
                     go g' env' z isFirstTime
                 )
                 (zipper >>= selecter)
@@ -137,7 +138,7 @@ resultants Fail            = []
 topLevel :: Program -> Heuristic -> SldTree
 topLevel (Program defs goal) heuristic =
   let env = Env.fromDefs defs in
-  let (logicGoal, env', _) = E.preEval env goal in
+  let ((logicGoal, _), env') = runState (E.preEval goal) env in
   sldResolutionStep [Descend logicGoal []] env' Subst.empty [] True heuristic
 
 mcs :: (Eq a, Show a) => [G a] -> [[G a]]

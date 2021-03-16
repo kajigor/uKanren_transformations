@@ -1,6 +1,6 @@
 module Test.CPD where
 
-import           Test.Helper (manyAssert, test, test2, assertCustom)
+import           Test.Helper (manyAssert, test, test2, assertCustom, (@?=))
 
 import qualified CPD.GlobalControl        as GC
 import           CPD.LocalControl
@@ -21,6 +21,7 @@ import           Util.Miscellaneous
 import           Embed
 import qualified Subst
 import qualified Environment as Env
+import Control.Monad.State
 
 fnames :: S -> FN.FreshNames
 fnames = FN.FreshNames
@@ -89,9 +90,9 @@ unit_select = do
         len2D = Descend len2 [len1]
 
 unit_popingOutFreshes = do
-    test (fst3 . E.preEval Env.empty) (fresh ["x", "y"] goal) (callF x' y')
-    test (fst3 . E.preEval (Env.fromDefs [fDef])) (fresh ["x", "y"] $ goal) (callF x' y')
-    test ((\(x, _, y) -> (x, y)) . E.preEval Env.empty) (fresh ["m", "n"] body) (body', reverse [0..4])
+    (fst $ evalState (E.preEval (fresh ["x", "y"] goal)) Env.empty) @?= (callF x' y')
+    (fst $ evalState (E.preEval (fresh ["x", "y"] goal)) (Env.fromDefs [fDef])) @?= (callF x' y')
+    (evalState (E.preEval (fresh ["m", "n"] body)) Env.empty) @?= (body', reverse [0..4])
   where
     x = V "x"
     y = V "y"

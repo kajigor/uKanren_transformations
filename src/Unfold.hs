@@ -1,6 +1,7 @@
 module Unfold where
 
 import           Control.Applicative
+import           Control.Monad.State
 import           Data.Maybe          (mapMaybe)
 import qualified Data.Set            as Set
 import qualified Eval                as E
@@ -13,23 +14,25 @@ import qualified Environment as Env
 import Util.ListZipper
 import Debug.Trace
 
-oneStepUnfold :: G S -> Env.Env -> (G S, Env.Env)
-oneStepUnfold g@(Invoke f as) env =
-  let (Def n fs body) = Env.getDef env f in
+oneStepUnfold :: G S -> State Env.Env (G S)
+oneStepUnfold g@(Invoke f as) = do
+  env <- get
+  let (Def n fs body) = Env.getDef env f
   if length fs == length as
-  then
-    let i' = foldl (\ interp (f, a) -> VI.extend interp f a) (Env.getInterp env) $ zip fs as in
-    let (g', env', _) = E.preEval (Env.updateInterp env i') body in
-    (g', env')
+  then do
+    let i' = foldl (\ interp (f, a) -> VI.extend interp f a) (Env.getInterp env) $ zip fs as
+    let ((g', _), env') = runState (E.preEval body) (Env.updateInterp env i')
+    put env'
+    return g'
   else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
-oneStepUnfold g env = (g, env)
+oneStepUnfold g = return g
 
-oneStep :: G S -> Env.Env -> Subst.Subst -> ([([G S], Subst.Subst)], Env.Env)
-oneStep goal env state =
-    let (unfolded, env') = oneStepUnfold goal env in
-    let normalized = normalize unfolded in
-    let unified = mapMaybe (unifyStuff state) normalized in
-    (unified, env')
+oneStep :: G S -> Subst.Subst -> State Env.Env [([G S], Subst.Subst)]
+oneStep goal state = do
+    unfolded <- oneStepUnfold goal
+    let normalized = normalize unfolded
+    let unified = mapMaybe (unifyStuff state) normalized
+    return unified
 
 normalize :: G S -> [[G S]] -- disjunction of conjunctions of calls and unifications
 normalize (f :\/: g) = normalize f ++ normalize g
@@ -50,8 +53,8 @@ unifyStuff state gs =
 
 maximumBranches :: Def -> Int
 maximumBranches def@(Def _ args body) =
-    let goal = fst3 $ E.preEval Env.empty (fresh args body) in
-    length $ fst $ oneStep (succeed goal) Env.empty Subst.empty
+    let goal = fst $ evalState (E.preEval (fresh args body)) Env.empty in
+    length $ evalState (oneStep (succeed goal) Subst.empty) Env.empty
   where
     succeed (g :/\: h)         = succeed g :/\: succeed h
     succeed (g :\/: h)         = succeed g :\/: succeed h
@@ -70,7 +73,7 @@ getMaximumBranches env (Invoke name _) =
 notMaximumBranches :: Env.Env -> Subst.Subst -> G S -> Bool
 notMaximumBranches env state goal@(Invoke name args) =
     let maxBranches = maximumBranches (Env.getDef env name) in
-    let (unfolded, _) = oneStep goal env state in
+    let unfolded = evalState (oneStep goal state) env in
     length unfolded < maxBranches
     -- let result = length unfolded < maxBranches in
     -- trace (printf "\nGoal: %s\nNot maximum branches: %s\nUnfoldComplexity: %s\nUnfolded: %s\nMaxBranches: %s\n" (show goal) (show result) (show $ length $ filter (not . null . fst) unfolded) (show $ length unfolded) (show maxBranches)) $
@@ -112,9 +115,8 @@ findBestByComplexity env sigma goals =
 
 unfoldComplexity :: Env.Env -> Subst.Subst -> G S -> Complexity
 unfoldComplexity env sigma goal@(Invoke name _) =
-  let (unfolded, _) = oneStep goal env sigma in
+  let unfolded = evalState (oneStep goal sigma) env in
   let max = maximumBranches (Env.getDef env name) in
-  -- trace (printf "\n%s is %s\n" name (if static env name then "static" else "not static")) $
   Complexity max (length unfolded) (length $ filter (null . fst) unfolded)
 
 static :: Env.Env -> String -> Bool

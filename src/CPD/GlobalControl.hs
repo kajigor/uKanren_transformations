@@ -17,6 +17,7 @@ import           Syntax
 import           Text.Printf        ( printf )
 import           Util.Miscellaneous
 import qualified Environment as Env
+import Control.Monad.State (runState)
 
 data GlobalTree = Leaf  (Descend [G S]) Generalizer Subst.Subst
                 | Node  (Descend [G S]) Generalizer LC.SldTree [GlobalTree]
@@ -85,7 +86,7 @@ abstractChild ancs (subst, g, Just env) =
 topLevel :: Program -> LC.Heuristic -> (GlobalTree, G S, [S])
 topLevel (Program defs goal) heuristic =
   let env = Env.fromDefs defs in
-  let (logicGoal, env', names) = E.preEval env goal in
+  let ((logicGoal, names), env') = runState (E.preEval goal) env in
   -- trace (printf "\nGoal:\n%s\nNames:\n%s\n" (show goal) (show names)) $
   let nodes = [[logicGoal]] in
   (fst $ go nodes (Descend.Descend [logicGoal] []) env' Subst.empty Subst.empty, logicGoal, names) where

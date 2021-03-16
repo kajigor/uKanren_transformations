@@ -18,6 +18,7 @@ import           Tree
 import           Util.Miscellaneous
 import qualified VarInterpretation   as VI
 import qualified FreshNames          as FN
+import Control.Monad.State (runState)
 
 type TreeContext = (Set.Set Id, Map.Map Id [S], [Id])
 
@@ -229,7 +230,7 @@ unfold (sr, args, ids) cs e s gen conjs =
   let (e', conjs') = foldl (\ (d, conj) (i, p, zyz@(Invoke f as)) ->
                                let (Def _ fs g) = Defs.getDef p f in
                                let i'           = foldl (\ interp (f, a) -> VI.extend interp f a) i $ zip fs as in
-                               let (g', (Env.Env p' i'' d'), _) = E.preEval (Env.Env p i' d) g in
+                               let ((g', _), Env.Env p' i'' d') = runState (E.preEval g) (Env.Env p i' d) in
                                (d', (i'', p', g'):conj)
                            ) (e, []) conjs
   in
@@ -240,6 +241,6 @@ unfold (sr, args, ids) cs e s gen conjs =
 
 drive :: G X -> (TreeContext, Tree, [Id])
 drive goal =
-  let (goal', (Env.Env g' i' d'), args) = E.preEval Env.empty goal in
+  let ((goal', args), Env.Env g' i' d') = runState (E.preEval goal) Env.empty in
   let (x, y, _) = eval emptyContext [] d' Subst.empty Subst.empty [] (i', g', goal') []
   in (x, y, reverse args)
