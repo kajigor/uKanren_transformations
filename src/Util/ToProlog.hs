@@ -39,9 +39,8 @@ goalToDNF g = toDNF [] g where
                          Just s' -> [(s', [])]
   toDNF s (Invoke n a) = [(s, [(n, a)])]
   toDNF s (Fresh _ g') = toDNF s g'
-  toDNF s (Disjunction gs) = concatMap (toDNF s) gs
-  toDNF s (Conjunction (g1 :| [])) = toDNF s g1
-  toDNF s (Conjunction (g1 :| g2)) = [(s2, f1 ++ f2) | (s1, f1) <- toDNF s g1, (s2, f2) <- toDNF s1 (unsafeConj g2)]
+  toDNF s (Disjunction x y gs) = concatMap (toDNF s) (x : y : gs)
+  toDNF s (Conjunction g1 g2 gs) = [(s2, f1 ++ f2) | (s1, f1) <- toDNF s g1, (s2, f2) <- toDNF s1 (unsafeConj $ g2 : gs)]
 
 {-------------------------------------------}
 applySigma :: Subst -> Term X -> Term X
