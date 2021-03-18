@@ -37,7 +37,7 @@ oneStep goal state = do
 
 normalize :: G S -> [[G S]] -- disjunction of conjunctions of calls and unifications
 normalize (Disjunction x y gs) = concatMap normalize (x : y : gs)
-normalize (Conjunction x y gs) = normalize x ++ normalize (unsafeConj (y : gs))
+normalize (Conjunction x y gs) = (++) <$> normalize x <*> normalize (unsafeConj (y : gs))
 normalize g@(Invoke _ _) = [[g]]
 normalize g@(_ :=: _) = [[g]]
 normalize g = error ("Unexpected goal type in normalization\n" ++ show g)

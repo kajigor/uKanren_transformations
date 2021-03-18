@@ -55,7 +55,7 @@ runConsPD' outDir = Transformer.ConsPD.transform outDir Nothing (ConsPD.topLevel
 transform :: [Char] -> Maybe String -> (Program -> (ConsPD.ConsPDTree, G S, [S])) -> FilePath -> Program -> IO ()
 transform outDir env function filename prg = do
   let norm = normalizeProg prg
-  print norm
+  -- print norm
 
   let goal@(Program definitions _) = makeNormal prg
   let path = outDir </> filename
@@ -67,6 +67,7 @@ transform outDir env function filename prg = do
 
   let result = runTransformation goal function
 
+  writeFile (path </> "norm.txt") (show norm)
   toOcanren (path </> "original.ml") goal (names result)
   Transformer.MkToProlog.transform (path </> "original.pl") definitions
   printTree (path </> "tree.dot") (tree result)

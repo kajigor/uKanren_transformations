@@ -22,7 +22,7 @@ import Util.Miscellaneous
 import Printer.Dot
 
 upTo d x =
-  trace (printf "\nDepth: %s" $ show d) $
+  -- trace (printf "\nDepth: %s" $ show d) $
   if d == 0 then Fail
   else upToDepth x
   where

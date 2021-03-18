@@ -51,16 +51,16 @@ norm :: G X -> State [Name] [State [Name] [Either (G X) (Base X)]] -- disjunctio
 norm (Fresh x g) = do
   modify (x:)
   norm g
-norm (Conjunction x y gs) = do
+norm (Disjunction x y gs) = do
   x' <- norm x
-  y' <- norm (unsafeConj (y : gs))
+  y' <- norm (unsafeDisj (y : gs))
   return (x' ++ y')
 norm g = return [norm' g]
 
 norm' :: G X -> State [Name] [Either (G X) (Base X)]
-norm' (Disjunction x y gs) = do
+norm' (Conjunction x y gs) = do
   x' <- norm' x
-  y' <- norm' (unsafeDisj (y : gs))
+  y' <- norm' (unsafeConj (y : gs))
   return (x' ++ y')
 norm' (Fresh x g) = do
   modify (x:)

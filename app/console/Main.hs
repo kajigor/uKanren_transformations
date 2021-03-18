@@ -135,6 +135,11 @@ runAction args = do
       EvalApp.runWithParser (input action) (numAnswers action)
     Normalize | useIrinaParser action ->
       NormalizeApp.run (input action)
+    Parser ->
+      if useIrinaParser action
+      then ParseApp.run (input action)
+      else
+        Transformer.PrologToMk.transform (input action)
     x | useIrinaParser action -> do
       let transformer = case x of CPD -> CPDApp.runWithParser; ConsPD -> ConsPDApp.runWithParser
       let out = fromMaybe "test/out/cpd" (output action)
@@ -148,11 +153,6 @@ runAction args = do
       CPDApp.run
     ConsPD ->
       ConsPDApp.run
-    Parser ->
-      if useIrinaParser action
-      then ParseApp.run (input action)
-      else
-        Transformer.PrologToMk.transform (input action)
 
 -- runAction (Transform directory file) =
 --     Transformer.PrologToMk.transform (fromMaybe defaultDirectory directory) file

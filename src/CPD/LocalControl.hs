@@ -68,7 +68,7 @@ sldResolution goal env subst seen =
 
 sldResolutionStep :: [DescendGoal] -> Env.Env -> Subst.Subst -> [[G S]] -> Bool -> Heuristic -> SldTree
 sldResolutionStep gs env s seen isFirstTime heuristic =
-  trace (printf "Local control\n%s\n\n" (show gs))  $
+  -- trace (printf "Local control\n%s\n\n" (show gs))  $
   let (temp, _) = FN.getFreshName (Env.getFreshNames env) in
   let curs = map getCurr gs in
   let prettySeen = Util.showList "" seen  in

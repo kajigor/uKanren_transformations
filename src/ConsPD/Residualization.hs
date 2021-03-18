@@ -38,7 +38,7 @@ generateDefs tree =
   let gens = collectGens tree in
   let distinct = nub $ map snd leaves in
   let simplified = restrictSubsts $ simplify $ renameAmbigousVars $ tree in
-  trace (printf "\n\nSimplified tree:\n%s\n\n" $ show simplified) $
+  -- trace (printf "\n\nSimplified tree:\n%s\n\n" $ show simplified) $
   let nodes = (toplevel, simplified) : map (\(_,x) -> findNode x tree) gens ++ map (`findNode` tree) distinct in
   let definitions = foldl (\defs gs -> fst3 (CpdR.renameGoals gs defs) ) [] $ map fst nodes in
   let defWithTree = zip (reverse definitions) (map snd nodes) in
@@ -118,7 +118,7 @@ nodeContent x                            = Nothing -- error "Failed to get node 
 
 generateDef :: CpdR.Definitions -> [([G S], G S)] -> (([G S], Name, [S]), ConsPDTree) -> Def
 generateDef defs invocations ((gs, n, args), tree) =
-  trace (printf "\n\nGenerateDef\n\nDefs\n%s\n\nInvoks\n%s\n\nGs\n%s\n\nName\n%s\n\nArgs\n%s\n\n" (show defs) (show invocations) (show gs) (show n) (show args)) $
+  -- trace (printf "\n\nGenerateDef\n\nDefs\n%s\n\nInvoks\n%s\n\nGs\n%s\n\nName\n%s\n\nArgs\n%s\n\n" (show defs) (show invocations) (show gs) (show n) (show args)) $
   let body = generateGoalFromTree defs invocations tree args in
   let argsX = map Res.vident args in
   Def n argsX (E.postEval argsX body)
