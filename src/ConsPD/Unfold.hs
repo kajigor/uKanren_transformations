@@ -211,8 +211,9 @@ topLevel limit (Program defs goal) =
             Nothing ->
               if length goal == 1
               then do
-                let (unified, env') = runState (oneStep (head goal) state) env
-                put (seen', failed, env')
+                unified <- adaptState (oneStep (head goal) state)
+                -- let (unified, env') = runState (oneStep (head goal) state) env
+                -- put (seen', failed, env')
                 ch <- unfoldSequentially unified addAnc
                 or ch (addAnc goal) state
               else
@@ -262,6 +263,13 @@ topLevel limit (Program defs goal) =
                     children <- unfoldSequentially (zip (map (:[]) goal) (repeat state)) addAnc
                     split children goal state
     wrap left right x = left ++ x ++ right
+
+    adaptState :: State Env.Env a -> State (b, c, Env.Env) a
+    adaptState state = do
+      (_,_,e) <- get
+      let (r, env) = runState state e
+      modify (\(x,y,_) -> (x,y,env))
+      return r
 
     nullGoals goals subst env _ | null goals = leaf subst env
     nullGoals _ _ _ v = v
