@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+{-# LANGUAGE FlexibleContexts #-}
 module ConsPD.Unfold where
 
 import           Control.Monad.State
@@ -18,7 +19,7 @@ import           Generalization     (Generalizer, generalizeAllVarsToFree)
 import           Prelude            hiding (or)
 import qualified Subst
 import           Syntax
-import           Unfold             (findBestByComplexity, oneStep, isGoalStatic)
+import           Unfold             (findBestByComplexity, findTupling, oneStep, isGoalStatic)
 import           Util.ListZipper
 import qualified Environment as Env
 import Debug.Trace (trace, traceM, traceShowM, traceShow)
@@ -178,7 +179,8 @@ topLevel limit (Program defs goal) =
       let (hd, _) = FN.getFreshName (Env.getFreshNames env)
       let goal = Subst.substitute state goal'
       let seen' = goal : seen
-      let addAnc x = Descend x (goal : ancs')
+      let ancs = goal : ancs'
+      let addAnc x = Descend x ancs
       if variantCheck goal failed
       then
         return Fail
@@ -195,7 +197,7 @@ topLevel limit (Program defs goal) =
               -- f (x, y) /\ f (z, y) -> f (m, n) /\ f (z, C (n))
               if length goal == 1
               then
-                case findInstance goal seen of
+                case trace (printf "\n\nSearching for instance\nGoal\n%s\nSeen\n%s\n\n" (show goal) (show seen)) $ findInstance goal seen of
                   Just v ->
                     return $ Leaf goal state env v
                   Nothing -> do
@@ -211,58 +213,71 @@ topLevel limit (Program defs goal) =
             Nothing ->
               if length goal == 1
               then do
+                put (seen', failed, env)
                 unified <- adaptState (oneStep (head goal) state)
                 -- let (unified, env') = runState (oneStep (head goal) state) env
                 -- put (seen', failed, env')
                 ch <- unfoldSequentially unified addAnc
                 or ch (addAnc goal) state
               else
-                case findBestByComplexity env state goal of
-                  -- Either ls or rs is not empty!
-                  Just zipper ->
-                    let ls = left zipper in
-                    let x  = cursor zipper in
-                    let rs = right zipper in
-                    case if isGoalStatic env x then Nothing else findVariant [x] seen' of
-                      Just v -> do
-                        -- let x' = Conj [Leaf [x] state env v] [x] state in
-                        let x' = Leaf [x] state env v
-                        ls' <- unfoldNotNull ls state addAnc
-                        rs' <- unfoldNotNull rs state addAnc
-                        split (catMaybes [ls', Just x', rs']) goal state
-                      Nothing -> do
-                        let (unified, env') = runState (oneStep x state) env
-                        put ([x]:seen', failed, env')
-                        ch <- unfoldSequentially unified addAnc
-                        x' <- or ch (addAnc [x]) state
-                        case computedAnswers x' of
-                          Just xs ->
-                            if all (\(gs, _, _) -> null gs || instanceCheck gs seen) xs
-                            then do
-                              -- WHAT IF IT RENAMES WITHIN THIS SUBTREE???
-                              children <- mapM (\(goals, subst, newEnv) -> do
-                                  (seen, failed, env) <- get
-                                  let toUnfold = wrap ls rs goals
-                                  if null toUnfold
-                                  then return $ leaf subst newEnv
-                                  else do
-                                    put (seen, failed, newEnv)
-                                    go (addAnc toUnfold) subst
-                                ) xs
-                              or (reverse children) (addAnc $ wrap ls rs [x]) state
-                            else do
-                              ls' <- unfoldNotNull ls state addAnc
-                              rs' <- unfoldNotNull rs state addAnc
-                              split (catMaybes [ls', Just x', rs']) goal state
-                          Nothing -> do
+                case findTupling env state goal ancs of
+                  Just (unfolded, newEnv) -> do
+                    put (seen', failed, newEnv)
+                    ch <- unfoldSequentially unfolded addAnc
+                    or ch (addAnc goal) state
+                  Nothing ->
+                    case findBestByComplexity env state goal of
+                      -- Either ls or rs is not empty!
+                      Just zipper ->
+                        let ls = left zipper in
+                        let x  = cursor zipper in
+                        let rs = right zipper in
+                        case if isGoalStatic env x then Nothing else findVariant [x] seen' of
+                          Just v -> do
+                            -- let x' = Conj [Leaf [x] state env v] [x] state in
+                            let x' = Leaf [x] state env v
                             ls' <- unfoldNotNull ls state addAnc
                             rs' <- unfoldNotNull rs state addAnc
                             split (catMaybes [ls', Just x', rs']) goal state
-                  Nothing -> do
-                    put (seen', failed, env)
-                    children <- unfoldSequentially (zip (map (:[]) goal) (repeat state)) addAnc
-                    split children goal state
+                          Nothing -> do
+                            -- let (unified, env') = runState (oneStep x state) env
+                            -- put ([x]:seen', failed, env')
+                            unified <- adaptState (oneStep x state)
+                            -- modify (\(seen', f, e) -> ([x]:seen', f, e))
+                            modifySeen ([x]:)
+                            ch <- unfoldSequentially unified addAnc
+                            x' <- or ch (addAnc [x]) state
+                            case computedAnswers x' of
+                              Just xs ->
+                                if all (\(gs, _, _) -> null gs || instanceCheck gs seen) xs
+                                then do
+                                  -- WHAT IF IT RENAMES WITHIN THIS SUBTREE???
+                                  children <- mapM (\(goals, subst, newEnv) -> do
+                                      (seen, failed, env) <- get
+                                      let toUnfold = wrap ls rs goals
+                                      if null toUnfold
+                                      then return $ leaf subst newEnv
+                                      else do
+                                        put (seen, failed, newEnv)
+                                        go (addAnc toUnfold) subst
+                                    ) xs
+                                  or (reverse children) (addAnc $ wrap ls rs [x]) state
+                                else do
+                                  ls' <- unfoldNotNull ls state addAnc
+                                  rs' <- unfoldNotNull rs state addAnc
+                                  split (catMaybes [ls', Just x', rs']) goal state
+                              Nothing -> do
+                                ls' <- unfoldNotNull ls state addAnc
+                                rs' <- unfoldNotNull rs state addAnc
+                                split (catMaybes [ls', Just x', rs']) goal state
+                      Nothing -> do
+                        put (seen', failed, env)
+                        children <- unfoldSequentially (zip (map (:[]) goal) (repeat state)) addAnc
+                        split children goal state
     wrap left right x = left ++ x ++ right
+
+    modifySeen f =
+      modify (\(seen, failed, env) -> (f seen, failed, env))
 
     adaptState :: State Env.Env a -> State (b, c, Env.Env) a
     adaptState state = do

@@ -149,7 +149,7 @@ toSyntax (Prg defs g) =
 
     disjToG :: Disj a -> G a
     disjToG (Disj names conjs) =
-      let disj = unsafeConj $ conjToG <$> toList conjs in
+      let disj = unsafeDisj $ conjToG <$> toList conjs in
       fresh names disj
 
     go (Goal disj) = disjToG disj

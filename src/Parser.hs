@@ -191,7 +191,7 @@ parsePat = try $ do
 
 parseOp :: Parser (G X)
 parseOp =
-  (unsafeDisj') <$> NE.sepBy1 (unsafeConj' <$> NE.sepBy1 parsePat (symbol "/\\")) (symbol "\\/")
+  unsafeDisj' <$> NE.sepBy1 (unsafeConj' <$> NE.sepBy1 parsePat (symbol "/\\")) (symbol "\\/")
 
   -- makeExprParser parsePat ops
   -- where

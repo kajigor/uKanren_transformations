@@ -4,16 +4,16 @@ import           Control.Applicative
 import           Control.Monad.State
 import           Data.Maybe          (mapMaybe)
 import qualified Data.Set            as Set
+import           Embed               (variantCheck)
 import qualified Eval                as E
 import qualified Subst
 import           Syntax
 import           Text.Printf         (printf)
-import           Util.Miscellaneous  (fst3, pinpoint)
+import           Util.Miscellaneous  (pinpoint, show')
 import qualified VarInterpretation   as VI
 import qualified Environment as Env
 import Util.ListZipper
 import Debug.Trace
-import Data.List.NonEmpty (NonEmpty (..), fromList)
 
 oneStepUnfold :: G S -> State Env.Env (G S)
 oneStepUnfold g@(Invoke f as) = do
@@ -34,6 +34,18 @@ oneStep goal state = do
     let normalized = normalize unfolded
     let unified = mapMaybe (unifyStuff state) normalized
     return unified
+
+unfoldConjunction :: [G S] -> Subst.Subst -> State Env.Env [([G S], Subst.Subst)]
+unfoldConjunction (x:xs) state = do
+  unified <- trace (printf "\nGoals:\n%s\n" $ show' (x:xs)) $ oneStep x state
+  results <- trace (printf "\nUnified:\n%s\n" $ show' unified) $
+             mapM (\(g, s) -> do
+                      goals <- unfoldConjunction xs s
+                      return $ (\(x,y) -> (g ++ x, y)) <$> goals
+                  ) unified
+  return $ trace (printf "\nResults:\n%s\n" $ show' results)
+         $ concat results
+unfoldConjunction [] s = return [([],s)]
 
 normalize :: G S -> [[G S]] -- disjunction of conjunctions of calls and unifications
 normalize (Disjunction x y gs) = concatMap normalize (x : y : gs)
@@ -98,6 +110,24 @@ data Complexity = Complexity { maxBranches :: Int, curBranches :: Int, substs ::
 instance Ord Complexity where
   (Complexity max cur subst) <= (Complexity max' cur' subst') =
     cur < max || cur - subst >= cur' - subst' || cur <= cur'
+
+findTupling :: Env.Env -> Subst.Subst -> [G S] -> [[G S]] -> Maybe (([([G S], Subst.Subst)], Env.Env))
+findTupling env subst goal ancs =
+    let (conjunctions, env') = runState (unfoldConjunction goal subst) env in
+    -- let res@(unfolded, env') = runState (mapM (\g -> oneStep g subst) goal) env in
+    -- let conjunctions = cross unfolded in
+    -- trace (printf "\nUnfolded:\n%s\n" $ show' unfolded) $
+    trace (printf "\nConjunctions:\n%s\n" $ show' conjunctions) $
+    trace (printf "\nAncs\n%s\n" $ show' ancs) $
+    if any (\(g, s) -> variantCheck (Subst.substitute s g) ancs) conjunctions
+    then Just (conjunctions, env')
+    else Nothing
+  where
+    cross :: [[([G S], Subst.Subst)]] -> [([G S], Subst.Subst)]
+    cross [] = [([],Subst.empty)]
+    cross (x:xs) = [ (y ++ z, Subst.union s' s'') | (y, s') <- x, (z, s'') <- cross xs ]
+
+
 
 findBestByComplexity :: Env.Env -> Subst.Subst -> [G S] -> Maybe (Zipper (G S))
 findBestByComplexity env sigma goals =

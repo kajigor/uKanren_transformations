@@ -15,7 +15,7 @@ import qualified Residualization     as Res
 import qualified Subst
 import           Syntax
 import           Text.Printf         (printf)
-import           Util.Miscellaneous  (fst3)
+import           Util.Miscellaneous  (fst3, show')
 import Debug.Trace
 
 topLevel :: Program -> Program
@@ -44,6 +44,7 @@ generateDefs tree =
   let defWithTree = zip (reverse definitions) (map snd nodes) in
   let invocations = map (generateInvocation definitions) leaves in
   let defs = map (generateDef definitions invocations) defWithTree in
+  trace (printf "\n\nDefs:\n%s\n\n" $ show' defs) $
   -- let defs = map (generateDef invocations) defWithTree in
   let (_, newGoal) = generateInvocation definitions (toplevel, toplevel) in
   (defs, Res.vident <$> newGoal)
@@ -112,13 +113,13 @@ nontrivial (Leaf _ _ _ _) = False
 nontrivial _              = True
 
 nodeContent (Or _ (Descend goal _) _) = Just goal
-nodeContent (Conj _ goal _)              = Just goal
-nodeContent (Split _ goal _)             = Just goal
-nodeContent x                            = Nothing -- error "Failed to get node content: unsupported node type"
+nodeContent (Conj _ goal _)           = Just goal
+nodeContent (Split _ goal _)          = Just goal
+nodeContent x                         = Nothing -- error "Failed to get node content: unsupported node type"
 
 generateDef :: CpdR.Definitions -> [([G S], G S)] -> (([G S], Name, [S]), ConsPDTree) -> Def
 generateDef defs invocations ((gs, n, args), tree) =
-  -- trace (printf "\n\nGenerateDef\n\nDefs\n%s\n\nInvoks\n%s\n\nGs\n%s\n\nName\n%s\n\nArgs\n%s\n\n" (show defs) (show invocations) (show gs) (show n) (show args)) $
+  trace (printf "\n\nGenerateDef\n\nDefs\n%s\n\nInvoks\n%s\n\nGs\n%s\n\nName\n%s\n\nArgs\n%s\n\n" (show defs) (show invocations) (show gs) (show n) (show args)) $
   let body = generateGoalFromTree defs invocations tree args in
   let argsX = map Res.vident args in
   Def n argsX (E.postEval argsX body)
@@ -181,9 +182,14 @@ generateGoalFromTree definitions invocations tree args =
     --   let vs = map fst subst ++ concatMap (fv . snd) subst in
     --   (nub $ union vg vs) \\ seen
 
-    getInvocation True _ = Nothing
+    getInvocation True gs =
+      trace (printf "\n\nNOT Getting invocation\n%s\n\n" $ show gs) $
+      Nothing
     getInvocation _   gs =
-      snd <$> (find ((gs ==) . fst) invocations)
+      trace (printf "\n\nGetting invocation\n%s\n\n" $ show gs) $
+      let res = snd <$> (find ((gs ==) . fst) invocations) in
+      trace (printf "\n\nResult\n%s\n\n" $ show res) $
+      res
 
     getInvocation' gs v = return $ generateInvocation' definitions gs v
 

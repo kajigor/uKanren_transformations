@@ -41,6 +41,10 @@ null = Map.null . getSubst
 fromList :: [(S, Ts)] -> Subst
 fromList = Subst . Map.fromList
 
+-- This is wacky: it may clash vars
+union :: Subst -> Subst -> Subst
+union (Subst s) (Subst s') = Subst $ Map.union s s'
+
 -- Applying substitution
 class ApplySubst a where
   substitute :: Subst -> a -> a
