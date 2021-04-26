@@ -244,7 +244,8 @@ topLevel limit (Program defs goal) =
                             -- put ([x]:seen', failed, env')
                             unified <- adaptState (oneStep x state)
                             -- modify (\(seen', f, e) -> ([x]:seen', f, e))
-                            modifySeen ([x]:)
+                            -- modifySeen ([x]:) -- WHY???
+                            modifySeen (const seen')
                             ch <- unfoldSequentially unified addAnc
                             x' <- or ch (addAnc [x]) state
                             case computedAnswers x' of
@@ -253,12 +254,12 @@ topLevel limit (Program defs goal) =
                                 then do
                                   -- WHAT IF IT RENAMES WITHIN THIS SUBTREE???
                                   children <- mapM (\(goals, subst, newEnv) -> do
-                                      (seen, failed, env) <- get
                                       let toUnfold = wrap ls rs goals
                                       if null toUnfold
-                                      then return $ leaf subst newEnv
+                                      then
+                                        return $ leaf subst newEnv
                                       else do
-                                        put (seen, failed, newEnv)
+                                        modifyEnv (const newEnv)
                                         go (addAnc toUnfold) subst
                                     ) xs
                                   or (reverse children) (addAnc $ wrap ls rs [x]) state
@@ -278,6 +279,9 @@ topLevel limit (Program defs goal) =
 
     modifySeen f =
       modify (\(seen, failed, env) -> (f seen, failed, env))
+
+    modifyEnv f =
+      modify (\(seen, failed, env) -> (seen, failed, f env))
 
     adaptState :: State Env.Env a -> State (b, c, Env.Env) a
     adaptState state = do
