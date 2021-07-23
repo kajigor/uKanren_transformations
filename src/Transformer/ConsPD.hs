@@ -57,7 +57,8 @@ transform outDir env function filename prg = do
   let norm = normalizeProg prg
   -- print norm
 
-  let goal@(Program definitions _) = makeNormal prg
+  -- let goal@(Program definitions _) = makeNormal prg
+  let goal@(Program definitions _) = prg
   let path = outDir </> filename
   createDirRemoveExisting path
   let consPdFile = path </> "conspd"

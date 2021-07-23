@@ -20,6 +20,10 @@ maybeToStream :: Maybe a -> Stream a
 maybeToStream Nothing  = Empty
 maybeToStream (Just a) = return a
 
+isMature :: Stream a -> Bool
+isMature (Immature _) = False
+isMature _ = True
+
 instance Functor Stream where
   fmap _ Empty        = Empty
   fmap f (Mature a s) = Mature (f a) (fmap f s)
