@@ -10,8 +10,11 @@ data Env = Env { getDefs :: Defs.Definitions
                , getInterp :: VI.Interpretation
                , getFreshNames :: FN.FreshNames
                }
-          deriving (Show, Ord, Eq)
+          -- deriving (Show, Ord, Eq)
+          deriving (Ord, Eq)
 
+instance Show Env where 
+     show = const "env"
 
 empty :: Env
 empty = Env Defs.empty VI.empty FN.defaultNames

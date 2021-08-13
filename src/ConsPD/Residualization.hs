@@ -37,14 +37,13 @@ generateDefs tree =
   let leaves = collectLeaves tree in
   let gens = collectGens tree in
   let distinct = nub $ map snd leaves in
-  let simplified = restrictSubsts $ simplify $ renameAmbigousVars $ tree in
-  -- trace (printf "\n\nSimplified tree:\n%s\n\n" $ show simplified) $
+  let simplified = restrictSubsts $ simplify $ renameAmbigousVars tree in
   let nodes = (toplevel, simplified) : map (\(_,x) -> findNode x tree) gens ++ map (`findNode` tree) distinct in
   let definitions = foldl (\defs gs -> fst3 (CpdR.renameGoals gs defs) ) [] $ map fst nodes in
   let defWithTree = zip (reverse definitions) (map snd nodes) in
   let invocations = map (generateInvocation definitions) leaves in
+  trace (printf "\nDefinitions\n%s\n\n" (intercalate "\n" (map show definitions))) $ 
   let defs = map (generateDef definitions invocations) defWithTree in
-  trace (printf "\n\nDefs:\n%s\n\n" $ show' defs) $
   -- let defs = map (generateDef invocations) defWithTree in
   let (_, newGoal) = generateInvocation definitions (toplevel, toplevel) in
   (defs, Res.vident <$> newGoal)
@@ -71,11 +70,11 @@ generateInvocation defs (gs, v) =
 
 generateInvocation' :: CpdR.Definitions -> [G S] -> [G S] -> G S
 generateInvocation' defs gs v =
-    let Just (goal, n, as) = find ((v ==) . (fst3)) defs in
+    let Just (goal, n, as) = find ((v ==) . fst3) defs in
     let name = n in
     let args = generateArgs as in
     let res = call name args in
-    (call name args)
+    call name args
   where
     generateArgs xs =
       case CpdR.unifyInvocationLists v gs (Just Subst.empty) of
@@ -119,7 +118,6 @@ nodeContent x                         = Nothing -- error "Failed to get node con
 
 generateDef :: CpdR.Definitions -> [([G S], G S)] -> (([G S], Name, [S]), ConsPDTree) -> Def
 generateDef defs invocations ((gs, n, args), tree) =
-  trace (printf "\n\nGenerateDef\n\nDefs\n%s\n\nInvoks\n%s\n\nGs\n%s\n\nName\n%s\n\nArgs\n%s\n\n" (show defs) (show invocations) (show gs) (show n) (show args)) $
   let body = generateGoalFromTree defs invocations tree args in
   let argsX = map Res.vident args in
   Def n argsX (E.postEval argsX body)
@@ -127,6 +125,7 @@ generateDef defs invocations ((gs, n, args), tree) =
 -- generateGoalFromTree :: [([G S], G S)] -> ConsPDTree -> FN.FreshNames -> G X
 generateGoalFromTree :: CpdR.Definitions -> [([G S], G S)] -> ConsPDTree -> [S] -> G X
 generateGoalFromTree definitions invocations tree args =
+    trace (printf "GenerateGoalFromTree\n%s\n\n" (show $ nodeContent tree)) $ 
     case go args True tree of
       Just goal ->
         let normalized = goal in --  NonConjunctive.Unfold.disj $ map NonConjunctive.Unfold.conj $ normalize goal in
@@ -139,32 +138,42 @@ generateGoalFromTree definitions invocations tree args =
       (conj $ map (\(s, ts) -> (V s) === ts) $ reverse (Subst.toList xs)) <|> return success
 
     go :: [S] -> Bool -> ConsPDTree -> Maybe (G S)
-    go seen r Fail           = Just failure
-    go seen r (Success ss _) = residualizeEnv ss
-    go seen r (Or ch (Descend gs _) s) = do
-      -- let vs = getNewVars seen gs s
-      let unifs = residualizeEnv s
-      let rest = getInvocation r gs <|> (disj $ catMaybes $ map (go seen False) ch)
-      mkGoal unifs rest
-    go seen r (Split ch gs s)  = do
-      -- let vs = getNewVars seen gs s
-      let unifs = residualizeEnv s
-      let rest = getInvocation r gs <|> (conj $ catMaybes $ map (go seen False) ch)
-      mkGoal unifs rest
-    go seen r (Leaf gs s _ vs) = do
-      let unifs = residualizeEnv s
-      let rest = getInvocation' gs vs -- snd (fromJust $ find ((gs ==) . fst) invocations)
-      mkGoal unifs rest
-    go seen r (Conj ch gs s)   = do
-      let unifs = residualizeEnv s
-      let rest = getInvocation r gs <|> (conj $ catMaybes $ map (go seen False) ch)
-      mkGoal unifs rest
-    go seen r (Gen ch gs gs' gen s) = do
-      let unifs = residualizeEnv s
-      let generalizer = residualizeEnv gen
-      let rest = getInvocation r gs <|> (conj $ catMaybes [go seen False ch])
-      mkGoal (mkGoal unifs generalizer) rest
-    go seen r (Prune _ _)     = error "Failed to residualize: Prune node in tree"
+    go seen r tree = 
+        let res = go' seen r tree  in 
+        trace (printf "Go:\n%s\nTree\n%s\nR: %s\nSeen\n%s\nResult\n%s\n\n" (show (nodeContent tree)) (show tree) (show r) (show seen) (show res)) $ 
+        res 
+      where 
+        go' seen r Fail           = Just failure
+        go' seen r (Success ss _) = residualizeEnv ss
+        -- go' seen False (Or ch (Descend gs _) s) | gs `elem` map fst3 definitions = do 
+        --   let unifs = residualizeEnv s 
+        --   let rest = generateInvocation' definitions gs gs 
+        --   mkGoal unifs (Just rest) 
+        go' seen r (Or ch (Descend gs _) s) = do
+          -- let vs = getNewVars seen gs s
+          let unifs = residualizeEnv s
+          let rest = getInvocation r gs <|> (disj $ catMaybes $ map (go seen False) ch)
+          let res = mkGoal unifs rest
+          res 
+        go' seen r (Split ch gs s)  = do
+          -- let vs = getNewVars seen gs s
+          let unifs = residualizeEnv s
+          let rest = getInvocation r gs <|> (conj $ catMaybes $ map (go seen False) ch)
+          mkGoal unifs rest
+        go' seen r (Leaf gs s _ vs) = do
+          let unifs = residualizeEnv s
+          let rest = getInvocation' gs vs -- snd (fromJust $ find ((gs ==) . fst) invocations)
+          mkGoal unifs rest
+        go' seen r (Conj ch gs s)   = do
+          let unifs = residualizeEnv s
+          let rest = getInvocation r gs <|> (conj $ catMaybes $ map (go seen False) ch)
+          mkGoal unifs rest
+        go' seen r (Gen ch gs gs' gen s) = do
+          let unifs = residualizeEnv s
+          let generalizer = residualizeEnv gen
+          let rest = getInvocation r gs <|> (conj $ catMaybes [go seen False ch])
+          mkGoal (mkGoal unifs generalizer) rest
+        go' seen r (Prune _ _)     = error "Failed to residualize: Prune node in tree"
 
     mkGoal (Just u) (Just r) =
         Just (f u r)
@@ -183,12 +192,10 @@ generateGoalFromTree definitions invocations tree args =
     --   (nub $ union vg vs) \\ seen
 
     getInvocation True gs =
-      trace (printf "\n\nNOT Getting invocation\n%s\n\n" $ show gs) $
       Nothing
     getInvocation _   gs =
-      trace (printf "\n\nGetting invocation\n%s\n\n" $ show gs) $
       let res = snd <$> (find ((gs ==) . fst) invocations) in
-      trace (printf "\n\nResult\n%s\n\n" $ show res) $
+      -- let res = snd <$> (find ((gs `isVariant`) . fst) invocations) in
       res
 
     getInvocation' gs v = return $ generateInvocation' definitions gs v

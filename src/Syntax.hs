@@ -99,11 +99,11 @@ call :: Name -> [Term a] -> G a
 call = Invoke
 
 disj :: [G a] -> Maybe (G a)
-disj gs | length gs >= 2 = return $ unsafeDisj gs
+disj gs | not (null gs) = return $ unsafeDisj gs
 disj _ = Nothing
 
 conj :: [G a] -> Maybe (G a)
-conj gs | length gs >= 2 = return $ unsafeConj gs
+conj gs | not (null gs) = return $ unsafeConj gs
 conj _ = Nothing
 
 unsafeConj :: [G a] -> G a

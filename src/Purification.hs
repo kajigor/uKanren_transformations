@@ -144,19 +144,23 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
           if length gs' == 1
           then (conjs, head gs')
           else (conjs, unsafeDisj gs')
-      purifyU constrV conjs (Conjunction g1 g2 gs) =
-        let (g2' :conjs' , g1' ) = purifyU constrV (g2 : gs ++ conjs) g1 in
+      purifyU constrV conjs c@(Conjunction g1 g' gs) =
+        let g2 = unsafeConj (g' : gs) in 
+        let (g2' :conjs' , g1' ) = purifyU constrV (g2 : conjs) g1 in
         let (g1'':conjs'', g2'') = purifyU constrV (g1':conjs') g2' in
-        case (g1'', g2'') of
-          _ | isSuccess g1'' && isSuccess g2'' -> (conjs'', success)
-          _ | isSuccess g1'' -> (conjs'', g2'' )
-          _ | isSuccess g2'' -> (conjs'', g1'' )
-          _ -> (conjs'', flatConj g1'' g2'')
+        let res = case (g1'', g2'') of
+                    _ | isSuccess g1'' && isSuccess g2'' -> (conjs'', success)
+                    _ | isSuccess g1'' -> (conjs'', g2'' )
+                    _ | isSuccess g2'' -> (conjs'', g1'' )
+                    _ -> (conjs'', flatConj g1'' g2'')
+        in
+        trace (printf "PurifyU\n%s\nResult:\n%s\n\n" (show c) (show res)) $ 
+        res 
       -- purifyU constrV conjs (g1 :/\: g2) =
       --   let (g2' :conjs' , g1' ) = purifyU constrV (g2 :conjs ) g1  in
       --   let (g1'':conjs'', g2'') = purifyU constrV (g1':conjs') g2' in
       --   case (g1'', g2'') of
-      --     _ | isSuccess g1'' && isSuccess g2'' -> (conjs'', success      )
+      --     _ | isSuccess g1'' && isSuccess g2'' -> (con{js'', success      )
       --     _ | isSuccess g1'' -> (conjs'', g2'' )
       --     _ | isSuccess g2'' -> (conjs'', g1'' )
       --     _ -> (conjs'', g1'' &&& g2'')
