@@ -10,7 +10,6 @@ import Program.Bool
 import Program.Sort
 import Program.Programs
 import Prelude hiding (succ)
-import Parser (parseWholeProgram)
 import Debug.Trace (trace)
 
 -- reify :: Eq a => [(a, Term a)] -> Term a -> Term a
@@ -33,10 +32,10 @@ addVar p@(Program defs goal) =
     Program defs (fresh (newVar:vars) (V newVar === C "tuple" (map V vars)) &&& g)
 
 
-runWithParser :: FilePath -> Int -> IO ()
-runWithParser inputFile num = do
+-- runWithParser :: FilePath -> Int -> IO ()
+runWithParser parser inputFile num = do
   program <- readFile inputFile
-  case parseWholeProgram program of
+  case parser program of
     Left err ->
       putStrLn err
     Right p ->

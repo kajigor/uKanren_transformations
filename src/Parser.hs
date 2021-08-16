@@ -102,7 +102,6 @@ curvyBr = between (symbol "{") (symbol "}")
 parseTerm :: Parser (Term X)
 parseTerm = parseListTerm
 
-
 parseListTerm :: Parser (Term X)
 parseListTerm = try conso
   <|> try (roundBr conso)
@@ -117,7 +116,7 @@ conso :: Parser (Term X)
 conso = do
   x  <- niloOrNum <|> roundBr parseTerm
   xs <- some $ symbol "%" *> parseTerm
-  return $ foldr1 (\term acc -> C "Cons" [term, acc]) $ (x : xs)
+  return $ foldr1 (\term acc -> C "Cons" [term, acc]) (x : xs)
 
 
 parseNumTerm :: Parser (Term X)

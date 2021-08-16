@@ -61,6 +61,7 @@ infix  8 ===
 goalFromList :: (G a -> G a -> [G a] -> G a) -> [G a] -> G a
 goalFromList f (x : y : xs) = f x y xs
 goalFromList _ [x] = x
+goalFromList _ [] = error "Empty list"
 
 flatConj :: G a -> G a -> G a
 flatConj g1 g2 =

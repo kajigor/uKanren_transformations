@@ -1,6 +1,5 @@
 module ConsPDApp where
 
-import           Parser                 (parseWholeProgram)
 import qualified Program.Bottles
 import qualified Program.Bridge
 import qualified Program.Desert
@@ -21,10 +20,10 @@ import           System.FilePath        (takeBaseName)
 import qualified Transformer.ConsPD
 import qualified Transformer.JustUnfold
 
-runWithParser :: FilePath -> FilePath -> IO ()
-runWithParser outDir inputFile = do
+-- runWithParser :: FilePath -> FilePath -> IO ()
+runWithParser parser outDir inputFile = do
   program <- readFile inputFile
-  case parseWholeProgram program of
+  case parser program of
     Left err ->
       putStrLn err
     Right program ->

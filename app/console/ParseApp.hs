@@ -1,15 +1,14 @@
 module ParseApp where
 
-import Parser (parseWholeProgram)
 import Syntax
 import Text.Printf (printf)
 import Util.File (checkIfFileExists, failIfNotExist, prologExt)
 import qualified Transformer.MkToProlog
 
-run fileName = do
+run parser fileName = do
   failIfNotExist fileName
   program <- readFile fileName
-  case parseWholeProgram program of
+  case parser program of
     Left err ->
       putStrLn err
     Right (Program defs goal) -> do

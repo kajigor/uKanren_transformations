@@ -1,7 +1,6 @@
 module CPDApp where
 
 import CPD.LocalControl
-import Parser (parseWholeProgram)
 import Program.List (maxLengtho, maxMino)
 import qualified Program.PropEval
 import Syntax
@@ -32,10 +31,10 @@ run = do
   runMaxMin
   runPropEval
 
-runWithParser :: FilePath -> FilePath -> IO ()
-runWithParser outDir inputFile = do
+-- runWithParser :: FilePath -> FilePath -> IO ()
+runWithParser parser outDir inputFile = do
   program <- readFile inputFile
-  case parseWholeProgram program of
+  case parser program of
     Left err ->
       putStrLn err
     Right program ->
