@@ -3,7 +3,6 @@ module SimpleParser where
 
 import           Control.Monad                  (void)
 import           Data.Void                      (Void(..))
-import           Data.Either                    (either, fromRight)
 import           Eval                           (postEval)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -11,16 +10,49 @@ import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Printf (printf)
 
 import           Syntax
+import Util.File
+import System.FilePath ( replaceBaseName )
+import Data.Either (rights, isRight, lefts)
+import qualified Data.Set as Set
+import Control.Monad.State
+import Debug.Trace (traceM)
 
+parseImports :: FilePath -> IO (Either String Program)
+parseImports path = do
+    evalStateT (go path) Set.empty
+  where
+    go :: FilePath -> StateT (Set.Set String) IO (Either String Program)
+    go filePath = do
+      parsingResult <- liftIO $ parseFromFile parseProgramWithImports filePath
+      case parsingResult of
+        Left err -> return $ Left err
+        Right (imports, program@(Program defs goal)) -> do
+          let paths = map (replaceBaseName filePath) imports
+          modify (Set.insert filePath)
+          seen <- get
+          let newImports = filter (`notElem` seen) paths
+          traceM (printf "Seen\n%s\nPaths\n%s\nParsing\n%s\n\n" (show seen) (show paths) (show filePath))
+          if null newImports
+          then return $ Right program
+          else do
+            mapM_ (modify . Set.insert) newImports
+            imported <- mapM (\newPath -> do
+                newResult <- go newPath
+                case newResult of
+                  Left err ->
+                    return $ Left (printf "Failed to parse %s\n%s" newPath err :: String)
+                  Right (Program ds _) -> do
+                    return $ Right ds
+              ) newImports
+            if all isRight imported
+            then return $ Right (Program (defs ++ concat (rights imported)) goal)
+            else return $ Left (printf "Failed to parse imports\n%s\n" (show $ lefts imported))
 
-defsAsts :: String -> [Def]
-defsAsts = fromRight [] . runParser (many parseDef) ""
-
-strDefAsts :: String -> String
-strDefAsts = unlines . fmap ((++ "\n") . show) . defsAsts
-
-defAst :: String -> Maybe Def
-defAst = either (const Nothing) Just . runParser parseDef ""
+parseFromFile :: Parser a -> FilePath -> IO (Either String a)
+parseFromFile parser filePath = do
+    failIfNotExist filePath
+    content <- readFile filePath
+    return $ runBundlingParser parser content
 
 runBundlingParser :: (Stream s, ShowErrorComponent e) => Parsec e s b -> s -> Either String b
 runBundlingParser parser =
@@ -28,20 +60,19 @@ runBundlingParser parser =
   where
     mapLeft f = either (Left . f) Right
 
-
-parseDefs :: String -> Either String [Def]
-parseDefs = runBundlingParser (many parseDef)
-
-
 parseWholeProgram :: String -> Either String Program
 parseWholeProgram = runBundlingParser parseProg
 
--- Parses the list of relation definitions, expects a goal to evaluate
-progAst :: String -> Maybe Program
-progAst = either (const Nothing) Just . runParser parseProg ""
+parseProgramWithImports :: Parser ([String], Program)
+parseProgramWithImports = do
+    imports <- many parseImport
+    program <- parseProg
+    return (imports, program)
 
-strProgAstWithDefGoal :: String -> String
-strProgAstWithDefGoal = either errorBundlePretty show . runParser parseProg ""
+parseImport :: Parser String
+parseImport = do
+  symbol "import"
+  ident
 
 type Parser = Parsec Void String
 
@@ -58,34 +89,28 @@ lexeme = L.lexeme sc
 symbol :: String -> Parser String
 symbol = L.symbol sc
 
-sugar :: [String]
-sugar = ["trueo", "falso", "zero", "succ", "conde"]
-
-kw :: [String] 
-kw = ["fresh", "in"]
-
 reserved :: [String]
-reserved = kw ++ sugar 
+reserved = ["fresh", "in"]
 
 notReserved :: Monad m => String -> m String
 notReserved x | x `elem` reserved = fail $ printf "%s is reserved" (show x)
 notReserved x = return x
 
-identLetters :: Parser Char 
-identLetters = 
+identLetters :: Parser Char
+identLetters =
   char '_' <|> alphaNumChar <|> char '\''
 
 ident :: Parser String
-ident = 
+ident =
     (lexeme . try) (p >>= notReserved)
   where
-    p = (:) <$> lowerChar <*> many identLetters 
-    
+    p = (:) <$> lowerChar <*> many identLetters
+
 constructorName :: Parser String
-constructorName = 
+constructorName =
     (lexeme . try) (p >>= notReserved)
   where
-    p = (:) <$> upperChar <*> many identLetters 
+    p = (:) <$> upperChar <*> many identLetters
 
 -- brackets
 roundBr, angleBr, boxBr, curvyBr :: Parser a -> Parser a
@@ -100,40 +125,27 @@ comma = symbol ","
 commaSep :: Parser a -> Parser [a]
 commaSep p = sepBy p comma
 
-commaSep1 :: Parser a -> Parser [a] 
+commaSep1 :: Parser a -> Parser [a]
 commaSep1 p = sepBy1 p comma
 
-parseBoolTerm :: Parser (Term X)
-parseBoolTerm = try $ falso <|> trueo 
-
-trueo :: Parser (Term X)
-trueo = do
-  symbol "trueo"
-  return $ C "true" []
-
-falso :: Parser (Term X)
-falso = do
-  symbol "falso"
-  return $ C "false" []
-
 consList :: Parser (Term X)
-consList = do 
+consList = do
   head <- parseTerm
   symbol "::"
   tail <- parseVar
   return $ C "Cons" [head, tail]
 
 listTerm :: Parser (Term X)
-listTerm = try $ 
-  roundBr consList <|> elemList 
+listTerm = try $
+  roundBr consList <|> elemList
 
-termsToList :: [Term X] -> Term X 
-termsToList = foldr (\h t -> C "Cons" [h, t]) (C "Nil" []) 
+termsToList :: [Term X] -> Term X
+termsToList = foldr (\h t -> C "Cons" [h, t]) (C "Nil" [])
 
 elemList :: Parser (Term X)
-elemList = boxBr $ do 
-  terms <- commaSep parseTerm 
-  return $ termsToList terms 
+elemList = boxBr $ do
+  terms <- commaSep parseTerm
+  return $ termsToList terms
 
 parseFresh :: Parser (G X)
 parseFresh = do
@@ -150,41 +162,40 @@ parseInvoke =
   <*> try parseArguments
 
 parseTerm :: Parser (Term X)
-parseTerm = 
+parseTerm =
   C <$> try constructorName <*> try parseArguments
   <|> parseSimpleTerm
 
 parseArguments :: Parser [Term X]
-parseArguments = many $ roundBr parseTerm <|> parseSimpleTerm 
+parseArguments = many $ roundBr parseTerm <|> parseSimpleTerm
 
 parseSimpleTerm :: Parser (Term X)
-parseSimpleTerm = 
-      parseVar 
-  <|> parseConst 
-  <|> listTerm 
-  <|> parseBoolTerm 
+parseSimpleTerm =
+      parseVar
+  <|> parseConst
+  <|> listTerm
 
 parseConst :: Parser (Term X)
-parseConst = 
+parseConst =
   C <$> try constructorName <*> return []
 
 parseVar :: Parser (Term X )
-parseVar = 
-  V <$> try ident 
+parseVar =
+  V <$> try ident
 
-parseSimpleGoal :: Parser (G X) 
-parseSimpleGoal = 
-  try $ parseUnification <|> parseInvokation <|> roundBr parseSimpleGoal
+parseSimpleGoal :: Parser (G X)
+parseSimpleGoal =
+  try $ parseUnification <|> parseInvocation <|> roundBr parseSimpleGoal
 
 parseUnification :: Parser (G X)
-parseUnification = try $ do 
-  l <- parseTerm 
+parseUnification = try $ do
+  l <- parseTerm
   symbol "=="
-  r <- parseTerm 
+  r <- parseTerm
   return (l :=: r)
 
-parseInvokation :: Parser (G X)
-parseInvokation = parseInvoke
+parseInvocation :: Parser (G X)
+parseInvocation = parseInvoke
 
 parseOp :: Parser (G X)
 parseOp =
