@@ -16,6 +16,7 @@ import Data.Either (rights, isRight, lefts)
 import qualified Data.Set as Set
 import Control.Monad.State
 import Debug.Trace (traceM)
+import Control.Monad.Combinators.Expr
 
 parseImports :: FilePath -> IO (Either String Program)
 parseImports path = do
@@ -130,22 +131,24 @@ commaSep1 p = sepBy1 p comma
 
 consList :: Parser (Term X)
 consList = do
-  head <- parseTerm
-  symbol "::"
+  headTerms <- some (try (parseTerm <* symbol "::"))
   tail <- parseVar
-  return $ C "Cons" [head, tail]
+  return $ foldr (\h t -> C "Cons" [h, t]) tail headTerms
+  <?> "consList"
 
 listTerm :: Parser (Term X)
-listTerm = try $
-  roundBr consList <|> elemList
+listTerm =
+  try (roundBr consList <|> elemList)
+  <?> "listTerm"
 
 termsToList :: [Term X] -> Term X
 termsToList = foldr (\h t -> C "Cons" [h, t]) (C "Nil" [])
 
 elemList :: Parser (Term X)
-elemList = boxBr $ do
+elemList = boxBr (do
   terms <- commaSep parseTerm
-  return $ termsToList terms
+  return (termsToList terms))
+  <?> "elemList"
 
 parseFresh :: Parser (G X)
 parseFresh = do
@@ -153,63 +156,88 @@ parseFresh = do
   names <- commaSep1 ident
   symbol "in"
   goal <- parseGoal
-  return $ foldr Fresh goal names
+  return (foldr Fresh goal names)
+  <?> "parseFresh"
 
-parseInvoke :: Parser (G X)
-parseInvoke =
+
+parseInvocation :: Parser (G X)
+parseInvocation =
       Invoke
   <$> try ident
   <*> try parseArguments
+  <?> "parseInvocation"
 
 parseTerm :: Parser (Term X)
 parseTerm =
-  C <$> try constructorName <*> try parseArguments
+  try (C <$> try constructorName <*> parseArguments)
   <|> parseSimpleTerm
+  <?> "parseTerm"
 
 parseArguments :: Parser [Term X]
-parseArguments = many $ roundBr parseTerm <|> parseSimpleTerm
+parseArguments =
+  some (parseSimpleTerm <|> roundBr parseTerm)
+  <?> "parseArguments"
+
 
 parseSimpleTerm :: Parser (Term X)
 parseSimpleTerm =
       parseVar
   <|> parseConst
   <|> listTerm
+  <?> "parseSimpleTerm"
 
 parseConst :: Parser (Term X)
 parseConst =
   C <$> try constructorName <*> return []
+  <?> "parseConst"
 
 parseVar :: Parser (Term X )
 parseVar =
   V <$> try ident
+  <?> "parseVar"
 
 parseSimpleGoal :: Parser (G X)
 parseSimpleGoal =
-  try $ parseUnification <|> parseInvocation <|> roundBr parseSimpleGoal
+  try parseInvocation <|> try parseUnification
+  <?> "parseSimpleGoal"
 
 parseUnification :: Parser (G X)
-parseUnification = try $ do
+parseUnification = try (do
   l <- parseTerm
   symbol "=="
   r <- parseTerm
-  return (l :=: r)
+  return (l :=: r))
+  <?> "parseUnification"
 
-parseInvocation :: Parser (G X)
-parseInvocation = parseInvoke
+
+-- expr = makeExprParser term table <?> "expression"
+
+-- term = roundBr parseGoal <|> parseSimpleGoal <?> "term"
+
+-- table = [ [ binary  "&" (\x y -> Conjunction x y [])
+--           , binary  "|" (\x y -> Disjunction x y [])
+--           ]
+--         ]
+
+-- binary name f = InfixR (f <$ symbol name)
+
 
 parseOp :: Parser (G X)
 parseOp =
-  unsafeDisj <$> sepBy1 (unsafeConj <$> sepBy1 (try $ parseSimpleGoal <|> roundBr parseGoal) (symbol "&")) (symbol "|")
+  unsafeDisj <$> sepBy1 (unsafeConj <$> sepBy1 (parseSimpleGoal <|> roundBr parseGoal) (symbol "&")) (symbol "|")
+  <?> "parseOp"
 
 parseGoal :: Parser (G X)
 parseGoal = sc
    *> try parseOp
   <|> try parseFresh
+  <?> "parseGoal"
 
 parseQuery :: Parser (G X)
 parseQuery = do
   symbol "?"
   parseGoal
+  <?> "parseQuery"
 
 -- definition
 parseDef :: Parser Def
@@ -218,9 +246,12 @@ parseDef = do
   args <- many ident
   symbol "="
   goal <- parseGoal
+  symbol ";"
   return $ Def name args goal
+  <?> "parseDef"
 
 -- program
 parseProg :: Parser Program
 parseProg =
   Program <$> many parseDef <*> (postEval [] <$> parseQuery)
+  <?> "parseProg"

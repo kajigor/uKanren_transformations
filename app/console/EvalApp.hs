@@ -39,6 +39,7 @@ runWithParser parser inputFile num = do
     Left err ->
       putStrLn err
     Right p ->
+      trace (show p) $
       mapM_ print (toplevel num show (addVar p))
 
 
