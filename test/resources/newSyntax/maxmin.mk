@@ -5,7 +5,7 @@ le x y b =
   ) | 
   ( fresh x', y' in 
       x == Succ x' & y == Succ y' & le x' y' b
-  )
+  );
 
 gt x y b = 
   (x == Zero & b == falso) | 
@@ -14,7 +14,7 @@ gt x y b =
   ) | 
   (fresh x', y' in 
       x == Succ x' & y == Succ y' & gt x' y' b
-  )
+  );
 
 maxmin x a i = 
   (x == [] & a == Zero & i == Zero) | 
@@ -22,7 +22,7 @@ maxmin x a i =
       x == (h :: t) & 
       max t h a & 
       min t h i 
-  ) 
+  );
 
 max x n m = 
   (x == [] & m == n) |
@@ -31,7 +31,7 @@ max x n m =
       ( (le h n trueo & max t n m) | 
         (gt h n trueo & max t h m)
       ) 
-  )  
+  );
 
 min x n m = 
   (x == [] & m == n) |
@@ -40,7 +40,7 @@ min x n m =
       ( (le h n trueo & min t h m) | 
         (gt h n trueo & min t n m)
       ) 
-  )
+  );
 
 
 ? maxmin x a i
