@@ -7,14 +7,13 @@ import qualified Transformer.MkToProlog
 import NormalizedSyntax
 
 runWithParser parser fileName = do
-  failIfNotExist fileName
-  program <- readFile fileName
-  case parser program of
+  res <- parser fileName
+  case res of
     Left err ->
       putStrLn err
     Right p -> do
       putStrLn "Initial program\n"
-      putStrLn program
+      putStrLn (show p)
       putStrLn "\nTransformed\n"
       let normalized = normalizeProg p
       print normalized

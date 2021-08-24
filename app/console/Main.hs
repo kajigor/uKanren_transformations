@@ -12,8 +12,8 @@ import qualified CPDApp
 import qualified ParseApp
 import qualified NormalizeApp
 import Util.File (failIfNotExist, isDir, getFiles, createDirRemoveExisting)
-import qualified Parser 
-import qualified SimpleParser 
+import Util.Miscellaneous (mapLeft)
+import qualified Parser.Parser as Parser
 import Syntax (Program)
 import Text.Printf (printf)
 
@@ -25,19 +25,15 @@ data Transformation
   | Normalize
   | PrologToMk
 
-data ParserType 
-  = IrinaParser 
-  | SimpleParser
-
 data Action = Action { transformation :: Transformation
                      , input :: FilePath
                      , output :: FilePath
                      , isInputADir :: Bool
-                     , parserType :: ParserType
+                     , parserType :: Parser.ParserType
                      , numAnswers :: Int
                      }
 
-data Args = Args Transformation (Maybe FilePath) (Maybe FilePath) (Maybe ParserType) Int
+data Args = Args Transformation (Maybe FilePath) (Maybe FilePath) (Maybe Parser.ParserType) Int
 
 transform :: Args -> IO Action
 transform (Args transformation input output parserType numAnswers) = do
@@ -50,7 +46,7 @@ transform (Args transformation input output parserType numAnswers) = do
     let out = fromMaybe defaultOutput output
     -- forM_ output createDirRemoveExisting
 
-    let pType = fromMaybe IrinaParser parserType 
+    let pType = fromMaybe Parser.Simple parserType
 
     return $ Action transformation i out isInputADir pType numAnswers
 
@@ -86,8 +82,8 @@ outputParser = strOption
   <> help "Where to put the transformation results."
   )
 
-parserTypeParser :: Parser ParserType
-parserTypeParser = flag SimpleParser IrinaParser 
+parserTypeParser :: Parser Parser.ParserType
+parserTypeParser = flag Parser.Simple Parser.Irina
   (  long "irina"
   <> short 'p'
   <> help "Run Irina's parser"
@@ -95,12 +91,12 @@ parserTypeParser = flag SimpleParser IrinaParser
 
 parseTransformation :: Parser Transformation
 parseTransformation =
-      consPDParser 
-  <|> cpdParser 
-  <|> parserParser 
-  <|> evalParser 
+      consPDParser
+  <|> cpdParser
+  <|> parserParser
+  <|> evalParser
   <|> normalizeParser
-  <|> prologToMkParser 
+  <|> prologToMkParser
 
 normalizeParser :: Parser Transformation
 normalizeParser = flag' Normalize
@@ -148,18 +144,19 @@ main = do
       <> header "uKanren-tranformations"
       )
 
-chooseParser :: ParserType -> (String -> Either String Program) 
-chooseParser IrinaParser = Parser.parseWholeProgram
-chooseParser SimpleParser = SimpleParser.parseWholeProgram  
+chooseParser :: Parser.ParserType -> (String -> IO (Either String Program))
+chooseParser pType = \input -> do
+  res <- Parser.importsParser pType input
+  return $ mapLeft show res
 
-chooseTransformer CPD = CPDApp.runWithParser 
-chooseTransformer ConsPD = ConsPDApp.runWithParser 
+chooseTransformer CPD = CPDApp.runWithParser
+chooseTransformer ConsPD = ConsPDApp.runWithParser
 
-defaultOutputDir args = 
-  printf "test/out/%s" $ 
-    case args of 
+defaultOutputDir args =
+  printf "test/out/%s" $
+    case args of
       CPD -> "cpd"
-      ConsPD -> "consPD" 
+      ConsPD -> "consPD"
       Eval -> "eval"
       Normalize -> "norm"
       Parser -> "parse"
@@ -167,54 +164,21 @@ defaultOutputDir args =
 runAction :: Args -> IO ()
 runAction args = do
   action <- transform args
-  let parser = chooseParser $ parserType action 
+  let parser = chooseParser $ parserType action
   case transformation action of
     Eval ->
       EvalApp.runWithParser parser (input action) (numAnswers action)
     Normalize ->
       NormalizeApp.runWithParser parser (input action)
-    Parser -> 
+    Parser ->
       ParseApp.run parser (input action)
     PrologToMk ->
       Transformer.PrologToMk.transform (input action)
     x -> do
-      let transformer = chooseTransformer (transformation action) 
+      let transformer = chooseTransformer (transformation action)
       if isInputADir action
       then do
         files <- getFiles "mk" (input action)
         mapM_ (transformer parser (output action)) files
       else
         transformer parser (output action) (input action)
-    -- CPD ->
-    --   CPDApp.run
-    -- ConsPD ->
-    --   ConsPDApp.run
-
--- runAction :: Args -> IO ()
--- runAction args = do
---   action <- transform args
---   let parser = chooseParser $ parserType args 
---   case transformation action of
---     Eval | useIrinaParser action ->
---       EvalApp.runWithParser (input action) (numAnswers action)
---     Normalize | useIrinaParser action ->
---       NormalizeApp.run (input action)
---     Parser ->
---       if useIrinaParser action
---       then ParseApp.run (input action)
---       else
---         Transformer.PrologToMk.transform (input action)
---     x | useIrinaParser action -> do
---       let transformer = case x of CPD -> CPDApp.runWithParser; ConsPD -> ConsPDApp.runWithParser
---       let out = fromMaybe "test/out/cpd" (output action)
---       if isInputADir action
---       then do
---         files <- getFiles "mk" (input action)
---         mapM_ (transformer out) files
---       else
---         transformer out (input action)
---     CPD ->
---       CPDApp.run
---     ConsPD ->
---       ConsPDApp.run
-

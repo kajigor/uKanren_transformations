@@ -6,9 +6,8 @@ import Util.File (checkIfFileExists, failIfNotExist, prologExt)
 import qualified Transformer.MkToProlog
 
 run parser fileName = do
-  failIfNotExist fileName
-  program <- readFile fileName
-  case parser program of
+  res <- parser fileName
+  case res of
     Left err ->
       putStrLn err
     Right (Program defs goal) -> do

@@ -34,8 +34,8 @@ addVar p@(Program defs goal) =
 
 -- runWithParser :: FilePath -> Int -> IO ()
 runWithParser parser inputFile num = do
-  program <- readFile inputFile
-  case parser program of
+  res <- parser inputFile
+  case res of
     Left err ->
       putStrLn err
     Right p ->

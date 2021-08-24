@@ -33,8 +33,8 @@ run = do
 
 -- runWithParser :: FilePath -> FilePath -> IO ()
 runWithParser parser outDir inputFile = do
-  program <- readFile inputFile
-  case parser program of
+  res <- parser inputFile
+  case res of
     Left err ->
       putStrLn err
     Right program ->

@@ -1,101 +1,43 @@
 {-
-  This file is created by Irina Artemeva
+  This parser was created by Irina Artemeva and since then modified.
   Available at https://github.com/Pluralia/uKanren_translator/blob/58ab786f94f68da1027428706448fbddb980fa72/src/Parser.hs
 -}
 
 {-# LANGUAGE DerivingStrategies #-}
-module Parser (
-      progAst
-    , strProgAstWithDefGoal
-    , defsAsts
-    , strDefAsts
-    , defAst
-    , parseDefs
-    , parseWholeProgram
-    ) where
+module Parser.IrinaParser (parseProg, parseProgramWithImports) where
 
-import           Control.Monad                  (void)
 import qualified Control.Applicative.Combinators.NonEmpty as NE
-import           Data.Void                      (Void(..))
-import           Data.Either                    (either, fromRight)
 import           Eval                           (postEval)
-import           Text.Megaparsec
-import           Text.Megaparsec.Char
-import qualified Text.Megaparsec.Char.Lexer as L
+import Text.Megaparsec ( (<|>), many, some, MonadParsec(try) )
+import Syntax
+    ( G((:=:), Invoke, Fresh),
+      Program(..),
+      Def(..),
+      Term(..),
+      X,
+      unsafeDisj,
+      unsafeConj',
+      unsafeDisj' )
+import Parser.Data ( Parser )
+import Parser.Lexer
+    ( sc, symbol, roundBr, angleBr, boxBr, curvyBr, identifier )
 
-import           Syntax
+parseProgramWithImports :: Parser ([String], Program)
+parseProgramWithImports = do
+    imports <- many parseImport
+    program <- parseProg
+    return (imports, program)
 
------------------------------------------------------------------------------------------------------
+parseImport :: Parser String
+parseImport = do
+  symbol "import"
+  ident
 
-defsAsts :: String -> [Def]
-defsAsts = fromRight [] . runParser (many parseDef) ""
-
-strDefAsts :: String -> String
-strDefAsts = unlines . fmap ((++ "\n") . show) . defsAsts
-
-defAst :: String -> Maybe Def
-defAst = either (const Nothing) Just . runParser parseDef ""
-
------------------------------------------------------------------------------------------------------
-
-runBundlingParser :: (Stream s, ShowErrorComponent e) => Parsec e s b -> s -> Either String b
-runBundlingParser parser =
-    mapLeft errorBundlePretty . runParser parser ""
-  where
-    mapLeft f = either (Left . f) Right
-
-
-parseDefs :: String -> Either String [Def]
-parseDefs = runBundlingParser (many parseDef)
-
-
-parseWholeProgram :: String -> Either String Program
-parseWholeProgram = runBundlingParser parseProg
-
--- Parses the list of relation definitions, expects a goal to evaluate
-progAst :: String -> Maybe Program
-progAst = either (const Nothing) Just . runParser parseProg ""
-
-strProgAstWithDefGoal :: String -> String
-strProgAstWithDefGoal = either errorBundlePretty show . runParser parseProg ""
-
------------------------------------------------------------------------------------------------------
-
-type Parser = Parsec Void String
-
------------------------------------------------------------------------------------------------------
-
--- spaces & comments
-sc :: Parser ()
-sc = L.space (void spaceChar) lineCmnt blockCmnt
-  where
-    lineCmnt  = L.skipLineComment "--"
-    blockCmnt = L.skipBlockComment "{-" "-}"
-
-lexeme :: Parser a -> Parser a
-lexeme = L.lexeme sc
-
-symbol :: String -> Parser String
-symbol = L.symbol sc
-
-sugar :: [String]
-sugar = ["trueo", "falso", "zero", "succ", "conde"]
+reserved :: [String]
+reserved = ["trueo", "falso", "zero", "succ", "conde", "import"]
 
 ident :: Parser String
-ident = (lexeme . try) (p >>= check)
-  where
-    p       = (:) <$> letterChar <*> many (char '_' <|> alphaNumChar <|> char '\'')
-    check x = if x `elem` sugar
-                then fail $ show x ++ " cannot be an identifier"
-                else return x
-
--- brackets
-roundBr, angleBr, boxBr, curvyBr :: Parser a -> Parser a
-roundBr = between (symbol "(") (symbol ")")
-angleBr = between (symbol "<") (symbol ">")
-boxBr   = between (symbol "[") (symbol "]")
-curvyBr = between (symbol "{") (symbol "}")
-
+ident = identifier reserved
 -----------------------------------------------------------------------------------------------------
 
 -- term

@@ -20,19 +20,14 @@ import           System.FilePath        (takeBaseName)
 import qualified Transformer.ConsPD
 import qualified Transformer.JustUnfold
 
-
-import SimpleParser (parseImports)
-
 -- runWithParser :: FilePath -> FilePath -> IO ()
 runWithParser parser outDir inputFile = do
-  r <- parseImports inputFile
-  case r of
+  res <- parser inputFile
+  case res of
     Left err ->
       putStrLn err
     Right program ->
       Transformer.ConsPD.runConsPD' outDir (takeBaseName inputFile) program
-
-
 
 -- -- runWithParser :: FilePath -> FilePath -> IO ()
 -- runWithParser parser outDir inputFile = do

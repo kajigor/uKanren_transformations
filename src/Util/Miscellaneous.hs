@@ -50,6 +50,9 @@ map3in4 f (x, y, z, t) = (x, y, f z, t)
 map4in4 :: (a -> b) -> (c, d, e, a) -> (c, d, e, b)
 map4in4 f (x, y, z, t) = (x, y, z, f t)
 
+mapLeft :: (a -> b) -> Either a c -> Either b c
+mapLeft f = either (Left . f) Right
+
 generateSplits :: Eq a => [a] -> Int -> [([a], [a])]
 generateSplits xs n =
   let sub = filter (\x -> n == length x) $ subsequences xs in
