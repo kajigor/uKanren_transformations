@@ -30,6 +30,10 @@ instance Show Def where
 data Program = Program [Def] (G X)
              deriving (Show, Eq)
 
+instance Semigroup Program where
+  Program defs1 goal1 <> Program defs2 _ =
+    Program (defs1 <> defs2) goal1
+
 -- Goals
 data G a
   = Term a :=: Term a

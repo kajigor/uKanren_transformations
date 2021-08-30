@@ -27,6 +27,7 @@ dependencies:
 - text
 - fgl
 - graphviz
+- transformers
 - mtl
 - extra
 - directory

@@ -1,11 +1,9 @@
 module NormalizeApp where
 
-import Syntax
-import Text.Printf (printf)
-import Util.File (checkIfFileExists, failIfNotExist, prologExt)
-import qualified Transformer.MkToProlog
-import NormalizedSyntax
+import NormalizedSyntax ( normalizeProg, toSyntax )
+import qualified Syntax
 
+runWithParser :: (t -> IO (Either String Syntax.Program)) -> t -> IO ()
 runWithParser parser fileName = do
   res <- parser fileName
   case res of
@@ -13,7 +11,7 @@ runWithParser parser fileName = do
       putStrLn err
     Right p -> do
       putStrLn "Initial program\n"
-      putStrLn (show p)
+      print p
       putStrLn "\nTransformed\n"
       let normalized = normalizeProg p
       print normalized
