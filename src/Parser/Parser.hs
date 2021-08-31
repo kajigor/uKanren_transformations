@@ -24,8 +24,8 @@ import Data.Semigroup ( Semigroup(sconcat) )
 import Control.Applicative.Lift ( eitherToErrors, runErrors )
 
 parser :: ParserType -> String -> Either (ParserError String) Syntax.Program
-parser =
-    runBundlingParser . chooseParser
+parser pType =
+    runBundlingParser (chooseParser pType) ""
   where
     chooseParser Irina = IrinaParser.parseProg
     chooseParser Simple = SimpleParser.parseProg
@@ -37,19 +37,6 @@ importsParser =
     chooseParser Irina = IrinaParser.parseProgramWithImports
     chooseParser Simple = SimpleParser.parseProgramWithImports
 
--- parseFromFile :: Parser a -> FilePath -> ExceptT (ParserError String) IO Syntax.Program
--- parseFromFile parser filePath = do
---     exist <- liftIO $ doesPathExist filePath
---     if not exist
---     then throwError $ FileNotFound filePath
---     else do
---       content <- liftIO $ readFile filePath
---       return $ runBundlingParserExcept parser content
-
--- runBundlingParserExcept :: (Stream s, ShowErrorComponent e) => Parsec e s b -> s -> ExceptT (ParserError String) Identity b
--- runBundlingParserExcept parser =
---     mapLeft (SyntaxError . errorBundlePretty) . runParser parser ""
-
 parseFromFile :: Parser a -> FilePath -> IO (Either (ParserError String) a)
 parseFromFile parser filePath = do
     exist <- doesPathExist filePath
@@ -57,12 +44,11 @@ parseFromFile parser filePath = do
     then return $ Left $ FileNotFound filePath
     else do
       content <- readFile filePath
-      return $ runBundlingParser parser content
+      return $ runBundlingParser parser filePath content
 
-runBundlingParser :: (Stream s, ShowErrorComponent e) => Parsec e s b -> s -> Either (ParserError String) b
-runBundlingParser parser =
-    mapLeft (SyntaxError . errorBundlePretty) . runParser parser ""
-
+runBundlingParser :: (Stream s, ShowErrorComponent e) => Parsec e s b -> FilePath -> s -> Either (ParserError String) b
+runBundlingParser parser filePath =
+    mapLeft (SyntaxError . errorBundlePretty) . runParser parser filePath
 
 parseImports :: Parser ([String], Syntax.Program)
              -> FilePath
@@ -80,12 +66,12 @@ parseImports parser path = do
       ExceptT $ do
         mapM_ (modify . Set.insert) newImports
         imported <- runErrors . sequenceA <$> mapM (\newPath -> do
-            newResult <- runExceptT $ go newPath
-            eitherToErrors <$> case newResult of
-              Left err ->
-                return $ Left [(\x -> printf "Failed to parse %s\n%s" newPath x :: String) <$> err]
-              Right p -> return $ Right p
+            result <- runExceptT $ go newPath
+            let mappedError = return $ mapLeft (: []) result
+            eitherToErrors <$> mappedError
           ) newImports
         return $ case imported of
-          Left errs -> Left $ SyntaxError (printf "Failed to parse imports\n%s\n" (show errs))
+          Left (h : t) -> Left $ sconcat (h :| t)
           Right ps -> Right (sconcat $ program :| ps)
+          Left [] -> error "This is impossible"
+
