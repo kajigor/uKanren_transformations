@@ -66,12 +66,13 @@ parseImports parser path = do
       ExceptT $ do
         mapM_ (modify . Set.insert) newImports
         imported <- runErrors . sequenceA <$> mapM (\newPath -> do
-            result <- runExceptT $ go newPath
-            let mappedError = return $ mapLeft (: []) result
-            eitherToErrors <$> mappedError
+            newResult <- runExceptT $ go newPath
+            eitherToErrors <$> case newResult of
+              Left err ->
+                return $ Left [(\x -> printf "Failed to parse %s\n%s" newPath x :: String) <$> err]
+              Right p -> return $ Right p
           ) newImports
         return $ case imported of
-          Left (h : t) -> Left $ sconcat (h :| t)
-          Right ps -> Right (sconcat $ program :| ps)
-          Left [] -> error "This is impossible"
+          Left errs -> Left $ SyntaxError (printf "Failed to parse imports\n%s\n" (show errs))
+          Right ps -> Right (sconcat (program :| ps))
 
