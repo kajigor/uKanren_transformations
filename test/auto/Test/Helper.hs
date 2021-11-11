@@ -8,6 +8,7 @@ module Test.Helper
   , test5
   , manyAssert
   , assertCustom
+  , assertCustom1
   , manyAssertCustom
   ) where
 
@@ -38,6 +39,10 @@ test5 f input =
 manyAssert :: (Eq a, Show a) => a -> (b -> с -> a) -> [(b, с)] -> Assertion
 manyAssert expected f =
   mapM_ (\(x, y) -> test2 f x y expected)
+
+assertCustom1 :: (Eq a, Show a) => String -> (a -> Bool) -> a -> Assertion
+assertCustom1 str fun x =
+  assertBool str (fun x)
 
 assertCustom :: (Eq a, Show a) => String -> (a -> b -> Bool) -> a -> b -> Assertion
 assertCustom str fun x y =

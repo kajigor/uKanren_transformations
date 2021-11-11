@@ -417,8 +417,10 @@ revAccoDef =
         xs === nil &&& sx === acc |||
         (
           fresh ["h", "t"]
-            (xs === h % t) &&&
-            call "revacco" [t, h % acc, sx]
+            (
+              (xs === h % t) &&&
+              call "revacco" [t, h % acc, sx]
+            )
         )
       )
     )

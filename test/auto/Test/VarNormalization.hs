@@ -1,9 +1,11 @@
 module Test.VarNormalization where
 
 import Transformer.VarNormalization
-import           Test.Helper  (test)
+import Test.Helper  (test, assertCustom1)
 import Syntax
 import Program.List (appendo)
+import Program ( stdlibPrograms )
+import Text.Printf (printf)
 
 x, y, z, q0, q1, q2, q3, x0, x1, x2, x3 :: Term [Char]
 x = V "x"
@@ -75,3 +77,25 @@ unit_uniqueUnification = do
   where
     runTest =
       test (\g -> fst $ uniqueVarGoal g [])
+
+unit_allVarsDefined = do
+    mapM_ runTest Program.stdlibPrograms
+  where
+    runTest p =
+      assertCustom1 (printf "All vars defined\n%s\n" (show p)) allVarsDefined p
+
+unit_notAllVarsDefined = do
+    runTest (Program [] (x === x))
+    runTest (Program [] (Fresh "x" (x === y)))
+    runTest (Program [] (Conjunction (Fresh "x" (x === x)) (Fresh "y" (x === y)) []))
+    runTest (Program [] (Disjunction (Fresh "x" (x === x)) (Fresh "y" (x === y)) []))
+    runTest (Program [] (fresh ["x", "y"] $ Invoke "f" [C "cons" [x, C "cons" [y, C "cons" [z, C "nil" []]]]]))
+  where
+    runTest p =
+      assertCustom1 (printf "Not all vars defined\n%s\n" (show p)) (not . allVarsDefined) p
+
+unit_allRelationsDefined = do
+    mapM_ runTest Program.stdlibPrograms
+  where
+    runTest p =
+      assertCustom1 (printf "All relations defined\n%s\n" (show p)) allRelationsDefined p
