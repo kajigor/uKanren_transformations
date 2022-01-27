@@ -164,10 +164,10 @@ topLevel (Program defs goal) =
 eval :: Env.Env -> Subst.Subst -> G S -> Stream (Subst.Subst, FN.FreshNames)
 eval env s (t1 :=:  t2) = fmap (, Env.getFreshNames env) (maybeToStream $ unify (Just s) t1 t2)
 -- eval env s (g1 :\/: g2) = eval env s g1 `mplus` eval env s g2
-eval env s (Conjunction x y gs) =
+eval env s (Disjunction x y gs) =
   foldr1 mplus (eval env s <$> (x : y : gs))
 -- eval env s (g1 :/\: g2) = eval env s g1 >>= (\ (s', d') -> eval (Env.updateNames env d') s' g2)
-eval env s (Disjunction x y gs) =
+eval env s (Conjunction x y gs) =
   eval env s x >>= \(s', d') ->
   eval (Env.updateNames env d') s' (unsafeDisj $ y : gs)
 eval env s (Invoke f as) =
