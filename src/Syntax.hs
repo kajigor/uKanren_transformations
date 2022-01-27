@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 
