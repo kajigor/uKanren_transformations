@@ -4,63 +4,26 @@
 {-# LANGUAGE FlexibleInstances #-}
 module TaglessFinal.Syntax where
 
-import Text.Printf ( printf )
-import Control.Monad.State
+import TaglessFinal.Term
+import qualified TaglessFinal.Subst as Subst
+import qualified Stream
+import qualified TaglessFinal.Unify as Unify
 import TaglessFinal.VarState
+import TaglessFinal.EvalState
 
-type Name = String
-type Var = String
-
-data Term = Var Var  | Con Name [Term]
-            deriving (Show, Eq)
+import Control.Monad
+import Control.Monad.State
 
 class Goal repr where
-  unify :: Term -> Term -> repr
+  unify :: Term Var -> Term Var -> repr
   conj :: repr -> repr -> repr
   disj :: repr -> repr -> repr
   fresh :: (Var -> repr) -> repr
 
-  lam :: (Term -> repr) -> repr
-  app :: repr -> Term -> repr
+  lam :: (Term Var -> repr) -> repr
+  app :: repr -> Term Var -> repr
   fixP :: String -> (repr -> repr) -> repr
   var :: String -> repr
-
-newtype View = View { unView :: State VarState String }
-
-instance Goal View where
-  unify x y = View $ return $ printf "(%s == %s)" (show x) (show y)
-  conj x y = View $ do
-    x' <- unView x
-    y' <- unView y
-    return $ printf "(%s && %s)" x' y'
-  disj x y = View $ do
-    x' <- unView x
-    y' <- unView y
-    return $ printf "(%s || %s)" x' y'
-  fresh f = View $ do
-    v <- nextFreshVar
-    let x = printf "x.%s" (show v) :: String
-    body <- unView $ f x
-    return $ printf "(fresh %s in %s)" x body
-
-  lam f = View $ do
-    v <- nextVar
-    let x = printf "v.%s" (show v) :: String
-    body <- unView $ f (Var x)
-    return $ printf "(\\%s -> %s)" x body
-
-  var n = View $ return n
-
-  fixP name f = View $ do
-    body <- unView $ f (var name)
-    return $ printf "(fix \\%s -> %s)" name body
-
-  app f arg = View $ do
-    application <- unView f
-    return $ printf "(app %s %s)" application (show arg)
-
-
-view goal = evalState (unView goal) (VarState 0 0)
 
 appendo :: Goal repr => repr
 appendo =
@@ -75,3 +38,25 @@ appendo =
                           (unify z (Con "Cons" [Var h, Var r]))))
             )
     )
+
+type EvalResult = Stream.Stream (Subst.Subst Var)
+
+newtype Eval = Eval { runEval :: State EvalState EvalResult }
+
+-- instance Goal Eval where
+  -- unify t1 t2 = Eval $ return $ \s -> Stream.maybeToStream $ Unify.unify (Just s) t1 t2
+  -- conj g1 g2 = Eval $ do
+  --   state <- get
+  --   return $ \s -> do
+  --     let (f, state') = runState (runEval g1) state
+  --     let (g, state'') = runState (runEval g2) state'
+  --     f s >>= g
+       --  >>= runEval g2
+  -- disj g1 g2 = Eval $ \s -> runEval g1 s `mplus` runEval g2 s
+  -- fresh goal =
+  --   undefined
+
+  -- lam = _
+  -- app = _
+  -- fixP = _
+  -- var = _

@@ -169,7 +169,7 @@ eval env s (Disjunction x y gs) =
 -- eval env s (g1 :/\: g2) = eval env s g1 >>= (\ (s', d') -> eval (Env.updateNames env d') s' g2)
 eval env s (Conjunction x y gs) =
   eval env s x >>= \(s', d') ->
-  eval (Env.updateNames env d') s' (unsafeDisj $ y : gs)
+  eval (Env.updateNames env d') s' (unsafeConj $ y : gs)
 eval env s (Invoke f as) =
   let (Def _ fs g) = Env.getDef env f in
   let i' = foldl (\ i'' (f', a) -> VI.extend i'' f' a) (Env.getInterp env) $ zip fs as in

@@ -1,4 +1,4 @@
-module Stream where
+module Stream (takeS, maybeToStream, isMature, fmap, pure, (<*>), empty, (<|>), (>>=), mzero, mplus, Stream (..)) where
 
 import Control.Monad
 import Control.Applicative
