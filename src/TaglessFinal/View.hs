@@ -10,15 +10,19 @@ import TaglessFinal.VarState
 newtype View a = View { unView :: State VarState String }
 
 instance Goal View where
-  unify x y = View $ return $ printf "(%s == %s)" (show x) (show y)
+  term x = View (return $ show x)
+  unify x y = View $ do
+    x <- unView x
+    y <- unView y
+    return $ printf "(%s == %s)" x y
   conj x y = View $ do
-    x' <- unView x
-    y' <- unView y
-    return $ printf "(%s && %s)" x' y'
+    x <- unView x
+    y <- unView y
+    return $ printf "(%s && %s)" x y
   disj x y = View $ do
-    x' <- unView x
-    y' <- unView y
-    return $ printf "(%s || %s)" x' y'
+    x <- unView x
+    y <- unView y
+    return $ printf "(%s || %s)" x y
   fresh f = View $ do
     v <- nextFreshVar
     let x = toFreshVar v
@@ -28,7 +32,7 @@ instance Goal View where
   lam f = View $ do
     v <- nextVar
     let x = toVar v
-    body <- unView $ f (Var x)
+    body <- unView $ f (View $ return x)
     return $ printf "(\\%s -> %s)" x body
 
   -- var n = View $ return n
@@ -38,8 +42,9 @@ instance Goal View where
     return $ printf "(fix \\%s -> %s)" name body
 
   app f arg = View $ do
-    application <- unView f
-    return $ printf "(app %s %s)" application (show arg)
+    f <- unView f
+    arg <- unView arg
+    return $ printf "(app %s %s)" f arg
 
 view :: View a -> String
 view goal = evalState (unView goal) (VarState 0 0)
