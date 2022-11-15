@@ -5,6 +5,7 @@ import           Program.List
 import           Program.Programs
 import qualified Subst
 import           Syntax
+import           Program
 import           Test.Helper      (test2)
 import           Text.Printf
 import           Util.Check
@@ -23,7 +24,7 @@ unit_checkConj = do
                   [call "|=|" [V 127, V 128, C "true"[]], call "|=|" [V 12, C "Succ" [C "Succ" [C "Succ" [C "Succ" [V 128]]]], V 14]]
                   False
 
-checkTest :: Program -> Bool
+checkTest :: Program G X -> Bool
 checkTest (Program defs goal) =
     let env = Env.fromDefs defs in
     let ((logicGoal, names), env') = runState (E.preEval goal) env in
@@ -35,7 +36,7 @@ revAcco' = Program revAcco $ fresh ["x", "a", "y"] (call "revacco" [V "x", V "a"
 rev = Program reverso $ fresh ["x", "y"] (call "reverso" [V "x", V "y"])
 maxLen = Program maxLengtho $ fresh ["xs", "m", "l"] (call "maxLengtho" [V "xs", V "m", V "l"])
 
-runTest :: String -> Program -> IO ()
+runTest :: String -> Program G X -> IO ()
 runTest name prog = do
   putStrLn $ printf "%s should%s be unfolded further" name (if checkTest prog then "" else " not")
 

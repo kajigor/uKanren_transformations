@@ -1,6 +1,8 @@
 module Program.Sudoku4x4 where
 
 import Syntax
+import Program
+import Def
 
 query = Program sudoku4x4 $ fresh ["sudoku", "q"] (call "check_sudoku" [V "sudoku", V "q"])
 queryValid   = Program sudoku4x4 $ fresh ["q"] (call "check_sudoku" [validField, V "q"])
@@ -29,11 +31,11 @@ validField = C "s4x4" [ n2, n3, n1, n4
                       , n1, n2, n4, n3
                       ]
 
-notEq :: [Def]
+notEq :: [Def G X]
 notEq = [notEqDef]
 
-notEqDef :: Def 
-notEqDef = 
+notEqDef :: Def G X
+notEqDef =
     Def "not_eq" ["a", "b", "q97"] (
       ((V "a" === C "n1" []) &&&
       (((V "b" === C "n1" []) &&&
@@ -73,11 +75,11 @@ notEqDef =
       (V "q97" === C "false" []))))
     )
 
-allDifferent :: [Def]
+allDifferent :: [Def G X]
 allDifferent = allDifferentDef : notEq
 
-allDifferentDef :: Def 
-allDifferentDef = 
+allDifferentDef :: Def G X
+allDifferentDef =
     Def "all_different" ["a", "b", "c", "d", "q69"] (
       fresh ["q67", "q68"] (
         (call "not_eq" [V "a", V "b", V "q67"]) &&&
@@ -112,11 +114,11 @@ allDifferentDef =
         (V "q69" === V "q68"))))
     )
 
-checkSudoku :: [Def]
+checkSudoku :: [Def G X]
 checkSudoku = checkSudokuDef : allDifferent
 
-checkSudokuDef :: Def 
-checkSudokuDef = 
+checkSudokuDef :: Def G X
+checkSudokuDef =
     Def "check_sudoku" ["sudoku", "q0"] (
       fresh ["a11", "a12", "a13", "a14", "a21", "a22", "a23", "a24", "a31", "a32", "a33", "a34", "a41", "a42", "a43", "a44"] (
         (V "sudoku" === C "s4x4" [V "a11", V "a12", V "a13", V "a14", V "a21", V "a22", V "a23", V "a24", V "a31", V "a32", V "a33", V "a34", V "a41", V "a42", V "a43", V "a44"]) &&&
@@ -189,9 +191,9 @@ checkSudokuDef =
           (V "q0" === V "q2"))))))
     )
 
-sudoku4x4 :: [Def]
+sudoku4x4 :: [Def G X]
 sudoku4x4 = checkSudoku ++ allDifferent ++ notEq
 
-env :: String 
-env = 
+env :: String
+env =
   "open MiniKanren\nopen MiniKanrenStd\ntype num =\n  | N1 \n  | N2 \n  | N3 \n  | N4 \nlet n1 () = !! N1\nlet n2 () = !! N2\nlet n3 () = !! N3\nlet n4 () = !! N4\ntype 'a0 gsudoku4X4 =\n  | S4x4 of 'a0 * 'a0 * 'a0 * 'a0 * 'a0 * 'a0 * 'a0 * 'a0 * 'a0 * 'a0 * 'a0 *\n  'a0 * 'a0 * 'a0 * 'a0 * 'a0 \nlet rec fmap fa0 =\n  function\n  | S4x4\n      (a0_0, a0_1, a0_2, a0_3, a0_4, a0_5, a0_6, a0_7, a0_8, a0_9, a0_10,\n       a0_11, a0_12, a0_13, a0_14, a0_15)\n      ->\n      S4x4\n        ((fa0 a0_0), (fa0 a0_1), (fa0 a0_2), (fa0 a0_3), (fa0 a0_4),\n          (fa0 a0_5), (fa0 a0_6), (fa0 a0_7), (fa0 a0_8), (fa0 a0_9),\n          (fa0 a0_10), (fa0 a0_11), (fa0 a0_12), (fa0 a0_13), (fa0 a0_14),\n          (fa0 a0_15))\nmodule For_gsudoku4X4 =\n  (Fmap)(struct\n           let rec fmap fa0 =\n             function\n             | S4x4\n                 (a0_0, a0_1, a0_2, a0_3, a0_4, a0_5, a0_6, a0_7, a0_8, a0_9,\n                  a0_10, a0_11, a0_12, a0_13, a0_14, a0_15)\n                 ->\n                 S4x4\n                   ((fa0 a0_0), (fa0 a0_1), (fa0 a0_2), (fa0 a0_3),\n                     (fa0 a0_4), (fa0 a0_5), (fa0 a0_6), (fa0 a0_7),\n                     (fa0 a0_8), (fa0 a0_9), (fa0 a0_10), (fa0 a0_11),\n                     (fa0 a0_12), (fa0 a0_13), (fa0 a0_14), (fa0 a0_15))\n           type 'a0 t = 'a0 gsudoku4X4\n         end)\nlet rec s4x4 x__0 x__1 x__2 x__3 x__4 x__5 x__6 x__7 x__8 x__9 x__10 x__11\n  x__12 x__13 x__14 x__15 =\n  inj\n    (For_gsudoku4X4.distrib\n       (S4x4\n          (x__0, x__1, x__2, x__3, x__4, x__5, x__6, x__7, x__8, x__9, x__10,\n            x__11, x__12, x__13, x__14, x__15)))"

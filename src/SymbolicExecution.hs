@@ -6,6 +6,7 @@ import qualified Eval               as E
 import           Prelude            hiding (or)
 import qualified Subst
 import           Syntax
+import Program
 import           Unfold             (oneStep)
 import qualified Environment as Env
 import Control.Monad.State
@@ -17,7 +18,7 @@ data SymTree = Fail
              | Prune [G S] Subst.Subst
              deriving (Show, Eq)
 
-topLevel :: Int -> Program -> SymTree
+topLevel :: Int -> Program G X -> SymTree
 topLevel depth (Program defs goal) =
     let env = Env.fromDefs defs in
     let ((logicGoal, _), env') = runState (E.preEval goal) env in

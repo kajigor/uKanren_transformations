@@ -1,6 +1,8 @@
 module Program.Desert where
 
 import Syntax
+import Program
+import Def
 import Prelude hiding (elem)
 
 some x = C "some" [x]
@@ -19,10 +21,10 @@ query''  = Program tree $ fresh ["a", "b"] (call "checkAnswer" [V "a", ofInt 5, 
 query''' = Program tree $ fresh ["a", "b"] (call "checkAnswer" [V "a", ofInt 8, ofInt 5, some $ V "b"])
 query1   = Program tree $ fresh ["a", "b", "c", "d"] (call "checkAnswer" [V "a", V "b", V "c", some $ V "d"])
 
-add :: [Def]
+add :: [Def G X]
 add = [addDef]
 
--- addDef :: Def
+-- addDef :: Def G X
 -- addDef =
 --     Def "add" ["a", "b", "q193"] (
 --       ((V "a" === C "o" []) &&&
@@ -32,7 +34,7 @@ add = [addDef]
 --         (call "add" [V "x", C "s" [V "b"], V "q193"])))
 --     )
 
-addDef :: Def
+addDef :: Def G X
 addDef =
     ( Def "add" ["x", "y", "z"]
         (
@@ -44,10 +46,10 @@ addDef =
   where
     [x, y, z, x', z'] = map V ["x", "y", "z", "x'", "z'"]
 
-goe :: [Def]
+goe :: [Def G X]
 goe = [goeDef]
 
-goeDef :: Def
+goeDef :: Def G X
 goeDef =
     Def "goe" ["a", "b", "q186"] (
       ((V "a" === C "o" []) &&&
@@ -65,10 +67,10 @@ goeDef =
             (call "goe" [V "x", V "y", V "q186"]))))))
     )
 
-sub :: [Def]
+sub :: [Def G X]
 sub = [subDef]
 
-subDef :: Def
+subDef :: Def G X
 subDef =
     Def "sub" ["a", "b", "q182"] (
       ((V "b" === C "o" []) &&&
@@ -82,10 +84,10 @@ subDef =
             (call "sub" [V "x", V "y", V "q182"]))))))
     )
 
-elem :: [Def]
+elem :: [Def G X]
 elem = [elemDef]
 
-elemDef :: Def
+elemDef :: Def G X
 elemDef =
     Def "elem" ["l", "n", "q179"] (
       fresh ["x", "xs"] (
@@ -97,10 +99,10 @@ elemDef =
           (call "elem" [V "xs", V "m", V "q179"])))))
     )
 
-eqNat :: [Def]
+eqNat :: [Def G X]
 eqNat = [eqNatDef]
 
-eqNatDef :: Def
+eqNatDef :: Def G X
 eqNatDef =
     Def "eqNat" ["a", "b", "q172"] (
       ((V "a" === C "o" []) &&&
@@ -118,10 +120,10 @@ eqNatDef =
             (call "eqNat" [V "x", V "y", V "q172"]))))))
     )
 
-checkStep :: [Def]
+checkStep :: [Def G X]
 checkStep = checkStepDef : goe ++ eqNat ++ add ++ elem
 
-checkStepDef :: Def
+checkStepDef :: Def G X
 checkStepDef =
     Def "checkStep" ["step", "Env", "len", "cop", "q85"] (
       fresh ["pos", "fuel", "sts"] (
@@ -235,10 +237,10 @@ checkStepDef =
               (V "q85" === V "q157")))))))))))
     )
 
-addForElem :: [Def]
+addForElem :: [Def G X]
 addForElem = addForElemDef : add
 
-addForElemDef :: Def
+addForElemDef :: Def G X
 addForElemDef =
     Def "addForElem" ["l", "n", "v", "q79"] (
       fresh ["x", "xs"] (
@@ -254,10 +256,10 @@ addForElemDef =
               (call "addForElem" [V "xs", V "m", V "v", V "q83"])))))))
     )
 
-setForElem :: [Def]
+setForElem :: [Def G X]
 setForElem = [setForElemDef]
 
-setForElemDef :: Def
+setForElemDef :: Def G X
 setForElemDef =
     Def "setForElem" ["l", "n", "v", "q74"] (
       fresh ["x", "xs"] (
@@ -272,10 +274,10 @@ setForElemDef =
     )
 
 
-step :: [Def]
+step :: [Def G X]
 step = stepDef : sub ++ add ++ addForElem ++ goe ++ setForElem
 
-stepDef :: Def
+stepDef :: Def G X
 stepDef =
     Def "step" ["step", "Env", "len", "cop", "q50"] (
       fresh ["pos", "fuel", "sts"] (
@@ -323,10 +325,10 @@ stepDef =
                       (call "setForElem" [V "sts", V "x", C "o" [], V "q72"])))))))))))))))))
     )
 
-isFinishEnv :: [Def ]
+isFinishEnv :: [Def G X]
 isFinishEnv = isFinishEnvDef : eqNat
 
-isFinishEnvDef :: Def
+isFinishEnvDef :: Def G X
 isFinishEnvDef =
     Def "isFinishEnv" ["Env", "len", "q49"] (
       fresh ["pos", "fuel", "sts"] (
@@ -334,10 +336,10 @@ isFinishEnvDef =
         (call "eqNat" [V "pos", V "len", V "q49"]))
     )
 
-getFuel :: [Def]
+getFuel :: [Def G X]
 getFuel = getFuelDef : sub
 
-getFuelDef :: Def
+getFuelDef :: Def G X
 getFuelDef =
     Def "getFuel" ["step", "Env", "cop", "q42"] (
       (fresh ["d"] (
@@ -359,10 +361,10 @@ getFuelDef =
             (V "q42" === C "o" [])))))))
     )
 
-isMove :: [Def]
+isMove :: [Def G X]
 isMove = [isMoveDef]
 
-isMoveDef :: Def
+isMoveDef :: Def G X
 isMoveDef =
     Def "isMove" ["step", "q34"] (
       (fresh ["q35"] (
@@ -378,10 +380,10 @@ isMoveDef =
         (V "q34" === C "false" [])))
     )
 
-eqBool :: [Def]
+eqBool :: [Def G X]
 eqBool = [eqBoolDef]
 
-eqBoolDef :: Def
+eqBoolDef :: Def G X
 eqBoolDef =
     Def "eqBool" ["a", "b", "q30"] (
       ((V "a" === C "true" []) &&&
@@ -393,10 +395,10 @@ eqBoolDef =
       (V "q30" === C "true" []))))
     )
 
-stations :: [Def]
+stations :: [Def G X]
 stations = [stationsDef]
 
-stationsDef :: Def
+stationsDef :: Def G X
 stationsDef =
     Def "stations" ["n", "q23"] (
       ((V "n" === C "o" []) &&&
@@ -408,10 +410,10 @@ stationsDef =
             (call "stations" [V "m", V "q25"])))))
     )
 
-startEnv :: [Def]
+startEnv :: [Def G X]
 startEnv = startEnvDef : stations
 
-startEnvDef :: Def
+startEnvDef :: Def G X
 startEnvDef =
   Def "startEnv" ["len", "cop", "q29"] (
     fresh ["q27"] (
@@ -419,10 +421,10 @@ startEnvDef =
       (call "stations" [V "len", V "q27"]))
   )
 
-calcFuel :: [Def]
+calcFuel :: [Def G X]
 calcFuel = calcFuelDef : isFinishEnv ++ isMove ++ eqBool ++ checkStep ++ add ++ getFuel ++ step
 
-calcFuelDef :: Def
+calcFuelDef :: Def G X
 calcFuelDef =
     Def "calcFuel" ["Env", "ans", "len", "cop", "prevIsMove", "q2"] (
       ((V "ans" === C "nil" []) &&&
@@ -461,10 +463,10 @@ calcFuelDef =
                   (V "q2" === C "none" [])))))))))))))
     )
 
-checkAnswer :: [Def]
+checkAnswer :: [Def G X]
 checkAnswer = checkAnswerDef : startEnv ++ calcFuel
 
-checkAnswerDef :: Def
+checkAnswerDef :: Def G X
 checkAnswerDef =
     Def "checkAnswer" ["answer", "len", "cop", "q1"] (
       fresh ["q0"] (
@@ -472,7 +474,7 @@ checkAnswerDef =
         (call "calcFuel" [V "q0", V "answer", V "len", V "cop", C "false" [], V "q1"]))
     )
 
-tree :: [Def]
+tree :: [Def G X]
 tree =
   [ addDef
   , goeDef

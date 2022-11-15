@@ -1,6 +1,8 @@
 module Program.Prop where
 
 import Syntax
+import Program
+import Def
 import Program.Bool
 import Program.List
 import Program.Num
@@ -36,7 +38,7 @@ plainQuery' = Program plainEvalo $ fresh ["fm", "st", "res"] (call "evalo" [V "s
 
 plainQueryConj = Program evaloConj (fresh ["st", "fm1", "fm2"] (call "evaloConj" $ map V ["st", "fm1", "fm2"]))
 
-evaloConjDef :: Def
+evaloConjDef :: Def G X
 evaloConjDef =
     ( Def "evaloConj" ["st", "fm1", "fm2"]
       (
@@ -44,14 +46,14 @@ evaloConjDef =
       )
     )
 
-evaloConj :: [Def]
+evaloConj :: [Def G X]
 evaloConj = evaloConjDef : plainEvalo
 
-evalo' :: [Def]
+evalo' :: [Def G X]
 evalo' = evalo'Def : elemo
 
 -- no ando/oro
-evalo'Def :: Def
+evalo'Def :: Def G X
 evalo'Def =
     ( Def "evalo" ["st", "fm", "u"]
       (
@@ -98,10 +100,10 @@ evalo'Def =
     )
     where [st, fm, u, x, y, z] = map V ["st", "fm", "u", "x", "y", "z"]
 
-elemo :: [Def]
+elemo :: [Def G X]
 elemo = [elemoDef]
 
-elemoDef :: Def
+elemoDef :: Def G X
 elemoDef =
     ( Def "elemo" ["n", "s", "v"]
       (
@@ -114,12 +116,12 @@ elemoDef =
     )
     where [n, s, v, h, t, n'] = map V ["n", "s", "v", "h", "t", "n'"]
 
-evalo'' :: [Def]
+evalo'' :: [Def G X]
 evalo'' = evalo''Def : ando ++ oro ++ noto ++ elemo
 
 -- ando/oro last
 -- uses elemo
-evalo''Def :: Def
+evalo''Def :: Def G X
 evalo''Def =
     ( Def "evalo" ["st", "fm", "u"]
       (
@@ -152,12 +154,12 @@ evalo''Def =
     where
       [st, fm, u, x, y, z, v, w] = map V ["st", "fm", "u", "x", "y", "z", "v", "w"]
 
-evalo''' :: [Def]
+evalo''' :: [Def G X]
 evalo''' = evalo'''Def : ando ++ oro ++ noto ++ elemo
 
 -- ando/oro first
 -- uses elemo
-evalo'''Def :: Def
+evalo'''Def :: Def G X
 evalo'''Def =
     ( Def "evalo" ["st", "fm", "u"]
       (
@@ -192,7 +194,7 @@ evalo'''Def =
 
 
 -- table implementation of ando/oro
-plainEvalo :: [Def]
+plainEvalo :: [Def G X]
 plainEvalo =
     plainEvaloDef : ando ++ oro ++ noto ++ elemo
   where
@@ -226,7 +228,7 @@ plainEvalo =
       )
     [x, y, v] = map V ["x", "y", "v"]
 
-plainEvaloDef :: Def
+plainEvaloDef :: Def G X
 plainEvaloDef =
     ( Def "evalo" ["st", "fm", "u"]
       (
@@ -259,12 +261,12 @@ plainEvaloDef =
     where
       [st, fm, u, x, y, v, w, z] = map V ["st", "fm", "u", "x", "y", "v", "w", "z"]
 
-evalo :: [Def]
+evalo :: [Def G X]
 evalo = evaloDef : ando ++ oro ++ noto ++ assoco
 
 -- ando/oro last
 -- uses assoco
-evaloDef :: Def
+evaloDef :: Def G X
 evaloDef =
     ( Def "evalo" ["st", "fm", "u"]
       (

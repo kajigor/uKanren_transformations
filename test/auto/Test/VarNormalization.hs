@@ -3,8 +3,10 @@ module Test.VarNormalization where
 import Transformer.VarNormalization
 import Test.Helper  (test, assertCustom1)
 import Syntax
+import Def
+import Program
 import Program.List (appendo)
-import Program ( stdlibPrograms )
+import Programs ( stdlibPrograms )
 import Text.Printf (printf)
 
 x, y, z, q0, q1, q2, q3, x0, x1, x2, x3 :: Term [Char]
@@ -79,7 +81,7 @@ unit_uniqueUnification = do
       test (\g -> fst $ uniqueVarGoal g [])
 
 unit_allVarsDefined = do
-    mapM_ runTest Program.stdlibPrograms
+    mapM_ runTest stdlibPrograms
   where
     runTest p =
       assertCustom1 (printf "All vars defined\n%s\n" (show p)) allVarsDefined p
@@ -95,7 +97,7 @@ unit_notAllVarsDefined = do
       assertCustom1 (printf "Not all vars defined\n%s\n" (show p)) (not . allVarsDefined) p
 
 unit_allRelationsDefined = do
-    mapM_ runTest Program.stdlibPrograms
+    mapM_ runTest stdlibPrograms
   where
     runTest p =
       assertCustom1 (printf "All relations defined\n%s\n" (show p)) allRelationsDefined p

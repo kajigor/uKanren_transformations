@@ -4,6 +4,7 @@ import CPD.LocalControl
 import Program.List (maxLengtho, maxMino)
 import qualified Program.PropEval
 import Syntax
+import Program
 import System.FilePath (takeBaseName)
 import qualified Transformer.CPD
 
@@ -22,8 +23,8 @@ runMaxMin = do
 runPropEval = do
   transform "propFirstNando" Program.PropEval.nandoFirstQuery Nothing Deterministic
   transform "propFirstPlain" Program.PropEval.plainFirstQuery Nothing Deterministic
-  transform "propLastPlain" Program.PropEval.plainLastQuery Nothing Deterministic
-  transform "propLastNando" Program.PropEval.nandoLastQuery Nothing Deterministic
+  transform "propLastPlain"  Program.PropEval.plainLastQuery Nothing Deterministic
+  transform "propLastNando"  Program.PropEval.nandoLastQuery Nothing Deterministic
 
 run :: IO ()
 run = do

@@ -1,6 +1,8 @@
 module Program.Bottles where
 
 import Syntax
+import Program
+import Def
 
 true = C "true" []
 
@@ -19,19 +21,19 @@ query' =
 
 queryEq = Program fancyEq $ fresh ["x", "y"] (call "fancyEq" [V "x", V "y", true])
 
-definition :: [Def]
+definition :: [Def G X]
 definition = definitionDef : bottles
 
-definitionDef :: Def
+definitionDef :: Def G X
 definitionDef =
     Def "query" ["q", "res"] (
       call "capacities1" [V "q"] &&& call "checkAnswer" [V "res", V "q", seven, true])
 
 
-add :: [Def]
+add :: [Def G X]
 add = [addDef]
 
--- addDef :: Def
+-- addDef :: Def G X
 -- addDef =
 --     Def "add" ["a", "b", "q113"] (
 --       ((V "a" === C "o" []) &&&
@@ -41,7 +43,7 @@ add = [addDef]
 --         (call "add" [V "x", C "s" [V "b"], V "q113"])))
 --     )
 
-addDef :: Def
+addDef :: Def G X
 addDef =
     ( Def "add" ["x", "y", "z"]
         (
@@ -53,10 +55,10 @@ addDef =
   where
     [x, y, z, x', z'] = map V ["x", "y", "z", "x'", "z'"]
 
-greater :: [Def]
+greater :: [Def G X]
 greater = [greaterDef]
 
-greaterDef :: Def
+greaterDef :: Def G X
 greaterDef =
     Def "greater" ["a", "b", "q109"] (
       ((V "a" === C "o" []) &&&
@@ -70,10 +72,10 @@ greaterDef =
             (call "greater" [V "x", V "y", V "q109"]))))))
     )
 
-sub :: [Def]
+sub :: [Def G X]
 sub = [subDef]
 
-subDef :: Def
+subDef :: Def G X
 subDef =
     Def "sub" ["a", "b", "q105"] (
       ((V "b" === C "o" []) &&&
@@ -88,10 +90,10 @@ subDef =
     )
 
 
-anotherBottle :: [Def]
+anotherBottle :: [Def G X]
 anotherBottle = [anotherBottleDef]
 
-anotherBottleDef :: Def
+anotherBottleDef :: Def G X
 anotherBottleDef =
     Def "anotherBottle" ["b", "q102"] (
       ((V "b" === C "fst" []) &&&
@@ -100,10 +102,10 @@ anotherBottleDef =
       (V "q102" === C "fst" []))
     )
 
-createEnv :: [Def]
+createEnv :: [Def G X]
 createEnv = [createEnvDef]
 
-createEnvDef :: Def
+createEnvDef :: Def G X
 createEnvDef =
     Def "createEnv" ["bottle", "lvl1", "lvl2", "q99"] (
       ((V "bottle" === C "fst" []) &&&
@@ -112,10 +114,10 @@ createEnvDef =
       (V "q99" === C "pair" [V "lvl2", V "lvl1"]))
     )
 
-fst' :: [Def]
+fst' :: [Def G X]
 fst' = [fst'Def]
 
-fst'Def :: Def
+fst'Def :: Def G X
 fst'Def =
     Def "fst'" ["x", "q96"] (
       fresh ["a", "q97"] (
@@ -123,10 +125,10 @@ fst'Def =
         (V "a" === V "q96"))
     )
 
-snd' :: [Def]
+snd' :: [Def G X]
 snd' = [snd'Def]
 
-snd'Def :: Def
+snd'Def :: Def G X
 snd'Def =
     Def "snd'" ["x", "q93"] (
       fresh ["q94", "a"] (
@@ -134,10 +136,10 @@ snd'Def =
         (V "a" === V "q93"))
     )
 
-getCapacity :: [Def]
+getCapacity :: [Def G X]
 getCapacity = getCapacityDef : fst' ++ snd'
 
-getCapacityDef :: Def
+getCapacityDef :: Def G X
 getCapacityDef =
     Def "get_capacity" ["capacities", "bottle", "q92"] (
       ((V "bottle" === C "fst" []) &&&
@@ -146,10 +148,10 @@ getCapacityDef =
       (call "snd'" [V "capacities", V "q92"]))
     )
 
-fancyEq :: [Def]
+fancyEq :: [Def G X]
 fancyEq = [fancyEqDef]
 
-fancyEqDef :: Def
+fancyEqDef :: Def G X
 fancyEqDef =
     Def "fancyEq" ["a", "b", "q85"] (
       ((V "a" === C "o" []) &&&
@@ -168,10 +170,10 @@ fancyEqDef =
     )
 
 
-checkStep :: [Def]
+checkStep :: [Def G X]
 checkStep = checkStepDef : fancyEq ++ getCapacity ++ anotherBottle
 
-checkStepDef :: Def
+checkStepDef :: Def G X
 checkStepDef =
     Def "checkStep" ["Env0", "step0", "capacities", "q48"] (
       fresh ["f", "s"] (
@@ -221,10 +223,10 @@ checkStepDef =
               (V "q48" === C "true" []))))))))))
     )
 
-doStep :: [Def]
+doStep :: [Def G X]
 doStep = doStepDef : getCapacity ++ createEnv ++ add ++ anotherBottle ++ greater
 
-doStepDef :: Def
+doStepDef :: Def G X
 doStepDef =
     Def "doStep" ["Env0", "step0", "capacities", "q15"] (
       fresh ["f", "s"] (
@@ -273,10 +275,10 @@ doStepDef =
     )
 
 
-isFinishEnv :: [Def]
+isFinishEnv :: [Def G X]
 isFinishEnv = isFinishEnvDef : fancyEq
 
-isFinishEnvDef :: Def
+isFinishEnvDef :: Def G X
 isFinishEnvDef =
     Def "isFinishEnv" ["Env0", "reqLvl", "q8"] (
       fresh ["f", "s"] (
@@ -290,10 +292,10 @@ isFinishEnvDef =
           (V "q8" === V "q10"))))))
     )
 
-checkAnswer' :: [Def]
+checkAnswer' :: [Def G X]
 checkAnswer' = checkAnswer'Def : isFinishEnv ++ checkStep ++ doStep
 
-checkAnswer'Def :: Def
+checkAnswer'Def :: Def G X
 checkAnswer'Def =
     Def "checkAnswer'" ["Env0", "answer", "capacities", "reqLvl", "q1"] (
       ((V "answer" === C "nil" []) &&&
@@ -310,25 +312,25 @@ checkAnswer'Def =
             (V "q1" === C "false" [])))))))
     )
 
-checkAnswer :: [Def]
+checkAnswer :: [Def G X]
 checkAnswer = checkAnswerDef : checkAnswer'
 
-checkAnswerDef :: Def
+checkAnswerDef :: Def G X
 checkAnswerDef =
     Def "checkAnswer" ["answer", "capacities", "reqLvl", "q7"] (
       call "checkAnswer'" [C "pair" [C "o" [], C "o" []], V "answer", V "capacities", V "reqLvl", V "q7"]
     )
 
-capacities1 :: [Def]
+capacities1 :: [Def G X]
 capacities1 = [capacities1Def]
 
-capacities1Def :: Def
+capacities1Def :: Def G X
 capacities1Def =
     Def "capacities1" ["q0"] (
       V "q0" === C "pair" [four, nine]
     )
 
-bottles :: [Def]
+bottles :: [Def G X]
 bottles =
   [ addDef
   , greaterDef

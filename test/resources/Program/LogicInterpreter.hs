@@ -1,6 +1,8 @@
 module Program.LogicInterpreter where
 
 import Syntax
+import Program
+import Def
 import Prelude hiding (succ, lookup)
 
 {-
@@ -9,8 +11,8 @@ test_check_subst =
     fresh ["subst", "fml", "res"] (call "check_subst" [V "subst", V "fml", V "res"])
 -}
 
-eqNatDef :: Def 
-eqNatDef = 
+eqNatDef :: Def G X
+eqNatDef =
     Def "eq_nat" ["a", "b", "q110"] (
       ((V "a" === C "z" []) &&&
       (((V "b" === C "z" []) &&&
@@ -27,11 +29,11 @@ eqNatDef =
             (call "eq_nat" [V "x", V "y", V "q110"]))))))
     )
 
-eqNat :: [Def]
+eqNat :: [Def G X]
 eqNat = [eqNatDef]
 
-lookupDef :: Def
-lookupDef = 
+lookupDef :: Def G X
+lookupDef =
     Def "lookup" ["s", "n", "q105"] (
       ((V "s" === C "nil" []) &&&
       (V "q105" === C "none" [])) |||
@@ -45,14 +47,14 @@ lookupDef =
             (call "lookup" [V "xs", V "n", V "q105"])))))))
     )
 
-lookup :: [Def]
-lookup = lookupDef : eqNat ++ lookup 
+lookup :: [Def G X]
+lookup = lookupDef : eqNat ++ lookup
 
-totalDisj :: [Def]
+totalDisj :: [Def G X]
 totalDisj = [totalDisjDef]
 
-totalDisjDef :: Def 
-totalDisjDef = 
+totalDisjDef :: Def G X
+totalDisjDef =
     Def "total_disj" ["a", "b", "q98"] (
       ((V "a" === C "true" []) &&&
       (((V "b" === C "true" []) &&&
@@ -66,11 +68,11 @@ totalDisjDef =
       (V "q98" === C "false" []))))
     )
 
-totalConj :: [Def]
+totalConj :: [Def G X]
 totalConj = [totalConjDef]
 
-totalConjDef :: Def 
-totalConjDef = 
+totalConjDef :: Def G X
+totalConjDef =
     Def "total_conj" ["a", "b", "q91"] (
       ((V "a" === C "true" []) &&&
       (((V "b" === C "true" []) &&&
@@ -84,11 +86,11 @@ totalConjDef =
       (V "q91" === C "false" []))))
     )
 
-eval :: [Def]
-eval = evalDef : lookup ++ eval ++ totalConj ++ totalDisj 
-  
-evalDef :: Def 
-evalDef = 
+eval :: [Def G X]
+eval = evalDef : lookup ++ eval ++ totalConj ++ totalDisj
+
+evalDef :: Def G X
+evalDef =
     Def "eval" ["subst", "expr", "q65"] (
       ((V "expr" === C "i" []) &&&
       (V "q65" === C "some" [C "true" []])) |||
@@ -147,11 +149,11 @@ evalDef =
                         (call "total_disj" [V "a", V "b", V "q89"])))))))))))))))
     )
 
-append :: [Def]
+append :: [Def G X]
 append = [appendDef]
 
-appendDef :: Def 
-appendDef = 
+appendDef :: Def G X
+appendDef =
     Def "append" ["a", "b", "q61"] (
       ((V "a" === C "nil" []) &&&
       (V "b" === V "q61")) |||
@@ -162,11 +164,11 @@ appendDef =
             (call "append" [V "xs", V "b", V "q63"])))))
     )
 
-remove :: [Def]
-remove = removeDef : eqNat 
+remove :: [Def G X]
+remove = removeDef : eqNat
 
-removeDef :: Def 
-removeDef = 
+removeDef :: Def G X
+removeDef =
     Def "remove" ["v", "l", "q54"] (
       ((V "l" === C "nil" []) &&&
       (V "q54" === C "nil" [])) |||
@@ -182,11 +184,11 @@ removeDef =
               (V "q54" === C "%" [V "x", V "nl"])))))))))
     )
 
-removeRepeats :: [Def]
+removeRepeats :: [Def G X]
 removeRepeats = removeRepeatsDef : remove
 
-removeRepeatsDef :: Def 
-removeRepeatsDef = 
+removeRepeatsDef :: Def G X
+removeRepeatsDef =
     Def "remove_repeats" ["l", "q48"] (
       ((V "l" === C "nil" []) &&&
       (V "q48" === C "nil" [])) |||
@@ -199,11 +201,11 @@ removeRepeatsDef =
               (call "remove_repeats" [V "q52", V "q50"])))))))
     )
 
-allVars :: [Def]
+allVars :: [Def G X]
 allVars = allVarsDef : append
 
-allVarsDef :: Def 
-allVarsDef = 
+allVarsDef :: Def G X
+allVarsDef =
     Def "all_vars" ["e", "q37"] (
       ((V "e" === C "i" []) &&&
       (V "q37" === C "nil" [])) |||
@@ -229,11 +231,11 @@ allVarsDef =
             (call "append" [V "q45", V "q46", V "q37"])))))
     )
 
-check :: [Def]
-check = checkDef : eqNat 
+check :: [Def G X]
+check = checkDef : eqNat
 
-checkDef :: Def 
-checkDef = 
+checkDef :: Def G X
+checkDef =
     Def "check" ["subst", "vars", "q18"] (
       ((V "vars" === C "nil" []) &&&
       (((V "subst" === C "nil" []) &&&
@@ -256,11 +258,11 @@ checkDef =
                (V "q18" === V "q27"))))))))))
     )
 
-checkSubst :: [Def]
+checkSubst :: [Def G X]
 checkSubst = checkSubstDef : allVars ++ removeRepeats ++ check
 
-checkSubstDef :: Def 
-checkSubstDef = 
+checkSubstDef :: Def G X
+checkSubstDef =
     Def "check_subst" ["subst", "expr", "q36"] (
       fresh ["q32"] (
         (fresh ["q34"] (
@@ -268,11 +270,11 @@ checkSubstDef =
           (call "remove_repeats" [V "q34", V "q32"]))) &&&
         (call "check" [V "subst", V "q32", V "q36"])))
 
-evalAndCheck :: [Def]
+evalAndCheck :: [Def G X]
 evalAndCheck = evalAndCheckDef : eval ++ checkSubst
 
-evalAndCheckDef :: Def 
-evalAndCheckDef = 
+evalAndCheckDef :: Def G X
+evalAndCheckDef =
     Def "eval_and_check" ["subst", "expr", "q11"] (
       fresh ["q12"] (
         (call "eval" [V "subst", V "expr", V "q12"]) &&&
@@ -288,11 +290,11 @@ evalAndCheckDef =
               (V "q11" === C "none" [])))))))))
     )
 
-checkAndEval :: [Def]
-checkAndEval = checkAndEvalDef : checkSubst ++ eval 
+checkAndEval :: [Def G X]
+checkAndEval = checkAndEvalDef : checkSubst ++ eval
 
-checkAndEvalDef :: Def  
-checkAndEvalDef = 
+checkAndEvalDef :: Def G X
+checkAndEvalDef =
     Def "check_and_eval" ["subst", "expr", "q4"] (
       fresh ["q5"] (
         (call "check_subst" [V "subst", V "expr", V "q5"]) &&&
@@ -308,32 +310,32 @@ checkAndEvalDef =
         (V "q4" === C "none" []))))
     )
 
-expr1 :: [Def]
+expr1 :: [Def G X]
 expr1 = [expr1Def]
 
-expr1Def :: Def 
+expr1Def :: Def G X
 expr1Def = Def "expr1" ["q3"] (V "q3" === C "o" [])
 
-expr2 :: [Def]
+expr2 :: [Def G X]
 expr2 = [expr2Def]
 
-expr2Def :: Def 
+expr2Def :: Def G X
 expr2Def = Def "expr2" ["q2"] (V "q2" === C "disj" [C "var" [C "z" []], C "i" []])
 
-expr3 :: [Def]
+expr3 :: [Def G X]
 expr3 = [expr3Def]
 
-expr3Def :: Def 
-expr3Def = 
+expr3Def :: Def G X
+expr3Def =
     Def "expr3" ["q1"] (
       V "q1" === C "conj_" [C "var" [C "z" []], C "i" []]
     )
 
-expr4 :: [Def]
+expr4 :: [Def G X]
 expr4 = [expr4Def]
 
-expr4Def :: Def
-expr4Def = 
+expr4Def :: Def G X
+expr4Def =
   Def "expr4" ["q0"] (
     V "q0" === C "disj" [C "conj_" [C "var" [C "z" []], C "var" [C "s" [C "z" []]]], C "conj_" [C "var" [C "s" [C "s" [C "z" []]]], C "not_" [C "var" [C "s" [C "s" [C "s" [C "z" []]]]]]]]
   )

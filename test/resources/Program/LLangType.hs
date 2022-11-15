@@ -1,6 +1,8 @@
 module Program.LLangType where
 
 import Syntax
+import Program
+import Def
 import Program.Bool
 import Program.List
 import Program.Option
@@ -16,7 +18,7 @@ integer = C "integer" []
 boolean :: Term a
 boolean = C "boolean" []
 
-typeEqDef :: Def
+typeEqDef :: Def G X
 typeEqDef =
     ( Def "typeEq" ["x", "y", "q86"]
       ( fresh ["q87"]
@@ -33,10 +35,10 @@ typeEqDef =
   where
     [x, y, q86, q87] = map V ["x", "y", "q86", "q87"]
 
-typeEq :: [Def]
+typeEq :: [Def G X]
 typeEq = [typeEqDef]
 
-typecheckDef :: Def
+typecheckDef :: Def G X
 typecheckDef =
     ( Def "typecheck_" ["gamma", "term", "q0"]
       (
@@ -204,5 +206,5 @@ typecheckDef =
             "q44", "q48", "q51", "q54", "q57", "q58", "c", "t", "e", "c'", "t'", "e'",
             "q64", "q67", "q69", "q72", "q75", "b", "q80", "v'"]
 
-typecheck :: [Def]
+typecheck :: [Def G X]
 typecheck = typecheckDef : nthOpt ++ typeEq

@@ -10,6 +10,8 @@ import           Generalization     (generalizeGoals)
 import           Prelude            hiding (or)
 import qualified Subst
 import           Syntax
+import           Def
+import           Program
 import           Unfold             (oneStepUnfold, unifyStuff, normalize)
 import           Util.Miscellaneous (fst3)
 import qualified Environment as Env
@@ -24,7 +26,7 @@ data PDTree = Fail
             | Split [PDTree] [G S] Subst.Subst
             deriving (Show, Eq)
 
-topLevel :: Program -> (PDTree, G S, [S])
+topLevel :: Program G X -> (PDTree, G S, [S])
 topLevel (Program defs goal) =
     let env = Env.fromDefs defs in
     let ((logicGoal, _), env') = runState (E.preEval goal) env in

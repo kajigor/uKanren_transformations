@@ -7,17 +7,17 @@ import Text.Megaparsec
     ( (<|>), (<?>), many, sepBy, sepBy1, some, MonadParsec(try) )
 import Syntax
     ( G((:=:), Invoke, Fresh),
-      Program(..),
-      Def(..),
       Term(..),
       X,
       unsafeConj,
       unsafeDisj )
+import Def
+import Program
 import Parser.Lexer
     ( sc, symbol, roundBr, boxBr, lIdentifier, uIdentifier, comma )
 import Parser.Data ( Parser )
 
-parseProgramWithImports :: Parser ([String], Program)
+parseProgramWithImports :: Parser ([String], Program G X)
 parseProgramWithImports = do
     imports <- many parseImport
     program <- parseProg
@@ -141,7 +141,7 @@ parseQuery = do
   <?> "parseQuery"
 
 -- definition
-parseDef :: Parser Def
+parseDef :: Parser (Def G X)
 parseDef = do
   name <- ident
   args <- many ident
@@ -152,7 +152,7 @@ parseDef = do
   <?> "parseDef"
 
 -- program
-parseProg :: Parser Program
+parseProg :: Parser (Program G X)
 parseProg =
   Program <$> many parseDef <*> (postEval [] <$> parseQuery)
   <?> "parseProg"

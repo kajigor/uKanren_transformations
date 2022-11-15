@@ -5,6 +5,7 @@ import qualified Definitions as Defs
 import qualified VarInterpretation as VI
 import qualified FreshNames as FN
 import Syntax
+import Def
 
 data Env = Env { getDefs :: Defs.Definitions
                , getInterp :: VI.Interpretation
@@ -13,19 +14,19 @@ data Env = Env { getDefs :: Defs.Definitions
           -- deriving (Show, Ord, Eq)
           deriving (Ord, Eq)
 
-instance Show Env where 
+instance Show Env where
      show = const "env"
 
 empty :: Env
 empty = Env Defs.empty VI.empty FN.defaultNames
 
-updateDef :: Env -> Def -> Env
+updateDef :: Env -> Def G X -> Env
 updateDef (Env p i d) def@(Def name _ _) = Env (Defs.insert name def p) i d
 
-updateDefs :: Env -> [Def] -> Env
+updateDefs :: Env -> [Def G X] -> Env
 updateDefs = foldl updateDef
 
-fromDefs :: [Def] -> Env
+fromDefs :: [Def G X] -> Env
 fromDefs = updateDefs empty
 
 updateNames :: Env -> FN.FreshNames -> Env
@@ -34,5 +35,5 @@ updateNames (Env p i _) = Env p i
 updateInterp :: Env -> VI.Interpretation -> Env
 updateInterp (Env p _ d) i = Env p i d
 
-getDef :: Env -> Name -> Def
+getDef :: Env -> Name -> Def G X
 getDef (Env p _ _) = Defs.getDef p

@@ -1,6 +1,8 @@
 module Program.PropEval where
 
 import Syntax
+import Program
+import Def
 import Program.Bool
 import Program.List
 import Program.Num
@@ -56,7 +58,7 @@ plainNotoDef =
     [x, y] = map V ["x", "y"]
 
 
-firstEvaloDef :: Def
+firstEvaloDef :: Def G X
 firstEvaloDef =
     ( Def "evalo" ["st", "fm", "u"]
       (
@@ -89,7 +91,7 @@ firstEvaloDef =
     where
       [st, fm, u, x, y, v, w, z] = map V ["st", "fm", "u", "x", "y", "v", "w", "z"]
 
-lastEvaloDef :: Def
+lastEvaloDef :: Def G X
 lastEvaloDef =
     ( Def "evalo" ["st", "fm", "u"]
       (
@@ -122,10 +124,10 @@ lastEvaloDef =
     where
       [st, fm, u, x, y, v, w, z] = map V ["st", "fm", "u", "x", "y", "v", "w", "z"]
 
-elemo :: [Def]
+elemo :: [Def G X]
 elemo = [elemoDef]
 
-elemoDef :: Def
+elemoDef :: Def G X
 elemoDef =
     ( Def "elemo" ["n", "s", "v"]
       (

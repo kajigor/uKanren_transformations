@@ -2,16 +2,18 @@ module Program.Sort where
 
 import Prelude hiding (succ, min, max)
 import Syntax
+import Program
+import Def
 import Program.Bool
 import Program.Num
 import Program.List hiding (a, b)
 
 query = Program sorto $ fresh ["x", "y"] (call "sorto" [V "x", V "y"])
 
-minmaxo :: [Def]
+minmaxo :: [Def G X]
 minmaxo = minmaxoDef : leo ++ gto
 
-minmaxoDef :: Def
+minmaxoDef :: Def G X
 minmaxoDef =
     ( Def "minmaxo" ["a", "b", "min", "max"]
       (
@@ -22,10 +24,10 @@ minmaxoDef =
   where
     [a, b, min, max] = map V ["a", "b", "min", "max"]
 
-smallesto :: [Def]
+smallesto :: [Def G X]
 smallesto = smallestoDef : minmaxo
 
-smallestoDef :: Def
+smallestoDef :: Def G X
 smallestoDef =
     ( Def "smallesto" ["l", "s", "l'"]
       (
@@ -42,10 +44,10 @@ smallestoDef =
   where
     [l, s, l', h, t, s', t', max] = map V ["l", "s", "l'", "h", "t", "s'", "t'", "max"]
 
-sorto :: [Def]
+sorto :: [Def G X]
 sorto = sortoDef : smallesto
 
-sortoDef :: Def
+sortoDef :: Def G X
 sortoDef =
     ( Def "sorto" ["x", "y"]
       (

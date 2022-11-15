@@ -6,6 +6,8 @@
 module FinalTagless.Syntax where
 
 import qualified Syntax
+import qualified Def as D
+import qualified Program as P
 
 import Text.Printf (printf)
 import Data.List (intercalate)
@@ -24,7 +26,7 @@ class Goal v termRepr goalRepr | goalRepr -> termRepr where
   unif :: termRepr v -> termRepr v -> goalRepr v
   conj :: goalRepr v -> goalRepr v -> [goalRepr v] -> goalRepr v
   disj :: goalRepr v -> goalRepr v -> [goalRepr v] -> goalRepr v
-  fresh :: String -> goalRepr v -> goalRepr v
+  fresh :: v -> goalRepr v -> goalRepr v
   call :: String -> [termRepr v] -> goalRepr v
 
   safeConj :: goalRepr v -> [goalRepr v] -> goalRepr v
@@ -35,14 +37,14 @@ class Goal v termRepr goalRepr | goalRepr -> termRepr where
   safeDisj x [] = x
   safeDisj x (y:xs) = disj x y xs
 
-  manyFresh :: [String] -> goalRepr v -> goalRepr v
+  manyFresh :: [v] -> goalRepr v -> goalRepr v
   manyFresh names goal = foldr fresh goal names
 
 instance (Show v) => Goal v S S where
   unif x y = S $ printf "%s === %s" (unS x) (unS y)
   conj x y xs = S $ printf "(%s)" (intercalate " /\\ " $ map unS (x : y : xs))
   disj x y xs = S $ printf "(%s)" (intercalate " \\/ " $ map unS (x : y : xs))
-  fresh x g = S $ printf "(fresh %s %s)" x (unS g)
+  fresh x g = S $ printf "(fresh %s %s)" (show x) (unS g)
   call n args = S $ printf "%s(%s)" n (intercalate ", " $ map unS args)
 
 
@@ -79,6 +81,6 @@ g2 = unDeep $ manyFresh ["x", "y"] (call "appendo" [var "x", var "y", con "nil" 
 
 g3 = unDeep $ manyFresh ["x", "y", "z"] $  conj (unif (var "x") (var "y")) (unif (var "y") (var "z")) [unif (var "x") (var "z")]
 
-program3 = Syntax.Program [] g3
+program3 = P.Program [] g3
 
-program1 = Syntax.Program [Syntax.Def "appendo" ["x", "y", "z"] g1] g2
+program1 = P.Program [D.Def "appendo" ["x", "y", "z"] g1] g2

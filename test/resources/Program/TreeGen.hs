@@ -1,13 +1,15 @@
 module Program.TreeGen where
 
 import Syntax
+import Program
+import Def
 import Prelude hiding (repeat)
 
-eqNat :: [Def]
+eqNat :: [Def G X]
 eqNat = [eqNatDef]
 
-eqNatDef :: Def
-eqNatDef = 
+eqNatDef :: Def G X
+eqNatDef =
     Def "eq_nat" ["n1", "n2", "q11"] (
       fresh ["q12"] (
         (V "q12" === C "pair" [V "n1", V "n2"]) &&&
@@ -24,11 +26,11 @@ eqNatDef =
            (call "eq_nat" [V "x", V "y", V "q11"])))))
     )
 
-eqOption :: [Def]
-eqOption = eqOptionDef : eqNat 
+eqOption :: [Def G X]
+eqOption = eqOptionDef : eqNat
 
-eqOptionDef :: Def 
-eqOptionDef = 
+eqOptionDef :: Def G X
+eqOptionDef =
     Def "eq_option" ["a", "b", "q19"] (
       fresh ["q20"] (
         (V "q20" === C "pair" [V "a", V "b"]) &&&
@@ -45,11 +47,11 @@ eqOptionDef =
         (V "q19" === C "true" []))))
     )
 
-eqLists :: [Def]
-eqLists = eqListsDef : eqTree 
+eqLists :: [Def G X]
+eqLists = eqListsDef : eqTree
 
-eqListsDef :: Def 
-eqListsDef = 
+eqListsDef :: Def G X
+eqListsDef =
     Def "eq_lists" ["l1", "l2", "q27"] (
       fresh ["q28"] (
         (V "q28" === C "pair" [V "l1", V "l2"]) &&&
@@ -72,10 +74,10 @@ eqListsDef =
         (V "q27" === C "true" []))))
     )
 
-eqTree :: [Def]
+eqTree :: [Def G X]
 eqTree = eqTreeDef : eqOption ++ eqLists
 
-eqTreeDef :: Def
+eqTreeDef :: Def G X
 eqTreeDef =
   Def "eq_tree" ["t1", "t2", "q53"] (
     fresh ["a1", "c1"] (
@@ -90,11 +92,11 @@ eqTreeDef =
             ((V "q45" === C "true" []) &&&
             (V "q53" === V "q46")))))))))
 
-repeat :: [Def]
+repeat :: [Def G X]
 repeat = [repeatDef]
 
-repeatDef :: Def 
-repeatDef = 
+repeatDef :: Def G X
+repeatDef =
     Def "repeat" ["e", "n", "q0"] (
       ((V "n" === C "o" []) &&&
       (V "q0" === C "nil" [])) |||
@@ -105,11 +107,11 @@ repeatDef =
             (call "repeat" [V "e", V "x", V "q2"])))))
     )
 
-treeGenerator :: [Def]
+treeGenerator :: [Def G X]
 treeGenerator = treeGeneratorDef : repeat
 
-treeGeneratorDef :: Def 
-treeGeneratorDef = 
+treeGeneratorDef :: Def G X
+treeGeneratorDef =
     Def "tree_generator" ["n", "q10"] (
       ((V "n" === C "o" []) &&&
       (V "q10" === C "node" [C "none" [], C "nil" []])) |||
@@ -121,13 +123,13 @@ treeGeneratorDef =
               (call "tree_generator" [V "x", V "q8"]) &&&
               (call "repeat" [V "q8", V "n", V "q6"])))))))
     )
-  
 
-treeGen :: [Def]
-treeGen = treeGenerator ++ eqTree 
 
-env :: String 
-env = 
+treeGen :: [Def G X]
+treeGen = treeGenerator ++ eqTree
+
+env :: String
+env =
   "open MiniKanren\nopen MiniKanrenStd\ntype 'a0 gnat =\n  | O \n  | S of 'a0 \nlet rec fmap fa0 = function | O -> O | S a0 -> S (fa0 a0)\nmodule For_gnat =\n  (Fmap)(struct\n           let rec fmap fa0 = function | O -> O | S a0 -> S (fa0 a0)\n           type 'a0 t = 'a0 gnat\n         end)\nlet rec o () = inj (For_gnat.distrib O)\nand s x__0 = inj (For_gnat.distrib (S x__0))\ntype ('a1, 'a0) gtree =\n  | Node of 'a1 * 'a0 \nlet rec fmap fa1 fa0 =\n  function | Node (a1_0, a0_1) -> Node ((fa1 a1_0), (fa0 a0_1))\nmodule For_gtree =\n  (Fmap2)(struct\n            let rec fmap fa1 fa0 =\n              function | Node (a1_0, a0_1) -> Node ((fa1 a1_0), (fa0 a0_1))\n            type ('a1, 'a0) t = ('a1, 'a0) gtree\n          end)\nlet rec node x__0 x__1 = inj (For_gtree.distrib (Node (x__0, x__1)))"
 
 

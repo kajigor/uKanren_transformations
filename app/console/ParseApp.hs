@@ -1,6 +1,7 @@
 module ParseApp where
 
 import Syntax
+import Program
 import Text.Printf (printf)
 import Util.File (checkIfFileExists, failIfNotExist, prologExt)
 import qualified Transformer.MkToProlog

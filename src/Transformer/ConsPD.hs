@@ -11,6 +11,8 @@ import           Printer.ConsPDTree     ()
 import           Purification
 import           Residualization        (vident)
 import           Syntax
+import           Def
+import           Program
 import           System.FilePath        ((<.>), (</>))
 import           System.Process         (system)
 import           Text.Printf
@@ -19,17 +21,17 @@ import           Util.Miscellaneous     (escapeTick)
 import           Util.File              (createDirRemoveExisting)
 import NormalizedSyntax (makeNormal, normalizeProg)
 
-data TransformResult = Result { original :: [Def]
+data TransformResult = Result { original :: [Def G X]
                               , tree :: ConsPD.ConsPDTree
                               , simplifiedTree :: ConsPD.ConsPDTree
                               , names :: [X]
-                              , beforePurification :: Maybe (G X, [X], [Def])
-                              , purified :: Maybe (G X, [X], [Def])
+                              , beforePurification :: Maybe (G X, [X], [Def G X])
+                              , purified :: Maybe (G X, [X], [Def G X])
                               }
 
-type Transformer = Program -> (ConsPD.ConsPDTree, G S, [S])
+type Transformer = Program G X -> (ConsPD.ConsPDTree, G S, [S])
 
-runTransformation :: Program -> Transformer -> TransformResult
+runTransformation :: Program G X -> Transformer -> TransformResult
 runTransformation goal@(Program original _) transformer =
   let transformed@(tree, logicGoal, names) = transformer goal in
   let namesX = vident <$> reverse names in
@@ -43,16 +45,16 @@ runTransformation goal@(Program original _) transformer =
   else
     Result original tree simplifiedTree namesX Nothing Nothing
 
-toOcanren :: FilePath -> Program -> [String] -> IO ()
+toOcanren :: FilePath -> Program G X -> [String] -> IO ()
 toOcanren fileName (Program defs goal) names =
   OC.topLevel fileName "topLevel" Nothing (goal, names, defs)
 
 runConsPD l = Transformer.ConsPD.transform "test/out/consPD" Nothing (ConsPD.topLevel l)
 
-runConsPD' :: [Char] -> FilePath -> Program -> IO ()
+runConsPD' :: [Char] -> FilePath -> Program G X -> IO ()
 runConsPD' outDir = Transformer.ConsPD.transform outDir Nothing (ConsPD.topLevel (-1))
 
-transform :: [Char] -> Maybe String -> (Program -> (ConsPD.ConsPDTree, G S, [S])) -> FilePath -> Program -> IO ()
+transform :: [Char] -> Maybe String -> (Program G X -> (ConsPD.ConsPDTree, G S, [S])) -> FilePath -> Program G X -> IO ()
 transform outDir env function filename prg = do
   let norm = normalizeProg prg
   -- print norm

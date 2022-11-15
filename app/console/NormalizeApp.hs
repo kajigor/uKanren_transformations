@@ -2,8 +2,9 @@ module NormalizeApp where
 
 import NormalizedSyntax ( normalizeProg, toSyntax )
 import qualified Syntax
+import Program
 
-runWithParser :: (t -> IO (Either String Syntax.Program)) -> t -> IO ()
+runWithParser :: (t -> IO (Either String (Program Syntax.G Syntax.X))) -> t -> IO ()
 runWithParser parser fileName = do
   res <- parser fileName
   case res of

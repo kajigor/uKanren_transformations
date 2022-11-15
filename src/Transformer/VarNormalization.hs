@@ -3,6 +3,8 @@
 module Transformer.VarNormalization where
 
 import Syntax
+import Program
+import Def
 import Control.Monad.State (State (..), evalState, get, put, modify, runState)
 import Control.Monad.Reader ( Reader, runReader, ask )
 import qualified Data.Set as Set
@@ -48,7 +50,7 @@ uniqueVarGoal goal boundArgs =
       put ((x, x') : varMap, next + 1)
       Fresh x' <$> go g
 
-uniqueVarRename :: Program -> Program
+uniqueVarRename :: Program G X -> Program G X
 uniqueVarRename (Program defs goal) =
     let defs' = map uniqueDef defs in
     let goal' = uniqueGoal goal in
@@ -60,7 +62,7 @@ uniqueVarRename (Program defs goal) =
     uniqueGoal goal =
       fst $ uniqueVarGoal goal []
 
-allVarsDefined :: Program -> Bool
+allVarsDefined :: Program G X -> Bool
 allVarsDefined (Program defs goal) =
     and (checkGoal goal [] : [checkDef def | def <- defs])
   where
@@ -95,7 +97,7 @@ allVarsDefined (Program defs goal) =
         go (V x) = [x]
         go (C _ xs) = concatMap go xs
 
-allRelationsDefined :: Program -> Bool
+allRelationsDefined :: Program G X -> Bool
 allRelationsDefined (Program defs goal) =
     let signatures = [ (name, length args) | Def name args _ <- defs ] in
     and (checkGoal goal signatures : [checkDef def signatures | def <- defs])
@@ -118,11 +120,11 @@ allRelationsDefined (Program defs goal) =
     checkDef (Def _ _ goal) =
       checkGoal goal
 
-normalize :: Program -> Program
+normalize :: Program G X -> Program G X
 normalize (Program defs goal) =
     Program (map normalizeDef defs) (normalizeGoal goal)
   where
-    normalizeDef :: Def -> Def
+    normalizeDef :: Def G X -> Def G X
     normalizeDef (Def name args goal) = Def name args (normalizeGoal goal)
 
     normalizeGoal :: G X -> G X

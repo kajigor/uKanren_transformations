@@ -2,16 +2,18 @@ module Program.Typing where
 
 import Prelude hiding (succ)
 import Syntax
+import Program
+import Def
 import Program.Pair
 import Program.List
 import Program.Num
 
 query = Program typo $ fresh ["t", "gamma", "x", "y"] (call "type" [V "t", V "gamma", C "arrow" [V "x", V "y"]])
 
-typo :: [Def]
+typo :: [Def G X]
 typo = typeDef : elemo
 
-typeDef :: Def
+typeDef :: Def G X
 typeDef =
     ( Def "type" ["term", "gamma", "ttype"]
       (
@@ -29,10 +31,10 @@ typeDef =
     [term, gamma, ttype, x, y, v, vt, t, t1, t2, t1type, t2type, gamma1] = map V ["term", "gamma", "ttype", "x", "y", "v", "vt", "t", "t1", "t2", "t1type", "t2type", "gamma1"]
 
 
-elemo :: [Def]
+elemo :: [Def G X]
 elemo = [elemoDef]
 
-elemoDef :: Def
+elemoDef :: Def G X
 elemoDef =
     ( Def "elemo" ["n", "s", "v"]
       (

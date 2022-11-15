@@ -1,6 +1,7 @@
 module EvalApp where
 
 import Syntax
+import Program
 import Stream
 import Eval
 import qualified Subst
@@ -19,9 +20,10 @@ reify s x@(V v) =
     Just t  -> reify s t
 reify s (C n ts) = C n $ map (reify s) ts
 
-toplevel :: Int -> (Term S -> String) -> Program -> [String]
+toplevel :: Int -> (Term S -> String) -> Program G X -> [String]
 toplevel n printer program =
-  map (\s -> printer $ reify s (V 0)) $ takeS n $ run program
+  let stream = run program in
+  map (\s -> printer $ reify s (V 0)) $ takeS n stream
 
 addVar p@(Program defs goal) =
   let (vars, g) = topLevelFreshVars goal in
@@ -39,7 +41,7 @@ runWithParser parser inputFile num = do
     Left err ->
       putStrLn err
     Right p ->
-      trace (show p) $
+      -- trace (show p) $
       mapM_ print (toplevel num show (addVar p))
 
 

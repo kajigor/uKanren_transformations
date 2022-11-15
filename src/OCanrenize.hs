@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module OCanrenize where
 
@@ -7,7 +8,8 @@ import Control.Applicative ((<|>))
 import Data.Char ( toLower )
 import Data.Maybe (fromMaybe)
 import Data.List (intercalate)
-import Syntax ( freshVars, Def(..), G(..), Term(..), X )
+import Syntax ( freshVars, G(..), Term(..), X )
+import Def (Def (..))
 import System.IO ( IOMode(WriteMode), hClose, openFile, hPutStrLn )
 import System.IO.Temp ( withSystemTempFile )
 import System.Process ( system )
@@ -79,7 +81,7 @@ ocanrenize :: String -> (G X, [String]) -> String
 ocanrenize topLevelName (g, args) =
   printf "let %s %s = %s" topLevelName (printArgs args) (ocanren g)
 
-ocanrenize' :: String -> (G X, [String], [Def]) -> String
+ocanrenize' :: String -> (G X, [String], [Def G X]) -> String
 ocanrenize' topLevelName input@(g, args, defs) =
     printf "let %s %s = %s %s" topLevelName (printArgs args) (printDefs defs) (ocanren g)
   where

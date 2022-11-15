@@ -3,6 +3,7 @@
 module Test.InductiveCheck where
 
 import Syntax
+import Program
 import InductiveCheck
 import Program.List
 import Program.Num

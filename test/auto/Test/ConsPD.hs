@@ -17,6 +17,7 @@ import           Program.Stlc           (evalo)
 import qualified Program.Unify
 import qualified Subst
 import           Syntax
+import           Program
 import qualified Transformer.ConsPD     as ConsPD
 import qualified Transformer.JustUnfold as JU
 import qualified Transformer.MkToProlog as Mk2Pl

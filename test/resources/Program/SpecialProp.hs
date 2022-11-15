@@ -1,12 +1,14 @@
-module Program.SpecialProp where 
+module Program.SpecialProp where
 
-import Syntax 
+import Syntax
+import Program
+import Def
 import Program.Bool
 import Program.List
 
 logintoQuery = Program loginto $ fresh ["s", "f", "r"] $ call "loginto" [V "s", V "f", trueo]
 
-loginto :: [Def]
+loginto :: [Def G X]
 loginto = [logintoDef, lookupo, ando, oro, noto]
   where
     logintoDef =

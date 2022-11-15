@@ -16,6 +16,7 @@ import           Program.Stlc           (evalo)
 import qualified Program.Typing
 import qualified Program.Unify
 import           Syntax
+import           Program
 import           System.FilePath        (takeBaseName)
 import qualified Transformer.ConsPD
 import qualified Transformer.JustUnfold

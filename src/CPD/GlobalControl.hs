@@ -14,6 +14,8 @@ import           Generalization     (Generalizer)
 import           Prelude            hiding (sequence)
 import qualified Subst
 import           Syntax
+import           Def
+import           Program
 import           Text.Printf        ( printf )
 import           Util.Miscellaneous
 import qualified Environment as Env
@@ -83,7 +85,7 @@ abstractChild ancs (subst, g, Just env) =
   let (abstracted, d') = abstract (Descend.Descend g ancs) g (Env.getFreshNames env) in
   map (\(g, gen) -> (subst, g, gen, Env.updateNames env d')) abstracted
 
-topLevel :: Program -> LC.Heuristic -> (GlobalTree, G S, [S])
+topLevel :: Program G X -> LC.Heuristic -> (GlobalTree, G S, [S])
 topLevel (Program defs goal) heuristic =
   let env = Env.fromDefs defs in
   let ((logicGoal, names), env') = runState (E.preEval goal) env in

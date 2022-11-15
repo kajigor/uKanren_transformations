@@ -16,6 +16,8 @@ import           Generalization
 import           Prelude            hiding (lookup)
 import qualified Subst
 import           Syntax
+import           Def
+import           Program
 import           Text.Printf
 import           Unfold             (oneStepUnfold, normalize, unifyStuff, getMaximumBranches)
 import qualified Environment as Env
@@ -135,7 +137,7 @@ resultants (Conj ch _ _)   = resultants ch
 resultants (Leaf ds s env) = [(s, map getCurr ds, Just env)]
 resultants Fail            = []
 
-topLevel :: Program -> Heuristic -> SldTree
+topLevel :: Program G X -> Heuristic -> SldTree
 topLevel (Program defs goal) heuristic =
   let env = Env.fromDefs defs in
   let ((logicGoal, _), env') = runState (E.preEval goal) env in

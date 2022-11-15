@@ -4,6 +4,8 @@ module FinalTagless.Deep where
 
 import FinalTagless.GoalSyntax
 import qualified Syntax
+import qualified Program as P
+import qualified Def as D
 
 newtype Deep v = Deep { unDeep :: Syntax.G v }
 
@@ -14,10 +16,6 @@ instance Goal v Deep where
   fresh x g = Deep $ Syntax.Fresh x (unDeep g)
   call n args = Deep $ Syntax.Invoke n args
 
+program3 = P.Program [] (unDeep g3)
 
-
-program3 :: Syntax.Program
-program3 = Syntax.Program [] (unDeep g3)
-
-program1 :: Syntax.Program
-program1 = Syntax.Program [Syntax.Def "appendo" ["x", "y", "z"] (unDeep g1)] (unDeep g2)
+program1 = P.Program [D.Def "appendo" ["x", "y", "z"] (unDeep g1)] (unDeep g2)

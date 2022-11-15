@@ -14,7 +14,8 @@ import qualified NormalizeApp
 import Util.File (failIfNotExist, isDir, getFiles, createDirRemoveExisting)
 import Util.Miscellaneous (mapLeft)
 import qualified Parser.Parser as Parser
-import Syntax (Program)
+import Syntax (X, G)
+import Program
 import Text.Printf (printf)
 
 data Transformation
@@ -144,7 +145,7 @@ main = do
       <> header "uKanren-tranformations"
       )
 
-chooseParser :: Parser.ParserType -> (String -> IO (Either String Program))
+chooseParser :: Parser.ParserType -> (String -> IO (Either String (Program G X)))
 chooseParser pType = \input -> do
   res <- Parser.importsParser pType input
   return $ mapLeft show res

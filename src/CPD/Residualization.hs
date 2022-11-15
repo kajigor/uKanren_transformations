@@ -5,6 +5,8 @@
 module CPD.Residualization where
 
 import Syntax
+import Def
+import Program
 import Text.Printf
 import Data.List
 import qualified Data.Set as Set
@@ -21,13 +23,13 @@ type Set = Set.Set
 
 type Definitions = [([G S], Name, [S])]
 
-residualizationTopLevel :: GlobalTree -> Program
+residualizationTopLevel :: GlobalTree -> Program G X
 residualizationTopLevel test =
   case residualizeGlobalTree test of
     defs@(Def name args _ : t) -> Program defs (Invoke name $ V <$> args)
     _ -> error "Residualiation failed: no defs generated"
 
-residualizeGlobalTree :: GlobalTree -> [Def]
+residualizeGlobalTree :: GlobalTree -> [Def G X]
 residualizeGlobalTree tree =
   let nodes = getNodes tree in
   let definitions = foldl (\defs gs -> fst3 (renameGoals gs defs) ) [] $ map fst nodes  in
@@ -130,7 +132,7 @@ isGroundTerm :: Term a -> Bool
 isGroundTerm (V _) = False
 isGroundTerm (C _ args) = all isGroundTerm args
 
-residualizeSldTree :: [G S] -> LC.SldTree -> Definitions -> Maybe Def
+residualizeSldTree :: [G S] -> LC.SldTree -> Definitions -> Maybe (Def G X)
 residualizeSldTree rootGoals tree definitions = do
   let (_, defName, rootVars) = fromMaybe (error (printf "Residualization failed: no definition found for\n%s\nDefs:\n%s\n" (show rootGoals) (show definitions))) $
                                find ((== rootGoals) . fst3) definitions

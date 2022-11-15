@@ -11,18 +11,18 @@ import           Eval                           (postEval)
 import Text.Megaparsec ( (<|>), many, some, MonadParsec(try) )
 import Syntax
     ( G((:=:), Invoke, Fresh),
-      Program(..),
-      Def(..),
       Term(..),
       X,
       unsafeDisj,
       unsafeConj',
       unsafeDisj' )
+import Def
+import Program
 import Parser.Data ( Parser )
 import Parser.Lexer
     ( sc, symbol, roundBr, angleBr, boxBr, curvyBr, identifier )
 
-parseProgramWithImports :: Parser ([String], Program)
+parseProgramWithImports :: Parser ([String], Program G X)
 parseProgramWithImports = do
     imports <- many parseImport
     program <- parseProg
@@ -165,7 +165,7 @@ parseQuery = do
 -----------------------------------------------------------------------------------------------------
 
 -- definition
-parseDef :: Parser Def
+parseDef :: Parser (Def G X)
 parseDef = do
   symbol "::"
   name <- ident
@@ -177,6 +177,6 @@ parseDef = do
 -----------------------------------------------------------------------------------------------------
 
 -- program
-parseProg :: Parser Program
+parseProg :: Parser (Program G X)
 parseProg =
   Program <$> many parseDef <*> (postEval [] <$> parseQuery)

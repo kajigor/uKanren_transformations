@@ -6,6 +6,7 @@ import           Data.Maybe
 import           Eval
 import qualified Subst
 import           Syntax
+import Program
 import           Unfold       (oneStepUnfold, unifyStuff, normalize)
 import qualified Environment as Env
 import Control.Monad.State
@@ -23,7 +24,7 @@ instance Ord a => Ord (IndWrap (Term a)) where
       isSubtree (C _ _) (V _) = False
       isSubtree x (C _ ts)    = any (isSubtree x) ts
 
-isInductive :: Program -> Bool
+isInductive :: Program G X -> Bool
 isInductive (Program defs goal) =
   let env = Env.fromDefs defs in
   let ((logicGoal, _), env') = runState (preEval goal) env in

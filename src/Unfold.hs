@@ -8,6 +8,7 @@ import           Embed               (variantCheck)
 import qualified Eval                as E
 import qualified Subst
 import           Syntax
+import Def
 import           Text.Printf         (printf)
 import           Util.Miscellaneous  (pinpoint, show')
 import qualified VarInterpretation   as VI
@@ -64,7 +65,7 @@ unifyStuff state gs =
       s <- E.unify  (Just state) t u
       go gs s conjs
 
-maximumBranches :: Def -> Int
+maximumBranches :: Def G X -> Int
 maximumBranches def@(Def _ args body) =
     let goal = fst $ evalState (E.preEval (fresh args body)) Env.empty in
     length $ evalState (oneStep (succeed goal) Subst.empty) Env.empty

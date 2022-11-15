@@ -2,11 +2,13 @@ module Program.PairBridgeBig where
 
 import Prelude hiding (succ, max)
 import Syntax
+import Program
+import Def
 
-greater :: [Def]
+greater :: [Def G X]
 greater = [greaterDef]
 
-greaterDef :: Def
+greaterDef :: Def G X
 greaterDef =
     Def "greater" ["a0", "b0", "q146"] (
       ((V "a0" === C "o" []) &&&
@@ -21,10 +23,10 @@ greaterDef =
     )
 
 
-grForPerson :: [Def]
+grForPerson :: [Def G X]
 grForPerson = [grForPersonDef]
 
-grForPersonDef :: Def
+grForPersonDef :: Def G X
 grForPersonDef =
   Def "grForPerson" ["x", "y", "q129"] (
     ((V "x" === C "a" []) &&&
@@ -58,10 +60,10 @@ grForPersonDef =
     (V "q129" === C "false" []))
   )
 
-max :: [Def]
+max :: [Def G X]
 max = maxDef : max
 
-maxDef :: Def
+maxDef :: Def G X
 maxDef =
     Def "max" ["a0", "b0", "q125"] (
       fresh ["q126"] (
@@ -72,10 +74,10 @@ maxDef =
         (V "b0" === V "q125"))))
     )
 
-add :: [Def]
+add :: [Def G X]
 add = [addDef]
 
-addDef :: Def
+addDef :: Def G X
 addDef =
     Def "add" ["a0", "b0", "q123"] (
       ((V "a0" === C "o" []) &&&
@@ -85,10 +87,10 @@ addDef =
         (call "add" [V "x", C "s" [V "b0"], V "q123"])))
     )
 
-eqForBool :: [Def]
+eqForBool :: [Def G X]
 eqForBool = [eqForBoolDef]
 
-eqForBoolDef :: Def
+eqForBoolDef :: Def G X
 eqForBoolDef =
   Def "eqForBool" ["a", "b", "q109"] (
     fresh ["q107", "q108"] (
@@ -112,10 +114,10 @@ eqForBoolDef =
   )
 
 
-eqForEnv :: [Def]
+eqForEnv :: [Def G X]
 eqForEnv = eqForEnvDef : eqForBool
 
-eqForEnvDef :: Def
+eqForEnvDef :: Def G X
 eqForEnvDef =
   Def "eqForEnv" ["x", "y", "q81"] (
     fresh ["l1", "a1", "b1", "c1", "d1"] (
@@ -150,10 +152,10 @@ eqForEnvDef =
   )
 
 
-checkPerson :: [Def]
+checkPerson :: [Def G X]
 checkPerson = checkPersonDef : eqForBool
 
-checkPersonDef :: Def
+checkPersonDef :: Def G X
 checkPersonDef =
     Def "checkPerson" ["Env", "person", "q79"] (
       fresh ["l", "a0", "b0", "c0", "d0"] (
@@ -169,10 +171,10 @@ checkPersonDef =
     )
 
 
-checkStep :: [Def]
+checkStep :: [Def G X]
 checkStep = checkStepDef : checkPerson ++ grForPerson
 
-checkStepDef :: Def
+checkStepDef :: Def G X
 checkStepDef =
   Def "checkStep" ["Env", "step", "q66"] (
     (fresh ["p"] (
@@ -195,10 +197,10 @@ checkStepDef =
           (V "q66" === V "q68")))))))
   )
 
-moveLight :: [Def]
+moveLight :: [Def G X]
 moveLight = [moveLightDef]
 
-moveLightDef :: Def
+moveLightDef :: Def G X
 moveLightDef =
     Def "moveLight" ["Env", "q61"] (
       fresh ["l", "a0", "b0", "c0", "d0"] (
@@ -211,10 +213,10 @@ moveLightDef =
           (V "q62" === C "true" []))))))
     )
 
-movePerson :: [Def]
+movePerson :: [Def G X]
 movePerson = [movePersonDef]
 
-movePersonDef :: Def
+movePersonDef :: Def G X
 movePersonDef =
     Def "movePerson" ["Env", "person", "q43"] (
       fresh ["l", "a0", "b0", "c0", "d0"] (
@@ -249,10 +251,10 @@ movePersonDef =
           (V "q57" === C "true" []))))))))
     )
 
-step :: [Def]
+step :: [Def G X]
 step = stepDef : step ++ movePerson ++ moveLight
 
-stepDef :: Def
+stepDef :: Def G X
 stepDef =
     Def "step" ["Env", "step", "q36"] (
       (fresh ["p"] (
@@ -269,10 +271,10 @@ stepDef =
             (call "moveLight" [V "q39", V "q36"])))))
     )
 
-times :: [Def]
+times :: [Def G X]
 times = [timesDef]
 
-timesDef :: Def
+timesDef :: Def G X
 timesDef =
     Def "times" ["p", "q31"] (
       ((V "p" === C "a" []) &&&
@@ -285,10 +287,10 @@ timesDef =
       (V "q31" === C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]))
     )
 
-getTime :: [Def]
+getTime :: [Def G X]
 getTime = getTimeDef : times ++ max
 
-getTimeDef :: Def
+getTimeDef :: Def G X
 getTimeDef =
     Def "getTime" ["Env", "q27"] (
       (fresh ["p"] (
@@ -302,28 +304,28 @@ getTimeDef =
             (call "max" [V "q28", V "q29", V "q27"])))))
     )
 
-start :: [Def]
+start :: [Def G X]
 start = [startDef]
 
-startDef :: Def
+startDef :: Def G X
 startDef =
     Def "start" ["q1"] (
       V "q1" === C "st" [C "true" [], C "true" [], C "true" [], C "true" [], C "true" []]
     )
 
-finish :: [Def ]
+finish :: [Def G X]
 finish = [finishDef]
 
-finishDef :: Def
+finishDef :: Def G X
 finishDef =
     Def "finish" ["q2"] (
       V "q2" === C "st" [C "false" [], C "false" [], C "false" [], C "false" [], C "false" []]
     )
 
-getAnswer' :: [Def]
+getAnswer' :: [Def G X]
 getAnswer' = getAnswer'Def : checkStep ++ step ++ add ++ getTime ++ finish ++ eqForEnv
 
-getAnswer'Def :: Def
+getAnswer'Def :: Def G X
 getAnswer'Def =
     Def "getAnswer'" ["answer", "Env", "q3"] (
       (fresh ["x", "xs"] (
@@ -357,10 +359,10 @@ getAnswer'Def =
          (V "q3" === C "none" []))))))
     )
 
-getAnswer :: [Def]
+getAnswer :: [Def G X]
 getAnswer = getAnswerDef : start ++ getAnswer'
 
-getAnswerDef :: Def
+getAnswerDef :: Def G X
 getAnswerDef =
     Def "getAnswer" ["answer", "q26"] (
       fresh ["q22"] (
@@ -369,10 +371,10 @@ getAnswerDef =
     )
 
 
-result :: [Def]
+result :: [Def G X]
 result = [resultDef]
 
-resultDef :: Def
+resultDef :: Def G X
 resultDef =
     Def "result" ["q0"] (
       V "q0" === C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "s" [C "o" []]]]]]]]]]]]]]]]]]

@@ -4,6 +4,8 @@ module NormalizedSyntax where
 
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import Syntax
+import Program
+import Def
 import Text.Printf
 import Control.Monad.State
 import Data.List.NonEmpty.Extra (fromList)
@@ -15,10 +17,10 @@ data Goal a = Goal (Disj a)
             deriving (Eq, Ord, Functor, Show)
 
 -- fresh names should be introduced on the top level of a disjunction
-data Disj a = Disj [Name] (NonEmpty (Conj a))
+data Disj a = Disj [a] (NonEmpty (Conj a))
             deriving (Eq, Ord, Functor, Show)
 
-data Conj a = Conj [Name] (NonEmpty (Base a))
+data Conj a = Conj [a] (NonEmpty (Base a))
             deriving (Eq, Ord, Functor, Show)
 
 data Base a = Unif (Term a) (Term a)
@@ -73,7 +75,7 @@ norm'' g@(_ :=: _) = toBase g
 norm'' (Fresh _ g) = error "Fresh on the base level"
 norm'' g = Left g
 
-normalizeProg :: Program -> Prg
+normalizeProg :: Program G X -> Prg
 normalizeProg (Program defs goal) =
   let d = mapM (\(Def name args body) -> do
             b <- normalize body
@@ -127,10 +129,10 @@ generateNewDef (Left g) = do
       (defs, n) <- get
       let potentialName = printf "rel_%d" n
       return (generateFreshName potentialName (map (\(Definition n _ _) -> n) defs))
-    args = fvg g
+    args = fv g
 
 
-toSyntax :: Prg -> Program
+toSyntax :: Prg -> Program G X
 toSyntax (Prg defs g) =
     Program definitions goal
   where
@@ -154,5 +156,5 @@ toSyntax (Prg defs g) =
 
     go (Goal disj) = disjToG disj
 
-makeNormal :: Program -> Program
+makeNormal :: Program G X -> Program G X
 makeNormal = toSyntax . normalizeProg

@@ -16,6 +16,7 @@ import           Program.Bool
 import           Program.List
 import           Program.Num
 import           Syntax
+import           Def
 import           Unfold
 import           Util.Miscellaneous
 import           Embed

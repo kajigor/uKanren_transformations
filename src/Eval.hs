@@ -7,6 +7,8 @@ import           Control.Monad
 import           Data.List
 import           Stream
 import           Syntax
+import           Program
+import           Def
 import qualified Data.Map.Strict as Map
 import qualified Subst
 import qualified VarInterpretation as VI
@@ -14,13 +16,6 @@ import qualified FreshNames as FN
 import qualified Environment as Env
 import Control.Monad.State
 import Data.List.NonEmpty (NonEmpty (..), fromList)
-
--- Envs
--- type Iota  = Map.Map X Ts
--- type Sigma = [(S, Ts)]
--- type Delta = [S]
--- type P     = Map.Map Name Def
--- type Gamma = (Defs.Definitions, VI.Interpretation, FN.FreshNames)
 
 unifyG :: (Subst.Subst -> S -> Ts -> Bool)
           -> Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
@@ -107,7 +102,7 @@ preEval goal = do
 
 postEval :: [X] -> G X -> G X
 postEval as goal =
-    let freshs = fvg goal \\ as in
+    let freshs = fv goal \\ as in
     foldr Fresh (go (freshs ++ as) goal) freshs
   where
     go vars (Conjunction x y gs) = unsafeConj $ go vars <$> (x : y : gs)
@@ -150,11 +145,9 @@ closeFresh as goal = goal
   --   surrFresh goal [] = goal
   --   surrFresh goal vs = foldr Fresh goal vs
 
-  --   getFresh goal as = fvg goal \\ as
+  --   getFresh goal as = fv goal \\ as
 
-
-
-topLevel :: Program -> Stream (Subst.Subst, FN.FreshNames)
+topLevel :: Program G X -> Stream (Subst.Subst, FN.FreshNames)
 topLevel (Program defs goal) =
   let env = Env.updateDefs Env.empty defs in
   let ((goal', _), env') = runState (preEval goal) env in
@@ -177,7 +170,7 @@ eval env s (Invoke f as) =
   eval env' s g'
 eval _ _ _ = error "Impossible case in eval"
 
-run :: Program -> Stream Subst.Subst
+run :: Program G X -> Stream Subst.Subst
 run (Program defs goal) =
   let env = Env.fromDefs defs in
   let ((goal',_), env') = runState (preEval goal) env in

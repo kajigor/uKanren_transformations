@@ -2,6 +2,8 @@ module Program.L where
 
 import Prelude hiding (succ)
 import Syntax
+import Program
+import Def
 import Program.List
 import Program.Num
 
@@ -9,7 +11,7 @@ query = Program typo $ fresh ["t", "gamma"] (call "type_" [V "t", V "gamma", jus
 query1 = Program typo $ fresh ["t"] (call "type_" [V "t", nil, just int])
 
 
-typo :: [Def]
+typo :: [Def G X]
 typo = typeDef : idx
 
 -- De Bruijn encoding for L lang
@@ -27,7 +29,7 @@ typo = typeDef : idx
 just x = C "some" [x]
 none = C "none" []
 
-typeDef :: Def
+typeDef :: Def G X
 typeDef =
     ( Def "type_" ["term", "gamma", "ttype"]
       (
@@ -50,10 +52,10 @@ typeDef =
       map V ["term", "gamma", "ttype", "x", "y", "v", "m", "n", "l", "r", "t", "t1", "bound", "body", "btype", "btype1", "cond", "thn", "els"]
 
 
-idx :: [Def]
+idx :: [Def G X]
 idx = [idxDef]
 
-idxDef :: Def
+idxDef :: Def G X
 idxDef =
     ( Def "idx" ["k", "xs", "v"]
       (
@@ -73,10 +75,10 @@ idxDef =
 int = C "integer" []
 bool = C "boolean" []
 
-elemo :: [Def]
+elemo :: [Def G X]
 elemo = [elemoDef]
 
-elemoDef :: Def
+elemoDef :: Def G X
 elemoDef =
     ( Def "elemo" ["n", "s", "v"]
       (

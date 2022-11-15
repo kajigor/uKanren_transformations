@@ -20,6 +20,8 @@ import           Program.Unify
 import           Purification
 import           Residualization
 import           Syntax
+import           Def
+import           Program
 import           System.FilePath          ((</>), (<.>))
 import           System.Process           (system)
 import           Text.Printf
@@ -27,14 +29,14 @@ import qualified Transformer.MkToProlog
 import qualified GHC.IO.Exception
 import Util.File ( createDirRemoveExisting, shortenFileName )
 
-data TransformResult = Result { original :: [Def]
+data TransformResult = Result { original :: [Def G X]
                               , globalTree :: GC.GlobalTree
                               , localTrees :: [([G S], LC.SldTree)]
-                              , beforePur :: Program
-                              , purified :: (G X, [X], [Def])
+                              , beforePur :: Program G X
+                              , purified :: (G X, [X], [Def G X])
                               }
 
-runTransformation :: Program -> LC.Heuristic -> TransformResult
+runTransformation :: Program G X -> LC.Heuristic -> TransformResult
 runTransformation goal@(Program original _) heuristic =
   let (globalTree, logicGoal, names) = GC.topLevel goal heuristic in
   let localTrees = GC.getNodes globalTree in
@@ -50,7 +52,7 @@ renderLocalTree :: FilePath -> [G S] -> LC.SldTree -> IO ()
 renderLocalTree localDir goal =
     printTree (localDir </> shortenFileName (show goal) <.> "dot")
 
-transform' :: FilePath -> FilePath -> Program -> Maybe String -> LC.Heuristic -> IO ()
+transform' :: FilePath -> FilePath -> Program G X -> Maybe String -> LC.Heuristic -> IO ()
 transform' outDir filename goal@(Program definitions _) env heuristic = do
     let path = outDir </> filename
     let localDir = path </> "local"
@@ -71,7 +73,7 @@ transform' outDir filename goal@(Program definitions _) env heuristic = do
 
     mapM_ generatePdf [path, localDir]
 
-transform :: FilePath -> Program -> Maybe String -> LC.Heuristic -> IO ()
+transform :: FilePath -> Program G X -> Maybe String -> LC.Heuristic -> IO ()
 transform = transform' "test/out/cpd"
 
 doOcanrenize = do

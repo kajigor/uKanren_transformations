@@ -1,12 +1,14 @@
 module Program.Map5 where
 
 import Syntax
+import Program
+import Def
 import Prelude hiding (succ)
 import Program.Num
 import Program.Bool
 import Program.List ((%), nil)
 
-map5Def :: Def
+map5Def :: Def G X
 map5Def =
     ( Def "map5" ["f", "i", "a", "xs"]
       (
@@ -19,13 +21,13 @@ map5Def =
       )
     )
 
-maxoDef :: Def
+maxoDef :: Def G X
 maxoDef =
     ( Def "maxo" ["x", "m"] (call "maxo1" [x, zero, m]))
   where
     [x, m] = map V ["x", "m"]
 
-maxo1Def :: Def
+maxo1Def :: Def G X
 maxo1Def =
     ( Def "maxo1" ["x", "n", "m" ]
       (
@@ -47,8 +49,8 @@ maxo1Def =
   where
     [x, m, n, h, t, z] = map V ["x", "m", "n", "h", "t", "z"]
 
-maxo1 :: [Def]
+maxo1 :: [Def G X]
 maxo1 = maxo1Def : leo ++ gto
 
-maxo :: [Def]
+maxo :: [Def G X]
 maxo = maxoDef : maxo1

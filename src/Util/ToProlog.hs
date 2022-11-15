@@ -1,11 +1,11 @@
 module Util.ToProlog where
 
 import Syntax
+import Def
 import Purification
 
 import Data.Char
 import Data.List
-import Data.List.NonEmpty (NonEmpty (..))
 
 import Text.ParserCombinators.Parsec
 
@@ -55,14 +55,14 @@ applyInFunc s (n, a) = (n, map (applySigma s) a)
 
 
 {-------------------------------------------}
-defToProlog :: Def -> Rules
+defToProlog :: Def G X -> Rules
 defToProlog (Def n a g) = map (\(s, f) -> (applyInFunc s (n, map V a), map (applyInFunc s) f)) $ goalToDNF g
 
 {-------------------------------------------}
 goalToProlog :: G X -> [Funcs]
 goalToProlog g = map (\(s, f) -> map (applyInFunc s) f) $ goalToDNF g
 
-defsToProlog :: [Def] -> String
+defsToProlog :: [Def G X] -> String
 defsToProlog defs =
   let rules = concatMap defToProlog defs in
   printRules rules
@@ -271,17 +271,17 @@ ruleToG v ((name, a ), b ) =
   let conjs2 = map (\(n,a) -> Invoke n a) b in
   let conjs  = conjs1 ++ conjs2 in
   let g      = if null conjs then success else foldr1 (&&&) conjs in
-  fresh (fvg g \\ v) g
+  fresh (fv g \\ v) g
 
 {-------------------------------------------}
-rulesToDef :: Rules -> Def
+rulesToDef :: Rules -> Def G X
 rulesToDef rs@(((n,a),_):_) =
   let v     = map (('z':) . show) [1..length a] in
   let disjs = map (ruleToG v) rs in
   Def n v $ foldr1 (|||) disjs
 
 {-------------------------------------------}
-prologToG :: String -> (G X, [String], [Def])
+prologToG :: String -> (G X, [String], [Def G X])
 prologToG pr =
   let rules@((((n,a),_):_):_) = sepRules $ normalizeRules $ getRules pr in
   let defs = map rulesToDef rules in

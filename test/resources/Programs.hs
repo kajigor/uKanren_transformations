@@ -1,10 +1,10 @@
-module Program (stdlibPrograms) where
+module Programs (stdlibPrograms) where
 
 import Program.Bool
 import Program.List
 import Program.Num
-import Syntax (success, Program (..))
-
+import Syntax (success)
+import Program (Program (..))
 
 stdlibPrograms =
   map (\defs -> Program defs success)

@@ -8,10 +8,12 @@ import           Data.List.NonEmpty     (NonEmpty (..), fromList)
 import qualified Data.Map.Strict        as Map
 import           Data.Maybe
 import qualified Data.Set               as Set
+import           Def
 import qualified Definitions            as Defs
 import qualified Eval                   as E
 import           Generalization         (Generalizer, generalizeGoals)
 import qualified Environment as Env
+import           Program
 import           Stream
 import qualified Subst
 import           Syntax
@@ -147,7 +149,7 @@ split gs1 gs2 = filter (not . null) $ split' gs1 gs2 where
           getDivedPref gs g = span (\(_,_,x) -> not $ weakCouple (g, x)) gs
 
 
-update :: (Defs.Definitions, FN.FreshNames) -> Def -> (Defs.Definitions, FN.FreshNames)
+update :: (Defs.Definitions, FN.FreshNames) -> Def G X -> (Defs.Definitions, FN.FreshNames)
 update (p, d) def =
   let (Env.Env p' _ d') = Env.updateDef (Env.Env p VI.empty d) def
   in  (p', d')

@@ -1,6 +1,8 @@
 module Program.Path where
 
 import Syntax
+import Program
+import Def
 import Prelude hiding (elem)
 
 querylength = Program pathTree $ fresh ["g", "a1", "a2", "a3", "a4", "a5"] (call "isPath" [C "%" [V "a1", C "%" [V "a2", C "%" [V "a3", C "%" [V "a4", C "%" [V "a5", C "nil" []]]]]], V "g", C "true" []])
@@ -23,10 +25,10 @@ queryElem1 = Program pathTree $ fresh ["x", "g"] (call "elem" [V "x", V "g", C "
 
 queryQueer = Program pathTree $ fresh ["x", "y", "z"] (call "eqPair" [V "x", V "y", C "false" []] &&& call "elem" [V "x", V "z", C "true" []])
 
-eqNat :: [Def]
+eqNat :: [Def G X]
 eqNat = [eqNatDef]
 
-eqNatDef :: Def
+eqNatDef :: Def G X
 eqNatDef =
     Def "eqNat" ["a", "b", "q24"] (
       fresh ["q25"] (
@@ -44,10 +46,10 @@ eqNatDef =
           (call "eqNat" [V "x", V "y", V "q24"])))))
     )
 
-eqPair :: [Def]
+eqPair :: [Def G X]
 eqPair = eqPairDef : eqNat
 
-eqPairDef :: Def
+eqPairDef :: Def G X
 eqPairDef =
     Def "eqPair" ["a", "b", "q15"] (
       fresh ["q16", "a1", "a2", "b1", "b2", "q17", "q18"] (
@@ -61,10 +63,10 @@ eqPairDef =
         (V "q15" === V "q18"))))
     )
 
-elem :: [Def]
+elem :: [Def G X]
 elem = elemDef : eqPair
 
-elemDef :: Def
+elemDef :: Def G X
 elemDef =
     Def "elem" ["x", "g", "q10"] (
       ((V "g" === C "nil" []) &&&
@@ -78,10 +80,10 @@ elemDef =
         (call "elem" [V "x", V "ys", V "q10"])))))
     )
 
-isPath :: [Def]
+isPath :: [Def G X]
 isPath = isPathDef : elem ++ isPath
 
-isPathDef :: Def
+isPathDef :: Def G X
 isPathDef =
     Def "isPath" ["c", "g", "q0"] (
       ((V "c" === C "nil" []) &&&
@@ -99,7 +101,7 @@ isPathDef =
         (V "q0" === V "q5")))))
     )
 
-pathTree :: [Def]
+pathTree :: [Def G X]
 pathTree = [eqNatDef, eqPairDef, elemDef, isPathDef]
 
 env :: String

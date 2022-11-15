@@ -7,9 +7,9 @@ import TaglessFinal.Term
 import Text.Printf ( printf )
 import Control.Monad.State
 import TaglessFinal.VarState
-import qualified Syntax
+import qualified Syntax as S
 
-newtype Deep a = Deep { unDeep :: State VarState (Either (Syntax.Tx) (Syntax.G Syntax.X)) }
+newtype Deep a = Deep { unDeep :: State VarState (Either (S.Term S.X) (S.G S.X)) }
 
 fromLeft :: Either a b -> a
 fromLeft (Left a) = a
@@ -22,20 +22,20 @@ instance Goal Deep where
   unify x y = Deep $ do
     x <- unDeep x
     y <- unDeep y
-    return $ Right $ (Syntax.===) (fromLeft x) (fromLeft y)
+    return $ Right $ (S.===) (fromLeft x) (fromLeft y)
   conj x y = Deep $ do
     x <- unDeep x
     y <- unDeep y
-    return $ Right $ (Syntax.&&&) (fromRight x) (fromRight y)
+    return $ Right $ (S.&&&) (fromRight x) (fromRight y)
   disj x y = Deep $ do
     x <- unDeep x
     y <- unDeep y
-    return $ Right $ (Syntax.|||) (fromRight x) (fromRight y)
+    return $ Right $ (S.|||) (fromRight x) (fromRight y)
   fresh f = Deep $ do
     v <- nextFreshVar
     let x = toFreshVar v
     body <- unDeep $ f x
-    return $ Right $ Syntax.Fresh x (fromRight body)
+    return $ Right $ S.Fresh x (fromRight body)
 
   lam f = Deep $ do
     v <- nextVar
@@ -52,5 +52,5 @@ instance Goal Deep where
     arg <- unDeep arg
     return $ application
 
-view :: Deep a -> Syntax.G Syntax.X
+view :: Deep a -> S.G S.X
 view goal = fromRight $ evalState (unDeep goal) (VarState 0 0)

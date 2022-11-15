@@ -4,6 +4,7 @@ module Test.SymExec where
 import           Program.List                  (nil, revAcco, reverso)
 import           Program.Programs              (doubleAppendo)
 import           Syntax
+import           Program
 import           Transformer.SymbolicExecution
 
 dA = Program doubleAppendo $ fresh ["x", "y", "z", "r"] (call "doubleAppendo" [V "x", V "y", V "z", V "r"])

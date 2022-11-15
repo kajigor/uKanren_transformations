@@ -14,6 +14,7 @@ import Util.Miscellaneous ( mapLeft )
 import System.Directory ( doesPathExist )
 import System.FilePath ( replaceBaseName )
 import qualified Syntax
+import Program
 import qualified Data.Set as Set
 import Control.Monad.State
     ( modify, evalStateT, MonadIO(liftIO), MonadState(get), StateT )
@@ -23,14 +24,14 @@ import Data.List.NonEmpty ( NonEmpty (..) )
 import Data.Semigroup ( Semigroup(sconcat) )
 import Control.Applicative.Lift ( eitherToErrors, runErrors )
 
-parser :: ParserType -> String -> Either (ParserError String) Syntax.Program
+parser :: ParserType -> String -> Either (ParserError String) (Program Syntax.G Syntax.X)
 parser pType =
     runBundlingParser (chooseParser pType) ""
   where
     chooseParser Irina = IrinaParser.parseProg
     chooseParser Simple = SimpleParser.parseProg
 
-importsParser :: ParserType -> FilePath -> IO (Either (ParserError String) Syntax.Program)
+importsParser :: ParserType -> FilePath -> IO (Either (ParserError String) (Program Syntax.G Syntax.X))
 importsParser =
     parseImports . chooseParser
   where
@@ -50,13 +51,13 @@ runBundlingParser :: (Stream s, ShowErrorComponent e) => Parsec e s b -> FilePat
 runBundlingParser parser filePath =
     mapLeft (SyntaxError . errorBundlePretty) . runParser parser filePath
 
-parseImports :: Parser ([String], Syntax.Program)
+parseImports :: Parser ([String], Program Syntax.G Syntax.X)
              -> FilePath
-             -> IO (Either (ParserError String) Syntax.Program)
+             -> IO (Either (ParserError String) (Program Syntax.G Syntax.X))
 parseImports parser path = do
     evalStateT (runExceptT $ go path) Set.empty
   where
-    go :: FilePath -> ExceptT (ParserError String) (StateT (Set.Set FilePath) IO) Syntax.Program
+    go :: FilePath -> ExceptT (ParserError String) (StateT (Set.Set FilePath) IO) (Program Syntax.G Syntax.X)
     go filePath = do
       (imports, program) <- ExceptT <$> liftIO $ parseFromFile parser filePath
       let paths = map (replaceBaseName filePath) imports

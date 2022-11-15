@@ -13,7 +13,7 @@ instance (Show v) => Goal v View where
   unif x y = View $ printf "%s === %s" (show x) (show y)
   conj x y xs = View $ printf "(%s)" (intercalate " /\\ " $ map unView (x : y : xs))
   disj x y xs = View $ printf "(%s)" (intercalate " \\/ " $ map unView (x : y : xs))
-  fresh x g = View $ printf "(fresh %s %s)" x (unView g)
+  fresh x g = View $ printf "(fresh %s %s)" (show x) (unView g)
   call n args = View $ printf "%s(%s)" n (intercalate ", " (map show args))
 
 g1Viewed = unView g1

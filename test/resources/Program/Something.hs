@@ -3,12 +3,14 @@ module Program.Something where
 import Prelude hiding (sum)
 
 import Syntax
+import Program
+import Def
 
-add :: [Def]
+add :: [Def G X]
 add = [addDef]
 
-addDef :: Def 
-addDef = 
+addDef :: Def G X
+addDef =
     Def "add" ["a", "b", "q14"] (
       ((V "a" === C "o" []) &&&
       (V "b" === V "q14")) |||
@@ -19,11 +21,11 @@ addDef =
             (call "add" [V "x", V "b", V "q16"])))))
     )
 
-value :: [Def]
+value :: [Def G X]
 value = [valueDef]
 
-valueDef :: Def 
-valueDef = 
+valueDef :: Def G X
+valueDef =
     Def "value" ["e", "q10"] (
       ((V "e" === C "q2" []) &&&
       (V "q10" === C "some" [C "s" [C "s" [C "o" []]]])) |||
@@ -33,11 +35,11 @@ valueDef =
       (V "q10" === C "none" []))
     )
 
-sum :: [Def]
+sum :: [Def G X]
 sum = sumDef : value ++ add
 
-sumDef :: Def 
-sumDef = 
+sumDef :: Def G X
+sumDef =
     Def "sum" ["l", "q0"] (
       ((V "l" === C "nil" []) &&&
       (V "q0" === C "some" [C "o" []])) |||

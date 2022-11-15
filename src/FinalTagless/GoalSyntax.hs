@@ -12,7 +12,7 @@ class Goal v goalRepr where
   unif :: Syntax.Term v -> Syntax.Term v -> goalRepr v
   conj :: goalRepr v -> goalRepr v -> [goalRepr v] -> goalRepr v
   disj :: goalRepr v -> goalRepr v -> [goalRepr v] -> goalRepr v
-  fresh :: String -> goalRepr v -> goalRepr v
+  fresh :: v -> goalRepr v -> goalRepr v
   call :: String -> [Syntax.Term v] -> goalRepr v
 
   safeConj :: goalRepr v -> [goalRepr v] -> goalRepr v
@@ -23,7 +23,7 @@ class Goal v goalRepr where
   safeDisj x [] = x
   safeDisj x (y:xs) = disj x y xs
 
-  manyFresh :: [String] -> goalRepr v -> goalRepr v
+  manyFresh :: [v] -> goalRepr v -> goalRepr v
   manyFresh names goal = foldr fresh goal names
 
 var = Syntax.V

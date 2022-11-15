@@ -1,6 +1,8 @@
 module Program.List where
 
 import Syntax
+import Program
+import Def
 import Program.Num
 import Program.Bool
 import Prelude hiding (succ)
@@ -38,7 +40,7 @@ list (C "Nil"  _     ) = "nil"
 list (C s []) = s
 list x = show x
 
-listoDef :: Def
+listoDef :: Def G X
 listoDef =
     ( Def "listo" ["x"]
       (
@@ -55,10 +57,10 @@ listoDef =
   where
     [x, h, t] = map V ["x", "h", "t"]
 
-listo :: [Def]
+listo :: [Def G X]
 listo = [listoDef]
 
-memberoDef :: Def
+memberoDef :: Def G X
 memberoDef =
     ( Def "membero" ["x", "list"]
       (
@@ -72,10 +74,10 @@ memberoDef =
   where
     [x, list, h, t] = map V ["x", "list", "h", "t"]
 
-membero :: [Def]
+membero :: [Def G X]
 membero = [memberoDef]
 
-inBothoDef :: Def
+inBothoDef :: Def G X
 inBothoDef =
     ( Def "inBotho" ["x", "ys", "zs"]
       (
@@ -86,10 +88,10 @@ inBothoDef =
   where
     [x, ys, zs] = map V ["x", "ys", "zs"]
 
-inBotho :: [Def]
+inBotho :: [Def G X]
 inBotho = inBothoDef : membero
 
-niloDef :: Def
+niloDef :: Def G X
 niloDef =
     ( Def "nilo" ["l"]
       (
@@ -99,10 +101,10 @@ niloDef =
   where
     l = V "l"
 
-nilo :: [Def]
+nilo :: [Def G X]
 nilo = [niloDef]
 
-singletonoDef :: Def
+singletonoDef :: Def G X
 singletonoDef =
     ( Def "singletono" ["l", "x"]
       (
@@ -112,10 +114,10 @@ singletonoDef =
   where
     [l, x] = map V ["l", "x"]
 
-singletono :: [Def]
+singletono :: [Def G X]
 singletono = [singletonoDef]
 
-maxLengthoDef :: Def
+maxLengthoDef :: Def G X
 maxLengthoDef =
     ( Def "maxLengtho" ["x", "m", "l"]
       (
@@ -126,10 +128,10 @@ maxLengthoDef =
   where
     [x, m, l] = map V ["x", "m", "l"]
 
-maxLengtho :: [Def]
+maxLengtho :: [Def G X]
 maxLengtho = maxLengthoDef : maxo ++ lengtho
 
-maxMinoDef :: Def
+maxMinoDef :: Def G X
 maxMinoDef =
     ( Def "maxMino" ["x", "m", "l"]
       (
@@ -140,10 +142,10 @@ maxMinoDef =
   where
     [x, m, l] = map V ["x", "m", "l"]
 
-maxMino :: [Def]
+maxMino :: [Def G X]
 maxMino = maxMinoDef : maxo ++ mino
 
-copyDef :: Def
+copyDef :: Def G X
 copyDef =
     ( Def "copy" ["l", "c"]
         (
@@ -161,10 +163,10 @@ copyDef =
   where
     [l, c, h, t, t'] = map V ["l", "c", "h", "t", "t'"]
 
-copy :: [Def]
+copy :: [Def G X]
 copy = [copyDef]
 
-copy2Def :: Def
+copy2Def :: Def G X
 copy2Def =
     ( Def "copy2" ["l", "c"]
         (
@@ -188,7 +190,7 @@ copy2Def =
   where
     [l, c, h, h1, h2, t, t'] = map V ["l", "c", "h", "h1", "h2", "t", "t'"]
 
-copycopyDef :: Def
+copycopyDef :: Def G X
 copycopyDef =
     ( Def "copycopy" ["l", "l1", "l2"]
       (
@@ -199,10 +201,10 @@ copycopyDef =
   where
     [l, l1, l2] = map V ["l", "l1", "l2"]
 
-copycopy :: [Def]
+copycopy :: [Def G X]
 copycopy = [copycopyDef, copyDef, copy2Def]
 
-lengthoDef :: Def
+lengthoDef :: Def G X
 lengthoDef =
     ( Def "lengtho" ["x", "l"]
       (
@@ -218,10 +220,10 @@ lengthoDef =
   where
     [x, l, h, t, z] = map V ["x", "l", "h", "t", "z"]
 
-lengtho :: [Def]
+lengtho :: [Def G X]
 lengtho = [lengthoDef]
 
-lengtho'Def :: Def
+lengtho'Def :: Def G X
 lengtho'Def =
     ( Def "lengtho'" ["x", "l"]
       (
@@ -237,16 +239,16 @@ lengtho'Def =
   where
     [x, l, h, t, z] = map V ["x", "l", "h", "t", "z"]
 
-lengtho' :: [Def]
+lengtho' :: [Def G X]
 lengtho' = [lengtho'Def]
 
-maxoDef :: Def
+maxoDef :: Def G X
 maxoDef =
     ( Def "maxo" ["x", "m"] (call "maxo1" [x, zero, m]))
   where
     [x, m] = map V ["x", "m"]
 
-maxo1Def :: Def
+maxo1Def :: Def G X
 maxo1Def =
     ( Def "maxo1" ["x", "n", "m" ]
       (
@@ -268,13 +270,13 @@ maxo1Def =
   where
     [x, m, n, h, t, z] = map V ["x", "m", "n", "h", "t", "z"]
 
-maxo1 :: [Def]
+maxo1 :: [Def G X]
 maxo1 = maxo1Def : leo ++ gto
 
-maxo :: [Def]
+maxo :: [Def G X]
 maxo = maxoDef : maxo1
 
-minoDef :: Def
+minoDef :: Def G X
 minoDef =
     ( Def "mino" ["x", "m"]
       (
@@ -289,7 +291,7 @@ minoDef =
   where
     [x, m, h, t] = map V ["x", "m", "h", "t"]
 
-mino1Def :: Def
+mino1Def :: Def G X
 mino1Def =
     ( Def "mino1" ["x", "n", "m" ]
       (
@@ -311,13 +313,13 @@ mino1Def =
   where
     [x, m, n, h, t, z] = map V ["x", "m", "n", "h", "t", "z"]
 
-mino1 :: [Def]
+mino1 :: [Def G X]
 mino1 = mino1Def : leo ++ gto
 
-mino :: [Def]
+mino :: [Def G X]
 mino = minoDef : mino1
 
-appLengthoDef :: Def
+appLengthoDef :: Def G X
 appLengthoDef =
     ( Def "appLengtho" []
       (
@@ -334,10 +336,10 @@ appLengthoDef =
   where
     [xs, ys, zs, m, n, s] = map V ["xs", "ys", "zs", "m", "n", "s"]
 
-appLengtho :: [Def]
+appLengtho :: [Def G X]
 appLengtho = appLengthoDef : addo ++ lengtho ++ appendo
 
-appendoDef :: Def
+appendoDef :: Def G X
 appendoDef =
     ( Def "appendo" ["x", "y", "xy"]
       (
@@ -353,10 +355,10 @@ appendoDef =
   where
     [x, y, xy, h, t, ty] = map V ["x", "y", "xy", "h", "t", "ty"]
 
-appendo :: [Def]
+appendo :: [Def G X]
 appendo = [appendoDef]
 
-appendo'Def :: Def
+appendo'Def :: Def G X
 appendo'Def =
     ( Def "appendo'" ["x", "y", "xy"]
       (
@@ -372,10 +374,10 @@ appendo'Def =
   where
     [x, y, xy, h, t, ty] = map V ["x", "y", "xy", "h", "t", "ty"]
 
-appendo' :: [Def]
+appendo' :: [Def G X]
 appendo' = [appendo'Def]
 
-reversoDef :: Def
+reversoDef :: Def G X
 reversoDef =
     ( Def "reverso" ["x", "y"]
       (
@@ -391,10 +393,10 @@ reversoDef =
   where
     [x, y, h, t, rt] = map V ["x", "y", "h", "t", "rt"]
 
-reverso :: [Def]
+reverso :: [Def G X]
 reverso = reversoDef : appendo
 
-doubleReversoDef :: Def
+doubleReversoDef :: Def G X
 doubleReversoDef =
     ( Def "doubleReverso" ["xs"]
       (
@@ -407,10 +409,10 @@ doubleReversoDef =
   where
     [xs, sx] = map V ["xs", "sx"]
 
-doubleReverso :: [Def]
+doubleReverso :: [Def G X]
 doubleReverso = doubleReversoDef : reverso
 
-revAccoDef :: Def
+revAccoDef :: Def G X
 revAccoDef =
     ( Def "revacco" ["xs", "acc", "sx"]
       (
@@ -427,10 +429,10 @@ revAccoDef =
   where
     [xs, acc, sx, h, t] = map V ["xs", "acc", "sx", "h", "t"]
 
-revAcco :: [Def]
+revAcco :: [Def G X]
 revAcco = [revAccoDef]
 
-assocoDef :: Def
+assocoDef :: Def G X
 assocoDef =
     ( Def "assoco" ["x", "xs", "v"]
       (
@@ -446,10 +448,10 @@ assocoDef =
     )
   where [x, xs, v, a, b, tl] = map V ["x", "xs", "v", "a", "b", "tl"]
 
-assoco :: [Def]
+assoco :: [Def G X]
 assoco = [assocoDef]
 
-nthOptDef :: Def
+nthOptDef :: Def G X
 nthOptDef =
     ( Def "nthOpt" ["xs", "n", "r"]
       (
@@ -466,7 +468,7 @@ nthOptDef =
   where
     [xs, n, r, h, t, x] = map V ["xs", "n", "r", "h", "t", "x"]
 
-nthOpt :: [Def]
+nthOpt :: [Def G X]
 nthOpt = [nthOptDef]
 
   -- let rec assoco x xs v =

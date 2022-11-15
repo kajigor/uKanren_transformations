@@ -10,7 +10,7 @@ newtype Interpretation = Interpretation { getInterpretation :: Map.Map X Ts }
 
 ---- Interpreting syntactic variables
 infix 9 <@>
-(<@>) :: Interpretation -> Tx -> Ts
+(<@>) :: Interpretation -> Term X -> Term S
 i <@> (V x) = app i x
 i <@> (C c ts) = C c $ map (i<@>) ts
 

@@ -3,9 +3,11 @@ module Program.Programs where
 import Program.List
 import Program.Num
 import Syntax
+import Program
+import Def
 import Prelude hiding (succ)
 
-palindromoDef :: Def
+palindromoDef :: Def G X
 palindromoDef =
     ( Def "palindromo" ["x"]
       (
@@ -15,10 +17,10 @@ palindromoDef =
   where
     x = V "x"
 
-palindromo :: [Def]
+palindromo :: [Def G X]
 palindromo = palindromoDef : reverso
 
-someAppendoDef :: Def
+someAppendoDef :: Def G X
 someAppendoDef =
     ( Def "someAppendo" ["x", "y", "z"]
       (
@@ -28,10 +30,10 @@ someAppendoDef =
   where
     [x, y, z] = map V ["x", "y", "z"]
 
-someAppendo :: [Def]
+someAppendo :: [Def G X]
 someAppendo = someAppendoDef : appendo
 
-doubleAppendoDef :: Def
+doubleAppendoDef :: Def G X
 doubleAppendoDef =
     ( Def "doubleAppendo" ["x", "y", "z", "r"]
       (
@@ -41,10 +43,10 @@ doubleAppendoDef =
   where
     [x, y, z, r, t] = map V ["x", "y", "z", "r", "t"]
 
-doubleAppendo :: [Def]
+doubleAppendo :: [Def G X]
 doubleAppendo = doubleAppendoDef : appendo
 
--- evenoDef :: Def
+-- evenoDef :: Def G X
 -- evenoDef =
 --     ( Def "eveno" ["x"]
 --       (
@@ -54,10 +56,10 @@ doubleAppendo = doubleAppendoDef : appendo
 --   where
 --     [x, z] = map V ["x", "z"]
 
--- eveno :: [Def]
+-- eveno :: [Def G X]
 -- eveno = evenoDef : addo
 
-doubleoDef :: Def
+doubleoDef :: Def G X
 doubleoDef =
     ( Def "doubleo" ["x", "xx"]
       (
@@ -67,10 +69,10 @@ doubleoDef =
   where
     [x, xx] = map V ["x", "xx"]
 
-doubleo :: [Def]
+doubleo :: [Def G X]
 doubleo = doubleoDef : appendo
 
-emptyAppendoDef :: Def
+emptyAppendoDef :: Def G X
 emptyAppendoDef =
     ( Def "emptyAppendo" ["x", "y"]
       (
@@ -80,13 +82,13 @@ emptyAppendoDef =
   where
     [x, y] = map V ["x", "y"]
 
-emptyAppendo :: [Def]
+emptyAppendo :: [Def G X]
 emptyAppendo = emptyAppendoDef : appendo
 
 toList [] = nil
 toList (c:cs) = peanify c % toList cs
 
-appendo123Def :: Def
+appendo123Def :: Def G X
 appendo123Def =
     ( Def "appendo123" ["x", "y"]
       (
@@ -96,10 +98,10 @@ appendo123Def =
   where
     [x, y] = map V ["x", "y"]
 
-appendo123 :: [Def]
+appendo123 :: [Def G X]
 appendo123 = appendo123Def : appendo
 
-appendoXyzDef :: Def
+appendoXyzDef :: Def G X
 appendoXyzDef =
     ( Def "appendoXyz" ["x", "y", "z", "t", "r"]
       (
@@ -109,10 +111,10 @@ appendoXyzDef =
   where
     [x, y, z, r, t] = map V ["x", "y", "z", "r", "t"]
 
-appendoXyz :: [Def]
+appendoXyz :: [Def G X]
 appendoXyz = appendoXyzDef : appendo
 
-singletonReversoDef :: Def
+singletonReversoDef :: Def G X
 singletonReversoDef =
     ( Def "singletonReverso" ["x", "y"]
       (
@@ -122,16 +124,16 @@ singletonReversoDef =
   where
     [x, y] = map V ["x", "y"]
 
-singletonReverso :: [Def]
+singletonReverso :: [Def G X]
 singletonReverso = singletonReversoDef : reverso ++ lengtho
 
-is5Def :: Def
+is5Def :: Def G X
 is5Def = Def "is5" ["x"] (V "x" === peanify 5)
 
-is5 :: [Def]
+is5 :: [Def G X]
 is5 = [is5Def]
 
-isNumDef :: Def
+isNumDef :: Def G X
 isNumDef =
     ( Def "isNum" ["x"]
       (
@@ -141,10 +143,10 @@ isNumDef =
   where
     [x, y] = map V ["x", "y"]
 
-isNum :: [Def]
+isNum :: [Def G X]
 isNum = [isNumDef]
 
-check5Def :: Def
+check5Def :: Def G X
 check5Def =
     ( Def "check5" ["x"]
       (
@@ -154,10 +156,10 @@ check5Def =
   where
     x = V "x"
 
-check5 :: [Def]
+check5 :: [Def G X]
 check5 = check5Def : isNum ++ is5
 
-genListsDef :: Def
+genListsDef :: Def G X
 genListsDef =
     ( Def "genLists" ["x"]
       (
@@ -168,10 +170,10 @@ genListsDef =
   where
     [x, y, h, t] = map V ["x", "y", "h", "t"]
 
-genLists :: [Def]
+genLists :: [Def G X]
 genLists = genListsDef : isNum
 
-has5Def :: Def
+has5Def :: Def G X
 has5Def =
     ( Def "has5" ["x"]
       ( fresh ["h", "t"]
@@ -183,10 +185,10 @@ has5Def =
   where
     [x, h, t] = map V ["x", "h", "t"]
 
-has5 :: [Def]
+has5 :: [Def G X]
 has5 = has5Def : is5
 
-checkList5Def :: Def
+checkList5Def :: Def G X
 checkList5Def =
     ( Def "checkList5" ["x"]
       (
@@ -196,10 +198,10 @@ checkList5Def =
   where
     x = V "x"
 
-checkList5 :: [Def]
+checkList5 :: [Def G X]
 checkList5 = checkList5Def : genLists ++ has5
 
-checkList5'Def :: Def
+checkList5'Def :: Def G X
 checkList5'Def =
     ( Def "checkList5" ["x"]
       (
@@ -209,10 +211,10 @@ checkList5'Def =
   where
     x = V "x"
 
-checkList5' :: [Def]
+checkList5' :: [Def G X]
 checkList5' = checkList5'Def : genLists ++ has5
 
-memAppDef :: Def
+memAppDef :: Def G X
 memAppDef =
     ( Def "memApp" ["h", "xs", "ys", "rs"]
       (call "membero" [h, xs] &&& call "appendo" [xs, ys, zs])
@@ -220,10 +222,10 @@ memAppDef =
   where
     [h, xs, ys, zs] = map V ["h", "xs", "ys", "zs"]
 
-memApp :: [Def]
+memApp :: [Def G X]
 memApp = memAppDef : membero ++ appendo
 
-memAppYDef :: Def
+memAppYDef :: Def G X
 memAppYDef =
     ( Def "memAppY" ["h", "xs", "ys", "rs"]
       (call "membero" [h, ys] &&& call "appendo" [xs, ys, zs])
@@ -231,10 +233,10 @@ memAppYDef =
   where
     [h, xs, ys, zs] = map V ["h", "xs", "ys", "zs"]
 
-memAppY :: [Def]
+memAppY :: [Def G X]
 memAppY = memAppYDef : membero ++ appendo
 
-funDef :: Def
+funDef :: Def G X
 funDef =
     ( Def "fun" ["n", "x", "r"]
       (
@@ -245,10 +247,10 @@ funDef =
   where
     [n, x, r] = map V ["n", "x", "r"]
 
-fun :: [Def]
+fun :: [Def G X]
 fun = funDef : eveno ++ oddo ++ f ++ g
 
-fDef :: Def
+fDef :: Def G X
 fDef =
     ( Def "f" ["n", "x", "r"]
       (
@@ -259,10 +261,10 @@ fDef =
   where
     [n, x, r] = map V ["n", "x", "r"]
 
-f :: [Def]
+f :: [Def G X]
 f = fDef : g ++ fun
 
-gDef :: Def
+gDef :: Def G X
 gDef =
     ( Def "g" ["n", "x", "r"]
       (
@@ -273,10 +275,10 @@ gDef =
   where
     [n, x, r] = map V ["n", "x", "r"]
 
-g :: [Def]
+g :: [Def G X]
 g = gDef : f ++ fun
 
-evenoDef :: Def
+evenoDef :: Def G X
 evenoDef =
     ( Def "eveno" ["n"]
       (
@@ -287,10 +289,10 @@ evenoDef =
   where
     [n, k] = map V ["n", "k"]
 
-eveno :: [Def]
+eveno :: [Def G X]
 eveno = [evenoDef, oddoDef]
 
-oddoDef :: Def
+oddoDef :: Def G X
 oddoDef =
     ( Def "oddo" ["n"]
       (
@@ -301,10 +303,10 @@ oddoDef =
   where
     [n, k] = map V ["n", "k"]
 
-oddo :: [Def]
+oddo :: [Def G X]
 oddo = eveno
 
-repDef :: Def
+repDef :: Def G X
 repDef =
     ( Def "rep" ["n", "x"]
       (
@@ -319,5 +321,5 @@ repDef =
   where
     [n, x, n', x'] = map V ["n", "x", "n'", "x'"]
 
-rep :: [Def]
+rep :: [Def G X]
 rep = [repDef]

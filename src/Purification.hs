@@ -1,6 +1,8 @@
 module Purification where
 
 import Syntax
+import Program
+import Def
 import Data.List
 import Data.List.NonEmpty (NonEmpty (..), fromList, toList)
 import qualified Data.Set        as Set
@@ -21,7 +23,7 @@ type Erasure     = Map Name [Int]
 type ErasureElem = (Name, Int)
 
 -- Purification of non-essential variables and arguments
-purification :: (Program, [String]) -> (G X, [String], [Def])
+purification :: (Program G X, [String]) -> (G X, [String], [Def G X])
 purification (program@(Program defs x), names) =
   -- justTakeOutLetsProgram program names
   -- trace_pur (x, names) $
@@ -33,10 +35,10 @@ purification (program@(Program defs x), names) =
 {-------------------------------------------}
 {-------------------------------------------}
 {-------------------------------------------}
-identity :: (G X, [String]) -> (G X, [String], [Def])
+identity :: (G X, [String]) -> (G X, [String], [Def G X])
 identity (g, a) = (g, a, [])
 
-justTakeOutLetsProgram :: Program -> [String] -> (G X, [String], [Def])
+justTakeOutLetsProgram :: Program G X -> [String] -> (G X, [String], [Def G X])
 justTakeOutLetsProgram program args =
     (goalWithoutLets, args, defs)
   where
@@ -49,14 +51,14 @@ justTakeOutLetsProgram program args =
       -- evalState (renameProgram program >>= escapeFreeVarsProgram) initialFvs
 
 {-------------------------------------------}
-justTakeOutLets :: (G X, [String]) -> (G X, [String], [Def])
+justTakeOutLets :: (G X, [String]) -> (G X, [String], [Def G X])
 justTakeOutLets (goal, args) = (goal, args, [])  where
 
 {-------------------------------------------}
 {-------------------------------------------}
 {-------------------------------------------}
 
-purificationWithErasure :: (G X, [String]) -> (G X, [String], [Def])
+purificationWithErasure :: (G X, [String]) -> (G X, [String], [Def G X])
 purificationWithErasure x = (g''', args', defs''') where
 
   (goalWithoutLets, args, defs) = justTakeOutLets x
@@ -86,7 +88,7 @@ purificationWithErasure x = (g''', args', defs''') where
     unsafeConj $ unifies ++ calls
 
   {-------------------------------------------}
-  rulesToDef :: Rules -> Def
+  rulesToDef :: Rules -> Def G X
   rulesToDef rules@(((n,a),_):_) =
     let v = map (toV "z") [1..length a] in
     let g = unsafeDisj $ map (ruleToOcanren v) rules in
@@ -99,7 +101,7 @@ purificationWithErasure x = (g''', args', defs''') where
 {-------------------------------------------}
 {-------------------------------------------}
 {-------------------------------------------}
-conservativePurificationWithErasure :: Program -> [String] -> (G X, [String], [Def])
+conservativePurificationWithErasure :: Program G X -> [String] -> (G X, [String], [Def G X])
 conservativePurificationWithErasure program@(Program defs goal) arguments =
     (goalAfterPurification, args, defsAfterPurification)
   where
@@ -135,7 +137,7 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
         then (conjs, g)
         else (map (substInGoal x t) conjs, success)
       purifyU constrV conjs (Disjunction x y gs) =
-        let constrV' = foldl (\s -> Set.union s . Set.fromList . fvg) constrV conjs in
+        let constrV' = foldl (\s -> Set.union s . Set.fromList . fv) constrV conjs in
         let gs' = map snd $ purifyU constrV' [] <$> (x : y : gs) in
         let filtered = filter (not . isSuccess) gs' in
         if null gs'
@@ -145,7 +147,7 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
           then (conjs, head gs')
           else (conjs, unsafeDisj gs')
       purifyU constrV conjs c@(Conjunction g1 g' gs) =
-        let g2 = unsafeConj (g' : gs) in 
+        let g2 = unsafeConj (g' : gs) in
         let (g2' :conjs' , g1' ) = purifyU constrV (g2 : conjs) g1 in
         let (g1'':conjs'', g2'') = purifyU constrV (g1':conjs') g2' in
         let res = case (g1'', g2'') of
@@ -154,8 +156,8 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
                     _ | isSuccess g2'' -> (conjs'', g1'' )
                     _ -> (conjs'', flatConj g1'' g2'')
         in
-        trace (printf "PurifyU\n%s\nResult:\n%s\n\n" (show c) (show res)) $ 
-        res 
+        trace (printf "PurifyU\n%s\nResult:\n%s\n\n" (show c) (show res)) $
+        res
       -- purifyU constrV conjs (g1 :/\: g2) =
       --   let (g2' :conjs' , g1' ) = purifyU constrV (g2 :conjs ) g1  in
       --   let (g1'':conjs'', g2'') = purifyU constrV (g1':conjs') g2' in
@@ -245,7 +247,7 @@ removeElems rs es = remove 1 rs es where
   remove _ _ _ = error "Index is out of elements."
 
 {-------------------------------------------}
-defToRules :: Def -> Rules
+defToRules :: Def G X -> Rules
 defToRules (Def n a g) = map (\(s, f) -> (applyInFunc s (n, ta), map (applyInFunc s) f)) $ gToRules g where
   ta = map V a
 
@@ -271,13 +273,13 @@ defToRules (Def n a g) = map (\(s, f) -> (applyInFunc s (n, ta), map (applyInFun
 {-------------------------------------------}
 
 closeByFresh :: [X] -> G X -> G X
-closeByFresh a g = fresh (fvg g \\ a) g
+closeByFresh a g = fresh (fv g \\ a) g
 
 renameGoal :: G X -> Map X X -> G X
 renameGoal goal mapping =
     (\x -> maybe x id (Map.lookup x mapping)) <$> goal
 
-renameDef :: Def -> State [S] Def
+renameDef :: Def G X -> State [S] (Def G X)
 renameDef (Def name args body) = do
     names <- get
     let (newNames, rest) = splitAt (length args) names
@@ -286,29 +288,29 @@ renameDef (Def name args body) = do
     let body' = renameGoal body (Map.fromList (zip args args'))
     return (Def name args' body')
 
-renameDefs :: [Def] -> State [S] [Def]
+renameDefs :: [Def G X] -> State [S] [Def G X]
 renameDefs = mapM renameDef
 
-renameProgram :: Program -> State [S] Program
+renameProgram :: Program G X -> State [S] (Program G X)
 renameProgram (Program defs goal) = do
     defs' <- renameDefs defs
     return $ Program defs' goal
 
 {-------------------------------------------}
 renameLetArgs :: [S] -> G X -> (G X, [S])
-renameLetArgs fvs x = (x, fvs)
+renameLetArgs fv x = (x, fv)
 
 
-escapeFreeVarsDef :: Def -> State ([S], Map Name [X]) Def
+escapeFreeVarsDef :: Def G X -> State ([S], Map Name [X]) (Def G X)
 escapeFreeVarsDef (Def name args body) = do
     (names, mapping) <- get
-    let freeVars = fvg body \\ args
+    let freeVars = fv body \\ args
     let (newNames, rest) = splitAt (length freeVars) names
     put (rest, Map.insert name freeVars mapping)
     let new = map (toV "y") newNames
     return (Def name (new ++ args) (renameGoal body (Map.fromList $ zip freeVars new)))
 
-escapeFreeVarsProgram :: Program -> State [S] Program
+escapeFreeVarsProgram :: Program G X -> State [S] (Program G X)
 escapeFreeVarsProgram (Program defs goal) = do
     names <- get
     let state = mapM escapeFreeVarsDef defs
@@ -333,7 +335,7 @@ addArgsInInvocations mapping =
 
 {-------------------------------------------}
 escapeFreeVars :: [S] -> G X -> (G X, [S])
-escapeFreeVars fvs x = (x, fvs)
+escapeFreeVars fv x = (x, fv)
 
 {-------------------------------------------}
 addArgsInCall :: Name -> [Term X] -> G X -> G X
@@ -390,7 +392,7 @@ removeLinks a g = case getFstLink a id id id g of
                     Just (disjC, conj, x, y) -> removeLinks a $ disjC $ substInGoal x y conj
 
 {-------------------------------------------}
-hasVar g x = elem x $ fvg g
+hasVar g x = elem x $ fv g
 
 {-------------------------------------------}
 removeUnifications :: (Term X -> Term X -> Bool) -> G X -> G X
@@ -414,7 +416,7 @@ renameFreshVars g =
 {-------------------------------------------}
 {-------------------------------------------}
 {-------------------------------------------}
-trace_pur ::  (Program, [String]) -> (G X, [String], [Def]) -> (G X, [String], [Def])
+trace_pur ::  (Program G X, [String]) -> (G X, [String], [Def G X]) -> (G X, [String], [Def G X])
 trace_pur (Program defs1 g1, _) result@(g2, _, defs2) =
     trace (printf "pur(fresh,unify,arg,constr,var,calls):\n%s -> %s\n"
             (show $ calcProg $ Program defs1 g1)

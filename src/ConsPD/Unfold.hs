@@ -19,6 +19,8 @@ import           Generalization     (Generalizer, generalizeAllVarsToFree)
 import           Prelude            hiding (or)
 import qualified Subst
 import           Syntax
+import           Def
+import           Program
 import           Unfold             (findBestByComplexity, findTupling, oneStep, isGoalStatic)
 import           Util.ListZipper
 import qualified Environment as Env
@@ -143,7 +145,7 @@ conjToList x = [x]
 globalLimit :: Int
 globalLimit = 8
 
-justUnfold :: Int -> Program -> (ConsPDTree, G S, [S])
+justUnfold :: Int -> Program G X -> (ConsPDTree, G S, [S])
 justUnfold limit (Program defs goal) =
     let env = Env.fromDefs defs in
     let ((logicGoal, names), env') = runState (E.preEval goal) env in
@@ -163,7 +165,7 @@ justUnfold limit (Program defs goal) =
                          ) unified in
       Or children d subst
 
-topLevel :: Int -> Program -> (ConsPDTree, G S, [S])
+topLevel :: Int -> Program G X -> (ConsPDTree, G S, [S])
 topLevel limit (Program defs goal) =
     let env = Env.fromDefs defs in
     let ((logicGoal, names), env') = runState (E.preEval goal) env in

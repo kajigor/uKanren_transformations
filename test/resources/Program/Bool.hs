@@ -1,6 +1,8 @@
 module Program.Bool where
 
 import Syntax
+import Program
+import Def
 
 falso :: Term a
 falso = C "false" []
@@ -8,7 +10,7 @@ falso = C "false" []
 trueo :: Term a
 trueo = C "true"  []
 
-nandoDef :: Def
+nandoDef :: Def G X
 nandoDef =
     ( Def "nando" ["a", "b", "c"]
         (
@@ -21,10 +23,10 @@ nandoDef =
   where
     [a, b, c] = map V ["a", "b", "c"]
 
-nando :: [Def]
+nando :: [Def G X]
 nando = [nandoDef]
 
-notoDef :: Def
+notoDef :: Def G X
 notoDef =
     ( Def "noto" ["a", "na"]
       (
@@ -34,10 +36,10 @@ notoDef =
   where
     [a, na] = map V ["a", "na"]
 
-noto :: [Def]
+noto :: [Def G X]
 noto = notoDef : nando
 
-oroDef :: Def
+oroDef :: Def G X
 oroDef =
     ( Def "oro" ["a", "b", "c"]
         (
@@ -52,10 +54,10 @@ oroDef =
   where
     [a, b, c, aa, bb] = map V ["a", "b", "c", "aa", "bb"]
 
-oro :: [Def]
+oro :: [Def G X]
 oro = oroDef : nando
 
-andoDef :: Def
+andoDef :: Def G X
 andoDef =
     ( Def "ando" ["a", "b", "c"]
       (
@@ -69,7 +71,7 @@ andoDef =
   where
     [a, b, c, ab] = map V ["a", "b", "c", "ab"]
 
-ando :: [Def]
+ando :: [Def G X]
 ando = andoDef : nando
 
 bool :: Term t -> String

@@ -1,6 +1,8 @@
 module Program.Unify where
 
 import Syntax
+import Program
+import Def
 
 query = Program unify $ fresh ["x", "y", "s"] (call "check_uni" [V "x", V "y", V "s", true])
 
@@ -12,13 +14,13 @@ queryGet = Program unify $ fresh ["var", "subst", "q25"] (call "get_term" [V "va
 
 true = C "true" []
 
-unify :: [Def]
+unify :: [Def G X]
 unify = unifyTree
 
-eqNat :: [Def]
+eqNat :: [Def G X]
 eqNat = [eqNatDef]
 
-eqNatDef :: Def
+eqNatDef :: Def G X
 eqNatDef =
     Def "eq_nat" ["a", "b", "q36"] (
      fresh ["q37"] (
@@ -36,10 +38,10 @@ eqNatDef =
           (call "eq_nat" [V "x", V "y", V "q36"])))))
     )
 
-getTerm :: [Def]
+getTerm :: [Def G X]
 getTerm = [getTermDef]
 
-getTermDef :: Def
+getTermDef :: Def G X
 getTermDef =
     Def "get_term" ["var", "subst", "q32"] (
       ((V "subst" === C "nil" []) &&&
@@ -53,11 +55,11 @@ getTermDef =
             (call "get_term" [V "n", V "xs", V "q32"]))))))
     )
 
-checkUni :: [Def]
+checkUni :: [Def G X]
 -- checkUni = checkUniDef : getTerm ++ eqNat ++ forall2
 checkUni = [checkUniDef, getTermDef, eqNatDef, forall2Def]
 
-checkUniDef :: Def
+checkUniDef :: Def G X
 checkUniDef =
     Def "check_uni" ["subst", "t1", "t2", "q31"] (
       fresh ["q11"] (
@@ -101,10 +103,10 @@ checkUniDef =
               ((V "q27" === C "none" []) &&&
               (call "eq_nat" [V "v1", V "v2", V "q31"])))))))))))
 
-forall2 :: [Def]
+forall2 :: [Def G X]
 forall2 = forall2Def : checkUni
 
-forall2Def :: Def
+forall2Def :: Def G X
 forall2Def =
     Def "forall2" ["subst", "l1", "l2", "q0"] (
       fresh ["q1"] (
@@ -122,7 +124,7 @@ forall2Def =
     )
 
 
-unifyTree :: [Def]
+unifyTree :: [Def G X]
 unifyTree = eqNat ++ getTerm ++ checkUni ++ forall2
 
 env :: String
