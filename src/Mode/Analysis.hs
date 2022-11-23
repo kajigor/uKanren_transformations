@@ -33,7 +33,7 @@ initVarFromMap instMap v =
     getInitInstVar v instMap =
       fromMaybe Free (Map.lookup v instMap)
 
-initMode :: (Functor f, Ord a) => f a -> Map.Map a Inst -> f (a, Mode)
+initMode :: (Functor f, Ord a, Show a, Show (f (a, Mode))) => f a -> Map.Map a Inst -> f (a, Mode)
 initMode goal instMap =
   initVarFromMap instMap <$> goal
 
@@ -45,7 +45,7 @@ updateAfterInst inst t =
     go inst <$> t
   where
     go :: Inst -> (a, Mode) -> (a, Mode)
-    go inst (x, mode) = (x, Mode { before = before mode, after = Just inst })
+    go inst (x, mode) = (x, mode { after = Just inst })
 
 afterMode :: Var (a, Mode) -> Maybe Inst
 afterMode (Var (_, mode)) = after mode
@@ -119,6 +119,7 @@ analyze goal = do
             lift Nothing
           else do
             v <- modifyMode v makeAfterModeGround
+            t <- modifyModeTerm t makeAfterModeGround
             return (Unif v t)
 
       -- let vGround = updateAfterInst Ground v in
@@ -148,7 +149,7 @@ analyze goal = do
         Nothing -> newSuitable goal
     go (Disj x y xs) = do
       state <- get
-      (x : y : xs) <- mapM (\g -> do put state; analyze g) (x : y : xs)
+      (x : y : xs) <- trace (surround "In Disjunction!" (getInstMap state)) $ mapM (\g -> do put state; analyze g) (x : y : xs)
       return (Disj x y xs)
       -- case checkInsts x y xs of
       --   Just _ -> return $ Disj x y xs
@@ -176,6 +177,7 @@ surround y x = y ++ "\n=========\n" ++ show x ++ "\n=========\n"
 
 analyzeNewDefs :: (Ord a, Show a) => StateT (AnalyzeState a) Maybe [Def Goal (a, Mode)]
 analyzeNewDefs = do
+    modify (\s -> s { getInstMap = Map.empty })
     state <- trace "analyze new def!" $ get
     if Set.null $ getQueue state
     then return []
@@ -183,9 +185,9 @@ analyzeNewDefs = do
       let ((name, args), queue) = Set.deleteFindMin (getQueue state)
       put $ state { getQueue = queue }
       def@(Def _ args' goal) <- lift $ Map.lookup name (getDefinitions state)
-      modded <- analyze (initMode goal $ varInstsFromMode args)
+      modded <- trace (surround "GOAL" goal) $ analyze (initMode goal $ varInstsFromMode args)
       newInstMap <- gets getInstMap
-      newArgs <- lift $ mapM (uncurry $ updateAfterMode newInstMap) $ zip args' args
+      newArgs <- lift $ zipWithM (updateAfterMode newInstMap) args' args
       -- newArgs <- lift $ mapM (updateMode newInstMap) args'
       let def = Def name newArgs modded
       newModes <- analyzeNewDefs
@@ -201,11 +203,13 @@ analyzeNewDefs = do
         Just x -> return (var,x)
         Nothing -> return (var, Mode {before = Free, after = Just Free })
 
-updateVars :: Ord a => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
-updateVars goal = do
+updateVars :: (Ord a, Show a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
+updateVars goal = trace (surround "updating vars in" goal) $ do
     state <- get
     let instMap = getInstMap state
-    lift $ go instMap goal
+    let result = go instMap goal
+    lift $ (trace (surround "UPdated" (result))) result
+    -- lift $ go instMap goal
   where
     go instMap (Unif v t) = do
       v <- goVar instMap v
@@ -283,7 +287,7 @@ enqueueModded name args = do
                      }
 
 varInstsFromMode :: Ord a => [(a, Mode)] -> Map.Map a Inst
-varInstsFromMode = Map.fromList . map (\(v, mode) -> (v, before mode))
+varInstsFromMode = Map.fromList . map (before <$>)
 
 newSuitable :: (Show a, Ord a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
 newSuitable call@(Call name args) = do

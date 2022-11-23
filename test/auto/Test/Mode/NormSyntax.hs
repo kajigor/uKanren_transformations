@@ -24,6 +24,10 @@ runTest program expected =
       flat @?= expected
     Nothing -> fail "Unique rename failed"
 
+unit_addo = do
+  runTest
+    (Program addo (S.call "addo" [S.V "x", S.V "y", S.V "z"]))
+    (Program {getDefs = [Def {getName = "topLevel0", getArgs = [2,1], getBody = Disj (Conj (Call "a" [Var {getVar = 2}] :| []) :| [Conj (Call "b" [Var {getVar = 1}] :| [])])}], getGoal = Disj (Conj (Call "addo" [Var {getVar = 0},Var {getVar = 1},Var {getVar = 2}] :| [Call "topLevel0" [Var {getVar = 2},Var {getVar = 1}]]) :| [])})
 
 unit_normSyntax :: IO ()
 unit_normSyntax = do

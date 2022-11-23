@@ -13,6 +13,7 @@ import Mode.Term
 import Program
 import Def
 import qualified Mode.NormSyntax as N
+import Text.Printf
 
 -- analyze :: (Show a, Ord a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
 

@@ -10,6 +10,7 @@ import Def
 import Data.List (intersect)
 import qualified Data.Set as Set
 import Data.Bifunctor (second)
+import Debug.Trace
 
 data Base a = Unif (Var a) (FlatTerm a)
             | Call String [Var a]
@@ -106,16 +107,25 @@ normalize program =
         goBase goal =
           newCall goal
 
-back :: Program Goal a -> Program S.Goal a
+back :: Show a => Program Goal a -> Program S.Goal a
 back (Program defs goal) =
     Program (map backDef defs) (backGoal goal)
   where
-    backDef (Def name args body) =
-      Def name args (backGoal goal)
-    backGoal (Disj (x :| [])) = backConj x
+    backDef def@(Def name args body) =
+      Def name args (backGoal body)
+
     backGoal (Disj (x :| (h:t))) = S.Disj (backConj x) (backConj h) (map backConj t)
-    backConj (Conj (x :| [])) = backBase x
+    backGoal goal@(Disj (x :| [])) = backConj x
+
     backConj (Conj (x :| (h:t))) = S.Conj (backBase x) (backBase h) (map backBase t)
+    backConj (Conj (x :| [])) = backBase x
+
     backBase (Unif x t) = S.Unif x t
     backBase (Call name args) = S.Call name args
 
+-- Program {
+--   getDefs =
+--     [addo 0 1 2 =
+--       Disj (Conj (Unif V.0 O () :| [Unif V.2 V.1]) :|
+--         [Conj (Unif V.0 S (V.3) :| [Call "addo" (V.3, V.1, V.4),Unif V.2 S (V.4)])])],
+--   getGoal = Disj (Conj (Call "addo" (V.0, V.1, V.2) :| []) :| [])}
