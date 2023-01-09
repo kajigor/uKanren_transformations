@@ -16,6 +16,8 @@ import qualified FreshNames as FN
 import qualified Environment as Env
 import Control.Monad.State
 import Data.List.NonEmpty (NonEmpty (..), fromList)
+import Debug.Trace
+import Text.Printf
 
 unifyG :: (Subst.Subst -> S -> Ts -> Bool)
           -> Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
@@ -27,9 +29,14 @@ unifyG f st@(Just subst) u v =
     unify' (V u') (V v') | u' == v' = Just subst
     unify' (V u') (V v') = Just $ Subst.insert (min u' v') (V $ max u' v') subst
     unify' (V u') t =
-      if f subst u' t
+      let fls = C "Falso" [] in
+      let tru = C "Trueo" [] in
+      (if t == C "State" [C "Side" [fls, fls, fls, fls], C "Side" [tru, tru, tru, tru]]
+      then trace "FINAL STATE"
+      else id)
+      (if f subst u' t
       then Nothing
-      else return $ Subst.insert u' v subst
+      else return $ Subst.insert u' v subst)
     unify' t (V v') =
       if f subst v' t
       then Nothing
@@ -95,6 +102,7 @@ preEval goal = do
       return (Invoke f (map (i VI.<@>) fs))
     go (Conjunction x y gs) = unsafeConj <$> mapM go (x : y : gs)
     go (Disjunction x y gs) = unsafeDisj <$> mapM go (x : y : gs)
+    -- go (Delay g) = go g
     getInterp :: State ([S], Env.Env) VI.Interpretation
     getInterp = do
       Env.Env _ i _ <- gets snd
@@ -164,10 +172,13 @@ eval env s (Conjunction x y gs) =
   eval env s x >>= \(s', d') ->
   eval (Env.updateNames env d') s' (unsafeConj $ y : gs)
 eval env s (Invoke f as) =
+  trace f $
   let (Def _ fs g) = Env.getDef env f in
   let i' = foldl (\ i'' (f', a) -> VI.extend i'' f' a) (Env.getInterp env) $ zip fs as in
   let ((g', _), env') = runState (preEval g) (Env.updateInterp env i') in
   eval env' s g'
+-- eval env s (Delay goal) =
+--   Immature (eval env s goal)
 eval _ _ _ = error "Impossible case in eval"
 
 run :: Program G X -> Stream Subst.Subst

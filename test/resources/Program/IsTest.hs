@@ -1,7 +1,6 @@
 module Program.IsTest where
 
 import Syntax
-import Program
 import Def
 import Prelude hiding (max)
 

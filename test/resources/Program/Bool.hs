@@ -1,7 +1,6 @@
 module Program.Bool where
 
 import Syntax
-import Program
 import Def
 
 falso :: Term a

@@ -4,9 +4,39 @@ import Program.Num
 import Syntax
 import Program
 import Mode.Toplevel
-import VarRename
+import Mode.Analysis
+import Mode.Syntax
+import Mode.Term
+import Mode.Inst
+import Control.Monad.State
 import Test.Helper ((@?=))
+import Data.List (subsequences)
+import Mode.Pretty (prettyString)
+
+groundMode = Mode { before = Ground, after = Just Ground }
+freeMode = Mode { before = Free, after = Nothing }
+freeThenGroundMode = Mode { before = Free, after = Just Ground }
+
+unit_unifyAnalysis :: IO ()
+unit_unifyAnalysis = do
+  let expected = Unif (Var (0, groundMode)) (FTVar (Var (1, freeThenGroundMode)))
+  let actual = evalStateT (analyze (Unif (Var (0, groundMode)) (FTVar (Var (1, freeMode))))) emptyAnalyzeState :: Maybe (Goal (Int, Mode))
+  actual @?= Just expected
+
+run (Just r) = putStrLn $ prettyString r
+run Nothing = putStrLn "Nothing"
 
 unit_analysis :: IO ()
 unit_analysis = do
-  print $ topLevel (Program addo (fresh ["x", "y", "z"] $ call "addo" [V "x", V "y", V "z"])) [0, 1]
+    mapM_ (go addoProg) (subsequences [0, 1, 2])
+    putStrLn "\n==============\nmulo\n===============\n"
+    mapM_ (go muloProg) (subsequences [0, 1, 2])
+  where
+    go prog ins = do
+      putStrLn "\n----------------------------------\n"
+      print ins
+      run $ topLevel prog ins
+      putStrLn "\n----------------------------------\n"
+      putStrLn ""
+    addoProg = Program addo (fresh ["x", "y", "z"] $ call "addo" [V "x", V "y", V "z"])
+    muloProg = Program mulo (fresh ["x", "y", "z"] $ call "mulo" [V "x", V "y", V "z"])

@@ -1,7 +1,6 @@
 module Program.List where
 
 import Syntax
-import Program
 import Def
 import Program.Num
 import Program.Bool

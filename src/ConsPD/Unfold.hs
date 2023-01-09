@@ -7,7 +7,6 @@ module ConsPD.Unfold where
 import           Control.Monad.State
 import           Data.Foldable      (foldlM)
 import           Data.List          (partition, delete)
-import           Data.List.NonEmpty (NonEmpty (..), toList)
 import qualified Data.Map.Strict    as M
 import           Data.Maybe         (catMaybes, fromJust, fromMaybe,
                                      isNothing, mapMaybe)
@@ -19,13 +18,10 @@ import           Generalization     (Generalizer, generalizeAllVarsToFree)
 import           Prelude            hiding (or)
 import qualified Subst
 import           Syntax
-import           Def
 import           Program
 import           Unfold             (findBestByComplexity, findTupling, oneStep, isGoalStatic)
 import           Util.ListZipper
 import qualified Environment as Env
-import Debug.Trace (trace, traceM, traceShowM, traceShow)
-import Text.Printf (printf)
 
 data ConsPDTree = Fail
                 | Success Subst.Subst Env.Env
@@ -199,7 +195,7 @@ topLevel limit (Program defs goal) =
               -- f (x, y) /\ f (z, y) -> f (m, n) /\ f (z, C (n))
               if length goal == 1
               then
-                case trace (printf "\n\nSearching for instance\nGoal\n%s\nSeen\n%s\n\n" (show goal) (show seen)) $ findInstance goal seen of
+                case findInstance goal seen of
                   Just v ->
                     return $ Leaf goal state env v
                   Nothing -> do

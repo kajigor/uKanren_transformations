@@ -7,8 +7,6 @@ import Control.Monad.State
 import FreshNames
 import qualified Data.Map as M
 
-import Debug.Trace
-
 data RenameState a = RenameState
   { getVarMap :: M.Map X a
   , getNameSource :: PolyFreshNames a

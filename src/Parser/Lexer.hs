@@ -32,7 +32,7 @@ identLetters :: Parser Char
 identLetters =
   char '_' <|> alphaNumChar <|> char '\''
 
-notReserved :: Monad m => [String] -> String -> m String
+notReserved :: MonadFail m => [String] -> String -> m String
 notReserved reserved x | x `elem` reserved = fail $ printf "%s is reserved" (show x)
 notReserved reserved x = return x
 

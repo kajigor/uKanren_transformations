@@ -1,7 +1,6 @@
 module Program.LogicInterpreter where
 
 import Syntax
-import Program
 import Def
 import Prelude hiding (succ, lookup)
 

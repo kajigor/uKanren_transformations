@@ -3,7 +3,6 @@ module Program.Something where
 import Prelude hiding (sum)
 
 import Syntax
-import Program
 import Def
 
 add :: [Def G X]

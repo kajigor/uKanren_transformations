@@ -6,7 +6,7 @@ import Eval (postEval)
 import Text.Megaparsec
     ( (<|>), (<?>), many, sepBy, sepBy1, some, MonadParsec(try) )
 import Syntax
-    ( G((:=:), Invoke, Fresh),
+    ( G(..),
       Term(..),
       X,
       unsafeConj,
@@ -14,22 +14,25 @@ import Syntax
 import Def
 import Program
 import Parser.Lexer
-    ( sc, symbol, roundBr, boxBr, lIdentifier, uIdentifier, comma )
+    ( sc, symbol, lexeme, roundBr, boxBr, lIdentifier, uIdentifier, comma )
 import Parser.Data ( Parser )
 
 parseProgramWithImports :: Parser ([String], Program G X)
-parseProgramWithImports = do
+parseProgramWithImports = sc *> do
     imports <- many parseImport
     program <- parseProg
     return (imports, program)
 
 parseImport :: Parser String
 parseImport = do
-  symbol "import"
+  lexeme (symbol "import")
   ident
 
+-- delay :: Parser String
+-- delay = lexeme (symbol "Delay")
+
 reserved :: [String]
-reserved = ["fresh", "in", "import"]
+reserved = ["fresh", "in", "import", "delay"]
 
 ident :: Parser String
 ident = lIdentifier reserved
@@ -73,6 +76,12 @@ parseFresh = do
   return (foldr Fresh goal names)
   <?> "parseFresh"
 
+-- parseDelay :: Parser (G X)
+-- parseDelay =
+--       Delay
+--   <$> (try delay
+--    *> parseInvocation)
+--   <?> "parseDelay"
 
 parseInvocation :: Parser (G X)
 parseInvocation =
@@ -112,7 +121,10 @@ parseVar =
 
 parseSimpleGoal :: Parser (G X)
 parseSimpleGoal =
-  try parseInvocation <|> try parseUnification
+  -- try parseDelay
+  -- <|>
+  try parseInvocation
+  <|> try parseUnification
   <?> "parseSimpleGoal"
 
 parseUnification :: Parser (G X)

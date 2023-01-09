@@ -8,8 +8,8 @@ import Text.Megaparsec
     ( Parsec,
       runParser,
       errorBundlePretty,
-      ShowErrorComponent,
-      Stream )
+      ShowErrorComponent )
+import Text.Megaparsec.Stream
 import Util.Miscellaneous ( mapLeft )
 import System.Directory ( doesPathExist )
 import System.FilePath ( replaceBaseName )
@@ -47,7 +47,7 @@ parseFromFile parser filePath = do
       content <- readFile filePath
       return $ runBundlingParser parser filePath content
 
-runBundlingParser :: (Stream s, ShowErrorComponent e) => Parsec e s b -> FilePath -> s -> Either (ParserError String) b
+runBundlingParser :: (Stream s, ShowErrorComponent e, VisualStream s, TraversableStream s) => Parsec e s b -> FilePath -> s -> Either (ParserError String) b
 runBundlingParser parser filePath =
     mapLeft (SyntaxError . errorBundlePretty) . runParser parser filePath
 

@@ -5,19 +5,16 @@ module Mode.Analysis where
 import Mode.Inst
 import Mode.Syntax
 import Def
-import Program
-
 import Data.Maybe
 import Data.List (sortOn, nub)
 import Control.Monad.State
 import qualified Data.Map as Map
 import qualified Data.Map.Merge.Strict as Merge
 import qualified Data.Set as Set
-import Debug.Trace
 import Data.List (permutations)
 import Control.Applicative ((<|>))
 import Mode.Term
-
+import Mode.Pretty
 
 initVarFromMap :: Ord a => Map.Map a Inst -> a -> (a, Mode)
 initVarFromMap instMap v =
@@ -29,13 +26,20 @@ initVarFromMap instMap v =
     initMode inst x =
       (x, Mode { before = inst, after = Nothing })
 
-    getInitInstVar :: Ord a => a -> Map.Map a Inst -> Inst
-    getInitInstVar v instMap =
-      fromMaybe Free (Map.lookup v instMap)
+getInitInstVar :: Ord a => a -> Map.Map a Inst -> Inst
+getInitInstVar v instMap =
+  fromMaybe Free (Map.lookup v instMap)
 
 initMode :: (Functor f, Ord a, Show a, Show (f (a, Mode))) => f a -> Map.Map a Inst -> f (a, Mode)
 initMode goal instMap =
   initVarFromMap instMap <$> goal
+
+newMode :: (Functor f, Ord a) => f a -> Map.Map a Inst -> f (a, Mode)
+newMode goal instMap =
+    go <$> goal
+  where
+    go v = initMode (getInitInstVar v instMap) v
+    initMode inst x = (x, Mode { before = inst, after = Just Ground })
 
 forgetModes :: Goal (a, Mode) -> Goal a
 forgetModes = (fst <$>)
@@ -59,7 +63,6 @@ moreInstantiated (_, mode1) (_, mode2) =
 
 suitableMode :: Show a => String -> [Var (a, Mode)] -> [(a, Mode)] -> Bool
 suitableMode name args as =
-  trace (surround "In suitable mode" (name, args, as) ) $
   all (uncurry moreInstantiated) (zip (map getVar args) as)
 
 runAnalyze :: (Show a, Ord a) => Goal a -> [a] -> Maybe (Goal (a, Mode))
@@ -83,8 +86,7 @@ data AnalyzeState a = AnalyzeState
 
 updateInstMap :: Ord a => a -> Mode -> StateT (AnalyzeState a) Maybe ()
 updateInstMap v mode = do
-  state <- get
-  put $ state { getInstMap = Map.insert v mode (getInstMap state) }
+  modify $ \state -> state { getInstMap = Map.insert v mode (getInstMap state) }
 
 modifyMode :: Ord a => Var (a, Mode) -> (Mode -> Maybe Mode) -> StateT (AnalyzeState a) Maybe (Var (a, Mode))
 modifyMode (Var (v, mode)) f = do
@@ -102,8 +104,7 @@ modifyModeTerm (FTVar v) f = do
 
 analyze :: (Show a, Ord a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
 analyze goal = do
-    res <- go goal
-    return (trace (surround "\n--------------\nIn analyze\nGoal:\n" goal ++ "\n--------------\n" ++ surround "Result:\n" res) $ res)
+    go goal
   where
     go goal@(Unif v@(Var (var, mode)) t) =
       let makeAfterModeGround m = Just $ m { after = Just Ground } in
@@ -149,7 +150,7 @@ analyze goal = do
         Nothing -> newSuitable goal
     go (Disj x y xs) = do
       state <- get
-      (x : y : xs) <- trace (surround "In Disjunction!" (getInstMap state)) $ mapM (\g -> do put state; analyze g) (x : y : xs)
+      (x : y : xs) <- mapM (\g -> do put state; analyze g) (x : y : xs)
       return (Disj x y xs)
       -- case checkInsts x y xs of
       --   Just _ -> return $ Disj x y xs
@@ -172,20 +173,18 @@ permuteConjs (Conj x y xs) =
   where
     toConj (x : y : xs) = Conj x y xs
 
-surround y x = y ++ "\n=========\n" ++ show x ++ "\n=========\n"
-
-
-analyzeNewDefs :: (Ord a, Show a) => StateT (AnalyzeState a) Maybe [Def Goal (a, Mode)]
+analyzeNewDefs :: (Ord a, Show a, ShowPretty a) => StateT (AnalyzeState a) Maybe [Def Goal (a, Mode)]
 analyzeNewDefs = do
     modify (\s -> s { getInstMap = Map.empty })
-    state <- trace "analyze new def!" $ get
+    state <- get
     if Set.null $ getQueue state
     then return []
     else do
       let ((name, args), queue) = Set.deleteFindMin (getQueue state)
       put $ state { getQueue = queue }
       def@(Def _ args' goal) <- lift $ Map.lookup name (getDefinitions state)
-      modded <- trace (surround "GOAL" goal) $ analyze (initMode goal $ varInstsFromMode args)
+      let initGoal = initMode goal $ varInstsFromMode args
+      modded <- analyze initGoal
       newInstMap <- gets getInstMap
       newArgs <- lift $ zipWithM (updateAfterMode newInstMap) args' args
       -- newArgs <- lift $ mapM (updateMode newInstMap) args'
@@ -204,11 +203,11 @@ analyzeNewDefs = do
         Nothing -> return (var, Mode {before = Free, after = Just Free })
 
 updateVars :: (Ord a, Show a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
-updateVars goal = trace (surround "updating vars in" goal) $ do
+updateVars goal = do
     state <- get
     let instMap = getInstMap state
     let result = go instMap goal
-    lift $ (trace (surround "UPdated" (result))) result
+    lift $ result
     -- lift $ go instMap goal
   where
     go instMap (Unif v t) = do
@@ -228,20 +227,21 @@ updateVars goal = trace (surround "updating vars in" goal) $ do
       y <- go instMap y
       xs <- mapM (go instMap) xs
       return $ Disj x y xs
-    goVar instMap var@(Var (v, mode)) =
-      case Map.lookup v instMap of
-        Nothing -> return var
-        Just m | isJust $ after m-> return (Var (v, Mode { before = fromJust $ after m, after = Nothing }))
-        _ -> Nothing
-        -- Just m | before m == before mode && (isNothing (after mode) || after mode == Just Free || after mode == after m) ->
-        --   return (Var (v, mode { after = after m} ))
-        -- _ -> Nothing
     goTerm instMap (FTVar var) = do
       var <- goVar instMap var
       return $ FTVar var
     goTerm instMap (FTCon name args) = do
       args <- mapM (goVar instMap) args
       return (FTCon name args)
+    goVar instMap var@(Var (v, mode)) =
+      case Map.lookup v instMap of
+        Nothing -> return var
+        Just m | isJust $ after m ->
+          return (Var (v, Mode { before = fromJust $ after m, after = Nothing }))
+        _ -> Nothing
+        -- Just m | before m == before mode && (isNothing (after mode) || after mode == Just Free || after mode == after m) ->
+        --   return (Var (v, mode { after = after m} ))
+        -- _ -> Nothing
 
 
 retrieveInsts :: Ord a => Goal (a, Mode) -> Maybe (Map.Map a Mode)
@@ -296,14 +296,14 @@ newSuitable call@(Call name args) = do
     case Map.lookup name defs of
       Just (Def _ xs body) -> do
         let varInsts = Map.fromList $ map (\(Var (v, mode)) -> (v, before mode)) args
-        let newBody = initMode body varInsts
+        let newBody = newMode body varInsts
         let newModded = zipWith pushMode args xs
         enqueueModded name newModded
-        return call
+        return (Call name (map Var newModded))
       _ -> lift Nothing
   where
     pushMode (Var (_, mode)) y =
-      (y, mode)
+      (y, mode { after = Just Ground }) -- TODO REMOVE
 newSuitable _ =
   lift Nothing
 

@@ -44,6 +44,7 @@ dependencies:
 - megaparsec
 - parser-combinators
 - optparse-applicative
+- prettyprinter
 
 ghc-options:
   - -fwarn-unused-imports

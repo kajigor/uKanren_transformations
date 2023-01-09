@@ -16,7 +16,6 @@ import           Generalization
 import           Prelude            hiding (lookup)
 import qualified Subst
 import           Syntax
-import           Def
 import           Program
 import           Text.Printf
 import           Unfold             (oneStepUnfold, normalize, unifyStuff, getMaximumBranches)

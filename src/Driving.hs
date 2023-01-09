@@ -4,7 +4,6 @@ module Driving where
 
 import           Data.Foldable
 import           Data.List              hiding (group, groupBy)
-import           Data.List.NonEmpty     (NonEmpty (..), fromList)
 import qualified Data.Map.Strict        as Map
 import           Data.Maybe
 import qualified Data.Set               as Set
@@ -13,7 +12,6 @@ import qualified Definitions            as Defs
 import qualified Eval                   as E
 import           Generalization         (Generalizer, generalizeGoals)
 import qualified Environment as Env
-import           Program
 import           Stream
 import qualified Subst
 import           Syntax

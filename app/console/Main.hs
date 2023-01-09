@@ -146,7 +146,7 @@ main = do
       )
 
 chooseParser :: Parser.ParserType -> (String -> IO (Either String (Program G X)))
-chooseParser pType = \input -> do
+chooseParser pType input = do
   res <- Parser.importsParser pType input
   return $ mapLeft show res
 

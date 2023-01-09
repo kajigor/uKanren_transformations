@@ -2,7 +2,6 @@ module Program.Num where
 
 import Prelude hiding (succ)
 import Syntax
-import Program
 import Def
 import Program.Bool
 import Text.Printf
@@ -36,7 +35,7 @@ addoDef =
         (
           x === zero &&& z === y |||
           fresh ["x'", "z'"]
-            (x === succ x' &&& call "addo" [x', y, z'] &&& z === succ z' )
+            (x === succ x' &&& z === succ z' &&& call "addo" [x', y, z'] )
         )
     )
   where
@@ -52,8 +51,8 @@ muloDef =
         (x === zero &&& z === zero) |||
           fresh ["x'", "z'"]
             (x === succ x' &&&
-             call "addo" [y, z', z] &&&
-             call "mulo" [x', y, z'])
+             call "mulo" [x', y, z'] &&&
+             call "addo" [y, z', z])
       )
     )
   where

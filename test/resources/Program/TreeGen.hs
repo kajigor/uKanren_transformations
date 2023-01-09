@@ -1,7 +1,6 @@
 module Program.TreeGen where
 
 import Syntax
-import Program
 import Def
 import Prelude hiding (repeat)
 

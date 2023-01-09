@@ -2,7 +2,6 @@ module Program.PairBridgeBig where
 
 import Prelude hiding (succ, max)
 import Syntax
-import Program
 import Def
 
 greater :: [Def G X]

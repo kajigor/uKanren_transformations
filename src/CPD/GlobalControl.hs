@@ -6,7 +6,6 @@ import qualified CPD.LocalControl   as LC
 import           Data.List          (find, partition)
 import           Data.Tuple
 import           Descend
-import           Debug.Trace        (trace)
 import           Embed
 import qualified Eval               as E
 import qualified FreshNames         as FN
@@ -14,9 +13,7 @@ import           Generalization     (Generalizer)
 import           Prelude            hiding (sequence)
 import qualified Subst
 import           Syntax
-import           Def
 import           Program
-import           Text.Printf        ( printf )
 import           Util.Miscellaneous
 import qualified Environment as Env
 import Control.Monad.State (runState)

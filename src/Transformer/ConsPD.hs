@@ -19,7 +19,7 @@ import           Text.Printf
 import qualified Transformer.MkToProlog
 import           Util.Miscellaneous     (escapeTick)
 import           Util.File              (createDirRemoveExisting)
-import NormalizedSyntax (makeNormal, normalizeProg)
+import           NormalizedSyntax       (normalizeProg)
 
 data TransformResult = Result { original :: [Def G X]
                               , tree :: ConsPD.ConsPDTree
