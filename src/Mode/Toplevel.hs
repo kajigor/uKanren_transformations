@@ -12,6 +12,7 @@ import Debug.Trace
 import Mode.Term
 import Program
 import Def
+import Data.List (find)
 import qualified Mode.NormSyntax as N
 
 -- analyze :: (Show a, Ord a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
@@ -21,8 +22,10 @@ runAnalyze goal ins =
   let goal' = initMode goal (Map.fromList $ zip ins $ repeat Ground) in
   evalStateT (analyze goal') emptyAnalyzeState
 
+makeDefMap :: [Def g a] -> Map.Map String (Def g a)
 makeDefMap defs = Map.fromList $ map (\d -> (getName d, d)) defs
 
+initModeForVar :: (Foldable t, Eq a) => t (Var a) -> Var a -> (a, Mode)
 initModeForVar inputArgs (Var x) =
     (x, Mode before after)
   where
@@ -48,3 +51,18 @@ topLevel program ins = do
         defs <- evalStateT analyzeNewDefs state
         return $ Program defs modded
       _ -> Nothing
+
+topLevelWithDefaultCall :: Program S.G S.X -> String -> [Int] -> Maybe (Program Goal (S.S, Mode))
+topLevelWithDefaultCall program relName ins = do
+  program <- replaceGoalWithDefaultCall program relName
+  topLevel program ins
+
+replaceGoalWithDefaultCall :: Program S.G S.X -> String -> Maybe (Program S.G S.X)
+replaceGoalWithDefaultCall program relName = do
+    Program (getDefs program) <$> defaultCall
+  where
+    defaultCall = do
+      vars <- defaultArgs
+      return $ S.fresh vars $ S.Invoke relName $ map S.V vars
+    defaultArgs =
+      getArgs <$> find (\(Def name _ _) -> name == relName) (getDefs program)

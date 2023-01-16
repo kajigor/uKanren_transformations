@@ -1,9 +1,7 @@
 module Main where
 
 import Options.Applicative
-import Data.Foldable (forM_)
-import Data.Semigroup ((<>))
-import Data.Maybe (fromMaybe, fromJust, isNothing)
+import Data.Maybe (fromMaybe)
 import qualified EvalApp
 import qualified Transformer.PrologToMk
 import System.Directory (getCurrentDirectory)
@@ -11,7 +9,8 @@ import qualified ConsPDApp
 import qualified CPDApp
 import qualified ParseApp
 import qualified NormalizeApp
-import Util.File (failIfNotExist, isDir, getFiles, createDirRemoveExisting)
+import qualified ModeApp
+import Util.File (failIfNotExist, isDir, getFiles)
 import Util.Miscellaneous (mapLeft)
 import qualified Parser.Parser as Parser
 import Syntax (X, G)
@@ -25,6 +24,7 @@ data Transformation
   | Eval
   | Normalize
   | PrologToMk
+  | Mode
 
 data Action = Action { transformation :: Transformation
                      , input :: FilePath
@@ -32,12 +32,22 @@ data Action = Action { transformation :: Transformation
                      , isInputADir :: Bool
                      , parserType :: Parser.ParserType
                      , numAnswers :: Int
+                     , groundVars :: [Int]
+                     , relName :: String
                      }
 
-data Args = Args Transformation (Maybe FilePath) (Maybe FilePath) (Maybe Parser.ParserType) Int
+data Args = Args
+  { transformationArg :: Transformation
+  , inputArg :: Maybe FilePath
+  , outputArg :: Maybe FilePath
+  , parserTypeArg :: Maybe Parser.ParserType
+  , numAnswersArg :: Int
+  , groundVarsArg :: [Int]
+  , relNameArg :: String
+  }
 
 transform :: Args -> IO Action
-transform (Args transformation input output parserType numAnswers) = do
+transform (Args transformation input output parserType numAnswers groundVars relName) = do
     curDir <- getCurrentDirectory
     let i = fromMaybe curDir input
     failIfNotExist i
@@ -49,7 +59,7 @@ transform (Args transformation input output parserType numAnswers) = do
 
     let pType = fromMaybe Parser.Simple parserType
 
-    return $ Action transformation i out isInputADir pType numAnswers
+    return $ Action transformation i out isInputADir pType numAnswers groundVars relName
 
 actionParser :: Parser Args
 actionParser =
@@ -58,6 +68,8 @@ actionParser =
         <*> optional outputParser
         <*> optional parserTypeParser
         <*> numAnswersParser
+        <*> groundVarsParser
+        <*> relationNameParser
 
 numAnswersParser :: Parser Int
 numAnswersParser = option auto
@@ -66,6 +78,22 @@ numAnswersParser = option auto
   <> showDefault
   <> value 1
   <> metavar "INT" )
+
+groundVarsParser :: Parser [Int]
+groundVarsParser = option auto
+  (  long "ground"
+  <> help "Which variables are supposed to be treated as ground"
+  <> showDefault
+  <> value []
+  <> metavar "GROUND")
+
+relationNameParser :: Parser String
+relationNameParser = strOption
+  (  long "rel"
+  <> help "Which relation to mode-analyze"
+  <> showDefault
+  <> value ""
+  <> metavar "REL")
 
 inputParser :: Parser FilePath
 inputParser = strOption
@@ -98,6 +126,7 @@ parseTransformation =
   <|> evalParser
   <|> normalizeParser
   <|> prologToMkParser
+  <|> modeParser
 
 normalizeParser :: Parser Transformation
 normalizeParser = flag' Normalize
@@ -115,6 +144,12 @@ evalParser :: Parser Transformation
 evalParser = flag' Eval
   (  long "eval"
   <> help "Evaluate the goal"
+  )
+
+modeParser :: Parser Transformation
+modeParser = flag' Mode
+  (  long "mode"
+  <> help "Run mode analysis"
   )
 
 cpdParser :: Parser Transformation
@@ -161,6 +196,7 @@ defaultOutputDir args =
       Eval -> "eval"
       Normalize -> "norm"
       Parser -> "parse"
+      Mode -> "mode"
 
 runAction :: Args -> IO ()
 runAction args = do
@@ -169,6 +205,8 @@ runAction args = do
   case transformation action of
     Eval ->
       EvalApp.runWithParser parser (input action) (numAnswers action)
+    Mode ->
+      ModeApp.runWithParser parser (input action) (relName action) (groundVars action)
     Normalize ->
       NormalizeApp.runWithParser parser (input action)
     Parser ->

@@ -3,9 +3,10 @@ module ParseApp where
 import Syntax
 import Program
 import Text.Printf (printf)
-import Util.File (checkIfFileExists, failIfNotExist, prologExt)
+import Util.File (prologExt)
 import qualified Transformer.MkToProlog
 
+run :: (String -> IO (Either String (Program G X))) -> String -> IO ()
 run parser fileName = do
   res <- parser fileName
   case res of
