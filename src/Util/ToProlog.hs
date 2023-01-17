@@ -1,15 +1,15 @@
 module Util.ToProlog where
 
-import Syntax
-import Def
-import Purification
+import           Def
+import           Purification
+import           Syntax
 
-import Data.Char
-import Data.List
+import           Data.Char
+import           Data.List
 
-import Text.ParserCombinators.Parsec
+import           Text.ParserCombinators.Parsec
 
-import Text.Printf
+import           Text.Printf
 
 
 {-------------------------------------------}

@@ -1,19 +1,19 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Mode.Pretty where
 
 
-import Prettyprinter
-import Prettyprinter.Render.Text ( renderStrict )
-import Mode.Term
-import Mode.Inst
-import Mode.Syntax
-import Def
-import Program
+import           Def
+import           Mode.Inst
+import           Mode.Syntax
+import           Mode.Term
+import           Prettyprinter
+import           Prettyprinter.Render.Text (renderStrict)
+import           Program
 
-import qualified Data.Text as T
-import qualified Data.Char as C
+import qualified Data.Char                 as C
+import qualified Data.Text                 as T
 
 type Error = T.Text
 type Prog = Doc T.Text

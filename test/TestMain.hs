@@ -2,13 +2,13 @@ module TestMain (
     main
 ) where
 
-import qualified OCanrenizeTest as OC
+import qualified BridgeTest          as BT
+import qualified DrivingTest         as D
+import qualified EmbedTest           as ET
+import qualified OCanrenizeTest      as OC
+import qualified PrintingTest        as PT
 import qualified ResidualizationTest as R
-import qualified DrivingTest as D
-import qualified BridgeTest as BT
-import qualified PrintingTest as PT
-import qualified EmbedTest as ET
-import qualified SomeTest as ST
+import qualified SomeTest            as ST
 
 main :: IO ()
 main = do

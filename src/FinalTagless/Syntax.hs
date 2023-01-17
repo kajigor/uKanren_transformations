@@ -1,16 +1,17 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE FunctionalDependencies    #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module FinalTagless.Syntax where
 
+import qualified Def         as D
+import qualified Program     as P
 import qualified Syntax
-import qualified Def as D
-import qualified Program as P
 
-import Text.Printf (printf)
-import Data.List (intercalate)
+import           Data.List   (intercalate)
+import           Text.Printf (printf)
 
 class Term v repr where
   var :: v -> repr v

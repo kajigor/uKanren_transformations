@@ -1,8 +1,8 @@
 module Program.Bottles where
 
-import Syntax
-import Program
-import Def
+import           Def
+import           Program
+import           Syntax
 
 true = C "true" []
 

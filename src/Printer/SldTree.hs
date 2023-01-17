@@ -1,11 +1,11 @@
 
 module Printer.SldTree where
 
-import CPD.LocalControl
-import Descend
-import Printer.Dot
-import Syntax
-import Text.Printf
+import           CPD.LocalControl
+import           Descend
+import           Printer.Dot
+import           Syntax
+import           Text.Printf
 
 instance DotPrinter SldTree where
   labelNode t@(Conj ch _ _) = addChild    t ch

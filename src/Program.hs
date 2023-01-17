@@ -1,7 +1,7 @@
 {-# LANGUAGE InstanceSigs #-}
 module Program where
 
-import Def
+import           Def
 
 data Program g a = Program
   { getDefs :: [Def g a]

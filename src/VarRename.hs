@@ -1,14 +1,14 @@
 module VarRename (uniquelyRenameVars) where
 
-import Syntax
-import Def
-import Program
-import Control.Monad.State
-import FreshNames
-import qualified Data.Map as M
+import           Control.Monad.State
+import qualified Data.Map            as M
+import           Def
+import           FreshNames
+import           Program
+import           Syntax
 
 data RenameState a = RenameState
-  { getVarMap :: M.Map X a
+  { getVarMap     :: M.Map X a
   , getNameSource :: PolyFreshNames a
   }
 

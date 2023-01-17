@@ -1,7 +1,8 @@
-{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE InstanceSigs     #-}
 module Def where
 
-import Text.Printf (printf)
+import           Text.Printf (printf)
 
 data Def g a = Def
   { getName :: String

@@ -1,11 +1,11 @@
 module Test.Mode.Syntax where
 
-import Test.Helper ((@?=))
-import Syntax
-import Mode.Syntax
-import Mode.Term
-import FreshNames
-import Control.Monad.State
+import           Control.Monad.State
+import           FreshNames
+import           Mode.Syntax
+import           Mode.Term
+import           Syntax
+import           Test.Helper         ((@?=))
 
 v0, v1, v2 :: Term Int
 vars :: [Term Int]

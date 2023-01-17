@@ -1,9 +1,9 @@
 module Program.Something where
 
-import Prelude hiding (sum)
+import           Prelude hiding (sum)
 
-import Syntax
-import Def
+import           Def
+import           Syntax
 
 add :: [Def G X]
 add = [addDef]

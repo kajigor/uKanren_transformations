@@ -1,8 +1,8 @@
 module Util.Miscellaneous where
 
-import Data.List ( (\\), intercalate, subsequences )
-import Text.Printf (printf)
-import Util.ListZipper
+import           Data.List       (intercalate, subsequences, (\\))
+import           Text.Printf     (printf)
+import           Util.ListZipper
 
 fst3 :: (a, b, c) -> a
 fst3 (x, _, _) = x

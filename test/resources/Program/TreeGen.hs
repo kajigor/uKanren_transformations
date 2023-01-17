@@ -1,8 +1,8 @@
 module Program.TreeGen where
 
-import Syntax
-import Def
-import Prelude hiding (repeat)
+import           Def
+import           Prelude hiding (repeat)
+import           Syntax
 
 eqNat :: [Def G X]
 eqNat = [eqNatDef]

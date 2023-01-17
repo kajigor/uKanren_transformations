@@ -1,12 +1,12 @@
 module Program.List where
 
-import Syntax
-import Def
-import Program.Num
-import Program.Bool
-import Prelude hiding (succ)
-import Text.Printf
-import Program.Option
+import           Def
+import           Prelude        hiding (succ)
+import           Program.Bool
+import           Program.Num
+import           Program.Option
+import           Syntax
+import           Text.Printf
 
 -- Tests
 infixr 9 %

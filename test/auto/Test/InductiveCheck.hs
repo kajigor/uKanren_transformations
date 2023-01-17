@@ -2,12 +2,12 @@
 
 module Test.InductiveCheck where
 
-import Syntax
-import Program
-import InductiveCheck
-import Program.List
-import Program.Num
-import Test.Helper ((@?=), test)
+import           InductiveCheck
+import           Program
+import           Program.List
+import           Program.Num
+import           Syntax
+import           Test.Helper    (test, (@?=))
 
 unit_orderTest = do
   False @?= (x <<= y)

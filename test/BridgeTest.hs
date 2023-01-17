@@ -1,8 +1,8 @@
 module BridgeTest where
 
-import Bridge
-import Syntax
+import           Bridge
 import qualified PrintingTest as PT
+import           Syntax
 
 game2BigGoal = game2Big $ fresh ["a", "b"] (call "result" [V "b"] &&& call "getAnswer" [V "a", C "some" [V "b"]])
 game2Goal = game2 $ fresh ["a", "b"] (call "getAnswer" [V "a", C "some" [V "b"]])

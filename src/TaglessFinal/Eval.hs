@@ -1,12 +1,12 @@
 module TaglessFinal.Eval where
 
-import Control.Monad.State
-import TaglessFinal.Term
+import           Control.Monad.State
 import qualified Stream
-import qualified TaglessFinal.Unify as Unify
-import TaglessFinal.VarState
+import           TaglessFinal.Term
+import qualified TaglessFinal.Unify    as Unify
+import           TaglessFinal.VarState
 
-import TaglessFinal.Syntax
+import           TaglessFinal.Syntax
 
 newtype Eval a = Eval { runEval :: a }
 

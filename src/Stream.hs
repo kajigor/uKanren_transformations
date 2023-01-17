@@ -1,7 +1,7 @@
 module Stream (takeS, maybeToStream, isMature, fmap, pure, (<*>), empty, (<|>), (>>=), mzero, mplus, Stream (..)) where
 
-import Control.Monad
-import Control.Applicative
+import           Control.Applicative
+import           Control.Monad
 
 -- Stream
 data Stream a = Empty

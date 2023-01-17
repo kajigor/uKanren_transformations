@@ -1,8 +1,8 @@
 module Definitions where
 
 import qualified Data.Map as Map
-import Syntax
-import Def
+import           Def
+import           Syntax
 
 newtype Definitions = Definitions { getDefinitions :: Map.Map Name (Def G X) }
                     deriving (Show, Ord, Eq)

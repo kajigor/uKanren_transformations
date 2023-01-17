@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs  #-}
 module Mode.Term where
 
-import Text.Printf
-import Data.List (intercalate)
+import           Data.List   (intercalate)
+import           Text.Printf
 
 
 newtype Var a = Var { getVar :: a }

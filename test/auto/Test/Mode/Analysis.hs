@@ -1,17 +1,17 @@
 module Test.Mode.Analysis where
 
-import Program.Num
-import Syntax
-import Program
-import Mode.Toplevel
-import Mode.Analysis
-import Mode.Syntax
-import Mode.Term
-import Mode.Inst
-import Control.Monad.State
-import Test.Helper ((@?=))
-import Data.List (subsequences)
-import Mode.Pretty (prettyString)
+import           Control.Monad.State
+import           Data.List           (subsequences)
+import           Mode.Analysis
+import           Mode.Inst
+import           Mode.Pretty         (prettyString)
+import           Mode.Syntax
+import           Mode.Term
+import           Mode.Toplevel
+import           Program
+import           Program.Num
+import           Syntax
+import           Test.Helper         ((@?=))
 
 groundMode = Mode { before = Ground, after = Just Ground }
 freeMode = Mode { before = Free, after = Nothing }

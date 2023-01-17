@@ -1,11 +1,11 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module FinalTagless.Deep where
 
-import FinalTagless.GoalSyntax
+import qualified Def                     as D
+import           FinalTagless.GoalSyntax
+import qualified Program                 as P
 import qualified Syntax
-import qualified Program as P
-import qualified Def as D
 
 newtype Deep v = Deep { unDeep :: Syntax.G v }
 

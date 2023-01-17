@@ -2,14 +2,14 @@
 
 module SymbolicExecution where
 
-import qualified Eval               as E
-import           Prelude            hiding (or)
+import           Control.Monad.State
+import qualified Environment         as Env
+import qualified Eval                as E
+import           Prelude             hiding (or)
+import           Program
 import qualified Subst
 import           Syntax
-import Program
-import           Unfold             (oneStep)
-import qualified Environment as Env
-import Control.Monad.State
+import           Unfold              (oneStep)
 
 data SymTree = Fail
              | Success Subst.Subst

@@ -4,17 +4,17 @@
 module Eval where
 
 import           Control.Monad
+import           Control.Monad.State
 import           Data.List
-import           Stream
-import           Syntax
-import           Program
+import qualified Data.Map.Strict     as Map
 import           Def
-import qualified Data.Map.Strict as Map
+import qualified Environment         as Env
+import qualified FreshNames          as FN
+import           Program
+import           Stream
 import qualified Subst
-import qualified VarInterpretation as VI
-import qualified FreshNames as FN
-import qualified Environment as Env
-import Control.Monad.State
+import           Syntax
+import qualified VarInterpretation   as VI
 
 unifyG :: (Subst.Subst -> S -> Ts -> Bool)
           -> Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst

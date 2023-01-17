@@ -1,6 +1,6 @@
 module Program.Option where
 
-import Syntax
+import           Syntax
 
 none :: Term a
 none = C "none" []

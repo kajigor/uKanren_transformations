@@ -1,11 +1,11 @@
 module Program.L where
 
-import Prelude hiding (succ)
-import Syntax
-import Program
-import Def
-import Program.List
-import Program.Num
+import           Def
+import           Prelude      hiding (succ)
+import           Program
+import           Program.List
+import           Program.Num
+import           Syntax
 
 query = Program typo $ fresh ["t", "gamma"] (call "type_" [V "t", V "gamma", just int])
 query1 = Program typo $ fresh ["t"] (call "type_" [V "t", nil, just int])

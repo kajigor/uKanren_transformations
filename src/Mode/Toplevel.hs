@@ -1,18 +1,18 @@
 module Mode.Toplevel where
 
-import Mode.Syntax
-import Mode.Inst
-import Mode.Analysis
-import Control.Monad.State
-import qualified Syntax as S
-import qualified Data.Map as Map
-import qualified Data.Set as Set
-import VarRename
-import Mode.Term
-import Program
-import Def
-import Data.List (find)
-import qualified Mode.NormSyntax as N
+import           Control.Monad.State
+import           Data.List           (find)
+import qualified Data.Map            as Map
+import qualified Data.Set            as Set
+import           Def
+import           Mode.Analysis
+import           Mode.Inst
+import qualified Mode.NormSyntax     as N
+import           Mode.Syntax
+import           Mode.Term
+import           Program
+import qualified Syntax              as S
+import           VarRename
 
 -- analyze :: (Show a, Ord a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
 

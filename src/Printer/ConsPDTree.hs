@@ -1,7 +1,8 @@
+{-# LANGUAGE InstanceSigs #-}
 
 module Printer.ConsPDTree where
 
-import           ConsPD.Unfold    (ConsPDTree (..), restrictSubsts)
+import           ConsPD.Unfold (ConsPDTree (..), restrictSubsts)
 import           Descend
 import           Printer.Dot
 import           Syntax
@@ -17,6 +18,7 @@ instance DotPrinter ConsPDTree where
   simplify = restrictSubsts
 
 instance Dot ConsPDTree where
+  dot :: ConsPDTree -> String
   dot (Leaf gs s _ v) = printf "Leaf <BR/> %s <BR/> %s <BR/> %s" (dot gs) (dot s) (dot v)
   dot Fail = "_|_"
   dot (Success s _) = printf "Success <BR/> %s" (dot s)

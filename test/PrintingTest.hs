@@ -3,22 +3,22 @@ module PrintingTest where
 import           Data.List
 import           Driving
 import           Eval
+import           Prelude            hiding (succ)
+import           Printer.Dot
+import           Printer.Tree
 import           Program.List
 import           Program.Num
-import           Prelude     hiding (succ)
-import           Residualization
+import           Program.Programs
 import           Program.Sort
+import           Program.Stlc
+import           Residualization
 import           Stream
 import           Syntax
-import           Test        hiding (main)
-import           Tree
-import           Printer.Tree
-import           Program.Stlc
-import           Program.Programs
+import           Test               hiding (main)
 import           Text.Printf
+import           Tree
 import           Util.ConjRetriever
-import Util.Miscellaneous
-import Printer.Dot
+import           Util.Miscellaneous
 
 upTo d x =
   if d == 0 then Fail

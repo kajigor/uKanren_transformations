@@ -1,12 +1,12 @@
 module TaglessFinal.Deep where
 
 
-import TaglessFinal.Syntax
-import TaglessFinal.Term
+import           TaglessFinal.Syntax
+import           TaglessFinal.Term
 
-import Control.Monad.State
-import TaglessFinal.VarState
-import qualified Syntax as S
+import           Control.Monad.State
+import qualified Syntax                as S
+import           TaglessFinal.VarState
 
 newtype Deep a = Deep { unDeep :: State VarState (Either (S.Term S.X) (S.G S.X)) }
 

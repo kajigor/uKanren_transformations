@@ -1,11 +1,11 @@
 module Printer.GlobalTree where
 
-import Printer.Dot
+import           Printer.Dot
 
-import Syntax
-import CPD.GlobalControl
-import Descend
-import Text.Printf
+import           CPD.GlobalControl
+import           Descend
+import           Syntax
+import           Text.Printf
 
 instance DotPrinter GlobalTree where
   -- labelNode t@(Node _ ch) i vs es ids = addChildren t ch i vs es ids -- (filter (\t -> not $ case t of Leaf _ _ -> True ; _ -> False) ch) i vs es ids

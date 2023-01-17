@@ -3,17 +3,18 @@
 module Main (main, tests) where
 
 import           Control.Monad
-import qualified CPD.GlobalControl        as GC
+import qualified CPD.GlobalControl   as GC
 import           CPD.LocalControl
 import           CPD.Residualization
-import           Data.Foldable            (for_)
+import           Data.Foldable       (for_)
 import           Data.List
 import           Data.Maybe
-import qualified OCanrenize               as OC
-import           Prelude                  hiding (succ)
+import           Embed
+import qualified OCanrenize          as OC
+import           Prelude             hiding (succ)
 import           Printer.Dot
-import           Printer.GlobalTree ()
-import           Printer.SldTree ()
+import           Printer.GlobalTree  ()
+import           Printer.SldTree     ()
 import qualified Program.Bottles
 import           Program.List
 import           Program.Programs
@@ -22,13 +23,12 @@ import           Program.Unify
 import           Purification
 import           Residualization
 import           Syntax
+import           System.CPUTime
 import           System.Directory
+import           System.Process      (system)
 import           Text.Printf
 import           Util.ConjRetriever
 import           Util.Miscellaneous
-import           Embed
-import           System.CPUTime
-import           System.Process           (system)
 
 
 main :: IO ()

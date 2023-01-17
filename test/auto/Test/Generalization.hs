@@ -2,12 +2,12 @@
 
 module Test.Generalization where
 
-import           Test.Helper    (test2)
+import           Control.Monad.State
+import qualified FreshNames          as FN
 import           Generalization
-import qualified FreshNames as FN
-import           Syntax
 import qualified Subst
-import Control.Monad.State
+import           Syntax
+import           Test.Helper         (test2)
 
 gen1 :: Generalizer
 gen1 = Subst.empty

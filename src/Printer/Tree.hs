@@ -1,7 +1,7 @@
 module Printer.Tree where
 
-import Printer.Dot
-import Tree
+import           Printer.Dot
+import           Tree
 
 instance DotPrinter Tree where
   labelNode t@(Call _ ch _ _)  = addChild    t ch

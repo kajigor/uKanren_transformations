@@ -1,15 +1,15 @@
 {-# LANGUAGE DeriveFunctor #-}
 module Mode.NormSyntax where
 
-import Mode.Term
-import Data.List.NonEmpty (NonEmpty (..))
-import qualified Mode.Syntax as S
-import Control.Monad.State
-import Program
-import Def
-import Data.List (intersect)
-import qualified Data.Set as Set
-import Data.Bifunctor (second)
+import           Control.Monad.State
+import           Data.Bifunctor      (second)
+import           Data.List           (intersect)
+import           Data.List.NonEmpty  (NonEmpty (..))
+import qualified Data.Set            as Set
+import           Def
+import qualified Mode.Syntax         as S
+import           Mode.Term
+import           Program
 
 data Base a = Unif (Var a) (FlatTerm a)
             | Call String [Var a]
@@ -25,7 +25,7 @@ type Goal = Disj
 
 data NameSource = NameSource
   { usedNames :: [String]
-  , counter :: Int
+  , counter   :: Int
   }
 
 newNameSource :: [String] -> NameSource

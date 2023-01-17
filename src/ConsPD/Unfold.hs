@@ -1,27 +1,26 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts    #-}
 module ConsPD.Unfold where
 
 import           Control.Monad.State
-import           Data.Foldable      (foldlM)
-import           Data.List          (partition, delete)
-import qualified Data.Map.Strict    as M
-import           Data.Maybe         (catMaybes, fromJust, fromMaybe,
-                                     isNothing, mapMaybe)
+import           Data.Foldable       (foldlM)
+import           Data.List           (delete, partition)
+import qualified Data.Map.Strict     as M
+import           Data.Maybe          (catMaybes, fromJust, fromMaybe, isNothing, mapMaybe)
 import           Descend
 import           Embed
-import qualified Eval               as E
-import qualified FreshNames         as FN
-import           Generalization     (Generalizer, generalizeAllVarsToFree)
-import           Prelude            hiding (or)
+import qualified Environment         as Env
+import qualified Eval                as E
+import qualified FreshNames          as FN
+import           Generalization      (Generalizer, generalizeAllVarsToFree)
+import           Prelude             hiding (or)
+import           Program
 import qualified Subst
 import           Syntax
-import           Program
-import           Unfold             (findBestByComplexity, findTupling, oneStep, isGoalStatic)
+import           Unfold              (findBestByComplexity, findTupling, isGoalStatic, oneStep)
 import           Util.ListZipper
-import qualified Environment as Env
 
 data ConsPDTree = Fail
                 | Success Subst.Subst Env.Env

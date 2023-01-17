@@ -4,16 +4,16 @@ import           Control.Applicative
 import           Control.Monad.State
 import           Data.Maybe          (mapMaybe)
 import qualified Data.Set            as Set
+import           Def
 import           Embed               (variantCheck)
+import qualified Environment         as Env
 import qualified Eval                as E
 import qualified Subst
 import           Syntax
-import Def
 import           Text.Printf         (printf)
+import           Util.ListZipper
 import           Util.Miscellaneous  (pinpoint)
 import qualified VarInterpretation   as VI
-import qualified Environment as Env
-import Util.ListZipper
 
 oneStepUnfold :: G S -> State Env.Env (G S)
 oneStepUnfold g@(Invoke f as) = do

@@ -1,7 +1,7 @@
 module TaglessFinal.Unify where
 
-import TaglessFinal.Term
 import qualified TaglessFinal.Subst as Subst
+import           TaglessFinal.Term
 
 unifyG :: Ord a
        => (Subst.Subst a -> a -> Term a -> Bool)

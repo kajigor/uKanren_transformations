@@ -1,13 +1,13 @@
 module Test.VarNormalization where
 
-import Transformer.VarNormalization
-import Test.Helper  (test, assertCustom1)
-import Syntax
-import Def
-import Program
-import Program.List (appendo)
-import Programs ( stdlibPrograms )
-import Text.Printf (printf)
+import           Def
+import           Program
+import           Program.List                 (appendo)
+import           Programs                     (stdlibPrograms)
+import           Syntax
+import           Test.Helper                  (assertCustom1, test)
+import           Text.Printf                  (printf)
+import           Transformer.VarNormalization
 
 x, y, z, q0, q1, q2, q3, x0, x1, x2, x3 :: Term [Char]
 x = V "x"

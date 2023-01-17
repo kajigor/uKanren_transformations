@@ -1,7 +1,7 @@
 module SomeTest where
 
-import Syntax
-import Something
+import           Something
+import           Syntax
 
 import qualified PrintingTest as PT
 

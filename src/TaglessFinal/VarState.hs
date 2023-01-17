@@ -1,9 +1,9 @@
 module TaglessFinal.VarState where
 
-import Control.Monad.State
+import           Control.Monad.State
 
 data VarState = VarState
-  { getVar :: Int
+  { getVar      :: Int
   , getFreshVar :: Int
   }
 

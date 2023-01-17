@@ -2,11 +2,11 @@
 
 module Subst where
 
-import Syntax
+import           Data.List       (intercalate)
 import qualified Data.Map.Strict as Map
-import Text.Printf ( printf )
-import Data.List ( intercalate )
-import Prelude hiding ( lookup, null )
+import           Prelude         hiding (lookup, null)
+import           Syntax
+import           Text.Printf     (printf)
 
 newtype Subst = Subst { getSubst :: Map.Map S Ts }
               deriving Eq

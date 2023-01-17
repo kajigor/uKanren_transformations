@@ -1,14 +1,14 @@
 {-# LANGUAGE DeriveFunctor #-}
 module Mode.Syntax where
 
-import qualified Syntax as S
-import Def
-import Program
-import FreshNames
-import Control.Monad.State
-import qualified Data.Map.Strict as Map
-import Mode.Term
-import Data.List (nub)
+import           Control.Monad.State
+import           Data.List           (nub)
+import qualified Data.Map.Strict     as Map
+import           Def
+import           FreshNames
+import           Mode.Term
+import           Program
+import qualified Syntax              as S
 
 data Goal a = Call String [Var a]
             | Unif (Var a) (FlatTerm a)
@@ -125,7 +125,7 @@ flatten program nextVar =
 
 data FlattenState a = FlattenState
   { getVarSource :: a
-  , getVarMap :: Map.Map a (FlatTerm a)
+  , getVarMap    :: Map.Map a (FlatTerm a)
   , getNewVarMap :: Map.Map a (FlatTerm a)
   }
 

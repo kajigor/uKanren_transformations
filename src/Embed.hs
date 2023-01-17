@@ -1,15 +1,15 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE TypeFamilies           #-}
 
 module Embed where
 
-import Syntax
+import           Data.List       (find, subsequences)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (isJust)
-import Data.List (subsequences, find)
+import           Data.Maybe      (isJust)
+import           Syntax
 
 -- ordered subconjunctions of the proper length
 subconjs :: [a] -> Int -> [[a]]

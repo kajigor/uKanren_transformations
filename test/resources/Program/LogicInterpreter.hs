@@ -1,8 +1,8 @@
 module Program.LogicInterpreter where
 
-import Syntax
-import Def
-import Prelude hiding (succ, lookup)
+import           Def
+import           Prelude hiding (lookup, succ)
+import           Syntax
 
 {-
 test_check_subst =

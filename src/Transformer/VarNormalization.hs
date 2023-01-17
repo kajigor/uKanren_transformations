@@ -1,16 +1,16 @@
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleContexts #-}
 module Transformer.VarNormalization where
 
-import Syntax
-import Program
-import Def
-import Control.Monad.State (State (..), evalState, get, put, modify)
-import Control.Monad.Reader ( Reader, runReader, ask )
-import qualified Data.Set as Set
-import Text.Printf (printf)
-import Data.Maybe (fromJust)
-import Data.List (nub)
+import           Control.Monad.Reader (Reader, ask, runReader)
+import           Control.Monad.State  (State (..), evalState, get, modify, put)
+import           Data.List            (nub)
+import           Data.Maybe           (fromJust)
+import qualified Data.Set             as Set
+import           Def
+import           Program
+import           Syntax
+import           Text.Printf          (printf)
 
 data AnnotatedVar a = RelArgument a | FreshVar a
 

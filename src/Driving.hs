@@ -2,24 +2,24 @@
 
 module Driving where
 
+import           Control.Monad.State (runState)
 import           Data.Foldable
-import           Data.List              hiding (group, groupBy)
-import qualified Data.Map.Strict        as Map
+import           Data.List           hiding (group, groupBy)
+import qualified Data.Map.Strict     as Map
 import           Data.Maybe
-import qualified Data.Set               as Set
+import qualified Data.Set            as Set
 import           Def
-import qualified Definitions            as Defs
-import qualified Eval                   as E
-import           Generalization         (Generalizer, generalizeGoals)
-import qualified Environment as Env
+import qualified Definitions         as Defs
+import qualified Environment         as Env
+import qualified Eval                as E
+import qualified FreshNames          as FN
+import           Generalization      (Generalizer, generalizeGoals)
 import           Stream
 import qualified Subst
 import           Syntax
 import           Tree
 import           Util.Miscellaneous
 import qualified VarInterpretation   as VI
-import qualified FreshNames          as FN
-import Control.Monad.State (runState)
 
 type TreeContext = (Set.Set Id, Map.Map Id [S], [Id])
 

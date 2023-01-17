@@ -1,21 +1,22 @@
-{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE TupleSections          #-}
 
 module Generalization where
 
 import           Control.Exception.Base
+import           Control.Monad.State
 import           Data.List              hiding (group, groupBy)
 import qualified Data.Map               as Map
 import           Embed
+import qualified Environment            as Env
+import qualified FreshNames             as FN
 import qualified Subst
 import           Syntax
 import           Text.Printf            (printf)
 import           Util.Miscellaneous     (map1in3)
-import qualified FreshNames             as FN
-import qualified Environment as Env
-import           Control.Monad.State
 
 type Generalizer = Subst.Subst
 

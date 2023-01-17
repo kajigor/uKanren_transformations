@@ -1,15 +1,15 @@
 module Test.Mode.NormSyntax where
 
-import Program.Num
-import qualified Syntax as S
-import Mode.NormSyntax
-import Mode.Syntax (flatten)
-import Mode.Term
-import Program
-import Def
-import VarRename
-import Test.Helper ((@?=))
-import Data.List.NonEmpty
+import           Data.List.NonEmpty
+import           Def
+import           Mode.NormSyntax
+import           Mode.Syntax        (flatten)
+import           Mode.Term
+import           Program
+import           Program.Num
+import qualified Syntax             as S
+import           Test.Helper        ((@?=))
+import           VarRename
 
 x = FTVar $ Var "x"
 y = FTVar $ Var "y"

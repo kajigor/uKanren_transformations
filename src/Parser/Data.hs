@@ -1,12 +1,12 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Parser.Data where
 
-import Text.Megaparsec ( Parsec )
-import Data.Void ( Void(..) )
-import Text.Printf ( printf )
-import Data.List.NonEmpty ( NonEmpty(..) )
-import Data.List ( intercalate )
+import           Data.List          (intercalate)
+import           Data.List.NonEmpty (NonEmpty (..))
+import           Data.Void          (Void (..))
+import           Text.Megaparsec    (Parsec)
+import           Text.Printf        (printf)
 
 type Parser = Parsec Void String
 

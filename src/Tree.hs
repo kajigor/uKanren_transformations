@@ -1,9 +1,9 @@
 module Tree where
 
-import Syntax
-import Text.Printf
-import Generalization
+import           Generalization
 import qualified Subst
+import           Syntax
+import           Text.Printf
 
 type Id = Int
 data Tree =

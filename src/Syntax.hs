@@ -1,16 +1,16 @@
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE InstanceSigs #-}
 
 module Syntax where
 
-import Data.List ( intercalate, nub )
-import Data.List.NonEmpty ( toList, NonEmpty (..) )
-import Text.Printf ( printf )
-import Data.Char ( toLower )
-import Util.Miscellaneous ( parenthesize )
+import           Data.Char          (toLower)
+import           Data.List          (intercalate, nub)
+import           Data.List.NonEmpty (NonEmpty (..), toList)
+import           Text.Printf        (printf)
+import           Util.Miscellaneous (parenthesize)
 
 type X = String -- Syntactic variables
 type S = Int    -- Semantic variables

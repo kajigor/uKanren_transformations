@@ -1,13 +1,13 @@
 module TaglessFinal.EvalState where
 
+import           Control.Monad.State
+import qualified TaglessFinal.Subst    as Subst
+import           TaglessFinal.Term
 import qualified TaglessFinal.VarState as VarState
-import qualified TaglessFinal.Subst as Subst
-import TaglessFinal.Term
-import Control.Monad.State
 
 data EvalState = EvalState
   { getVarState :: VarState.VarState
-  , getSubst :: Subst.Subst Var
+  , getSubst    :: Subst.Subst Var
   }
 
 getSubstM :: State EvalState (Subst.Subst Var)

@@ -1,9 +1,9 @@
 module Residualization where
 
-import Syntax
-import Tree
-import Driving
+import           Driving
 import qualified Subst
+import           Syntax
+import           Tree
 
 
 toX :: Term S -> Term X

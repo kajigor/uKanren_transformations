@@ -4,12 +4,12 @@ import           Test.Helper            (test, test2)
 
 import qualified ConsPD.Unfold          as ConsPD
 import           Printer.ConsPDTree     ()
+import           Program
 import qualified Program.Bottles
 import qualified Program.Bridge
 import qualified Program.Bridge2
 import qualified Program.Desert
-import           Program.List           (appendo, maxLengtho, nil, revAcco,
-                                         reverso, (%))
+import           Program.List           (appendo, maxLengtho, nil, revAcco, reverso, (%))
 import           Program.Path
 import           Program.Programs       (doubleAppendo, rep)
 import qualified Program.Prop
@@ -17,7 +17,6 @@ import           Program.Stlc           (evalo)
 import qualified Program.Unify
 import qualified Subst
 import           Syntax
-import           Program
 import qualified Transformer.ConsPD     as ConsPD
 import qualified Transformer.JustUnfold as JU
 import qualified Transformer.MkToProlog as Mk2Pl

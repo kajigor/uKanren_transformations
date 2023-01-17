@@ -1,14 +1,14 @@
 module Purification where
 
-import Syntax
-import Program
-import Def
-import Data.List
-import qualified Data.Set        as Set
-import qualified Data.Map.Strict as Map
-import Control.Monad.State
-import Text.Printf (printf)
-import Debug.Trace (trace)
+import           Control.Monad.State
+import           Data.List
+import qualified Data.Map.Strict     as Map
+import qualified Data.Set            as Set
+import           Debug.Trace         (trace)
+import           Def
+import           Program
+import           Syntax
+import           Text.Printf         (printf)
 
 type Set = Set.Set
 type Map = Map.Map

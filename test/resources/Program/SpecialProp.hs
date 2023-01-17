@@ -1,10 +1,10 @@
 module Program.SpecialProp where
 
-import Syntax
-import Program
-import Def
-import Program.Bool
-import Program.List
+import           Def
+import           Program
+import           Program.Bool
+import           Program.List
+import           Syntax
 
 logintoQuery = Program loginto $ fresh ["s", "f", "r"] $ call "loginto" [V "s", V "f", trueo]
 

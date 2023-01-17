@@ -1,8 +1,8 @@
 module Program.Sample1 where
 
-import Syntax
-import Program
-import Def
+import           Def
+import           Program
+import           Syntax
 
 query = Program fAndS $ fresh ["x"] (call "fAndS" [x])
 

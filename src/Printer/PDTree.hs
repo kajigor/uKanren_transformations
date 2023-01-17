@@ -1,11 +1,11 @@
 
 module Printer.PDTree where
 
-import Printer.Dot
-import Syntax
-import PartialDeduction
-import Text.Printf
-import Descend
+import           Descend
+import           PartialDeduction
+import           Printer.Dot
+import           Syntax
+import           Text.Printf
 
 instance DotPrinter PDTree where
   labelNode t@(Conj ch _ _)  = addChildren t ch

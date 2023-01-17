@@ -1,8 +1,8 @@
 module Program.PairBridgeBig where
 
-import Prelude hiding (succ, max)
-import Syntax
-import Def
+import           Def
+import           Prelude hiding (max, succ)
+import           Syntax
 
 greater :: [Def G X]
 greater = [greaterDef]

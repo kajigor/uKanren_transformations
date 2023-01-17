@@ -1,9 +1,9 @@
 module Program.Path where
 
-import Syntax
-import Program
-import Def
-import Prelude hiding (elem)
+import           Def
+import           Prelude hiding (elem)
+import           Program
+import           Syntax
 
 querylength = Program pathTree $ fresh ["g", "a1", "a2", "a3", "a4", "a5"] (call "isPath" [C "%" [V "a1", C "%" [V "a2", C "%" [V "a3", C "%" [V "a4", C "%" [V "a5", C "nil" []]]]]], V "g", C "true" []])
 

@@ -1,11 +1,11 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module FinalTagless.View where
 
-import FinalTagless.GoalSyntax
+import           FinalTagless.GoalSyntax
 
-import Text.Printf (printf)
-import Data.List (intercalate)
+import           Data.List               (intercalate)
+import           Text.Printf             (printf)
 
 newtype View v = View { unView :: String }
 

@@ -1,10 +1,10 @@
 module Program.Num where
 
-import Prelude hiding (succ)
-import Syntax
-import Def
-import Program.Bool
-import Text.Printf
+import           Def
+import           Prelude      hiding (succ)
+import           Program.Bool
+import           Syntax
+import           Text.Printf
 
 peanify :: Integer -> Term a
 peanify n | n <= 0 = zero

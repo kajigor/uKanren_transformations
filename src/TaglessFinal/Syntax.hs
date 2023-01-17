@@ -1,15 +1,15 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Redundant bracket" #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE NoMonomorphismRestriction#-}
+{-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 module TaglessFinal.Syntax where
 
-import TaglessFinal.Term
-import qualified TaglessFinal.Subst as Subst
+import           Control.Monad.State
 import qualified Stream
-import TaglessFinal.VarState
-import Control.Monad.State
+import qualified TaglessFinal.Subst    as Subst
+import           TaglessFinal.Term
+import           TaglessFinal.VarState
 
 type T = Term Var
 

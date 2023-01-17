@@ -1,11 +1,11 @@
 module Util.ConjRetriever where
 
 import qualified CPD.GlobalControl as GC
-import Data.List.Extra
-import qualified Data.Set as Set
+import           Data.List.Extra
+import qualified Data.Set          as Set
 import           Descend
-import Syntax
-import Tree
+import           Syntax
+import           Tree
 
 
 retrieve :: Tree -> [[G S]]

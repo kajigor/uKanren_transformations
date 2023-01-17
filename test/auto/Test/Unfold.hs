@@ -2,7 +2,7 @@ module Test.Unfold where
 
 import           Test.Helper  (test)
 
-import           Program.Bool (nandoDef, andoDef)
+import           Program.Bool (andoDef, nandoDef)
 import           Program.List (appendoDef, revAccoDef, reversoDef)
 import qualified Program.Prop
 import           Unfold       (maximumBranches)

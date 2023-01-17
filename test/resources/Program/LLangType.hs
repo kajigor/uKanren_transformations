@@ -1,12 +1,12 @@
 module Program.LLangType where
 
-import Syntax
-import Program
-import Def
-import Program.Bool
-import Program.List
-import Program.Option
-import Program.Pair
+import           Def
+import           Program
+import           Program.Bool
+import           Program.List
+import           Program.Option
+import           Program.Pair
+import           Syntax
 
 query  = Program typecheck $ fresh ["t", "gamma"] (call "typecheck_" [V "gamma", V "t", some integer])
 query1 = Program typecheck $ fresh ["t"] (call "typecheck_" [nil, V "t", some integer])

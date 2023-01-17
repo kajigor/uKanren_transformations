@@ -1,20 +1,20 @@
+{-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
 
 module OCanrenize where
 
-import Control.Applicative ((<|>))
-import Data.Char ( toLower )
-import Data.Maybe (fromMaybe)
-import Data.List (intercalate)
-import Syntax ( freshVars, G(..), Term(..), X )
-import Def (Def (..))
-import System.IO ( IOMode(WriteMode), hClose, openFile, hPutStrLn )
-import System.IO.Temp ( withSystemTempFile )
-import System.Process ( system )
-import Text.Printf ( printf )
-import Util.Miscellaneous ( parenthesize )
+import           Control.Applicative ((<|>))
+import           Data.Char           (toLower)
+import           Data.List           (intercalate)
+import           Data.Maybe          (fromMaybe)
+import           Def                 (Def (..))
+import           Syntax              (G (..), Term (..), X, freshVars)
+import           System.IO           (IOMode (WriteMode), hClose, hPutStrLn, openFile)
+import           System.IO.Temp      (withSystemTempFile)
+import           System.Process      (system)
+import           Text.Printf         (printf)
+import           Util.Miscellaneous  (parenthesize)
 
 class OCanren a where
   ocanren :: a -> String

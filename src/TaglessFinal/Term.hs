@@ -1,7 +1,7 @@
 module TaglessFinal.Term where
 
-import Text.Printf ( printf )
 import qualified Syntax
+import           Text.Printf (printf)
 
 type Name = String
 type Var = String

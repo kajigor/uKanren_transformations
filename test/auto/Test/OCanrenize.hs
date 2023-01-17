@@ -1,8 +1,8 @@
 module Test.OCanrenize where
 
-import OCanrenize
-import Test.Helper (test)
-import Syntax
+import           OCanrenize
+import           Syntax
+import           Test.Helper (test)
 
 unit_OCanrenizeTerm = do
     test ocanren (C "fst" [] :: Term X) "(fst_ ())"

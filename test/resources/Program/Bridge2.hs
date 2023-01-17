@@ -1,10 +1,10 @@
 module Program.Bridge2 where
 
+import           Def
+import           Prelude        hiding (max, succ)
+import           Program
 import qualified Program.Bridge
-import Prelude hiding (succ, max)
-import Syntax
-import Program
-import Def
+import           Syntax
 
 
 query = Program getAnswer $ fresh ["a", "b"] (call "getAnswer" [V "a", C "some" [V "b"]])

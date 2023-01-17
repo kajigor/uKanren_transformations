@@ -1,28 +1,27 @@
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE TypeFamilies           #-}
 
 module CPD.LocalControl where
 
-import           Data.List          (find, intersect, nub)
+import           Control.Monad.State
+import           Data.List           (find, intersect, nub)
 import           Data.Maybe
+import           Descend
 import           Embed
-import qualified Eval               as E
-import qualified FreshNames         as FN
+import qualified Environment         as Env
+import qualified Eval                as E
+import qualified FreshNames          as FN
 import           Generalization
-import           Prelude            hiding (lookup)
+import           Prelude             hiding (lookup)
+import           Program
 import qualified Subst
 import           Syntax
-import           Program
 import           Text.Printf
-import           Unfold             (oneStepUnfold, normalize, unifyStuff, getMaximumBranches)
-import qualified Environment as Env
+import           Unfold              (getMaximumBranches, normalize, oneStepUnfold, unifyStuff)
 import           Util.ListZipper
-import qualified Util.Miscellaneous as Util
-import           Descend
-import Control.Monad.State
+import qualified Util.Miscellaneous  as Util
 
 data Heuristic = Deterministic | Branching
 

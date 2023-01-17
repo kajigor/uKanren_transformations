@@ -1,12 +1,12 @@
 module Program.Prop where
 
-import Syntax
-import Program
-import Def
-import Program.Bool
-import Program.List
-import Program.Num
-import Prelude hiding (succ)
+import           Def
+import           Prelude      hiding (succ)
+import           Program
+import           Program.Bool
+import           Program.List
+import           Program.Num
+import           Syntax
 
 fm  = C "conj" [C "var" [C "x" []], C "neg" [C "var" [C "x" []]]] -- always fails
 fm1 = C "conj" [C "var" [C "x" []], C "neg" [C "var" [C "y" []]]]

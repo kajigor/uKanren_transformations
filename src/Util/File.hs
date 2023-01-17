@@ -1,10 +1,11 @@
 module Util.File where
 
-import Control.Monad (unless, when)
-import Data.Maybe (fromMaybe)
-import System.Directory (doesFileExist, doesDirectoryExist, doesPathExist, removeDirectoryRecursive, createDirectoryIfMissing, listDirectory)
-import System.FilePath ((</>), replaceExtension, isExtensionOf)
-import Text.Printf (printf)
+import           Control.Monad    (unless, when)
+import           Data.Maybe       (fromMaybe)
+import           System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, doesPathExist,
+                                   listDirectory, removeDirectoryRecursive)
+import           System.FilePath  (isExtensionOf, replaceExtension, (</>))
+import           Text.Printf      (printf)
 
 prologExt :: FilePath -> FilePath
 prologExt p = replaceExtension p "pl"

@@ -1,10 +1,10 @@
 module Util.Check where
 
+import           Control.Monad.State
+import qualified Environment         as Env
 import qualified Subst
 import           Syntax
 import           Unfold
-import qualified Environment as Env
-import Control.Monad.State
 
 -- Checks if the first invocation is less than the second one.
 -- r x1 .. xn < r y1 .. yn <=> \exists i : xi -- strict subterm of yi

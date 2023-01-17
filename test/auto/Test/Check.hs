@@ -1,16 +1,16 @@
 module Test.Check where
 
-import qualified Eval   as E
+import           Control.Monad.State
+import qualified Environment         as Env
+import qualified Eval                as E
+import           Program
 import           Program.List
 import           Program.Programs
 import qualified Subst
 import           Syntax
-import           Program
-import           Test.Helper      (test2)
+import           Test.Helper         (test2)
 import           Text.Printf
 import           Util.Check
-import qualified Environment as Env
-import Control.Monad.State
 
 unit_checkConj = do
   test2 checkConj [call "f" [V 1, V 2], call "g" [V 2, V 3]] [call "f" [V 5, V 6], call "g" [C "" [V 2], V 3]] True

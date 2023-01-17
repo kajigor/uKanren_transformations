@@ -1,9 +1,9 @@
 module VarInterpretation where
 
-import Syntax
-import qualified Data.Map as Map
-import Data.List ( intercalate )
-import Text.Printf ( printf )
+import           Data.List   (intercalate)
+import qualified Data.Map    as Map
+import           Syntax
+import           Text.Printf (printf)
 
 newtype Interpretation = Interpretation { getInterpretation :: Map.Map X Ts }
                        deriving (Ord, Eq)

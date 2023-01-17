@@ -1,10 +1,10 @@
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DeriveFunctor #-}
 
 module FreshNames where
 
-import Prelude hiding ((<))
+import           Prelude hiding ((<))
 
 newtype PolyFreshNames a = FreshNames { unFreshNames :: a }
                          deriving (Show, Eq, Ord, Functor)

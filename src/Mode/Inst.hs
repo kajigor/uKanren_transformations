@@ -1,6 +1,6 @@
 module Mode.Inst where
 
-import Text.Printf
+import           Text.Printf
 
 data Inst = Ground
           | Free

@@ -2,14 +2,14 @@
 {-# LANGUAGE TupleSections #-}
 module NormalizedSyntax where
 
-import Data.List.NonEmpty (NonEmpty (..), toList)
-import Syntax
-import Program
-import Def
-import Text.Printf
-import Control.Monad.State
-import Data.List.NonEmpty.Extra (fromList)
-import Data.List (intercalate)
+import           Control.Monad.State
+import           Data.List                (intercalate)
+import           Data.List.NonEmpty       (NonEmpty (..), toList)
+import           Data.List.NonEmpty.Extra (fromList)
+import           Def
+import           Program
+import           Syntax
+import           Text.Printf
 
 
 data Goal a = Goal (Disj a)

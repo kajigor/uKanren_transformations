@@ -1,11 +1,11 @@
 module Program.Map5 where
 
-import Syntax
-import Def
-import Prelude hiding (succ)
-import Program.Num
-import Program.Bool
-import Program.List ((%), nil)
+import           Def
+import           Prelude      hiding (succ)
+import           Program.Bool
+import           Program.List (nil, (%))
+import           Program.Num
+import           Syntax
 
 map5Def :: Def G X
 map5Def =

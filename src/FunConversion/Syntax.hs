@@ -2,10 +2,10 @@
 
 module FunConversion.Syntax where
 
-import Prettyprinter
+import           Prettyprinter
 
-import qualified Data.Text as T
-import qualified Data.Char as C
+import qualified Data.Char     as C
+import qualified Data.Text     as T
 
 type Var = String
 type Name = String

@@ -1,41 +1,18 @@
 module Printer.Dot where
 
-import Data.Text.Lazy (Text, pack, unpack, replace)
-import Data.Graph.Inductive (Gr, mkGraph)
-import Data.GraphViz (
-  GraphvizParams,
-  GlobalAttributes(
-    GraphAttrs,
-    NodeAttrs
-    ),
-  X11Color(Transparent, White),
-  nonClusteredParams,
-  globalAttributes,
-  fmtNode,
-  fmtEdge,
-  graphToDot
-  )
-import Data.GraphViz.Printing (toDot, renderDot)
-import Data.GraphViz.Attributes.Complete (
-  Attribute(
-    BgColor,
-    Shape,
-    Label,
-    RankDir,
-    Style,
-    FillColor
-    ),
-  Shape(BoxShape),
-  Label(StrLabel),
-  RankDir(FromTop),
-  StyleName(Filled),
-  StyleItem(SItem),
-  toWColor,
-  )
+import           Data.Graph.Inductive              (Gr, mkGraph)
+import           Data.GraphViz                     (GlobalAttributes (GraphAttrs, NodeAttrs), GraphvizParams,
+                                                    X11Color (Transparent, White), fmtEdge, fmtNode, globalAttributes,
+                                                    graphToDot, nonClusteredParams)
+import           Data.GraphViz.Attributes.Complete (Attribute (BgColor, FillColor, Label, RankDir, Shape, Style),
+                                                    Label (StrLabel), RankDir (FromTop), Shape (BoxShape),
+                                                    StyleItem (SItem), StyleName (Filled), toWColor)
+import           Data.GraphViz.Printing            (renderDot, toDot)
+import           Data.Text.Lazy                    (Text, pack, replace, unpack)
 
-import Syntax
-import Text.Printf
-import qualified Data.Set as Set
+import qualified Data.Set                          as Set
+import           Syntax
+import           Text.Printf
 
 treeToGraph :: DotPrinter a => a -> Gr Text Text
 treeToGraph tree =

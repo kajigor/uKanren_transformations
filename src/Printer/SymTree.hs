@@ -1,10 +1,10 @@
 
 module Printer.SymTree where
 
-import Printer.Dot
-import Syntax
-import SymbolicExecution
-import Text.Printf
+import           Printer.Dot
+import           SymbolicExecution
+import           Syntax
+import           Text.Printf
 
 instance DotPrinter SymTree where
   labelNode t@(Conj ch _ _) = addChildren t ch

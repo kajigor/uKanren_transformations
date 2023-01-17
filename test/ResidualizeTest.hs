@@ -1,11 +1,11 @@
 module ResidualizationTest where
 
-import Residualization
-import Syntax
-import Text.Printf
-import Program.List
-import Driving
-import DrivingTest
+import           Driving
+import           DrivingTest
+import           Program.List
+import           Residualization
+import           Syntax
+import           Text.Printf
 
 scoping :: (G X, [String])
 scoping =

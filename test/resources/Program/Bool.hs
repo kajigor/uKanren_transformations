@@ -1,7 +1,7 @@
 module Program.Bool where
 
-import Syntax
-import Def
+import           Def
+import           Syntax
 
 falso :: Term a
 falso = C "false" []

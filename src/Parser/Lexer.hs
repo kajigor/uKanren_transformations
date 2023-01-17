@@ -1,12 +1,11 @@
 module Parser.Lexer where
 
-import Parser.Data ( Parser )
+import           Control.Monad              (void)
+import           Parser.Data                (Parser)
+import           Text.Megaparsec            (MonadParsec (try), between, many, (<|>))
+import           Text.Megaparsec.Char       (alphaNumChar, char, letterChar, lowerChar, spaceChar, upperChar)
 import qualified Text.Megaparsec.Char.Lexer as L
-import Control.Monad ( void )
-import Text.Megaparsec.Char
-    ( alphaNumChar, char, letterChar, lowerChar, upperChar, spaceChar )
-import Text.Megaparsec ( (<|>), between, many, MonadParsec(try) )
-import Text.Printf ( printf )
+import           Text.Printf                (printf)
 
 -- spaces & comments
 sc :: Parser ()

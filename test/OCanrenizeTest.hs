@@ -1,18 +1,18 @@
 module OCanrenizeTest where
 
-import OCanrenize
-import DrivingTest
-import Syntax
-import Num
-import Sort
-import Residualization
-import Driving
-import Stlc
-import Programs
-import Something
-import qualified BridgeTest as BT
-import qualified SomeTest as ST
-import qualified PrintingTest as PT
+import qualified BridgeTest      as BT
+import           Driving
+import           DrivingTest
+import           Num
+import           OCanrenize
+import qualified PrintingTest    as PT
+import           Programs
+import           Residualization
+import qualified SomeTest        as ST
+import           Something
+import           Sort
+import           Stlc
+import           Syntax
 
 runTest name goal = do
   PT.runTestSimplified name goal

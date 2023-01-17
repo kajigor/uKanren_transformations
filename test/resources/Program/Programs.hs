@@ -1,10 +1,10 @@
 module Program.Programs where
 
-import Program.List
-import Program.Num
-import Syntax
-import Def
-import Prelude hiding (succ)
+import           Def
+import           Prelude      hiding (succ)
+import           Program.List
+import           Program.Num
+import           Syntax
 
 palindromoDef :: Def G X
 palindromoDef =

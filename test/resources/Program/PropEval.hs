@@ -1,12 +1,12 @@
 module Program.PropEval where
 
-import Syntax
-import Program
-import Def
-import Program.Bool
-import Program.List
-import Program.Num
-import Prelude hiding (succ)
+import           Def
+import           Prelude      hiding (succ)
+import           Program
+import           Program.Bool
+import           Program.List
+import           Program.Num
+import           Syntax
 
 plainFirstQuery = Program plainFirst $ fresh ["fm", "st"] (call "evalo" [V "st", V "fm", trueo])
 plainLastQuery  = Program plainLast  $ fresh ["fm", "st"] (call "evalo" [V "st", V "fm", trueo])

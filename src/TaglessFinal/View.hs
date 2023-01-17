@@ -1,11 +1,11 @@
 module TaglessFinal.View where
 
-import TaglessFinal.Syntax
-import TaglessFinal.Term
+import           TaglessFinal.Syntax
+import           TaglessFinal.Term
 
-import Text.Printf ( printf )
-import Control.Monad.State
-import TaglessFinal.VarState
+import           Control.Monad.State
+import           TaglessFinal.VarState
+import           Text.Printf           (printf)
 
 newtype View a = View { unView :: State VarState String }
 

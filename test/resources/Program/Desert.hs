@@ -1,9 +1,9 @@
 module Program.Desert where
 
-import Syntax
-import Program
-import Def
-import Prelude hiding (elem)
+import           Def
+import           Prelude hiding (elem)
+import           Program
+import           Syntax
 
 some x = C "some" [x]
 

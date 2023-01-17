@@ -1,9 +1,9 @@
 module Program.Bridge where
 
-import Prelude hiding (succ, max)
-import Syntax
-import Program
-import Def
+import           Def
+import           Prelude hiding (max, succ)
+import           Program
+import           Syntax
 
 query = Program topLevelBigBridge (fresh ["a", "b"] (call "tlBigBridge" [V "a", V "b"]))
 

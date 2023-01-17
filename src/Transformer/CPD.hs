@@ -3,16 +3,19 @@
 module Transformer.CPD where
 
 import           Control.Monad
-import qualified CPD.GlobalControl        as GC
-import qualified CPD.LocalControl         as LC
+import qualified CPD.GlobalControl      as GC
+import qualified CPD.LocalControl       as LC
 import           CPD.Residualization
 import           Data.List
 import           Data.Maybe
-import qualified OCanrenize               as OC
-import           Prelude                  hiding (succ)
+import           Def
+import qualified GHC.IO.Exception
+import qualified OCanrenize             as OC
+import           Prelude                hiding (succ)
 import           Printer.Dot
-import Printer.GlobalTree ()
-import Printer.SldTree ()
+import           Printer.GlobalTree     ()
+import           Printer.SldTree        ()
+import           Program
 import qualified Program.Bottles
 import           Program.Programs
 import           Program.Prop
@@ -20,20 +23,17 @@ import           Program.Unify
 import           Purification
 import           Residualization
 import           Syntax
-import           Def
-import           Program
-import           System.FilePath          ((</>), (<.>))
-import           System.Process           (system)
+import           System.FilePath        ((<.>), (</>))
+import           System.Process         (system)
 import           Text.Printf
 import qualified Transformer.MkToProlog
-import qualified GHC.IO.Exception
-import Util.File ( createDirRemoveExisting, shortenFileName )
+import           Util.File              (createDirRemoveExisting, shortenFileName)
 
-data TransformResult = Result { original :: [Def G X]
+data TransformResult = Result { original   :: [Def G X]
                               , globalTree :: GC.GlobalTree
                               , localTrees :: [([G S], LC.SldTree)]
-                              , beforePur :: Program G X
-                              , purified :: (G X, [X], [Def G X])
+                              , beforePur  :: Program G X
+                              , purified   :: (G X, [X], [Def G X])
                               }
 
 runTransformation :: Program G X -> LC.Heuristic -> TransformResult

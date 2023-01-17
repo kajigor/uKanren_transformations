@@ -1,21 +1,14 @@
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances  #-}
 module Parser.SimpleParser where
 
-import Eval (postEval)
-import Text.Megaparsec
-    ( (<|>), (<?>), many, sepBy, sepBy1, some, MonadParsec(try) )
-import Syntax
-    ( G(..),
-      Term(..),
-      X,
-      unsafeConj,
-      unsafeDisj )
-import Def
-import Program
-import Parser.Lexer
-    ( sc, symbol, lexeme, roundBr, boxBr, lIdentifier, uIdentifier, comma )
-import Parser.Data ( Parser )
+import           Def
+import           Eval            (postEval)
+import           Parser.Data     (Parser)
+import           Parser.Lexer    (boxBr, comma, lIdentifier, lexeme, roundBr, sc, symbol, uIdentifier)
+import           Program
+import           Syntax          (G (..), Term (..), X, unsafeConj, unsafeDisj)
+import           Text.Megaparsec (MonadParsec (try), many, sepBy, sepBy1, some, (<?>), (<|>))
 
 parseProgramWithImports :: Parser ([String], Program G X)
 parseProgramWithImports = sc *> do

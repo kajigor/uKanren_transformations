@@ -2,21 +2,21 @@
 
 module CPD.GlobalControl where
 
-import qualified CPD.LocalControl   as LC
-import           Data.List          (find, partition)
+import           Control.Monad.State (runState)
+import qualified CPD.LocalControl    as LC
+import           Data.List           (find, partition)
 import           Data.Tuple
 import           Descend
 import           Embed
-import qualified Eval               as E
-import qualified FreshNames         as FN
-import           Generalization     (Generalizer)
-import           Prelude            hiding (sequence)
+import qualified Environment         as Env
+import qualified Eval                as E
+import qualified FreshNames          as FN
+import           Generalization      (Generalizer)
+import           Prelude             hiding (sequence)
+import           Program
 import qualified Subst
 import           Syntax
-import           Program
 import           Util.Miscellaneous
-import qualified Environment as Env
-import Control.Monad.State (runState)
 
 data GlobalTree = Leaf  (Descend [G S]) Generalizer Subst.Subst
                 | Node  (Descend [G S]) Generalizer LC.SldTree [GlobalTree]

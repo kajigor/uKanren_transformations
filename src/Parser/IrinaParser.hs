@@ -7,20 +7,14 @@
 module Parser.IrinaParser (parseProg, parseProgramWithImports) where
 
 import qualified Control.Applicative.Combinators.NonEmpty as NE
-import           Eval                           (postEval)
-import Text.Megaparsec ( (<|>), many, some, MonadParsec(try) )
-import Syntax
-    ( G((:=:), Invoke, Fresh),
-      Term(..),
-      X,
-      unsafeDisj,
-      unsafeConj',
-      unsafeDisj' )
-import Def
-import Program
-import Parser.Data ( Parser )
-import Parser.Lexer
-    ( sc, symbol, roundBr, angleBr, boxBr, curvyBr, identifier )
+import           Def
+import           Eval                                     (postEval)
+import           Parser.Data                              (Parser)
+import           Parser.Lexer                             (angleBr, boxBr, curvyBr, identifier, roundBr, sc, symbol)
+import           Program
+import           Syntax                                   (G ((:=:), Fresh, Invoke), Term (..), X, unsafeConj',
+                                                           unsafeDisj, unsafeDisj')
+import           Text.Megaparsec                          (MonadParsec (try), many, some, (<|>))
 
 parseProgramWithImports :: Parser ([String], Program G X)
 parseProgramWithImports = do

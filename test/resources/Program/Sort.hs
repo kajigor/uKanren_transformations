@@ -1,12 +1,12 @@
 module Program.Sort where
 
-import Prelude hiding (succ, min, max)
-import Syntax
-import Program
-import Def
-import Program.Bool
-import Program.Num
-import Program.List hiding (a, b)
+import           Def
+import           Prelude      hiding (max, min, succ)
+import           Program
+import           Program.Bool
+import           Program.List hiding (a, b)
+import           Program.Num
+import           Syntax
 
 query = Program sorto $ fresh ["x", "y"] (call "sorto" [V "x", V "y"])
 

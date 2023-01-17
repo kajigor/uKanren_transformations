@@ -1,6 +1,6 @@
 module Test.ListZipper where
 
-import           Test.Helper (test2)
+import           Test.Helper     (test2)
 
 import           Util.ListZipper
 

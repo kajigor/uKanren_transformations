@@ -1,23 +1,23 @@
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 
 module CPD.Residualization where
 
-import Syntax
-import Def
-import Program
-import Text.Printf
-import Data.List
-import qualified Data.Set as Set
-import qualified Residualization as Res
-import qualified CPD.LocalControl as LC
-import Eval
-import Data.Char
-import Data.Maybe
-import CPD.GlobalControl
-import Util.Miscellaneous
+import           CPD.GlobalControl
+import qualified CPD.LocalControl   as LC
+import           Data.Char
+import           Data.List
+import           Data.Maybe
+import qualified Data.Set           as Set
+import           Def
+import           Eval
+import           Program
+import qualified Residualization    as Res
 import qualified Subst
+import           Syntax
+import           Text.Printf
+import           Util.Miscellaneous
 
 type Set = Set.Set
 

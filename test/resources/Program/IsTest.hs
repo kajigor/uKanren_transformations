@@ -1,8 +1,8 @@
 module Program.IsTest where
 
-import Syntax
-import Def
-import Prelude hiding (max)
+import           Def
+import           Prelude hiding (max)
+import           Syntax
 
 greater :: [Def G X]
 greater = [greaterDef]

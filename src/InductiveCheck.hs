@@ -2,14 +2,14 @@
 
 module InductiveCheck where
 
+import           Control.Monad.State
 import           Data.Maybe
+import qualified Environment         as Env
 import           Eval
+import           Program
 import qualified Subst
 import           Syntax
-import Program
-import           Unfold       (oneStepUnfold, unifyStuff, normalize)
-import qualified Environment as Env
-import Control.Monad.State
+import           Unfold              (normalize, oneStepUnfold, unifyStuff)
 
 newtype IndWrap a = IndWrap { unwrap :: a }
 

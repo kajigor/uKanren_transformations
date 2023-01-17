@@ -1,8 +1,8 @@
 module Program.Stlc where
 
-import Prelude hiding (abs)
-import Syntax
-import Def
+import           Def
+import           Prelude hiding (abs)
+import           Syntax
 
 var :: Term a -> Term a
 var x   = C "V" [x]

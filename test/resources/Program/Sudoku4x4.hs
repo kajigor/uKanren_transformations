@@ -1,8 +1,8 @@
 module Program.Sudoku4x4 where
 
-import Syntax
-import Program
-import Def
+import           Def
+import           Program
+import           Syntax
 
 query = Program sudoku4x4 $ fresh ["sudoku", "q"] (call "check_sudoku" [V "sudoku", V "q"])
 queryValid   = Program sudoku4x4 $ fresh ["q"] (call "check_sudoku" [validField, V "q"])

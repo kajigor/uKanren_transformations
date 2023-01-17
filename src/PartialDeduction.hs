@@ -1,19 +1,19 @@
 module PartialDeduction where
 
-import           Data.List          (find)
-import           Data.Maybe         (mapMaybe)
+import           Control.Monad.State
+import           Data.List           (find)
+import           Data.Maybe          (mapMaybe)
 import qualified Descend
 import           Embed
-import qualified Eval               as E
-import           Generalization     (generalizeGoals)
-import           Prelude            hiding (or)
+import qualified Environment         as Env
+import qualified Eval                as E
+import           Generalization      (generalizeGoals)
+import           Prelude             hiding (or)
+import           Program
 import qualified Subst
 import           Syntax
-import           Program
-import           Unfold             (oneStepUnfold, unifyStuff, normalize)
-import           Util.Miscellaneous (fst3)
-import qualified Environment as Env
-import Control.Monad.State
+import           Unfold              (normalize, oneStepUnfold, unifyStuff)
+import           Util.Miscellaneous  (fst3)
 
 data PDTree = Fail
             | Success Subst.Subst

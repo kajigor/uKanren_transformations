@@ -4,29 +4,29 @@ module Transformer.ConsPD where
 import           ConsPD.Residualization
 import qualified ConsPD.Unfold          as ConsPD
 import           Control.Monad          (guard)
-import           Data.Maybe             (isJust, fromJust)
+import           Data.Maybe             (fromJust, isJust)
+import           Def
+import           NormalizedSyntax       (normalizeProg)
 import qualified OCanrenize             as OC
-import           Printer.Dot
 import           Printer.ConsPDTree     ()
+import           Printer.Dot
+import           Program
 import           Purification
 import           Residualization        (vident)
 import           Syntax
-import           Def
-import           Program
 import           System.FilePath        ((<.>), (</>))
 import           System.Process         (system)
 import           Text.Printf
 import qualified Transformer.MkToProlog
-import           Util.Miscellaneous     (escapeTick)
 import           Util.File              (createDirRemoveExisting)
-import           NormalizedSyntax       (normalizeProg)
+import           Util.Miscellaneous     (escapeTick)
 
-data TransformResult = Result { original :: [Def G X]
-                              , tree :: ConsPD.ConsPDTree
-                              , simplifiedTree :: ConsPD.ConsPDTree
-                              , names :: [X]
+data TransformResult = Result { original           :: [Def G X]
+                              , tree               :: ConsPD.ConsPDTree
+                              , simplifiedTree     :: ConsPD.ConsPDTree
+                              , names              :: [X]
                               , beforePurification :: Maybe (G X, [X], [Def G X])
-                              , purified :: Maybe (G X, [X], [Def G X])
+                              , purified           :: Maybe (G X, [X], [Def G X])
                               }
 
 type Transformer = Program G X -> (ConsPD.ConsPDTree, G S, [S])

@@ -1,20 +1,20 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TupleSections    #-}
 module Mode.Analysis where
 
-import Mode.Inst
-import Mode.Syntax
-import Def
-import Data.Maybe
-import Data.List (sortOn, nub)
-import Control.Monad.State
-import qualified Data.Map as Map
+import           Control.Applicative   ((<|>))
+import           Control.Monad.State
+import           Data.List             (nub, sortOn)
+import           Data.List             (permutations)
+import qualified Data.Map              as Map
 import qualified Data.Map.Merge.Strict as Merge
-import qualified Data.Set as Set
-import Data.List (permutations)
-import Control.Applicative ((<|>))
-import Mode.Term
-import Mode.Pretty
+import           Data.Maybe
+import qualified Data.Set              as Set
+import           Def
+import           Mode.Inst
+import           Mode.Pretty
+import           Mode.Syntax
+import           Mode.Term
 
 initVarFromMap :: Ord a => Map.Map a Inst -> a -> (a, Mode)
 initVarFromMap instMap v =
@@ -77,10 +77,10 @@ emptyAnalyzeState = AnalyzeState { getDefinitions = Map.empty
                                  , getQueue = Set.empty }
 
 data AnalyzeState a = AnalyzeState
-  { getDefinitions :: Map.Map String (Def Goal a)
+  { getDefinitions   :: Map.Map String (Def Goal a)
   , getAllModdedDefs :: Map.Map String [[(a, Mode)]]
-  , getInstMap :: Map.Map a Mode
-  , getQueue :: Set.Set (String, [(a, Mode)])
+  , getInstMap       :: Map.Map a Mode
+  , getQueue         :: Set.Set (String, [(a, Mode)])
   }
   deriving (Show)
 

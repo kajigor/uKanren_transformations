@@ -7,14 +7,14 @@ import           Control.Applicative ((<|>))
 import qualified CPD.Residualization as CpdR
 import           Data.List           (find, intercalate, nub)
 import           Data.Maybe          (catMaybes, fromJust, fromMaybe)
+import           Def
 import           Descend
-import           Embed (isVariant)
+import           Embed               (isVariant)
 import qualified Eval                as E
+import           Program
 import qualified Residualization     as Res
 import qualified Subst
 import           Syntax
-import           Program
-import           Def
 import           Text.Printf         (printf)
 import           Util.Miscellaneous  (fst3)
 

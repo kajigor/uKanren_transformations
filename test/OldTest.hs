@@ -1,15 +1,15 @@
 module OldTest where
 
-import Syntax
-import Stream
-import Eval
-import Driving
-import Tree
-import Program.List
-import Program.Num
-import Program.Bool
-import Program.Sort
-import Prelude hiding (succ)
+import           Driving
+import           Eval
+import           Prelude      hiding (succ)
+import           Program.Bool
+import           Program.List
+import           Program.Num
+import           Program.Sort
+import           Stream
+import           Syntax
+import           Tree
 
 reify :: Eq a => [(a, Term a)] -> Term a -> Term a
 reify s x@(V v) =

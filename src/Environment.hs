@@ -1,14 +1,14 @@
 -- miniKanren environment (previously gamma)
 module Environment where
 
-import qualified Definitions as Defs
+import           Def
+import qualified Definitions       as Defs
+import qualified FreshNames        as FN
+import           Syntax
 import qualified VarInterpretation as VI
-import qualified FreshNames as FN
-import Syntax
-import Def
 
-data Env = Env { getDefs :: Defs.Definitions
-               , getInterp :: VI.Interpretation
+data Env = Env { getDefs       :: Defs.Definitions
+               , getInterp     :: VI.Interpretation
                , getFreshNames :: FN.FreshNames
                }
           -- deriving (Show, Ord, Eq)

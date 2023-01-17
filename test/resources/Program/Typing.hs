@@ -1,12 +1,12 @@
 module Program.Typing where
 
-import Prelude hiding (succ)
-import Syntax
-import Program
-import Def
-import Program.Pair
-import Program.List
-import Program.Num
+import           Def
+import           Prelude      hiding (succ)
+import           Program
+import           Program.List
+import           Program.Num
+import           Program.Pair
+import           Syntax
 
 query = Program typo $ fresh ["t", "gamma", "x", "y"] (call "type" [V "t", V "gamma", C "arrow" [V "x", V "y"]])
 

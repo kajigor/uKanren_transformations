@@ -1,13 +1,13 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module TaglessFinal.Subst where
 
-import TaglessFinal.Term
-import qualified Data.Map.Strict as Map
-import Text.Printf ( printf )
-import Data.List ( intercalate )
-import Prelude hiding ( lookup, null )
+import           Data.List         (intercalate)
+import qualified Data.Map.Strict   as Map
+import           Prelude           hiding (lookup, null)
+import           TaglessFinal.Term
+import           Text.Printf       (printf)
 
 newtype Subst a = Subst { getSubst :: Map.Map a (Term a) }
                 deriving Eq
