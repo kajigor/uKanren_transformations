@@ -2,13 +2,12 @@ module Mode.Toplevel where
 
 import Mode.Syntax
 import Mode.Inst
-import Mode.Analysis hiding (trace)
+import Mode.Analysis
 import Control.Monad.State
 import qualified Syntax as S
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import VarRename
-import Debug.Trace
 import Mode.Term
 import Program
 import Def
@@ -35,7 +34,7 @@ initModeForVar inputArgs (Var x) =
 topLevel :: Program S.G S.X -> [Int] -> Maybe (Program Goal (S.S, Mode))
 topLevel program ins = do
     (program, nextVar) <- uniquelyRenameVars program
-    let flat@(Program defs goal) = trace (show program) $ N.back $ N.normalize $ flatten program nextVar
+    let flat@(Program defs goal) = N.back $ N.normalize $ flatten program nextVar
     case goal of
       Call name args -> do
         let inputArgs = map (args !!) ins

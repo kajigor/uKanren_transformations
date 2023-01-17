@@ -2,7 +2,6 @@ module Program.Stlc where
 
 import Prelude hiding (abs)
 import Syntax
-import Program
 import Def
 
 var :: Term a -> Term a

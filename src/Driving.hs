@@ -162,7 +162,7 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
  if length conjs > 3 -- head ids > 100
  then
     case find (\ (_, conjs') -> (embedGoals conjs' qqq_conjs)) cs of
-      Nothing     -> trace "AHA" $ (tc, Prune [conj qqq_conjs], d)
+      Nothing     -> (tc, Prune [conj qqq_conjs], d)
       Just (_, j) -> (tc, Prune [conj qqq_conjs, Invoke "Embedding" [],  conj j], d)
  else-}
   -- let qqq = map (\(a, b, g) -> (a, b, substitute s g)) conjs in
@@ -190,7 +190,6 @@ invoke tc@(sr, args, ids) cs d s gen conjs =
           else if length conjs' < length qqq
                then let context  = (id, qqq_conjs):cs in
                     let splitted = split qqq conjs' in
-                    --trace ("\nSplitted " ++ show (map (map trd') splitted)) $
                     let (tc'', d'', nodes) = foldl (\(tc, d, nodes) x ->
                                                        let (tc', node', d') = eval tc context d s gen [] (head x) (tail x)
                                                        in  (tc', d', node' : nodes)

@@ -57,7 +57,6 @@ abstract descend goals d =
           ((m, gen) : goals, delta)
         Just b ->
           let (goals, delta) = generalize m b d in
-          -- trace ("generalize done " ++ show' goals) $
           let (blah, halb) = go gs delta in
           (goals ++ blah, halb)
 
@@ -70,7 +69,6 @@ generalize m b d =
   let ((m1, m2), genOrig, delta) = LC.split d b m in -- TODO PCHM
   let genTrue = genOrig in
   --let (generalized, _, gen, delta') = D.generalizeGoals d m1 b in
-  -- trace (printf "\nAfter split\n%s\n" (show' $ LC.mcs m1)) $
   (map (project genTrue) (LC.mcs m1) ++ map (project Subst.empty) (LC.mcs m2), delta)
   -- (map (project genTrue) [m1] ++ map (project []) (LC.mcs m2), delta)
     where
@@ -86,7 +84,6 @@ topLevel :: Program G X -> LC.Heuristic -> (GlobalTree, G S, [S])
 topLevel (Program defs goal) heuristic =
   let env = Env.fromDefs defs in
   let ((logicGoal, names), env') = runState (E.preEval goal) env in
-  -- trace (printf "\nGoal:\n%s\nNames:\n%s\n" (show goal) (show names)) $
   let nodes = [[logicGoal]] in
   (fst $ go nodes (Descend.Descend [logicGoal] []) env' Subst.empty Subst.empty, logicGoal, names) where
     go nodes d@(Descend.Descend goal ancs) env subst generalizer =

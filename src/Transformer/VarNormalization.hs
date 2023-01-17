@@ -5,11 +5,11 @@ module Transformer.VarNormalization where
 import Syntax
 import Program
 import Def
-import Control.Monad.State (State (..), evalState, get, put, modify, runState)
+import Control.Monad.State (State (..), evalState, get, put, modify)
 import Control.Monad.Reader ( Reader, runReader, ask )
 import qualified Data.Set as Set
 import Text.Printf (printf)
-import Data.Maybe (fromJust, isJust)
+import Data.Maybe (fromJust)
 import Data.List (nub)
 
 data AnnotatedVar a = RelArgument a | FreshVar a

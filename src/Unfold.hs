@@ -10,11 +10,10 @@ import qualified Subst
 import           Syntax
 import Def
 import           Text.Printf         (printf)
-import           Util.Miscellaneous  (pinpoint, show')
+import           Util.Miscellaneous  (pinpoint)
 import qualified VarInterpretation   as VI
 import qualified Environment as Env
 import Util.ListZipper
-import Debug.Trace
 
 oneStepUnfold :: G S -> State Env.Env (G S)
 oneStepUnfold g@(Invoke f as) = do
@@ -38,14 +37,12 @@ oneStep goal state = do
 
 unfoldConjunction :: [G S] -> Subst.Subst -> State Env.Env [([G S], Subst.Subst)]
 unfoldConjunction (x:xs) state = do
-  unified <- trace (printf "\nGoals:\n%s\n" $ show' (x:xs)) $ oneStep x state
-  results <- trace (printf "\nUnified:\n%s\n" $ show' unified) $
-             mapM (\(g, s) -> do
+  unified <- oneStep x state
+  results <- mapM (\(g, s) -> do
                       goals <- unfoldConjunction xs s
                       return $ (\(x,y) -> (g ++ x, y)) <$> goals
                   ) unified
-  return $ trace (printf "\nResults:\n%s\n" $ show' results)
-         $ concat results
+  return $ concat results
 unfoldConjunction [] s = return [([],s)]
 
 normalize :: G S -> [[G S]] -- disjunction of conjunctions of calls and unifications
@@ -90,7 +87,6 @@ notMaximumBranches env state goal@(Invoke name args) =
     let unfolded = evalState (oneStep goal state) env in
     length unfolded < maxBranches
     -- let result = length unfolded < maxBranches in
-    -- trace (printf "\nGoal: %s\nNot maximum branches: %s\nUnfoldComplexity: %s\nUnfolded: %s\nMaxBranches: %s\n" (show goal) (show result) (show $ length $ filter (not . null . fst) unfolded) (show $ length unfolded) (show maxBranches)) $
     -- result
 notMaximumBranches _ _ _ = False
 
@@ -102,7 +98,6 @@ notMaximumBranches _ _ _ = False
 -- unfoldComplexity :: Env.Env -> E.Sigma -> G S -> (Int, Int)
 -- unfoldComplexity env@(p, _, _) state goal@(Invoke name args) =
 --     let (unfolded, _) = oneStep goal env state in
---     trace (printf "\nUnfolded:\nGoal: %s\n%s\n" (show goal) (show' unfolded)) $
 --     (length $ filter (not . null . fst) unfolded, length unfolded)
 
 data Complexity = Complexity { maxBranches :: Int, curBranches :: Int, substs :: Int }
@@ -117,9 +112,6 @@ findTupling env subst goal ancs =
     let (conjunctions, env') = runState (unfoldConjunction goal subst) env in
     -- let res@(unfolded, env') = runState (mapM (\g -> oneStep g subst) goal) env in
     -- let conjunctions = cross unfolded in
-    -- trace (printf "\nUnfolded:\n%s\n" $ show' unfolded) $
-    trace (printf "\nConjunctions:\n%s\n" $ show' conjunctions) $
-    trace (printf "\nAncs\n%s\n" $ show' ancs) $
     if any (\(g, s) -> variantCheck (Subst.substitute s g) ancs) conjunctions
     then Just (conjunctions, env')
     else Nothing

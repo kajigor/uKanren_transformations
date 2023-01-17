@@ -2,7 +2,6 @@ module Test.Mode.Syntax where
 
 import Test.Helper ((@?=))
 import Syntax
-import qualified Data.Map as Map
 import Mode.Syntax
 import Mode.Term
 import FreshNames

@@ -10,7 +10,6 @@ import Def
 import Data.List (intersect)
 import qualified Data.Set as Set
 import Data.Bifunctor (second)
-import Debug.Trace
 
 data Base a = Unif (Var a) (FlatTerm a)
             | Call String [Var a]

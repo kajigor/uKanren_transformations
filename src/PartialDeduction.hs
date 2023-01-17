@@ -1,6 +1,5 @@
 module PartialDeduction where
 
-import qualified CPD.LocalControl   as LC
 import           Data.List          (find)
 import           Data.Maybe         (mapMaybe)
 import qualified Descend
@@ -10,7 +9,6 @@ import           Generalization     (generalizeGoals)
 import           Prelude            hiding (or)
 import qualified Subst
 import           Syntax
-import           Def
 import           Program
 import           Unfold             (oneStepUnfold, unifyStuff, normalize)
 import           Util.Miscellaneous (fst3)

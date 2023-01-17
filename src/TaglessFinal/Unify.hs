@@ -11,7 +11,6 @@ unifyG :: Ord a
        -> Maybe (Subst.Subst a)
 unifyG _ Nothing _ _ = Nothing
 unifyG f st@(Just subst) u v =
-    -- trace (printf "Subst length: %d" (Subst.size subst)) $
     unify' (walk subst u) (walk subst v)
   where
     unify' (Var u') (Var v') | u' == v' = Just subst

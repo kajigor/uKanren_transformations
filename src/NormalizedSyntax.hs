@@ -10,7 +10,6 @@ import Text.Printf
 import Control.Monad.State
 import Data.List.NonEmpty.Extra (fromList)
 import Data.List (intercalate)
-import Debug.Trace (trace)
 
 
 data Goal a = Goal (Disj a)

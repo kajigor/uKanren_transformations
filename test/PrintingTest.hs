@@ -1,7 +1,6 @@
 module PrintingTest where
 
 import           Data.List
-import           Debug.Trace
 import           Driving
 import           Eval
 import           Program.List
@@ -22,7 +21,6 @@ import Util.Miscellaneous
 import Printer.Dot
 
 upTo d x =
-  -- trace (printf "\nDepth: %s" $ show d) $
   if d == 0 then Fail
   else upToDepth x
   where

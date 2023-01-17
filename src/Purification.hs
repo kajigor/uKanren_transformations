@@ -4,12 +4,11 @@ import Syntax
 import Program
 import Def
 import Data.List
-import Data.List.NonEmpty (NonEmpty (..), fromList, toList)
 import qualified Data.Set        as Set
 import qualified Data.Map.Strict as Map
 import Control.Monad.State
-import Debug.Trace (trace)
 import Text.Printf (printf)
+import Debug.Trace (trace)
 
 type Set = Set.Set
 type Map = Map.Map
@@ -156,7 +155,6 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
                     _ | isSuccess g2'' -> (conjs'', g1'' )
                     _ -> (conjs'', flatConj g1'' g2'')
         in
-        trace (printf "PurifyU\n%s\nResult:\n%s\n\n" (show c) (show res)) $
         res
       -- purifyU constrV conjs (g1 :/\: g2) =
       --   let (g2' :conjs' , g1' ) = purifyU constrV (g2 :conjs ) g1  in

@@ -6,7 +6,6 @@ import           ConsPD.Unfold
 import           Control.Applicative ((<|>))
 import qualified CPD.Residualization as CpdR
 import           Data.List           (find, intercalate, nub)
-import           Data.List.NonEmpty  (NonEmpty (..), toList)
 import           Data.Maybe          (catMaybes, fromJust, fromMaybe)
 import           Descend
 import           Embed (isVariant)
@@ -17,8 +16,7 @@ import           Syntax
 import           Program
 import           Def
 import           Text.Printf         (printf)
-import           Util.Miscellaneous  (fst3, show')
-import Debug.Trace
+import           Util.Miscellaneous  (fst3)
 
 topLevel :: Program G X -> Program G X
 topLevel input =
@@ -44,7 +42,6 @@ generateDefs tree =
   let definitions = foldl (\defs gs -> fst3 (CpdR.renameGoals gs defs) ) [] $ map fst nodes in
   let defWithTree = zip (reverse definitions) (map snd nodes) in
   let invocations = map (generateInvocation definitions) leaves in
-  trace (printf "\nDefinitions\n%s\n\n" (intercalate "\n" (map show definitions))) $
   let defs = map (generateDef definitions invocations) defWithTree in
   -- let defs = map (generateDef invocations) defWithTree in
   let (_, newGoal) = generateInvocation definitions (toplevel, toplevel) in
@@ -90,7 +87,6 @@ generateInvocation' defs gs v =
 findNode :: [G S] -> ConsPDTree -> ([G S], ConsPDTree)
 findNode v tree =
     let nodes = go tree in
-    -- trace (printf "\n\nNodes\n%s\n\n" (show nodes)) $
     case find nontrivial nodes of
       Just n -> (v, restrictSubsts $ simplify $ renameAmbigousVars n)
       Nothing -> error $ printf "Residualization error: no node for\n%s" (show v)
@@ -127,7 +123,6 @@ generateDef defs invocations ((gs, n, args), tree) =
 -- generateGoalFromTree :: [([G S], G S)] -> ConsPDTree -> FN.FreshNames -> G X
 generateGoalFromTree :: CpdR.Definitions -> [([G S], G S)] -> ConsPDTree -> [S] -> G X
 generateGoalFromTree definitions invocations tree args =
-    trace (printf "GenerateGoalFromTree\n%s\n\n" (show $ nodeContent tree)) $
     case go args True tree of
       Just goal ->
         let normalized = goal in --  NonConjunctive.Unfold.disj $ map NonConjunctive.Unfold.conj $ normalize goal in
@@ -142,7 +137,6 @@ generateGoalFromTree definitions invocations tree args =
     go :: [S] -> Bool -> ConsPDTree -> Maybe (G S)
     go seen r tree =
         let res = go' seen r tree  in
-        trace (printf "Go:\n%s\nTree\n%s\nR: %s\nSeen\n%s\nResult\n%s\n\n" (show (nodeContent tree)) (show tree) (show r) (show seen) (show res)) $
         res
       where
         go' seen r Fail           = Just failure
@@ -234,7 +228,6 @@ renameAmbigousVars tree = tree
 
   --   getNewVars seen goal subst =
   --     let vars = getVars goal subst in
-  --     -- trace (printf "\n\nNewVars\nGoal\n%s\nVars\n%s\n" (show goal) (show $  vars \\ seen)) $
   --     (vars \\ seen)
 
   --   getVars goal subst =

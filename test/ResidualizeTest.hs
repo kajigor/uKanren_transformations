@@ -2,7 +2,6 @@ module ResidualizationTest where
 
 import Residualization
 import Syntax
-import Debug.Trace
 import Text.Printf
 import Program.List
 import Driving
@@ -21,11 +20,11 @@ scoping =
   in residualize (drive (f ( fresh ["x","y","t"] $ call "f" [V "x", V "y", V "t"])))
 
 redtest :: G X
-redtest   = let (r, _) = residualize tc in trace (printf "\n\n%s\n\n" $ show r) r
+redtest   = let (r, _) = residualize tc in r
 
 redtest' :: G X
 redtest'  = let (r, _) = residualize tc'
                 ((x, y, _), _, _) = tc'
-            in trace (printf "\n\n%s\n\n%s\n\n%s" (show r) (show x) (show y)) r
+            in r
 redtest'' :: G X
-redtest'' = let (r, _) = residualize tc'' in trace (printf "\n\n%s\n\n" $ show r) r
+redtest'' = let (r, _) = residualize tc'' in r

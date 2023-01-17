@@ -11,7 +11,6 @@ import Program.Bool
 import Program.Sort
 import Program.Programs
 import Prelude hiding (succ)
-import Debug.Trace
 
 reify :: Subst.Subst -> Ts -> Term S
 reify s x@(V v) =
@@ -23,13 +22,11 @@ reify s (C n ts) = C n $ map (reify s) ts
 toplevel :: Int -> (Term S -> String) -> Program G X -> [String]
 toplevel n printer program =
   let stream = run program in
-  trace (show $ takeS n stream) $
   map (\s -> printer $ reify s (V 0)) $ takeS n stream
 
 addVar :: Program G String -> Program G String
 addVar p@(Program defs goal) =
   let (vars, g) = topLevelFreshVars goal in
-  trace (show vars) $
   if length vars <= 1
   then p
   else

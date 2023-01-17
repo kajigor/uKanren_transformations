@@ -1,7 +1,6 @@
 module Util.ConjRetriever where
 
 import qualified CPD.GlobalControl as GC
-import qualified CPD.LocalControl as LC
 import Data.List.Extra
 import qualified Data.Set as Set
 import           Descend

@@ -15,28 +15,19 @@ import qualified VarInterpretation as VI
 import qualified FreshNames as FN
 import qualified Environment as Env
 import Control.Monad.State
-import Data.List.NonEmpty (NonEmpty (..), fromList)
-import Debug.Trace
-import Text.Printf
 
 unifyG :: (Subst.Subst -> S -> Ts -> Bool)
           -> Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
 unifyG _ Nothing _ _ = Nothing
 unifyG f st@(Just subst) u v =
-    -- trace (printf "Subst length: %d" (Subst.size subst)) $
     unify' (walk subst u) (walk subst v)
   where
     unify' (V u') (V v') | u' == v' = Just subst
     unify' (V u') (V v') = Just $ Subst.insert (min u' v') (V $ max u' v') subst
     unify' (V u') t =
-      let fls = C "Falso" [] in
-      let tru = C "Trueo" [] in
-      (if t == C "State" [C "Side" [fls, fls, fls, fls], C "Side" [tru, tru, tru, tru]]
-      then trace "FINAL STATE"
-      else id)
-      (if f subst u' t
+      if f subst u' t
       then Nothing
-      else return $ Subst.insert u' v subst)
+      else return $ Subst.insert u' v subst
     unify' t (V v') =
       if f subst v' t
       then Nothing
@@ -120,11 +111,9 @@ postEval as goal =
 closeFresh :: [X] -> G X -> G X
 closeFresh as goal = goal
   --   let goalNoFresh = stripFresh goal in
-  --   trace (printf "\n========================================\nCloseFresh\nBefore\n%s\nAfter\n%s\n" (show goal) (show goalNoFresh)) $
   --   -- let (f, xs) = go as goal in
   --   let (f, xs) = go as goalNoFresh in
   --   let res = f [] in
-  --   trace (printf "\nResult:\n%s\n" (show res)) $
   --   res
   -- where
   --   go as (g :/\: h) =
@@ -133,7 +122,6 @@ closeFresh as goal = goal
   --     let uv = union uv1 uv2 in
   --     let func = (\dv ->
   --                     let udv = uv \\ dv in
-  --                     trace (printf "In conj\n%s\nudv: %s\n" (show goal) (show udv)) $
   --                     let goal = (f1 (udv ++ dv) :/\: f2 (udv ++ dv)) in
   --                     surrFresh goal udv) in
   --     (func, uv)
@@ -172,7 +160,6 @@ eval env s (Conjunction x y gs) =
   eval env s x >>= \(s', d') ->
   eval (Env.updateNames env d') s' (unsafeConj $ y : gs)
 eval env s (Invoke f as) =
-  trace f $
   let (Def _ fs g) = Env.getDef env f in
   let i' = foldl (\ i'' (f', a) -> VI.extend i'' f' a) (Env.getInterp env) $ zip fs as in
   let ((g', _), env') = runState (preEval g) (Env.updateInterp env i') in

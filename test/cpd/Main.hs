@@ -9,7 +9,6 @@ import           CPD.Residualization
 import           Data.Foldable            (for_)
 import           Data.List
 import           Data.Maybe
-import           Debug.Trace
 import qualified OCanrenize               as OC
 import           Prelude                  hiding (succ)
 import           Printer.Dot

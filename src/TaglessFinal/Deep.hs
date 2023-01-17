@@ -4,7 +4,6 @@ module TaglessFinal.Deep where
 import TaglessFinal.Syntax
 import TaglessFinal.Term
 
-import Text.Printf ( printf )
 import Control.Monad.State
 import TaglessFinal.VarState
 import qualified Syntax as S

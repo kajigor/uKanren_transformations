@@ -3,7 +3,6 @@ module Program.Programs where
 import Program.List
 import Program.Num
 import Syntax
-import Program
 import Def
 import Prelude hiding (succ)
 

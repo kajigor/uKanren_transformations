@@ -7,7 +7,6 @@ import Data.Void ( Void(..) )
 import Text.Printf ( printf )
 import Data.List.NonEmpty ( NonEmpty(..) )
 import Data.List ( intercalate )
-import Data.Semigroup ( Semigroup(..) )
 
 type Parser = Parsec Void String
 

@@ -3,7 +3,6 @@
 module FunConversion.Syntax where
 
 import Prettyprinter
-import Prettyprinter.Render.Text ( renderStrict )
 
 import qualified Data.Text as T
 import qualified Data.Char as C

@@ -8,11 +8,7 @@ import FreshNames
 import Control.Monad.State
 import qualified Data.Map.Strict as Map
 import Mode.Term
-import Def
-import Program
 import Data.List (nub)
-
-import Debug.Trace
 
 data Goal a = Call String [Var a]
             | Unif (Var a) (FlatTerm a)

@@ -7,8 +7,8 @@
 {-# LANGUAGE Rank2Types #-}
 module FinalTagless.Shallow where
 
-import FinalTagless.GoalSyntax
-import qualified Syntax
+-- import FinalTagless.GoalSyntax
+-- import qualified Syntax
 
 -- import qualified Subst
 -- import qualified Stream

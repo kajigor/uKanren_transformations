@@ -8,7 +8,6 @@ module CPD.LocalControl where
 
 import           Data.List          (find, intersect, nub)
 import           Data.Maybe
-import           Debug.Trace
 import           Embed
 import qualified Eval               as E
 import qualified FreshNames         as FN
@@ -25,11 +24,7 @@ import qualified Util.Miscellaneous as Util
 import           Descend
 import Control.Monad.State
 
--- trace :: String -> a -> a
--- trace _ x = x
-
 data Heuristic = Deterministic | Branching
-
 
 type DescendGoal = Descend (G S)
 
@@ -64,12 +59,10 @@ instance Subst.ApplySubst [Descend (G S)] where
 sldResolution :: [G S] -> Env.Env -> Subst.Subst -> [[G S]] -> Heuristic -> SldTree
 sldResolution goal env subst seen =
   -- sldResolutionStep (map (\x -> Descend x Set.empty) goal) env subst Set.empty True
-  -- trace "\n\nSLDRESOLUTION \n\n" $
   sldResolutionStep (map (\x -> Descend x []) goal) env subst seen True
 
 sldResolutionStep :: [DescendGoal] -> Env.Env -> Subst.Subst -> [[G S]] -> Bool -> Heuristic -> SldTree
 sldResolutionStep gs env s seen isFirstTime heuristic =
-  -- trace (printf "Local control\n%s\n\n" (show gs))  $
   let (temp, _) = FN.getFreshName (Env.getFreshNames env) in
   let curs = map getCurr gs in
   let prettySeen = Util.showList "" seen  in
@@ -168,7 +161,6 @@ msgExists _ _ = False
 -- works for ordered subconjunctions
 complementSubconjs :: (Instance a (Term a), Eq a, Ord a, Show a) => [G a] -> [G a] -> [G a]
 complementSubconjs xs ys =
-  -- trace (printf "\nComplementing\n%s\nby\n%s\n" (show xs) (show ys)) $
   go xs ys
    where
     go [] xs = xs
@@ -184,7 +176,6 @@ complementSubconjs xs ys =
 -- isStrictInst q t iff q = t \Theta
 minimallyGeneral :: (Show a, Ord a) => [([G a], Generalizer)] -> ([G a], Generalizer)
 minimallyGeneral xs =
-  -- trace (printf "minimallyGeneral %s" $ show xs) $
   go xs xs
   where
     go [x] _     = x
@@ -196,24 +187,20 @@ bmc :: FN.FreshNames -> [G S] -> [[G S]] -> ([([G S], Generalizer)], FN.FreshNam
 bmc d q [] = ([], d)
 bmc d q (q':qCurly) | msgExists q q' =
   let (generalized, _, gen, delta) = generalizeGoals d q q' in
-  -- trace (printf "Generalizing\nq:   %s\nq':  %s\nRes: %s\nGen: %s\ndelta: %s\n" (show q) (show q') (show generalized) (show gen) (show $ head d)) $
   let (gss, delta') = bmc delta q qCurly in
   ((generalized, gen) : gss, delta')
   -- if head d >= 50
   -- then error "ooops"
   -- else
-  --   trace (printf "Generalizing\nq:   %s\nq':  %s\nRes: %s\nGen: %s\ndelta: %s\n" (show q) (show q') (show generalized) (show gen) (show $ head d)) $
   --   let (gss, delta') = bmc delta q qCurly in
   --   ((generalized, gen) : gss, delta')
-bmc d q (q':qCurly) = trace "why msg does not exist?!" $ bmc d q qCurly
+bmc d q (q':qCurly) = bmc d q qCurly
 -- bmc d q qCurly = [(\(x,_,_,_) -> x) $ D.generalizeGoals d q q' | q' <- qCurly, msgExists q q']
 
 split :: FN.FreshNames -> [G S] -> [G S] -> (([G S], [G S]), Generalizer, FN.FreshNames)
 split d q q' = -- q <= q'
-  -- trace (printf "splitting\nq:  %s\nq': %s\n" (show q) (show q')) $
   let n = length q in
   let qCurly = filter (\q'' -> and $ zipWith embed q q'') $ subconjs q' n in
   let (bestMC, delta) = bmc d q qCurly in
   let (b, gen) = minimallyGeneral bestMC in
-  -- trace (printf "\nQcurly:\n%s\n\nBestMC:\n%s\n\nB:  %s\nQ': %s\nQ:  %s\n" (show' qCurly) (show' bestMC) (show b) (show q') (show q)) $
   ((b, if length q' > n then complementSubconjs b q' else []), gen, delta)
