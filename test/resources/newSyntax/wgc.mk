@@ -4,7 +4,7 @@ eval state moves state' =
   (fresh move, moves', state'' in
     (moves == Cons move moves') &
     (step state move state'') &
-    (Delay eval state'' moves' state'))
+    (eval state'' moves' state'))
 ;
 
 swap state result =
@@ -12,7 +12,7 @@ swap state result =
     state  == State l r &
     result == State r l;
 
-step' left right state' =
+step' left right move state' =
   fresh lm, lg, lw, lc, rm, rg, rw, rc in
     (left == Side lg lw lc lm) & (right == Side rg rw rc rm) &
     ( (move == Empty  )                  & (state' == State (Side lg lw lc Falso   ) (Side rg rw rc Trueo))    & safe state' |
@@ -24,8 +24,8 @@ step' left right state' =
 step state move state' =
   fresh left, right in
     ( state == State left right ) &
-    ( isMan left  & noMan right & step' left right state' |
-      isMan right & noMan left  & (fresh state'' in step' right left state'' & swap state'' state'));
+    ( isMan left  & noMan right & step' left right move state' |
+      isMan right & noMan left  & (fresh state'' in step' right left move state'' & swap state'' state'));
 
 safe' side =
   isMan side |
