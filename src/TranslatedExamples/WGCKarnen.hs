@@ -4,19 +4,21 @@ import Eval
 import Stream hiding (Empty)
 import Subst (showSubst')
 import Syntax
+import Program
+import Def
 
 data Move = Empty | Goat | Wolf | Cabbage deriving (Show, Eq)
 
-fresh1' :: (Show x) => x -> (Tx -> G a) -> G a
+fresh1' :: (Show x) => x -> (Tx -> G X) -> G X
 fresh1' i f = fresh ["a" ++ show i] (f (V $ "a" ++ show i))
 
-fresh2' :: (Show x) => x -> (Tx -> Tx -> G a) -> G a
+fresh2' :: (Show x) => x -> (Tx -> Tx -> G X) -> G X
 fresh2' i f = fresh ["a" ++ show i, "b" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i))
 
-fresh3' :: (Show x) => x -> (Tx -> Tx -> Tx -> G a) -> G a
+fresh3' :: (Show x) => x -> (Tx -> Tx -> Tx -> G X) -> G X
 fresh3' i f = fresh ["a" ++ show i, "b" ++ show i, "c" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i) (V $ "c" ++ show i))
 
-fresh4' :: (Show x) => x -> (Tx -> Tx -> Tx -> Tx -> G a) -> G a
+fresh4' :: (Show x) => x -> (Tx -> Tx -> Tx -> Tx -> G X) -> G X
 fresh4' i f = fresh ["a" ++ show i, "b" ++ show i, "c" ++ show i, "d" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i) (V $ "c" ++ show i) (V $ "d" ++ show i))
 
 fresh1 = fresh1' ""

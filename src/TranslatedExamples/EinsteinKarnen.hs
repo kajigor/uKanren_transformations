@@ -4,40 +4,41 @@ import Eval (run)
 import Stream (takeS)
 import Subst (showSubst')
 import Syntax
+import Program
 
 data Nop = Nop
 
 instance Show Nop where
   show x = ""
 
-fresh1' :: (Show x) => x -> (Tx -> G a) -> G a
+fresh1' :: (Show x) => x -> (Tx -> G X) -> G X
 fresh1' i f = fresh ["a" ++ show i] (f (V $ "a" ++ show i))
 
-fresh2' :: (Show x) => x -> (Tx -> Tx -> G a) -> G a
+fresh2' :: (Show x) => x -> (Tx -> Tx -> G X) -> G X
 fresh2' i f = fresh ["a" ++ show i, "b" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i))
 
-fresh3' :: (Show x) => x -> (Tx -> Tx -> Tx -> G a) -> G a
+fresh3' :: (Show x) => x -> (Tx -> Tx -> Tx -> G X) -> G X
 fresh3' i f = fresh ["a" ++ show i, "b" ++ show i, "c" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i) (V $ "c" ++ show i))
 
-fresh4' :: (Show x) => x -> (Tx -> Tx -> Tx -> Tx -> G a) -> G a
+fresh4' :: (Show x) => x -> (Tx -> Tx -> Tx -> Tx -> G X) -> G X
 fresh4' i f = fresh ["a" ++ show i, "b" ++ show i, "c" ++ show i, "d" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i) (V $ "c" ++ show i) (V $ "d" ++ show i))
 
-fresh5' :: (Show x) => x -> (Tx -> Tx -> Tx -> Tx -> Tx -> G a) -> G a
+fresh5' :: (Show x) => x -> (Tx -> Tx -> Tx -> Tx -> Tx -> G X) -> G X
 fresh5' i f = fresh ["a" ++ show i, "b" ++ show i, "c" ++ show i, "d" ++ show i, "e" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i) (V $ "c" ++ show i) (V $ "d" ++ show i) (V $ "e" ++ show i))
 
-fresh1 :: (Tx -> G a) -> G a
+fresh1 :: (Tx -> G X) -> G X
 fresh1 = fresh1' Nop
 
-fresh2 :: (Tx -> Tx -> G a) -> G a
+fresh2 :: (Tx -> Tx -> G X) -> G X
 fresh2 = fresh2' Nop
 
-fresh3 :: (Tx -> Tx -> Tx -> G a) -> G a
+fresh3 :: (Tx -> Tx -> Tx -> G X) -> G X
 fresh3 = fresh3' Nop
 
-fresh4 :: (Tx -> Tx -> Tx -> Tx -> G a) -> G a
+fresh4 :: (Tx -> Tx -> Tx -> Tx -> G X) -> G X
 fresh4 = fresh4' Nop
 
-fresh5 :: (Tx -> Tx -> Tx -> Tx -> Tx -> G a) -> G a
+fresh5 :: (Tx -> Tx -> Tx -> Tx -> Tx -> G X) -> G X
 fresh5 = fresh5' Nop
 
 inj :: (Show a) => a -> Tx
