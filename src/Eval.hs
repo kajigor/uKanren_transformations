@@ -93,7 +93,7 @@ preEval goal = do
       return (Invoke f (map (i VI.<@>) fs))
     go (Conjunction x y gs) = unsafeConj <$> mapM go (x : y : gs)
     go (Disjunction x y gs) = unsafeDisj <$> mapM go (x : y : gs)
-    -- go (Delay g) = go g
+    go (Delay g) = Delay <$> go g
     getInterp :: State ([S], Env.Env) VI.Interpretation
     getInterp = do
       Env.Env _ i _ <- gets snd
@@ -164,8 +164,8 @@ eval env s (Invoke f as) =
   let i' = foldl (\ i'' (f', a) -> VI.extend i'' f' a) (Env.getInterp env) $ zip fs as in
   let ((g', _), env') = runState (preEval g) (Env.updateInterp env i') in
   eval env' s g'
--- eval env s (Delay goal) =
---   Immature (eval env s goal)
+eval env s (Delay goal) =
+  Immature (eval env s goal)
 eval _ _ _ = error "Impossible case in eval"
 
 run :: Program G X -> Stream Subst.Subst

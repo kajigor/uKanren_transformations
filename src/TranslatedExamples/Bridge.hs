@@ -21,24 +21,59 @@ listToStream = foldr (mplus . return) empty
 
 data Person = PA | PB | PC | PD deriving (Show, Eq)
 
-crossingTime :: Person -> Stream Int
-crossingTime PA = return 1
-crossingTime PB = return 2
-crossingTime PC = return 5
-crossingTime PD = return 8
-
 data Qua = Qua Bool Bool Bool Bool Bool deriving (Show, Eq)
 
 data State = State Qua Qua deriving (Show, Eq)
 
 data Move = Single Person | Double Person Person deriving (Show, Eq)
 
-moveTime :: Move -> Stream Int
+data Nat = Zro | Suc Nat deriving (Show, Eq)
+
+addNat :: Nat -> Nat -> Stream Nat
+addNat Zro b = return b
+addNat (Suc a) b = do
+    out' <- addNat a b
+    return (Suc out')
+
+maxNat :: Nat -> Nat -> Stream Nat
+maxNat Zro b = return b
+maxNat a Zro = return a
+maxNat (Suc a) (Suc b) = do
+    out' <- maxNat a b
+    return (Suc out')
+
+lte :: Nat -> Nat -> Stream ()
+lte Zro _ = yes
+lte (Suc a) (Suc b) = lte a b
+lte _ _ = no
+
+fromInt :: Int -> Nat
+fromInt 0 = Zro
+fromInt n = Suc (fromInt (n - 1))
+
+toInt :: Nat -> Int
+toInt Zro = 0
+toInt (Suc n) = 1 + toInt n
+
+crossingTime :: Person -> Stream Nat
+crossingTime PA = return (fromInt 1)
+crossingTime PB = return (fromInt 2)
+crossingTime PC = return (fromInt 5)
+crossingTime PD = return (fromInt 8)
+
+moveTime :: Move -> Stream Nat
 moveTime (Double a b) = do
   ta <- crossingTime a
   tb <- crossingTime b
-  return (max ta tb)
+  maxNat ta tb
 moveTime (Single a) = crossingTime a
+
+totalTime :: [Move] -> Stream Nat
+totalTime [] = return Zro
+totalTime (h : t) = do
+    time <- moveTime h
+    out' <- totalTime t
+    addNat time out'
 
 isTorch :: Qua -> Stream ()
 isTorch (Qua True _ _ _ _) = yes
@@ -136,8 +171,8 @@ evalBridges s s' = (guard (s == s') $> []) `mplus`
 boundedEvalBridges :: State -> State -> Stream [Move]
 boundedEvalBridges s s' = do
     ms <- evalBridges s s'
-    t <- traverse moveTime ms
-    guard (sum t <= 15)
+    t <- totalTime ms
+    _ <- lte t (fromInt 15)
     return ms
 
 startState :: State
@@ -145,18 +180,6 @@ startState = State (Qua True True True True True) (Qua False False False False F
 
 endState :: State
 endState = State (Qua False False False False False) (Qua True True True True True)
-
-preL :: Qua
-preL = Qua True True True True False
-
-preR :: Qua
-preR = Qua False False False False True
-
-postL :: Qua
-postL = Qua False False True True False
-
-postR :: Qua
-postR = Qua True True False False True
 
 mainBridges :: IO ()
 mainBridges = mapM_ print (takeS 1 (boundedEvalBridges startState endState))

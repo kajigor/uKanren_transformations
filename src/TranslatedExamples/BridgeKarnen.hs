@@ -2,11 +2,11 @@ module TranslatedExamples.BridgeKarnen where
 
 import Data.List (intercalate)
 import Data.Maybe (catMaybes)
-import Def
+import Def ( Def(Def) )
 import Eval (run)
-import Program
+import Program ( Program(Program) )
 import Stream (takeS)
-import Subst (Subst, showSubst')
+import Subst (Subst)
 import qualified Subst (lookup)
 import Syntax
 
@@ -30,27 +30,12 @@ fresh4' i f = fresh ["a" ++ show i, "b" ++ show i, "c" ++ show i, "d" ++ show i]
 fresh5' :: (Show x) => x -> (Tx -> Tx -> Tx -> Tx -> Tx -> G X) -> G X
 fresh5' i f = fresh ["a" ++ show i, "b" ++ show i, "c" ++ show i, "d" ++ show i, "e" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i) (V $ "c" ++ show i) (V $ "d" ++ show i) (V $ "e" ++ show i))
 
-fresh1 :: (Tx -> G X) -> G X
-fresh1 = fresh1' Nop
-
-fresh2 :: (Tx -> Tx -> G X) -> G X
-fresh2 = fresh2' Nop
-
-fresh3 :: (Tx -> Tx -> Tx -> G X) -> G X
-fresh3 = fresh3' Nop
-
-fresh4 :: (Tx -> Tx -> Tx -> Tx -> G X) -> G X
-fresh4 = fresh4' Nop
-
-fresh5 :: (Tx -> Tx -> Tx -> Tx -> Tx -> G X) -> G X
-fresh5 = fresh5' Nop
-
 inj :: (Show a) => a -> Tx
 inj x = C (show x) []
 
 data Person = PA | PB | PC | PD deriving (Show, Eq)
 
-zro :: Tx
+zro :: Term a
 zro = C "zro" []
 
 suc :: Tx -> Tx
@@ -62,39 +47,47 @@ nil = C "nil" []
 cons :: Tx -> Tx -> Tx
 cons h t = C "cons" [h, t]
 
+fromInt :: Int -> Tx
 fromInt 0 = zro
 fromInt n = suc (fromInt (n - 1))
+
+toInt :: Ts -> Subst -> Maybe Int
+toInt (V n) s = Subst.lookup n s >>= (`toInt` s)
+toInt (C "zro" []) s = Just 0
+toInt (C "suc" [t]) s = (+ 1) <$> toInt t s
+toInt _ _ = Nothing
 
 maxo :: Tx -> Tx -> Tx -> G X
 maxo a b out =
   unsafeDisj
     [ (a === zro) &&& (out === b),
       (b === zro) &&& (out === a),
-      fresh3 $ \a' b' out' -> (a === suc a') &&& (b === suc b') &&& (out === suc out') &&& maxo a' b' out'
+      fresh3' "maxo" $ \a' b' out' -> (a === suc a') &&& (b === suc b') &&& (out === suc out') &&& Delay (call "maxo" [a', b', out'])
     ]
+
+maxoDef :: Def G X
+maxoDef = Def "maxo" ["a", "b", "out"] (maxo (V "a") (V "b") (V "out"))
 
 addo :: Tx -> Tx -> Tx -> G X
 addo a b out =
   unsafeDisj
     [ (a === zro) &&& (out === b),
-      fresh2 $ \a' out' -> (a === suc a') &&& (out === suc out') &&& addo a' b out'
+      fresh2' "adoo" $ \a' out' -> (a === suc a') &&& (out === suc out') &&& Delay (call "addo" [a', b, out'])
     ]
 
-sumo :: Tx -> Tx -> G X
-sumo l out =
+addoDef :: Def G X
+addoDef = Def "addo" ["a", "b", "out"] (addo (V "a") (V "b") (V "out"))
+
+lteo :: Tx -> Tx -> G X
+lteo a b =
   unsafeDisj
-    [ (l === nil) &&& (out === zro),
-      fresh3 $ \h t out' -> (l === cons h t) &&& addo h out' out &&& sumo t out'
+    [ a === zro,
+      fresh2' "lteo" $ \a' b' -> a === suc a' &&& b === suc b' &&& Delay (call "lteo" [a', b'])
     ]
 
-crossingTime :: Tx -> Tx -> G X
-crossingTime p t =
-  unsafeDisj
-    [ (p === inj PA) &&& t === fromInt 1,
-      (p === inj PB) &&& t === fromInt 2,
-      (p === inj PC) &&& t === fromInt 5,
-      (p === inj PD) &&& t === fromInt 8
-    ]
+lteoDef :: Def G X
+lteoDef = Def "lteo" ["a", "b"] (lteo (V "a") (V "b"))
+
 
 qua :: Tx -> Tx -> Tx -> Tx -> Tx -> Tx
 qua t a b c d = C "qua" [t, a, b, c, d]
@@ -110,6 +103,15 @@ singleMove p1 = C "move" [p1]
 
 doubleMove :: Tx -> Tx -> Tx
 doubleMove p1 p2 = C "move" [p1, p2]
+
+crossingTime :: Tx -> Tx -> G X
+crossingTime p t =
+  unsafeDisj
+    [ (p === inj PA) &&& t === fromInt 1,
+      (p === inj PB) &&& t === fromInt 2,
+      (p === inj PC) &&& t === fromInt 5,
+      (p === inj PD) &&& t === fromInt 8
+    ]
 
 moveTime :: Tx -> Tx -> G X
 moveTime m time =
@@ -127,23 +129,21 @@ moveTime m time =
           ]
       ]
 
-isTorch :: Tx -> G X
-isTorch s = fresh4 $ \a b c d -> s === qua (inj True) a b c d
+totalTime :: Tx -> Tx -> G X
+totalTime ms out =
+  unsafeDisj
+    [ ms === nil &&& out === zro,
+      fresh4' "totalTime" $ \h time t out' -> ms === cons h t &&& moveTime h time &&& Delay (call "totalTime" [t, out']) &&& addo time out' out
+    ]
 
-isPerson :: Tx -> Person -> G X
-isPerson s PA = fresh4 $ \t b c d -> s === qua t (inj True) b c d
-isPerson s PB = fresh4 $ \t a c d -> s === qua t a (inj True) c d
-isPerson s PC = fresh4 $ \t a b d -> s === qua t a b (inj True) d
-isPerson s PD = fresh4 $ \t a b c -> s === qua t a b c (inj True)
+totalTimeDef :: Def G X
+totalTimeDef = Def "totalTime" ["move", "outTime"] (totalTime (V "move") (V "outTime"))
+
+isTorch :: Tx -> G X
+isTorch s = fresh4' "isTorch" $ \a b c d -> s === qua (inj True) a b c d
 
 noTorch :: Tx -> G X
-noTorch s = fresh4 $ \a b c d -> s === qua (inj False) a b c d
-
-noPerson :: Tx -> Person -> G X
-noPerson s PA = fresh4 $ \t b c d -> s === qua t (inj False) b c d
-noPerson s PB = fresh4 $ \t a c d -> s === qua t a (inj False) c d
-noPerson s PC = fresh4 $ \t a b d -> s === qua t a b (inj False) d
-noPerson s PD = fresh4 $ \t a b c -> s === qua t a b c (inj False)
+noTorch s = fresh4' "noTorch" $ \a b c d -> s === qua (inj False) a b c d
 
 personToT :: (Person -> G X) -> Tx -> G X
 personToT f p =
@@ -154,20 +154,14 @@ personToT f p =
       (p === inj PD) &&& f PD
     ]
 
-isPersonT :: Tx -> Tx -> G X
-isPersonT p s = personToT (isPerson s) p
-
-noPersonT :: Tx -> Tx -> G X
-noPersonT p s = personToT (noPerson s) p
-
 moveTorch :: Tx -> Tx -> G X
-moveTorch oldQua newQua = fresh4 $ \a b c d -> oldQua === qua (inj False) a b c d &&& newQua === qua (inj True) a b c d
+moveTorch oldQua newQua = fresh4' "moveTorch" $ \a b c d -> oldQua === qua (inj False) a b c d &&& newQua === qua (inj True) a b c d
 
 movePerson :: Tx -> Tx -> Person -> G X
-movePerson oldQua newQua PA = fresh4 $ \t b c d -> oldQua === qua t (inj False) b c d &&& newQua === qua t (inj True) b c d
-movePerson oldQua newQua PB = fresh4 $ \t a c d -> oldQua === qua t a (inj False) c d &&& newQua === qua t a (inj True) c d
-movePerson oldQua newQua PC = fresh4 $ \t a b d -> oldQua === qua t a b (inj False) d &&& newQua === qua t a b (inj True) d
-movePerson oldQua newQua PD = fresh4 $ \t a b c -> oldQua === qua t a b c (inj False) &&& newQua === qua t a b c (inj True)
+movePerson oldQua newQua PA = fresh4' "movePerson" $ \t b c d -> oldQua === qua t (inj False) b c d &&& newQua === qua t (inj True) b c d
+movePerson oldQua newQua PB = fresh4' "movePerson" $ \t a c d -> oldQua === qua t a (inj False) c d &&& newQua === qua t a (inj True) c d
+movePerson oldQua newQua PC = fresh4' "movePerson" $ \t a b d -> oldQua === qua t a b (inj False) d &&& newQua === qua t a b (inj True) d
+movePerson oldQua newQua PD = fresh4' "movePerson" $ \t a b c -> oldQua === qua t a b c (inj False) &&& newQua === qua t a b c (inj True)
 
 movePersonT :: Tx -> Tx -> Tx -> G X
 movePersonT p oldQua newQua = personToT (movePerson oldQua newQua) p
@@ -208,7 +202,7 @@ applyMove m l r newState = fresh2' "apply#quas" $ \l' r' ->
       )
 
 swap :: Tx -> Tx -> G X
-swap s s' = fresh2 $ \l r -> (s === state l r) &&& (s' === state r l)
+swap s s' = fresh2' "swap" $ \l r -> (s === state l r) &&& (s' === state r l)
 
 step :: Tx -> Tx -> Tx -> G X
 step s m s' = fresh2' "step#state" $ \l r ->
@@ -222,7 +216,14 @@ evalBridges :: Tx -> Tx -> Tx -> G X
 evalBridges state moves state' =
   unsafeDisj
     [ moves === nil &&& (state === state'),
-      fresh3' "eval" $ \move moves' state'' -> moves === cons move moves' &&& step state move state'' &&& call "evalBridges" [state'', moves', state']
+      fresh3' "eval" $ \move moves' state'' -> moves === cons move moves' &&& step state move state'' &&& Delay (call "evalBridges" [state'', moves', state'])
+    ]
+
+boundedEvalBridges :: Tx -> Tx -> Tx -> G X
+boundedEvalBridges state moves state' =
+  unsafeConj
+    [ call "evalBridges" [state, moves, state'],
+      fresh1' "boundedEvalBridges" $ \time -> call "totalTime" [moves, time] &&& call "lteo" [time, fromInt 15]
     ]
 
 evalBridgesDef :: Def G X
@@ -234,20 +235,12 @@ startState = state (qua' True True True True True) (qua' False False False False
 endState :: Tx
 endState = state (qua' False False False False False) (qua' True True True True True)
 
-preL :: Tx
-preL = qua' True True True True False
-
-preR :: Tx
-preR = qua' False False False False True
-
-postL :: Tx
-postL = qua' False False True True False
-
-postR :: Tx
-postR = qua' True True False False True
-
 showBridges :: Ts -> Subst -> Maybe String
 showBridges (V n) s = Subst.lookup n s >>= (`showBridges` s)
+showBridges (C "zro" []) s = Just "0"
+showBridges t@(C "suc" _) s = show <$> toInt t s
+showBridges (C "nil" []) s = Just "[]"
+showBridges (C "cons" [h, t]) s = concat <$> sequence [showBridges h s, Just " : ", showBridges t s]
 showBridges (C name []) s = Just name
 showBridges (C "move" [p]) s = showBridges p s
 showBridges (C "move" [p1, p2]) s = do
@@ -277,25 +270,10 @@ showBridges t s = Just $ show t
 mainBridges :: IO ()
 mainBridges =
   mapM_
-    (print . showSubst')
-    -- (takeS 1 $ run $ Program [Def "evalBridges" ["state", "moves", "state'"] (evalBridges (V "state") (V "moves") (V "state'"))] $ fresh1' "mainBridges" $ \moves -> call "evalBridges" [state preL preR, moves, endState])
+    (print . showBridges (V 0))
     ( takeS 1 $
         run $
-          Program [evalBridgesDef] $
-            fresh5' "mainBridges" $ \m s'' m' m'' s''' -> s'' === (state postL postR) &&&
-              step (state preL preR) m s''
-                &&& step s'' m' s'''
-                &&& call "evalBridges" [s''', m'', startState]
+          Program [evalBridgesDef, totalTimeDef, addoDef, maxoDef, lteoDef] $
+            fresh2' "mainBridges" $ \moves time ->
+              boundedEvalBridges startState moves endState &&& totalTime moves time
     )
--- mainBridges =
---   mapM_
---     (print . showSubst')
---     -- (takeS 1 $ run $ Program [Def "evalBridges" ["state", "moves", "state'"] (evalBridges (V "state") (V "moves") (V "state'"))] $ fresh1' "mainBridges" $ \moves -> call "evalBridges" [state preL preR, moves, endState])
---     ( takeS 1 $
---         run $
---           Program [evalBridgesDef] $
---             fresh5' "mainBridges" $ \m s'' m' m'' s''' ->
---                 step (state postL postR) m' s'''
---                 &&& call "evalBridges" [s''', m'', startState]
---     )
--- (takeS 1 $ run $ Program [] $ fresh1' "mainBridges" $ \m -> isTorch preL &&& applyMove m preL preR endState)
