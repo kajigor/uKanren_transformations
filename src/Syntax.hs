@@ -28,7 +28,7 @@ data G a
   | Disjunction (G a) (G a) [G a] -- a list of disjuncts: at least 2 disjuncts should be present
   | Fresh a (G a)
   | Invoke Name [Term a]
-  -- | Delay (G a)
+  | Delay (G a)
   deriving (Eq, Ord, Functor)
 
 freshVars :: [a] -> G a -> ([a], G a)
