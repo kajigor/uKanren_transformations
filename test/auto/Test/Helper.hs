@@ -9,6 +9,7 @@ module Test.Helper
   , manyAssert
   , assertCustom
   , assertCustom1
+  , assertBool
   , manyAssertCustom
   ) where
 
