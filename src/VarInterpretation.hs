@@ -26,4 +26,7 @@ empty :: Interpretation
 empty = Interpretation $ Map.empty
 
 app :: Interpretation -> X -> Ts
-app (Interpretation iota) x = iota Map.! x
+app (Interpretation iota) x =
+  case Map.lookup x iota of
+    Just r -> r
+    Nothing -> error (printf "Var %s undefined" x)
