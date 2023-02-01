@@ -1,3 +1,3 @@
-[![GitHub CI](https://github.com/userName/repoName/workflows/CI/badge.svg)](https://github.com/userName/repoName/actions)
+[![GitHub CI](https://github.com/kajigor/uKanren_transformations/workflows/CI/badge.svg)](https://github.com/kajigor/uKanren_transformations/actions)
 
 # uKanren-transformation
