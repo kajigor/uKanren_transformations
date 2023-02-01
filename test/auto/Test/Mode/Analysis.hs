@@ -20,7 +20,7 @@ freeThenGroundMode = Mode { before = Free, after = Just Ground }
 unit_unifyAnalysis :: IO ()
 unit_unifyAnalysis = do
   let expected = Unif (Var (0, groundMode)) (FTVar (Var (1, freeThenGroundMode)))
-  let actual = evalStateT (analyze (Unif (Var (0, groundMode)) (FTVar (Var (1, freeMode))))) emptyAnalyzeState :: Maybe (Goal (Int, Mode))
+  let actual = evalStateT (prioritizeGround (Unif (Var (0, groundMode)) (FTVar (Var (1, freeMode))))) emptyAnalyzeState :: Maybe (Goal (Int, Mode))
   actual @?= Just expected
 
 run (Just r) = putStrLn $ prettyString r

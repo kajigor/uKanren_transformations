@@ -14,6 +14,7 @@ data Goal a = Call String [Var a]
             | Unif (Var a) (FlatTerm a)
             | Conj (Goal a) (Goal a) [Goal a]
             | Disj (Goal a) (Goal a) [Goal a]
+            | EtaD (Goal a)
             deriving (Show, Eq, Ord, Functor)
 
 allVars :: Eq a => Goal a -> [a]
@@ -24,6 +25,7 @@ allVars =
     go (Unif v t) = v : varsFromTerm t
     go (Conj x y xs) = go x ++ go y ++ concatMap go xs
     go (Disj x y xs) = go x ++ go y ++ concatMap go xs
+    go (EtaD g) = go g
 
 freshVar :: FreshName a => State (FlattenState a) a
 freshVar = do
@@ -96,6 +98,8 @@ flattenGoal (S.Disjunction x y xs) = do
   return $ disj x' y' xs'
 flattenGoal (S.Fresh _ g) =
   flattenGoal g
+flattenGoal (S.Delay g) =
+  EtaD <$> flattenGoal g
 
 local :: (Ord a, FreshName a, Show a) =>
          (b -> State (FlattenState a) c) ->

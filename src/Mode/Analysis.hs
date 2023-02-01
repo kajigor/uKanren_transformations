@@ -65,10 +65,10 @@ suitableMode :: Show a => String -> [Var (a, Mode)] -> [(a, Mode)] -> Bool
 suitableMode name args as =
   all (uncurry moreInstantiated) (zip (map getVar args) as)
 
-runAnalyze :: (Show a, Ord a) => Goal a -> [a] -> Maybe (Goal (a, Mode))
-runAnalyze goal ins =
+runAnalyze :: (Show a, Ord a) => AllowFree -> Goal a -> [a] -> Maybe (Goal (a, Mode))
+runAnalyze allowFree goal ins =
   let goal' = initMode goal (Map.fromList $ zip ins $ repeat Ground) in
-  evalStateT (analyze goal') emptyAnalyzeState
+  evalStateT (analyze allowFree goal') emptyAnalyzeState
 
 emptyAnalyzeState :: AnalyzeState a
 emptyAnalyzeState = AnalyzeState { getDefinitions = Map.empty
@@ -101,13 +101,15 @@ modifyModeTerm (FTCon name vars) f = do
 modifyModeTerm (FTVar v) f = do
   FTVar <$> modifyMode v f
 
+data AllowFree = AllowFree | DisallowFree
 
-analyze :: (Show a, Ord a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
-analyze goal = do
+analyze :: (Show a, Ord a) => AllowFree -> Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
+analyze allowFree goal = do
     go goal
   where
     go goal@(Unif v@(Var (var, mode)) t) =
       let makeAfterModeGround m = Just $ m { after = Just Ground } in
+      let makeAfterModeFree m = Just $ m { after = Just Free } in
       case before mode of
         Ground -> do
           v <- modifyMode v makeAfterModeGround
@@ -116,8 +118,13 @@ analyze goal = do
         Free -> do
           let tVars = varsFromTerm t
           if any (\(Var (_, m)) -> before m == Free ) tVars
-          then
-            lift Nothing
+          then do
+            case allowFree of
+              DisallowFree -> lift Nothing
+              AllowFree -> do
+                v <- modifyMode v makeAfterModeFree
+                t <- modifyModeTerm t makeAfterModeFree
+                return (Unif v t)
           else do
             v <- modifyMode v makeAfterModeGround
             t <- modifyModeTerm t makeAfterModeGround
@@ -150,7 +157,7 @@ analyze goal = do
         Nothing -> newSuitable goal
     go (Disj x y xs) = do
       state <- get
-      (x : y : xs) <- mapM (\g -> do put state; analyze g) (x : y : xs)
+      (x : y : xs) <- mapM (\g -> do put state; analyze allowFree g) (x : y : xs)
       return (Disj x y xs)
       -- case checkInsts x y xs of
       --   Just _ -> return $ Disj x y xs
@@ -159,19 +166,26 @@ analyze goal = do
         choice $ map processConj $ permuteConjs goal
       where
         processConj (Conj x y xs) = do
-          x <- analyze x
-          y <- (updateVars >=> analyze) y
-          xs <- mapM (updateVars >=> analyze) xs
+          x <- analyze allowFree x
+          y <- (updateVars >=> analyze allowFree) y
+          xs <- mapM (updateVars >=> analyze allowFree) xs
           return (Conj x y xs)
         processConj _ = lift Nothing
+    go (EtaD g) =
+        EtaD <$> go g
 
 choice t = foldr (<|>) (lift Nothing) t
 
+permuteConjs :: Goal a -> [Goal a]
 permuteConjs (Conj x y xs) =
     let xss = permutations (x : y : xs) in
     map toConj xss
   where
     toConj (x : y : xs) = Conj x y xs
+
+prioritizeGround :: (Show a, Ord a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
+prioritizeGround goal =
+  analyze DisallowFree goal <|> analyze AllowFree goal
 
 analyzeNewDefs :: (Ord a, Show a, ShowPretty a) => StateT (AnalyzeState a) Maybe [Def Goal (a, Mode)]
 analyzeNewDefs = do
@@ -184,7 +198,7 @@ analyzeNewDefs = do
       put $ state { getQueue = queue }
       def@(Def _ args' goal) <- lift $ Map.lookup name (getDefinitions state)
       let initGoal = initMode goal $ varInstsFromMode args
-      modded <- analyze initGoal
+      modded <- prioritizeGround initGoal
       newInstMap <- gets getInstMap
       newArgs <- lift $ zipWithM (updateAfterMode newInstMap) args' args
       -- newArgs <- lift $ mapM (updateMode newInstMap) args'
@@ -227,6 +241,8 @@ updateVars goal = do
       y <- go instMap y
       xs <- mapM (go instMap) xs
       return $ Disj x y xs
+    go instMap (EtaD g) =
+      EtaD <$> go instMap g
     goTerm instMap (FTVar var) = do
       var <- goVar instMap var
       return $ FTVar var

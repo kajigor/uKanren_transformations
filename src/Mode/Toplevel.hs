@@ -16,10 +16,10 @@ import           VarRename
 
 -- analyze :: (Show a, Ord a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
 
-runAnalyze :: (Show a, Ord a) => Goal a -> [a] -> Maybe (Goal (a, Mode))
-runAnalyze goal ins =
+runAnalyze :: (Show a, Ord a) => AllowFree -> Goal a -> [a] -> Maybe (Goal (a, Mode))
+runAnalyze allowFree goal ins =
   let goal' = initMode goal (Map.fromList $ zip ins $ repeat Ground) in
-  evalStateT (analyze goal') emptyAnalyzeState
+  evalStateT (analyze allowFree goal') emptyAnalyzeState
 
 makeDefMap :: [Def g a] -> Map.Map String (Def g a)
 makeDefMap defs = Map.fromList $ map (\d -> (getName d, d)) defs
@@ -46,7 +46,7 @@ topLevel program ins = do
                           , getQueue = Set.fromList [topMode]
                           , getDefinitions = makeDefMap defs
                           }
-        (modded, state) <- runStateT (analyze goal') initState
+        (modded, state) <- runStateT (prioritizeGround goal') initState
         defs <- evalStateT analyzeNewDefs state
         return $ Program defs modded
       _ -> Nothing
