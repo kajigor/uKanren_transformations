@@ -1,3 +1,3 @@
-[![Build Status](https://travis-ci.com/kajigor/uKanren_transformations.svg?branch=master)](https://travis-ci.com/kajigor/uKanren_transformations)
+[![GitHub CI](https://github.com/userName/repoName/workflows/CI/badge.svg)](https://github.com/userName/repoName/actions)
 
 # uKanren-transformation
