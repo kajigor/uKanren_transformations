@@ -21,8 +21,8 @@ parseImport = do
   lexeme (symbol "import")
   ident
 
--- delay :: Parser String
--- delay = lexeme (symbol "Delay")
+delay :: Parser String
+delay = lexeme (symbol "Delay")
 
 reserved :: [String]
 reserved = ["fresh", "in", "import", "delay"]
@@ -69,12 +69,12 @@ parseFresh = do
   return (foldr Fresh goal names)
   <?> "parseFresh"
 
--- parseDelay :: Parser (G X)
--- parseDelay =
---       Delay
---   <$> (try delay
---    *> parseInvocation)
---   <?> "parseDelay"
+parseDelay :: Parser (G X)
+parseDelay =
+      Delay
+  <$> (try delay
+   *> parseInvocation)
+  <?> "parseDelay"
 
 parseInvocation :: Parser (G X)
 parseInvocation =
@@ -114,9 +114,8 @@ parseVar =
 
 parseSimpleGoal :: Parser (G X)
 parseSimpleGoal =
-  -- try parseDelay
-  -- <|>
-  try parseInvocation
+  try parseDelay
+  <|> try parseInvocation
   <|> try parseUnification
   <?> "parseSimpleGoal"
 
