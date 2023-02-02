@@ -31,6 +31,9 @@ data G a
   | Delay (G a)
   deriving (Eq, Ord, Functor)
 
+collectFreshVars :: G a -> ([a], G a)
+collectFreshVars = freshVars []
+
 freshVars :: [a] -> G a -> ([a], G a)
 freshVars names (Fresh name goal) = freshVars (name : names) goal
 freshVars names goal = (reverse names, goal)

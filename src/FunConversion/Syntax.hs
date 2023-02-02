@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module FunConversion.Syntax where
 
-import           Prettyprinter
-
-import qualified Data.Char     as C
 import qualified Data.Text     as T
+import           Prettyprinter
+import           Util.String
 
 type Var = String
 type Name = String
@@ -28,6 +28,7 @@ data Lang = Empty
 
 data Def = Def Name [([Term], Lang)]
 
+addXZ :: Def
 addXZ =
   Def "addXZ" [
     ( [Var "x", Var "z"]
@@ -44,6 +45,7 @@ addXZ =
     )
   ]
 
+addYZ :: Def
 addYZ =
   Def "addYZ" [
     ( [Var "y", Var "z"]
@@ -81,20 +83,16 @@ type HaskellProg = Doc T.Text
 class Haskell a where
   toHaskell :: a -> Either Error HaskellProg
 
-modifyFirstLetter _ "" = ""
-modifyFirstLetter f x = f (head x) : tail x
-
-toLower = modifyFirstLetter C.toLower
-
-toUpper = modifyFirstLetter C.toUpper
-
+parenIfCon :: Term -> Doc ann -> Doc ann
 parenIfCon (Con _ []) = id
 parenIfCon (Con _ _) = parens
 parenIfCon _ = id
 
+parenIfCon' :: Term -> Either Error (Doc T.Text)
 parenIfCon' t = parenIfCon t <$> toHaskell t
 
 instance Haskell Term where
+  toHaskell :: Term -> Either Error HaskellProg
   toHaskell (Var v)
     | null v = Left "Var name cannot be empty"
     | otherwise = Right $ pretty $ toLower v
@@ -105,9 +103,11 @@ instance Haskell Term where
       ts <- mapM parenIfCon' terms
       return $ hsep (pretty con : ts)
 
+tabSize :: Int
 tabSize = 2
 
 instance Haskell Def where
+  toHaskell :: Def -> Either Error HaskellProg
   toHaskell (Def name defs) = do
       ds <- mapM go defs
       return $ vsep (map (pretty name <+>) ds)
@@ -159,6 +159,7 @@ tupled' [x] = x
 tupled' xs = tupled xs
 
 instance Haskell Lang where
+  toHaskell :: Lang -> Either Error HaskellProg
   toHaskell Empty = return emptyKW
   toHaskell (Let var e) = do
     let v = pretty $ toLower var

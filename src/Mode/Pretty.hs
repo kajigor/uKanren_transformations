@@ -1,9 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs      #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Mode.Pretty where
 
-
+import qualified Data.Text                 as T
 import           Def
 import           Mode.Inst
 import           Mode.Syntax
@@ -11,9 +12,7 @@ import           Mode.Term
 import           Prettyprinter
 import           Prettyprinter.Render.Text (renderStrict)
 import           Program
-
-import qualified Data.Char                 as C
-import qualified Data.Text                 as T
+import           Util.String
 
 type Error = T.Text
 type Prog = Doc T.Text
@@ -49,6 +48,7 @@ instance ShowPretty a => ShowPretty (Var a) where
     return $ pretty ("v." :: T.Text) <> v
 
 instance ShowPretty a => ShowPretty (FlatTerm a) where
+  showPretty :: ShowPretty a => FlatTerm a -> Either Error Prog
   showPretty (FTCon name terms)
     | null name = Left "Constructor name cannot be empty"
     | otherwise = do
@@ -107,10 +107,3 @@ instance ShowPretty a => ShowPretty (Program Goal a) where
     defs <- mapM showPretty defs
     goal <- showPretty goal
     return $ vsep defs <> line <> goal
-
-modifyFirstLetter _ "" = ""
-modifyFirstLetter f x = f (head x) : tail x
-
-toLower = modifyFirstLetter C.toLower
-
-toUpper = modifyFirstLetter C.toUpper
