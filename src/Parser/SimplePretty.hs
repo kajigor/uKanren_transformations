@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Parser.SimplePretty where
 
+import           Data.List                 (intersperse)
 import qualified Data.Text                 as T
 import           Def
 import           Prettyprinter
@@ -16,10 +17,19 @@ type Error = T.Text
 type PrettyProg = Doc T.Text
 
 prettyString :: SimplePretty a => a -> String
-prettyString x =
+prettyString =
+  prettyStringWithLayout defaultLayoutOptions
+
+prettyStringLimitWidth :: SimplePretty a => Int -> a -> String
+prettyStringLimitWidth width =
+  prettyStringWithLayout (LayoutOptions { layoutPageWidth = AvailablePerLine width 1.0})
+
+prettyStringWithLayout :: SimplePretty a => LayoutOptions -> a -> String
+prettyStringWithLayout layout x =
   case toSimplePretty x of
     Left err -> T.unpack err
-    Right p -> T.unpack . renderStrict . layoutPretty defaultLayoutOptions $ p
+    Right p -> T.unpack . renderStrict . layoutPretty layout $ p
+
 
 class SimplePretty a where
   toSimplePretty :: a -> Either Error PrettyProg
@@ -71,15 +81,15 @@ instance SimplePretty a => SimplePretty (G a) where
         return (pretty name <+> hsep args)
   toSimplePretty g@(Disjunction x y xs) = do
     disjuncts <- mapM (\h -> parensIfNeeded g h <$> toSimplePretty h) (x:y:xs)
-    return (vsep $ punctuate disjOp disjuncts)
+    return $ vcat $ punctuate disjOp disjuncts
   toSimplePretty g@(Conjunction x y xs) = do
     conjuncts <- mapM (\h -> parensIfNeeded g h <$> toSimplePretty h) (x:y:xs)
-    return (hcat $ punctuate conjOp conjuncts)
+    return $ hcat $ punctuate conjOp conjuncts
   toSimplePretty g@(Fresh _ b) = do
     let (names, goal) = collectFreshVars g
     goal <- toSimplePretty goal
     names <- mapM toSimplePretty names
-    return $ parensIfNeeded g b (freshKW <+> hcat (punctuate (comma <+> "") names) <+> inKW <+> goal)
+    return $ parensIfNeeded g b (hang tabSize $ freshKW <+> hcat (punctuate (comma <> space) names) <+> inKW <> line <>  goal)
   toSimplePretty g@(Delay x) = do
     x' <- toSimplePretty x
     return $ parensIfNeeded g x (delayKW <+> x')
@@ -124,6 +134,9 @@ disjOp = spaced $ pretty ("|" :: T.Text)
 unifOp :: Doc ann
 unifOp = pretty ("==" :: T.Text)
 
+questionMark :: Doc ann
+questionMark = pretty ("?" :: T.Text)
+
 instance SimplePretty a => SimplePretty (Def G a) where
   toSimplePretty :: SimplePretty a => Def G a -> Either Error PrettyProg
   toSimplePretty (Def name args body)
@@ -131,11 +144,11 @@ instance SimplePretty a => SimplePretty (Def G a) where
     | otherwise = do
         args <- mapM toSimplePretty args
         body <- toSimplePretty body
-        return $ pretty name <+> hsep args <+> equals <> line <> indent tabSize body
+        return $ hang tabSize $ pretty name <+> hsep args <+> equals <> line <> group body
 
 instance SimplePretty a => SimplePretty (Program G a) where
   toSimplePretty :: SimplePretty a => Program G a -> Either Error PrettyProg
   toSimplePretty (Program defs goal) = do
     defs <- mapM toSimplePretty defs
     goal <- toSimplePretty goal
-    return $ vsep defs <> line <> goal
+    return $ vsep (intersperse mempty defs) <> line <> line <> questionMark <+> goal
