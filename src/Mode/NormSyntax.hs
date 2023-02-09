@@ -4,6 +4,7 @@ module Mode.NormSyntax where
 import           Control.Monad.State
 import           Data.Bifunctor      (second)
 import           Data.List           (intersect)
+import           Data.List           (nub)
 import           Data.List.NonEmpty  (NonEmpty (..))
 import qualified Data.Set            as Set
 import           Def
@@ -11,8 +12,12 @@ import qualified Mode.Syntax         as S
 import           Mode.Term
 import           Program
 
+data Delayed = Delayed
+             | NotDelayed
+             deriving (Show, Eq)
+
 data Base a = Unif (Var a) (FlatTerm a)
-            | Call String [Var a]
+            | Call Delayed String [Var a]
             deriving (Show, Eq, Functor)
 
 newtype Conj a = Conj (NonEmpty (Base a))
@@ -74,12 +79,12 @@ normalize program =
           else
             return n
 
-        newCall goal = do
+        newCall delayed goal = do
           n <- newName
           let vars = S.allVars goal `intersect` args
           let newDef = Def { getName = n, getArgs = vars, getBody = goal }
           modify (second (Set.insert newDef))
-          return $ Call n $ map Var vars
+          return $ Call delayed n $ map Var vars
         goDisj (S.Disj x y xs) = do
           x <- goConj x
           y <- goConj y
@@ -94,17 +99,19 @@ normalize program =
           xs <- mapM goBase xs
           return $ Conj $ x :| (y : xs)
         goConj goal@(S.Disj _ _ _) = do
-          call <- newCall goal
+          call <- newCall NotDelayed goal
           return $ Conj $ call :| []
         goConj goal = do
           goal <- goBase goal
           return $ Conj $ goal :| []
         goBase (S.Call n as) =
-          return $ Call n as
+          return $ Call NotDelayed n as
         goBase (S.Unif x t) =
           return $ Unif x t
+        goBase (S.EtaD goal) = do
+          newCall Delayed goal
         goBase goal =
-          newCall goal
+          newCall NotDelayed goal
 
 back :: Show a => Program Goal a -> Program S.Goal a
 back (Program defs goal) =
@@ -120,11 +127,15 @@ back (Program defs goal) =
     backConj (Conj (x :| [])) = backBase x
 
     backBase (Unif x t) = S.Unif x t
-    backBase (Call name args) = S.Call name args
+    backBase (Call NotDelayed name args) = S.Call name args
+    backBase (Call Delayed name args) = S.EtaD $ S.Call name args
 
--- Program {
---   getDefs =
---     [addo 0 1 2 =
---       Disj (Conj (Unif V.0 O () :| [Unif V.2 V.1]) :|
---         [Conj (Unif V.0 S (V.3) :| [Call "addo" (V.3, V.1, V.4),Unif V.2 S (V.4)])])],
---   getGoal = Disj (Conj (Call "addo" (V.0, V.1, V.2) :| []) :| [])}
+allVars :: Eq a => Goal a -> [a]
+allVars =
+    nub . map getVar . go
+  where
+    go = goDisj
+    goDisj (Disj (x :| xs)) = goConj x ++ concatMap goConj xs
+    goConj (Conj (x :| xs)) = goBase x ++ concatMap goBase xs
+    goBase (Call _ _ args) = args
+    goBase (Unif v t) = v : varsFromTerm t

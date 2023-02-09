@@ -4,17 +4,18 @@ module Mode.Analysis where
 
 import           Control.Applicative   ((<|>))
 import           Control.Monad.State
-import           Data.List             (nub, sortOn)
-import           Data.List             (permutations)
+import           Data.List             (permutations, sortOn)
+import           Data.List.NonEmpty    (NonEmpty (..), fromList)
 import qualified Data.Map              as Map
 import qualified Data.Map.Merge.Strict as Merge
 import           Data.Maybe
 import qualified Data.Set              as Set
 import           Def
 import           Mode.Inst
-import           Mode.Pretty
-import           Mode.Syntax
+import           Mode.NormSyntax
 import           Mode.Term
+
+type ModeAnalysisError = String
 
 initVarFromMap :: Ord a => Map.Map a Inst -> a -> (a, Mode)
 initVarFromMap instMap v =
@@ -65,7 +66,11 @@ suitableMode :: Show a => String -> [Var (a, Mode)] -> [(a, Mode)] -> Bool
 suitableMode name args as =
   all (uncurry moreInstantiated) (zip (map getVar args) as)
 
-runAnalyze :: (Show a, Ord a) => AllowFree -> Goal a -> [a] -> Maybe (Goal (a, Mode))
+runAnalyze :: (Show a, Ord a)
+           => AllowFree
+           -> Goal a
+           -> [a]
+           -> Either ModeAnalysisError (Goal (a, Mode))
 runAnalyze allowFree goal ins =
   let goal' = initMode goal (Map.fromList $ zip ins $ repeat Ground) in
   evalStateT (analyze allowFree goal') emptyAnalyzeState
@@ -84,17 +89,17 @@ data AnalyzeState a = AnalyzeState
   }
   deriving (Show)
 
-updateInstMap :: Ord a => a -> Mode -> StateT (AnalyzeState a) Maybe ()
+updateInstMap :: Ord a => a -> Mode -> StateT (AnalyzeState a) (Either ModeAnalysisError) ()
 updateInstMap v mode = do
   modify $ \state -> state { getInstMap = Map.insert v mode (getInstMap state) }
 
-modifyMode :: Ord a => Var (a, Mode) -> (Mode -> Maybe Mode) -> StateT (AnalyzeState a) Maybe (Var (a, Mode))
+modifyMode :: Ord a => Var (a, Mode) -> (Mode -> (Either ModeAnalysisError) Mode) -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Var (a, Mode))
 modifyMode (Var (v, mode)) f = do
   m <- lift $ f mode
   updateInstMap v m
   return (Var (v, m))
 
-modifyModeTerm :: Ord a => FlatTerm (a, Mode) -> (Mode -> Maybe Mode) -> StateT (AnalyzeState a) Maybe (FlatTerm (a, Mode))
+modifyModeTerm :: Ord a => FlatTerm (a, Mode) -> (Mode -> (Either ModeAnalysisError) Mode) -> StateT (AnalyzeState a) (Either ModeAnalysisError) (FlatTerm (a, Mode))
 modifyModeTerm (FTCon name vars) f = do
   vars <- mapM (\v -> modifyMode v f) vars
   return $ FTCon name vars
@@ -103,13 +108,38 @@ modifyModeTerm (FTVar v) f = do
 
 data AllowFree = AllowFree | DisallowFree
 
-analyze :: (Show a, Ord a) => AllowFree -> Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
+analyze :: (Show a, Ord a)
+        => AllowFree
+        -> Goal (a, Mode)
+        -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Goal (a, Mode))
 analyze allowFree goal = do
     go goal
   where
-    go goal@(Unif v@(Var (var, mode)) t) =
-      let makeAfterModeGround m = Just $ m { after = Just Ground } in
-      let makeAfterModeFree m = Just $ m { after = Just Free } in
+    go = goDisj
+    goDisj (Disj (x :| xs)) = do
+      state <- get
+      x <- goConj x
+      xs <- mapM (\g -> do put state; goConj g) xs
+      return (Disj (x :| xs))
+    goConj goal@(Conj (x :| xs)) = do
+        choice $ map processConj $ permuteConjs (x : xs)
+      where
+        processConj (Conj (x :| xs)) = do
+          x <- goBase x
+          xs <- mapM (updateVars >=> goBase) xs
+          return (Conj (x :| xs))
+    goBase goal@(Call delayed name args) = do
+      state <- get
+      case Map.lookup name (getAllModdedDefs state) of
+        Just ds ->
+          let suitable = filter (suitableMode name args) ds in
+          if null suitable
+          then newSuitable goal
+          else pickSuitable suitable goal
+        Nothing -> newSuitable goal
+    goBase goal@(Unif v@(Var (var, mode)) t) =
+      let makeAfterModeGround m = return $ m { after = Just Ground } in
+      let makeAfterModeFree m = return $ m { after = Just Free } in
       case before mode of
         Ground -> do
           v <- modifyMode v makeAfterModeGround
@@ -120,7 +150,7 @@ analyze allowFree goal = do
           if any (\(Var (_, m)) -> before m == Free ) tVars
           then do
             case allowFree of
-              DisallowFree -> lift Nothing
+              DisallowFree -> lift $ Left "Free variables in both sides of unification"
               AllowFree -> do
                 v <- modifyMode v makeAfterModeFree
                 t <- modifyModeTerm t makeAfterModeFree
@@ -130,64 +160,24 @@ analyze allowFree goal = do
             t <- modifyModeTerm t makeAfterModeGround
             return (Unif v t)
 
-      -- let vGround = updateAfterInst Ground v in
-      -- case after mode of
-      --   Just Ground -> do
-      --     let tGround = updateAfterInst Ground t
-      --     updateInstMap var (snd $ getVar vGround)
-      --     let tVars = varsFromTerm t
-      --     mapM_ (\(Var (t, mode)) -> updateInstMap t (mode { after = Just Ground })) tVars
-      --     return $ Unif vGround tGround
-      --   _ -> case t of
-      --     FTVar v | afterMode v == Just Ground -> do
-      --       updateInstMap var (snd $ getVar vGround)
-      --       return $ Unif vGround t
-      --     FTCon s vars | all ((== Just Ground) . afterMode) vars -> do
-      --       updateInstMap var (snd $ getVar vGround)
-      --       return $ Unif vGround t
-      --     _ -> return goal
-    go goal@(Call name args) = do
-      state <- get
-      case Map.lookup name (getAllModdedDefs state) of
-        Just ds ->
-          let suitable = filter (suitableMode name args) ds in
-          if null suitable
-          then newSuitable goal
-          else pickSuitable suitable goal
-        Nothing -> newSuitable goal
-    go (Disj x y xs) = do
-      state <- get
-      (x : y : xs) <- mapM (\g -> do put state; analyze allowFree g) (x : y : xs)
-      return (Disj x y xs)
-      -- case checkInsts x y xs of
-      --   Just _ -> return $ Disj x y xs
-      --   _ -> lift Nothing
-    go goal@(Conj x y xs) =
-        choice $ map processConj $ permuteConjs goal
-      where
-        processConj (Conj x y xs) = do
-          x <- analyze allowFree x
-          y <- (updateVars >=> analyze allowFree) y
-          xs <- mapM (updateVars >=> analyze allowFree) xs
-          return (Conj x y xs)
-        processConj _ = lift Nothing
-    go (EtaD g) =
-        EtaD <$> go g
+choice :: [StateT s (Either ModeAnalysisError) b] -> StateT s (Either ModeAnalysisError) b
+choice = foldr (<|>) (lift $ Left "Failed to process a conjunction")
 
-choice t = foldr (<|>) (lift Nothing) t
-
-permuteConjs :: Goal a -> [Goal a]
-permuteConjs (Conj x y xs) =
-    let xss = permutations (x : y : xs) in
+permuteConjs :: [Base a] -> [Conj a]
+permuteConjs goals =
+    let xss = permutations goals in
     map toConj xss
   where
-    toConj (x : y : xs) = Conj x y xs
+    toConj = Conj . fromList
 
-prioritizeGround :: (Show a, Ord a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
+prioritizeGround :: (Show a, Ord a)
+                 => Goal (a, Mode)
+                 -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Goal (a, Mode))
 prioritizeGround goal =
   analyze DisallowFree goal <|> analyze AllowFree goal
 
-analyzeNewDefs :: (Ord a, Show a, ShowPretty a) => StateT (AnalyzeState a) Maybe [Def Goal (a, Mode)]
+analyzeNewDefs :: (Ord a, Show a)
+               => StateT (AnalyzeState a) (Either ModeAnalysisError) [Def Goal (a, Mode)]
 analyzeNewDefs = do
     modify (\s -> s { getInstMap = Map.empty })
     state <- get
@@ -196,15 +186,16 @@ analyzeNewDefs = do
     else do
       let ((name, args), queue) = Set.deleteFindMin (getQueue state)
       put $ state { getQueue = queue }
-      def@(Def _ args' goal) <- lift $ Map.lookup name (getDefinitions state)
-      let initGoal = initMode goal $ varInstsFromMode args
-      modded <- prioritizeGround initGoal
-      newInstMap <- gets getInstMap
-      newArgs <- lift $ zipWithM (updateAfterMode newInstMap) args' args
-      -- newArgs <- lift $ mapM (updateMode newInstMap) args'
-      let def = Def name newArgs modded
-      newModes <- analyzeNewDefs
-      return (def : newModes)
+      case Map.lookup name (getDefinitions state) of
+        Nothing -> lift $ Left $ name ++ " undefined"
+        Just def@(Def _ args' goal) -> do
+          let initGoal = initMode goal $ varInstsFromMode args
+          modded <- prioritizeGround initGoal
+          newInstMap <- gets getInstMap
+          newArgs <- lift $ zipWithM (updateAfterMode newInstMap) args' args
+          let def = Def name newArgs modded
+          newModes <- analyzeNewDefs
+          return (def : newModes)
   where
     updateAfterMode instMap var (_, before) =
       case Map.lookup var instMap of
@@ -216,33 +207,21 @@ analyzeNewDefs = do
         Just x -> return (var,x)
         Nothing -> return (var, Mode {before = Free, after = Just Free })
 
-updateVars :: (Ord a, Show a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
-updateVars goal = do
-    state <- get
-    let instMap = getInstMap state
-    let result = go instMap goal
-    lift $ result
-    -- lift $ go instMap goal
+updateVars :: (Ord a, Show a)
+           => Base (a, Mode)
+           -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Base (a, Mode))
+updateVars goal =
+  do
+    instMap <- gets getInstMap
+    go instMap goal
   where
     go instMap (Unif v t) = do
       v <- goVar instMap v
       t <- goTerm instMap t
       return (Unif v t)
-    go instMap (Call name args) = do
+    go instMap (Call delayed name args) = do
       args <- mapM (goVar instMap) args
-      return $ Call name args
-    go instMap (Conj x y xs) = do
-      x <- go instMap x
-      y <- go instMap y
-      xs <- mapM (go instMap) xs
-      return $ Conj x y xs
-    go instMap (Disj x y xs) = do
-      x <- go instMap x
-      y <- go instMap y
-      xs <- mapM (go instMap) xs
-      return $ Disj x y xs
-    go instMap (EtaD g) =
-      EtaD <$> go instMap g
+      return $ Call delayed name args
     goTerm instMap (FTVar var) = do
       var <- goVar instMap var
       return $ FTVar var
@@ -254,24 +233,22 @@ updateVars goal = do
         Nothing -> return var
         Just m | isJust $ after m ->
           return (Var (v, Mode { before = fromJust $ after m, after = Nothing }))
-        _ -> Nothing
-        -- Just m | before m == before mode && (isNothing (after mode) || after mode == Just Free || after mode == after m) ->
-        --   return (Var (v, mode { after = after m} ))
-        -- _ -> Nothing
+        _ -> lift $ Left $ show v ++ " undefined"
 
-
-retrieveInsts :: Ord a => Goal (a, Mode) -> Maybe (Map.Map a Mode)
+retrieveInsts :: (Show a, Ord a)
+              => Goal (a, Mode)
+              -> Either ModeAnalysisError (Map.Map a Mode)
 retrieveInsts goal =
-    let vars = sortOn fst $ nub $ allVars goal in
+    let vars = sortOn fst $ allVars goal in
     if repeats vars
-    then Nothing
-    else Just $ Map.fromList vars
+    then Left ("Some vars have different instantiations: " ++ show vars)
+    else return $ Map.fromList vars
   where
     repeats ((k1, v1) : (k2, v2) : xs) | k1 == k2 && v1 /= v2 = True
                                        | otherwise = repeats ((k2, v2) : xs)
     repeats _ = False
 
-checkInsts :: (Show k, Ord k) => Goal (k, Mode) -> Goal (k, Mode) -> [Goal (k, Mode)] -> Maybe (Map.Map k Mode)
+checkInsts :: (Show k, Ord k) => Goal (k, Mode) -> Goal (k, Mode) -> [Goal (k, Mode)] -> (Either ModeAnalysisError) (Map.Map k Mode)
 checkInsts x y xs = do
     instMap <- retrieveInsts x
     go instMap y xs
@@ -280,11 +257,11 @@ checkInsts x y xs = do
       yMap <- retrieveInsts y
       let merged = merge instMap yMap
       if Nothing `elem` Map.elems merged
-      then Nothing
+      then Left "Instantiations are incompatible"
       else
         let newInstMap = Map.map fromJust merged in
         if null xs
-        then Just $ newInstMap
+        then return newInstMap
         else go newInstMap (head xs) (tail xs)
 
     merge = Merge.merge preserve preserve (Merge.zipWithMatched nothingIfNotEq)
@@ -305,8 +282,10 @@ enqueueModded name args = do
 varInstsFromMode :: Ord a => [(a, Mode)] -> Map.Map a Inst
 varInstsFromMode = Map.fromList . map (before <$>)
 
-newSuitable :: (Show a, Ord a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
-newSuitable call@(Call name args) = do
+newSuitable :: (Show a, Ord a)
+            => Base (a, Mode)
+            -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Base (a, Mode))
+newSuitable call@(Call delayed name args) = do
     state <- get
     let defs = getDefinitions state
     case Map.lookup name defs of
@@ -315,17 +294,21 @@ newSuitable call@(Call name args) = do
         let newBody = newMode body varInsts
         let newModded = zipWith pushMode args xs
         enqueueModded name newModded
-        return (Call name (map Var newModded))
-      _ -> lift Nothing
+        return (Call delayed name (map Var newModded))
+      _ -> lift $ Left $ name ++ " undefined"
   where
     pushMode (Var (_, mode)) y =
       (y, mode { after = Just Ground }) -- TODO REMOVE
 newSuitable _ =
-  lift Nothing
+  lift $ Left "Unable to find newSuitable call"
 
-pickSuitable xs (Call name args) = do
+pickSuitable :: Ord a
+             => [[(a, Mode)]]
+             -> Base (a, b)
+             -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Base (a, Mode))
+pickSuitable xs (Call delayed name args) = do
     args <- merge (pick xs) args
-    return $ Call name args
+    return $ Call delayed name args
   where
     pick = head
     merge =
@@ -333,4 +316,4 @@ pickSuitable xs (Call name args) = do
         updateInstMap a mode
         return $ Var (a, mode))
 pickSuitable _ _ =
-  lift Nothing
+  lift $ Left "Unable to find a suitably moded call"

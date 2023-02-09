@@ -24,24 +24,24 @@ m = "m"
 unit_enumerateVar :: Assertion
 unit_enumerateVar = do
     -- No "x" in the state
-    testEnumerateVar x emptyState Nothing
+    testEnumerateVar x emptyState (Left "x undefined")
 
     -- "x" is put in the state, thus is assigned to 0
     state' <- assertIsJustState $ execStateT (newVar x) emptyState
-    testEnumerateVar x state' (Just 0)
+    testEnumerateVar x state' (Right 0)
 
     -- No "y" in the state
-    testEnumerateVar y state' Nothing
+    testEnumerateVar y state' (Left "y undefined")
 
     -- "y" is put in the state with "x", thus is assigned to 1
     state'' <- assertIsJustState $ execStateT (newVar y) state'
-    testEnumerateVar y state'' (Just 1)
+    testEnumerateVar y state'' (Right 1)
 
     -- Second time "x" is put in the state, thus is assigned to 2
     state''' <- assertIsJustState $ execStateT (newVar x) state''
-    testEnumerateVar x state''' (Just 2)
+    testEnumerateVar x state''' (Right 2)
   where
-    testEnumerateVar :: X -> RenameState S -> Maybe S -> Assertion
+    testEnumerateVar :: X -> RenameState S -> Either String S -> Assertion
     testEnumerateVar v state exp =
       evalStateT (enumerateVar v) state @?= exp
 
@@ -52,15 +52,15 @@ assertIsJustState state = do
 unit_enumerateTerm :: Assertion
 unit_enumerateTerm = do
     state <- assertIsJustState $ execStateT (do newVar x; newVar y) emptyState
-    testEnumerateTerm (V x) state (Just $ V 0)
-    testEnumerateTerm (V y) state (Just $ V 1)
-    testEnumerateTerm (V z) state Nothing
+    testEnumerateTerm (V x) state (Right $ V 0)
+    testEnumerateTerm (V y) state (Right $ V 1)
+    testEnumerateTerm (V z) state (Left "z undefined")
 
-    testEnumerateTerm (C "" [V x, V x, C "" [V y, V x]]) state (Just $ C "" [V 0, V 0, C "" [V 1, V 0]])
-    testEnumerateTerm (C "" [V x, V x, C "" [V z, V x]]) state Nothing
+    testEnumerateTerm (C "" [V x, V x, C "" [V y, V x]]) state (Right $ C "" [V 0, V 0, C "" [V 1, V 0]])
+    testEnumerateTerm (C "" [V x, V x, C "" [V z, V x]]) state (Left "z undefined")
 
   where
-    testEnumerateTerm :: Term X -> RenameState S -> Maybe (Term S) -> Assertion
+    testEnumerateTerm :: Term X -> RenameState S -> Either String (Term S) -> Assertion
     testEnumerateTerm t state exp =
       evalStateT (enumerateTerm t) state @?= exp
 
@@ -84,30 +84,30 @@ unit_enumerateUnif = do
     state <- assertIsJustState $ execStateT (do newVar x; newVar y) emptyState
     state' <- assertIsJustState $ execStateT (newVar x) state
 
-    testEnumerateGoal (selfUnif x) state (Just (selfUnif 0))
-    testEnumerateGoal (selfUnif x) state' (Just (selfUnif 2))
-    testEnumerateGoal (selfUnif y) state (Just (selfUnif 1))
-    testEnumerateGoal (selfUnif z) state Nothing
+    testEnumerateGoal (selfUnif x) state (Right (selfUnif 0))
+    testEnumerateGoal (selfUnif x) state' (Right (selfUnif 2))
+    testEnumerateGoal (selfUnif y) state (Right (selfUnif 1))
+    testEnumerateGoal (selfUnif z) state (Left "z undefined")
 
-    testEnumerateGoal (varUnif x y) state (Just (varUnif 0 1))
-    testEnumerateGoal (varUnif y x) state (Just (varUnif 1 0))
-    testEnumerateGoal (varUnif x y) state' (Just (varUnif 2 1))
-    testEnumerateGoal (varUnif x z) state Nothing
+    testEnumerateGoal (varUnif x y) state (Right (varUnif 0 1))
+    testEnumerateGoal (varUnif y x) state (Right (varUnif 1 0))
+    testEnumerateGoal (varUnif x y) state' (Right (varUnif 2 1))
+    testEnumerateGoal (varUnif x z) state (Left "z undefined")
 
-    testEnumerateGoal (constUnif x) state (Just (constUnif 0))
-    testEnumerateGoal (constUnif y) state (Just (constUnif 1))
-    testEnumerateGoal (constUnif z) state Nothing
-    testEnumerateGoal (constUnif x) state' (Just (constUnif 2))
+    testEnumerateGoal (constUnif x) state (Right (constUnif 0))
+    testEnumerateGoal (constUnif y) state (Right (constUnif 1))
+    testEnumerateGoal (constUnif z) state (Left "z undefined")
+    testEnumerateGoal (constUnif x) state' (Right (constUnif 2))
 
-    testEnumerateGoal (constUnif' x) state  (Just (constUnif' 0))
-    testEnumerateGoal (constUnif' y) state  (Just (constUnif' 1))
-    testEnumerateGoal (constUnif' z) state  Nothing
-    testEnumerateGoal (constUnif' x) state' (Just (constUnif' 2))
+    testEnumerateGoal (constUnif' x) state  (Right (constUnif' 0))
+    testEnumerateGoal (constUnif' y) state  (Right (constUnif' 1))
+    testEnumerateGoal (constUnif' z) state  (Left "z undefined")
+    testEnumerateGoal (constUnif' x) state' (Right (constUnif' 2))
 
-    testEnumerateGoal (complexUnif x y) state (Just (complexUnif 0 1))
-    testEnumerateGoal (complexUnif y x) state (Just (complexUnif 1 0))
-    testEnumerateGoal (complexUnif x y) state' (Just (complexUnif 2 1))
-    testEnumerateGoal (complexUnif x x) state' (Just (complexUnif 2 2))
+    testEnumerateGoal (complexUnif x y) state (Right (complexUnif 0 1))
+    testEnumerateGoal (complexUnif y x) state (Right (complexUnif 1 0))
+    testEnumerateGoal (complexUnif x y) state' (Right (complexUnif 2 1))
+    testEnumerateGoal (complexUnif x x) state' (Right (complexUnif 2 2))
 
 simpleCall :: a -> G a
 simpleCall x = call "simple" [V x]
@@ -123,24 +123,24 @@ unit_enumerateCall = do
     state <- assertIsJustState $ execStateT (do newVar x; newVar y) emptyState
     state' <- assertIsJustState $ execStateT (newVar x) state
 
-    testEnumerateGoal (simpleCall x) state (Just $ simpleCall 0)
-    testEnumerateGoal (simpleCall y) state (Just $ simpleCall 1)
-    testEnumerateGoal (simpleCall z) state Nothing
+    testEnumerateGoal (simpleCall x) state (Right $ simpleCall 0)
+    testEnumerateGoal (simpleCall y) state (Right $ simpleCall 1)
+    testEnumerateGoal (simpleCall z) state (Left "z undefined")
 
-    testEnumerateGoal (manyArgCall x x x) state  (Just $ manyArgCall 0 0 0)
-    testEnumerateGoal (manyArgCall x x x) state' (Just $ manyArgCall 2 2 2)
+    testEnumerateGoal (manyArgCall x x x) state  (Right $ manyArgCall 0 0 0)
+    testEnumerateGoal (manyArgCall x x x) state' (Right $ manyArgCall 2 2 2)
 
-    testEnumerateGoal (manyArgCall x y x) state  (Just $ manyArgCall 0 1 0)
-    testEnumerateGoal (manyArgCall x y x) state' (Just $ manyArgCall 2 1 2)
+    testEnumerateGoal (manyArgCall x y x) state  (Right $ manyArgCall 0 1 0)
+    testEnumerateGoal (manyArgCall x y x) state' (Right $ manyArgCall 2 1 2)
 
-    testEnumerateGoal (manyArgCall y y x) state  (Just $ manyArgCall 1 1 0)
-    testEnumerateGoal (manyArgCall y y x) state' (Just $ manyArgCall 1 1 2)
+    testEnumerateGoal (manyArgCall y y x) state  (Right $ manyArgCall 1 1 0)
+    testEnumerateGoal (manyArgCall y y x) state' (Right $ manyArgCall 1 1 2)
 
-    testEnumerateGoal (manyArgCall x y z) state Nothing
+    testEnumerateGoal (manyArgCall x y z) state (Left "z undefined")
 
-    testEnumerateGoal (constructorInCall x y x) state  (Just $ constructorInCall 0 1 0)
-    testEnumerateGoal (constructorInCall x y x) state' (Just $ constructorInCall 2 1 2)
-    testEnumerateGoal (constructorInCall x y z) state Nothing
+    testEnumerateGoal (constructorInCall x y x) state  (Right $ constructorInCall 0 1 0)
+    testEnumerateGoal (constructorInCall x y x) state' (Right $ constructorInCall 2 1 2)
+    testEnumerateGoal (constructorInCall x y z) state (Left "z undefined")
 
 
 disj1 :: a -> a -> G a
@@ -161,15 +161,15 @@ unit_enumerateDisjuncion = do
     state <- assertIsJustState $ execStateT (do newVar x; newVar y) emptyState
     state' <- assertIsJustState $ execStateT (newVar x) state
 
-    testEnumerateGoal (disj1 x y) state  (Just (disj1 0 1))
-    testEnumerateGoal (disj1 x y) state' (Just (disj1 2 1))
-    testEnumerateGoal (disj2 x y) state  (Just (disj2 0 1))
-    testEnumerateGoal (disj2 x y) state' (Just (disj2 2 1))
+    testEnumerateGoal (disj1 x y) state  (Right (disj1 0 1))
+    testEnumerateGoal (disj1 x y) state' (Right (disj1 2 1))
+    testEnumerateGoal (disj2 x y) state  (Right (disj2 0 1))
+    testEnumerateGoal (disj2 x y) state' (Right (disj2 2 1))
 
-    testEnumerateGoal (disj1 z y) state  Nothing
-    testEnumerateGoal (disj1 x z) state' Nothing
-    testEnumerateGoal (disj2 z y) state  Nothing
-    testEnumerateGoal (disj2 x z) state' Nothing
+    testEnumerateGoal (disj1 z y) state  (Left "z undefined")
+    testEnumerateGoal (disj1 x z) state' (Left "z undefined")
+    testEnumerateGoal (disj2 z y) state  (Left "z undefined")
+    testEnumerateGoal (disj2 x z) state' (Left "z undefined")
 
 
 unit_enumerateConjunction :: Assertion
@@ -177,15 +177,15 @@ unit_enumerateConjunction = do
     state <- assertIsJustState $ execStateT (do newVar x; newVar y) emptyState
     state' <- assertIsJustState $ execStateT (newVar x) state
 
-    testEnumerateGoal (conj1 x y) state  (Just (conj1 0 1))
-    testEnumerateGoal (conj1 x y) state' (Just (conj1 2 1))
-    testEnumerateGoal (conj2 x y) state  (Just (conj2 0 1))
-    testEnumerateGoal (conj2 x y) state' (Just (conj2 2 1))
+    testEnumerateGoal (conj1 x y) state  (Right (conj1 0 1))
+    testEnumerateGoal (conj1 x y) state' (Right (conj1 2 1))
+    testEnumerateGoal (conj2 x y) state  (Right (conj2 0 1))
+    testEnumerateGoal (conj2 x y) state' (Right (conj2 2 1))
 
-    testEnumerateGoal (conj1 z y) state  Nothing
-    testEnumerateGoal (conj1 x z) state' Nothing
-    testEnumerateGoal (conj2 z y) state  Nothing
-    testEnumerateGoal (conj2 x z) state' Nothing
+    testEnumerateGoal (conj1 z y) state  (Left "z undefined")
+    testEnumerateGoal (conj1 x z) state' (Left "z undefined")
+    testEnumerateGoal (conj2 z y) state  (Left "z undefined")
+    testEnumerateGoal (conj2 x z) state' (Left "z undefined")
 
 
 freshUnif :: a -> G a
@@ -199,22 +199,22 @@ unit_enumerateFresh = do
     state <- assertIsJustState $ execStateT (do newVar x; newVar y) emptyState
     state' <- assertIsJustState $ execStateT (newVar x) state
 
-    testEnumerateGoal (freshUnif x) state (Just $ freshUnif 2)
-    testEnumerateGoal (freshUnif y) state (Just $ freshUnif 2)
-    testEnumerateGoal (freshUnif z) state (Just $ freshUnif 2)
+    testEnumerateGoal (freshUnif x) state (Right $ freshUnif 2)
+    testEnumerateGoal (freshUnif y) state (Right $ freshUnif 2)
+    testEnumerateGoal (freshUnif z) state (Right $ freshUnif 2)
 
-    testEnumerateGoal (doubleFresh x y) state (Just $ doubleFresh 2 3)
-    testEnumerateGoal (doubleFresh z y) state (Just $ doubleFresh 2 3)
+    testEnumerateGoal (doubleFresh x y) state (Right $ doubleFresh 2 3)
+    testEnumerateGoal (doubleFresh z y) state (Right $ doubleFresh 2 3)
     -- First fresh is not visible
-    testEnumerateGoal (doubleFresh y y) state (Just $ Fresh 2 $ Fresh 3 $ selfUnif 3)
+    testEnumerateGoal (doubleFresh y y) state (Right $ Fresh 2 $ Fresh 3 $ selfUnif 3)
 
     addoState <- assertIsJustState $ execStateT (do newVar x; newVar y; newVar z) emptyState
-    testEnumerateGoal (appendoBody x y z h t r) addoState (Just $ appendoBody 0 1 2 3 4 5)
+    testEnumerateGoal (appendoBody x y z h t r) addoState (Right $ appendoBody 0 1 2 3 4 5)
 
     evaloState <- assertIsJustState $ execStateT (do newVar st; newVar fm; newVar u) emptyState
-    testEnumerateGoal (evaloBody st fm u x y v w z) evaloState (Just $ evaloBody' 0 1 2 3 4 5 4 6 3)
+    testEnumerateGoal (evaloBody st fm u x y v w z) evaloState (Right $ evaloBody' 0 1 2 3 4 5 4 6 3)
 
-testEnumerateGoal :: G X -> RenameState S -> Maybe (G S) -> Assertion
+testEnumerateGoal :: G X -> RenameState S -> Either String (G S) -> Assertion
 testEnumerateGoal goal state exp =
   evalStateT (enumerate goal) state @?= exp
 
@@ -222,17 +222,17 @@ unit_enumerateDef :: Assertion
 unit_enumerateDef = do
   testEnumerateDef  (Def "appendo" [x, y, z] (appendoBody x y z h t r))
                     emptyState
-                    (Just $ Def "appendo" [0, 1, 2] (appendoBody 0 1 2 3 4 5))
+                    (Right $ Def "appendo" [0, 1, 2] (appendoBody 0 1 2 3 4 5))
 
   testEnumerateDef (Def "addo" [x, y, z] (addoBody x y z n))
                    emptyState
-                   (Just $ Def "addo" [0, 1, 2] (addoBody 0 1 2 3))
+                   (Right $ Def "addo" [0, 1, 2] (addoBody 0 1 2 3))
 
   testEnumerateDef (Def "addo" [x, y, z] (addoBody' x y z n m))
                   emptyState
-                  (Just $ Def "addo" [0, 1, 2] (addoBody' 0 1 2 3 4))
+                  (Right $ Def "addo" [0, 1, 2] (addoBody' 0 1 2 3 4))
 
-testEnumerateDef :: Def G X -> RenameState S -> Maybe (Def G S) -> Assertion
+testEnumerateDef :: Def G X -> RenameState S -> Either String (Def G S) -> Assertion
 testEnumerateDef def state exp =
   evalStateT (enumerateDef def) state @?= exp
 

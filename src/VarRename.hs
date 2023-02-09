@@ -16,29 +16,35 @@ data RenameState a = RenameState
 emptyState :: FreshName a => RenameState a
 emptyState = RenameState { getVarMap = M.empty, getNameSource = defaultNames, getFirstNotUsed = defaultNames }
 
-uniquelyRenameVars :: Program G X -> Maybe (Program G S, S)
+type VarRenameError = String
+
+uniquelyRenameVars :: Program G X -> Either VarRenameError (Program G S, S)
 uniquelyRenameVars (Program defs goal) = do
   (goal, gState) <- runStateT (enumerate goal) emptyState
   defs <- mapM (\d -> runStateT (enumerateDef d) emptyState) defs
   let highestNextVar = maximum (getFirstNotUsed gState : map (getFirstNotUsed . snd) defs)
   return (Program (map fst defs) goal, fst $ getFreshName highestNextVar)
 
-enumerateDef ::  (Ord a, Show a, FreshName a) => Def G X -> StateT (RenameState a) Maybe (Def G a)
+enumerateDef ::  (Ord a, Show a, FreshName a) => Def G X -> StateT (RenameState a) (Either VarRenameError) (Def G a)
 enumerateDef (Def name args body) = do
   args <- mapM newVar args
   body <- enumerate body
   return $ Def name args body
 
-enumerate :: (Ord a, Show a, FreshName a) => G X -> StateT (RenameState a) Maybe (G a)
+enumerate :: (Ord a, Show a, FreshName a) => G X -> StateT (RenameState a) (Either VarRenameError) (G a)
 enumerate (x :=: y) = do
   x <- enumerateTerm x
   y <- enumerateTerm y
   return $ x :=: y
 enumerate (Conjunction x y xs) = do
-  (x : y : xs) <- mapM enumerate (x : y : xs)
+  x <- enumerate x
+  y <- enumerate y
+  xs <- mapM enumerate xs
   return $ Conjunction x y xs
 enumerate (Disjunction x y xs) = do
-  (x : y : xs) <- mapM enumerate (x : y : xs)
+  x <- enumerate x
+  y <- enumerate y
+  xs <- mapM enumerate xs
   return $ Disjunction x y xs
 enumerate (Invoke name args) = do
   args <- mapM enumerateTerm args
@@ -46,11 +52,13 @@ enumerate (Invoke name args) = do
 enumerate (Fresh x g) = do
   (g, v') <- withNewName x (enumerate g)
   return (Fresh v' g)
+enumerate (Delay g) = do
+  Delay <$> enumerate g
 
-withNewName :: (Ord a, FreshName a) =>
+withNewName :: (Ord a, FreshName a, Monad m) =>
                X ->
-               StateT (RenameState a) Maybe b ->
-               StateT (RenameState a) Maybe (b, a)
+               StateT (RenameState a) m b ->
+               StateT (RenameState a) m (b, a)
 withNewName x f = do
   oldState@(RenameState varMap nameSource firstNotUsed) <- get
   let (newName, newSource) = getFreshName nameSource
@@ -60,7 +68,7 @@ withNewName x f = do
   put $ oldState { getFirstNotUsed = max newSource firstNotUsed}
   return (r, newName)
 
-newVar :: (Ord a, FreshName a) => X -> StateT (RenameState a) Maybe a
+newVar :: (Ord a, FreshName a, Monad m) => X -> StateT (RenameState a) m a
 newVar x = do
   oldState@(RenameState varMap nameSource firstNotUsed) <- get
   let (newName, newSource) = getFreshName nameSource
@@ -68,12 +76,14 @@ newVar x = do
   put (RenameState newVarMap newSource (max newSource firstNotUsed))
   return newName
 
-enumerateVar :: (Show a, FreshName a) => X -> StateT (RenameState a) Maybe a
+enumerateVar :: (Show a, FreshName a) => X -> StateT (RenameState a) (Either VarRenameError) a
 enumerateVar v = do
   varMap <- gets getVarMap
-  lift $ M.lookup v varMap
+  case M.lookup v varMap of
+    Just r -> return r
+    Nothing -> lift $ Left $ v ++ " undefined"
 
-enumerateTerm :: (Show a, FreshName a) => Term X -> StateT (RenameState a) Maybe (Term a)
+enumerateTerm :: (Show a, FreshName a) => Term X -> StateT (RenameState a) (Either VarRenameError) (Term a)
 enumerateTerm (V v) = do
   v <- enumerateVar v
   return (V v)

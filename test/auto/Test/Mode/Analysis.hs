@@ -2,8 +2,10 @@ module Test.Mode.Analysis where
 
 import           Control.Monad.State
 import           Data.List           (subsequences)
+import           Data.List.NonEmpty  (NonEmpty (..))
 import           Mode.Analysis
 import           Mode.Inst
+import qualified Mode.NormSyntax     as N
 import           Mode.Pretty         (prettyString)
 import           Mode.Syntax
 import           Mode.Term
@@ -19,12 +21,12 @@ freeThenGroundMode = Mode { before = Free, after = Just Ground }
 
 unit_unifyAnalysis :: IO ()
 unit_unifyAnalysis = do
-  let expected = Unif (Var (0, groundMode)) (FTVar (Var (1, freeThenGroundMode)))
-  let actual = evalStateT (prioritizeGround (Unif (Var (0, groundMode)) (FTVar (Var (1, freeMode))))) emptyAnalyzeState :: Maybe (Goal (Int, Mode))
-  actual @?= Just expected
+  let expected = N.Disj (N.Conj (N.Unif (Var (0, groundMode)) (FTVar (Var (1, freeThenGroundMode))) :| []) :| [])
+  let actual = evalStateT (prioritizeGround (N.Disj (N.Conj (N.Unif (Var (0, groundMode)) (FTVar (Var (1, freeMode))) :| []) :| []))) emptyAnalyzeState :: Either ModeAnalysisError (N.Goal (Int, Mode))
+  actual @?= Right expected
 
-run (Just r) = putStrLn $ prettyString r
-run Nothing = putStrLn "Nothing"
+run (Right r) = print r
+run (Left err) = putStrLn err
 
 unit_analysis :: IO ()
 unit_analysis = do
