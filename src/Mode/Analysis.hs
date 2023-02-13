@@ -14,6 +14,7 @@ import           Def
 import           Mode.Inst
 import           Mode.NormSyntax
 import           Mode.Term
+import Data.Function (on)
 
 type ModeAnalysisError = String
 
@@ -66,6 +67,10 @@ suitableMode :: Show a => String -> [Var (a, Mode)] -> [(a, Mode)] -> Bool
 suitableMode name args as =
   all (uncurry moreInstantiated) (zip (map getVar args) as)
 
+suitableMode' :: Show a => String -> [Var (a, Mode)] -> [(a, Mode)] -> Bool
+suitableMode' name args as =
+  all (uncurry ((==) `on` snd)) (zip (map getVar args) as)
+
 runAnalyze :: (Show a, Ord a)
            => AllowFree
            -> Goal a
@@ -93,18 +98,24 @@ updateInstMap :: Ord a => a -> Mode -> StateT (AnalyzeState a) (Either ModeAnaly
 updateInstMap v mode = do
   modify $ \state -> state { getInstMap = Map.insert v mode (getInstMap state) }
 
-modifyMode :: Ord a => Var (a, Mode) -> (Mode -> (Either ModeAnalysisError) Mode) -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Var (a, Mode))
-modifyMode (Var (v, mode)) f = do
+modifyMode :: Ord a
+           => (Mode -> Either ModeAnalysisError Mode)
+           -> Var (a, Mode)
+           -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Var (a, Mode))
+modifyMode f (Var (v, mode)) = do
   m <- lift $ f mode
   updateInstMap v m
   return (Var (v, m))
 
-modifyModeTerm :: Ord a => FlatTerm (a, Mode) -> (Mode -> (Either ModeAnalysisError) Mode) -> StateT (AnalyzeState a) (Either ModeAnalysisError) (FlatTerm (a, Mode))
-modifyModeTerm (FTCon name vars) f = do
-  vars <- mapM (\v -> modifyMode v f) vars
+modifyModeTerm :: Ord a
+               => (Mode -> Either ModeAnalysisError Mode)
+               -> FlatTerm (a, Mode)
+               -> StateT (AnalyzeState a) (Either ModeAnalysisError) (FlatTerm (a, Mode))
+modifyModeTerm f (FTCon name vars) = do
+  vars <- mapM (modifyMode f) vars
   return $ FTCon name vars
-modifyModeTerm (FTVar v) f = do
-  FTVar <$> modifyMode v f
+modifyModeTerm f (FTVar v) = do
+  FTVar <$> modifyMode f v
 
 data AllowFree = AllowFree | DisallowFree
 
@@ -132,18 +143,17 @@ analyze allowFree goal = do
       state <- get
       case Map.lookup name (getAllModdedDefs state) of
         Just ds ->
-          let suitable = filter (suitableMode name args) ds in
+          let suitable = filter (suitableMode' name args) ds in
           if null suitable
           then newSuitable goal
           else pickSuitable suitable goal
         Nothing -> newSuitable goal
     goBase goal@(Unif v@(Var (var, mode)) t) =
-      let makeAfterModeGround m = return $ m { after = Just Ground } in
       let makeAfterModeFree m = return $ m { after = Just Free } in
       case before mode of
         Ground -> do
-          v <- modifyMode v makeAfterModeGround
-          t <- modifyModeTerm t makeAfterModeGround
+          v <- modifyMode makeAfterModeGround v
+          t <- modifyModeTerm makeAfterModeGround t
           return $ Unif v t
         Free -> do
           let tVars = varsFromTerm t
@@ -152,13 +162,16 @@ analyze allowFree goal = do
             case allowFree of
               DisallowFree -> lift $ Left "Free variables in both sides of unification"
               AllowFree -> do
-                v <- modifyMode v makeAfterModeFree
-                t <- modifyModeTerm t makeAfterModeFree
+                v <- modifyMode makeAfterModeFree v
+                t <- modifyModeTerm makeAfterModeFree t
                 return (Unif v t)
           else do
-            v <- modifyMode v makeAfterModeGround
-            t <- modifyModeTerm t makeAfterModeGround
+            v <- modifyMode makeAfterModeGround v
+            t <- modifyModeTerm makeAfterModeGround t
             return (Unif v t)
+
+makeAfterModeGround :: Monad m => Mode -> m Mode
+makeAfterModeGround m = return $ m { after = Just Ground }
 
 choice :: [StateT s (Either ModeAnalysisError) b] -> StateT s (Either ModeAnalysisError) b
 choice = foldr (<|>) (lift $ Left "Failed to process a conjunction")
@@ -292,12 +305,14 @@ newSuitable call@(Call delayed name args) = do
       Just (Def _ xs body) -> do
         let varInsts = Map.fromList $ map (\(Var (v, mode)) -> (v, before mode)) args
         let newBody = newMode body varInsts
-        let newModded = zipWith pushMode args xs
+        let newModded = zipWith pushMode args xs -- HERE IS THE PROBLEM
         enqueueModded name newModded
-        return (Call delayed name (map Var newModded))
+        grounded <- mapM (modifyMode makeAfterModeGround) args
+        intsMap <- gets getInstMap
+        return (Call delayed name grounded)
       _ -> lift $ Left $ name ++ " undefined"
   where
-    pushMode (Var (_, mode)) y =
+    pushMode (Var (x, mode)) y =
       (y, mode { after = Just Ground }) -- TODO REMOVE
 newSuitable _ =
   lift $ Left "Unable to find newSuitable call"
