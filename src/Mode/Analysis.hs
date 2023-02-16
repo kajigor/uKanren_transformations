@@ -4,6 +4,7 @@ module Mode.Analysis where
 
 import           Control.Applicative   ((<|>))
 import           Control.Monad.State
+import           Data.Function         (on)
 import           Data.List             (permutations, sortOn)
 import           Data.List.NonEmpty    (NonEmpty (..), fromList)
 import qualified Data.Map              as Map
@@ -14,7 +15,6 @@ import           Def
 import           Mode.Inst
 import           Mode.NormSyntax
 import           Mode.Term
-import Data.Function (on)
 
 type ModeAnalysisError = String
 
@@ -157,7 +157,7 @@ analyze allowFree goal = do
           return $ Unif v t
         Free -> do
           let tVars = varsFromTerm t
-          if any (\(Var (_, m)) -> before m == Free ) tVars
+          if any (\(_, m) -> before m == Free ) tVars
           then do
             case allowFree of
               DisallowFree -> lift $ Left "Free variables in both sides of unification"
@@ -252,7 +252,7 @@ retrieveInsts :: (Show a, Ord a)
               => Goal (a, Mode)
               -> Either ModeAnalysisError (Map.Map a Mode)
 retrieveInsts goal =
-    let vars = sortOn fst $ allVars goal in
+    let vars = sortOn fst $ Set.toList $ allVars goal in
     if repeats vars
     then Left ("Some vars have different instantiations: " ++ show vars)
     else return $ Map.fromList vars

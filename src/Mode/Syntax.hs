@@ -4,6 +4,7 @@ module Mode.Syntax where
 import           Control.Monad.State
 import           Data.List           (nub)
 import qualified Data.Map.Strict     as Map
+import qualified Data.Set            as Set
 import           Def
 import           FreshNames
 import           Mode.Term
@@ -17,14 +18,14 @@ data Goal a = Call String [Var a]
             | EtaD (Goal a)
             deriving (Show, Eq, Ord, Functor)
 
-allVars :: Eq a => Goal a -> [a]
+allVars :: (Ord a, Eq a) => Goal a -> Set.Set a
 allVars =
-    nub . map getVar . go
+    go
   where
-    go (Call _ args) = args
-    go (Unif v t) = v : varsFromTerm t
-    go (Conj x y xs) = go x ++ go y ++ concatMap go xs
-    go (Disj x y xs) = go x ++ go y ++ concatMap go xs
+    go (Call _ args) = Set.fromList $ map getVar args
+    go (Unif v t) = Set.insert (getVar v) $ varsFromTerm t
+    go (Conj x y xs) = Set.unions $ map go (x:y:xs)
+    go (Disj x y xs) = Set.unions $ map go (x:y:xs)
     go (EtaD g) = go g
 
 freshVar :: FreshName a => State (FlattenState a) a
