@@ -2,8 +2,6 @@
 module Mode.NormSyntax where
 
 import           Control.Monad.State
-import           Data.Bifunctor      (second)
-import           Data.List           (intersect)
 import           Data.List           (nub)
 import           Data.List.NonEmpty  (NonEmpty (..))
 import qualified Data.Set            as Set
@@ -29,62 +27,90 @@ newtype Disj a = Disj (NonEmpty (Conj a))
 type Goal = Disj
 
 data NameSource = NameSource
-  { usedNames :: [String]
+  { usedNames :: Set.Set String
   , counter   :: Int
   }
 
-newNameSource :: [String] -> NameSource
-newNameSource xs = NameSource { usedNames = xs, counter = 0 }
+data NormalizationState a = NormalizationState
+  { getNameSource :: NameSource
+  , getNewDefs    :: Set.Set (Def S.Goal a)
+  , getBoundVars  :: Set.Set a
+  }
+
+initNormalizationState :: [String] -> NormalizationState a
+initNormalizationState namesTaken =
+  NormalizationState
+  { getNameSource = initNameSource namesTaken
+  , getNewDefs = Set.empty
+  , getBoundVars = Set.empty
+  }
+
+initNameSource :: [String] -> NameSource
+initNameSource xs = NameSource { usedNames = Set.fromList xs, counter = 0 }
+
+withLocalVars :: (Ord a) =>
+                 Set.Set a ->
+                 (b -> State (NormalizationState a) c) ->
+                 b ->
+                 State (NormalizationState a) c
+withLocalVars boundVars f x  = do
+  oldBoundVars <- gets getBoundVars
+  modify $ addNewBoundVars boundVars
+  r <- f x
+  modify $ \s -> s { getBoundVars = oldBoundVars }
+  return r
 
 normalize :: (Ord a, Eq a, Show a) => Program S.Goal a -> Program Goal a
 normalize program =
     let namesTaken = map getName (getDefs program) in
-    evalState (normalizeProgram program) (newNameSource namesTaken, Set.empty)
+    evalState (normalizeProgram program) (initNormalizationState namesTaken)
   where
-    normalizeProgram program = do
-      defs <- mapM normalizeDef (getDefs program)
-      goal <- normalizeGoal (getGoal program) "topLevel" (S.allVars $ getGoal program)
+    normalizeProgram (Program defs goal) = do
+      defs <- mapM normalizeDef defs
+      goal <- withLocalVars (S.allVars goal) (normalizeGoal "topLevel") goal
       newDefs <- normalizeNewDefs
       return $ Program (defs ++ newDefs) goal
 
     normalizeDef def = do
-      body <- normalizeGoal (getBody def) (getName def) (getArgs def)
+      body <- withLocalVars (Set.fromList $ getArgs def) (normalizeGoal $ getName def) (getBody def)
       return $ def { getBody = body }
 
 
-    normalizeNewDefs :: (Ord a, Eq a) => State (NameSource, Set.Set (Def S.Goal a)) [Def Goal a]
+    normalizeNewDefs :: (Ord a, Eq a) => State (NormalizationState a) [Def Goal a]
     normalizeNewDefs = do
-      defs <- gets snd
+      defs <- gets getNewDefs
       if Set.null defs
       then
         return []
       else do
         let (def, rest) = Set.deleteFindMin defs
-        modify (second (const rest))
+        modify $ \s -> s { getNewDefs = rest }
         def <- normalizeDef def
         (def :) <$> normalizeNewDefs
 
-    normalizeGoal :: (Ord a, Eq a) => S.Goal a -> String -> [a] -> State (NameSource, Set.Set (Def S.Goal a)) (Goal a)
-    normalizeGoal goal name args =
-        goDisj goal
+    normalizeGoal :: (Ord a, Eq a) => String -> S.Goal a -> State (NormalizationState a) (Goal a)
+    normalizeGoal name =
+        goDisj
       where
-        newName :: State (NameSource, a) String
+        newName :: State (NormalizationState a) String
         newName = do
-          (nameSupply, x) <- get
-          let n = name ++ show (counter nameSupply)
-          if n `elem` usedNames nameSupply
+          nameSource <- gets getNameSource
+          let n = name ++ show (counter nameSource)
+          if n `elem` usedNames nameSource
           then do
-            put (nameSupply { counter = counter nameSupply + 1 }, x)
+            modify $ \s -> s { getNameSource = nameSource { counter = counter nameSource + 1 } }
             newName
-          else
+          else do
+            modify $ \s -> s { getNameSource = nameSource { usedNames = Set.insert n $ usedNames nameSource }}
             return n
 
         newCall delayed goal = do
           n <- newName
-          let vars = S.allVars goal `intersect` args
-          let newDef = Def { getName = n, getArgs = vars, getBody = goal }
-          modify (second (Set.insert newDef))
-          return $ Call delayed n $ map Var vars
+          boundVars <- gets getBoundVars
+          let vars = Set.intersection boundVars (S.allVars goal)
+          let newDef = Def { getName = n, getArgs = Set.toList vars, getBody = goal }
+          modify $ \state -> state { getNewDefs = Set.insert newDef (getNewDefs state) }
+          return $ Call delayed n $ map Var (Set.toList vars)
         goDisj (S.Disj x y xs) = do
           x <- goConj x
           y <- goConj y
@@ -104,14 +130,19 @@ normalize program =
         goConj goal = do
           goal <- goBase goal
           return $ Conj $ goal :| []
-        goBase (S.Call n as) =
+        goBase (S.Call n as) = do
+          modify $ addNewBoundVars (Set.fromList $ map getVar as)
           return $ Call NotDelayed n as
-        goBase (S.Unif x t) =
+        goBase (S.Unif x t) = do
+          modify $ addNewBoundVars (Set.insert (getVar x) (varsFromTerm t))
           return $ Unif x t
         goBase (S.EtaD goal) = do
           newCall Delayed goal
         goBase goal =
           newCall NotDelayed goal
+
+addNewBoundVars :: Ord a => Set.Set a -> NormalizationState a -> NormalizationState a
+addNewBoundVars vars s = s { getBoundVars = Set.union vars $ getBoundVars s }
 
 back :: Show a => Program Goal a -> Program S.Goal a
 back (Program defs goal) =
@@ -130,12 +161,11 @@ back (Program defs goal) =
     backBase (Call NotDelayed name args) = S.Call name args
     backBase (Call Delayed name args) = S.EtaD $ S.Call name args
 
-allVars :: Eq a => Goal a -> [a]
+allVars :: (Ord a, Eq a) => Goal a -> Set.Set a
 allVars =
-    nub . map getVar . go
+    goDisj
   where
-    go = goDisj
-    goDisj (Disj (x :| xs)) = goConj x ++ concatMap goConj xs
-    goConj (Conj (x :| xs)) = goBase x ++ concatMap goBase xs
-    goBase (Call _ _ args) = args
-    goBase (Unif v t) = v : varsFromTerm t
+    goDisj (Disj (x :| xs)) = Set.unions (goConj x : map goConj xs)
+    goConj (Conj (x :| xs)) = Set.unions (goBase x : map goBase xs)
+    goBase (Call _ _ args) = Set.fromList $ map getVar args
+    goBase (Unif v t) = Set.insert (getVar v) $ varsFromTerm t

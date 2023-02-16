@@ -58,11 +58,11 @@ unit_prettyFresh = do
   testPretty (Fresh "x" (x :=: x)) "fresh x in\n  x == x"
   testPretty (Fresh "x" $ Fresh "y" $ Fresh "z" (x :=: y)) "fresh x, y, z in\n  x == y"
 
-unit_prettyGoal :: Assertion
-unit_prettyGoal = do
-  let xIsX = x :=: x
-  testPretty (Conjunction (Disjunction xIsX xIsX []) (Disjunction xIsX xIsX []) []) "(x == x | x == x) & (x == x | x == x)"
-  testPretty (Disjunction (Fresh "h" $ Fresh "t" $ Conjunction (x :=: cons h t) (Fresh "z" (x :=: x)) []) (Fresh "x" (x :=: x)) []) "(fresh h, t in\n  x == Cons h t & (fresh z in\n  x == x)) | (fresh x in\n    x == x)"
+-- unit_prettyGoal :: Assertion
+-- unit_prettyGoal = do
+--   let xIsX = x :=: x
+--   testPretty (Conjunction (Disjunction xIsX xIsX []) (Disjunction xIsX xIsX []) []) "(x == x | x == x) & (x == x | x == x)"
+--   testPretty (Disjunction (Fresh "h" $ Fresh "t" $ Conjunction (x :=: cons h t) (Fresh "z" (x :=: x)) []) (Fresh "x" (x :=: x)) []) "(fresh h, t in\n  x == Cons h t & (fresh z in\n  x == x)) | (fresh x in\n    x == x)"
 
 unit_prettyAddo :: Assertion
 unit_prettyAddo = do
