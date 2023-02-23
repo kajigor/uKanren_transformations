@@ -1,3 +1,4 @@
+{-# LANGUAGE InstanceSigs #-}
 module Stream (takeS, maybeToStream, isMature, fmap, pure, (<*>), empty, (<|>), (>>=), mzero, mplus, Stream (..)) where
 
 import           Control.Applicative
@@ -39,11 +40,9 @@ instance Applicative Stream where
 
 instance Alternative Stream where
   empty = Empty
-  Empty <|> s = s
-  s <|> Empty = s
-  Immature s <|> t = s <|> t
-  s <|> Immature t = s <|> t
-  Mature a s <|> t = Mature a (s <|> t)
+  (Mature h tl) <|> y = Mature h $ y <|> tl
+  (Immature  x) <|> y = Immature $ y <|> x
+  Empty         <|> y = y
 
 instance Monad Stream where
   Empty >>= _ = mzero
@@ -51,7 +50,3 @@ instance Monad Stream where
   Immature x  >>= y = Immature $ x >>= y
 
 instance MonadPlus Stream where
-  mzero = Empty
-  mplus (Mature h tl) y = Mature h $ y `mplus` tl
-  mplus (Immature  x) y = Immature $ y `mplus` x
-  mplus Empty         y = y

@@ -194,4 +194,7 @@ einstein s =
       clue15 s
     ]
 
-mainEinstein = mapM_ (putStrLn . showSubst') (takeS 1 $ run $ Program [] (freshState $ \s -> einstein s))
+einsteinProgram :: Program G X
+einsteinProgram = Program [] (freshState $ \s -> einstein s)
+
+mainEinstein = mapM_ (putStrLn . showSubst') (takeS 1 $ run $ einsteinProgram)

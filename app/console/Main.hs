@@ -17,6 +17,11 @@ import Syntax (X, G)
 import Program
 import Text.Printf (printf)
 
+import TranslatedExamples.WGCKarnen (mainWGC)
+import TranslatedExamples.EinsteinKarnen (mainEinstein)
+import TranslatedExamples.BridgeKarnen (mainBridges)
+import TranslatedExamples.EvalLoop (mainLoop)
+import FunConversion.TransTest (testTrans)
 data Transformation
   = CPD
   | ConsPD
@@ -170,15 +175,17 @@ prologToMkParser = flag' PrologToMk
   <> help "Run prolog to miniKanren transformation"
   )
 
-main :: IO ()
-main = do
-    runAction =<< execParser opts
-  where
-    opts = info (actionParser <**> helper)
-      (  fullDesc
-      <> progDesc "Various transformers for miniKanren programs"
-      <> header "uKanren-tranformations"
-      )
+main = testTrans
+
+-- main :: IO ()
+-- main = do
+--     runAction =<< execParser opts
+--   where
+--     opts = info (actionParser <**> helper)
+--       (  fullDesc
+--       <> progDesc "Various transformers for miniKanren programs"
+--       <> header "uKanren-tranformations"
+--       )
 
 chooseParser :: Parser.ParserType -> (String -> IO (Either String (Program G X)))
 chooseParser pType input = do
