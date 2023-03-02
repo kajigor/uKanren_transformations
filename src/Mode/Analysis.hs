@@ -128,9 +128,9 @@ analyze allowFree goal = do
   where
     go = goDisj
     goDisj (Disj (x :| xs)) = do
-      state <- get
+      instMap <- gets getInstMap
       x <- goConj x
-      xs <- mapM (\g -> do put state; goConj g) xs
+      xs <- mapM (\g -> do modify (\s -> s { getInstMap = instMap }); goConj g) xs
       return (Disj (x :| xs))
     goConj goal@(Conj (x :| xs)) = do
         choice $ map processConj $ permuteConjs (x : xs)
@@ -284,13 +284,13 @@ checkInsts x y xs = do
 
 enqueueModded :: (Ord a, Monad m, Show a) => String -> [(a, Mode)] -> StateT (AnalyzeState a) m ()
 enqueueModded name args = do
-  state <- get
-  let allSeenModes = getAllModdedDefs state
+  oldQueue <- gets getQueue
+  allSeenModes <- gets getAllModdedDefs
   case Map.lookup name allSeenModes of
     Just modes | args `elem` modes -> return () -- TODO not a good way to check compatibility
-    _ -> put $ state { getAllModdedDefs = Map.insertWith (++) name [args] allSeenModes
-                     , getQueue = Set.insert (name, args) $ getQueue state
-                     }
+    _ -> modify $ \s -> s { getAllModdedDefs = Map.insertWith (++) name [args] allSeenModes
+                          , getQueue = Set.insert (name, args) oldQueue
+                          }
 
 varInstsFromMode :: Ord a => [(a, Mode)] -> Map.Map a Inst
 varInstsFromMode = Map.fromList . map (before <$>)
