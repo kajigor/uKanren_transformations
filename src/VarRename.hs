@@ -25,6 +25,14 @@ uniquelyRenameVars (Program defs goal) = do
   let highestNextVar = maximum (getFirstNotUsed gState : map (getFirstNotUsed . snd) defs)
   return (Program (map fst defs) goal, fst $ getFreshName highestNextVar)
 
+uniquelyRenameVarsInDefs :: (Show a, FreshName a, Ord a)
+                         => [Def G X]
+                         -> Either VarRenameError ([Def G a], a)
+uniquelyRenameVarsInDefs defs = do
+  defs <- mapM (\d -> runStateT (enumerateDef d) emptyState) defs
+  let highestNextVar = maximum (map (getFirstNotUsed . snd) defs)
+  return (map fst defs, fst $ getFreshName highestNextVar)
+
 enumerateDef ::  (Ord a, Show a, FreshName a) => Def G X -> StateT (RenameState a) (Either VarRenameError) (Def G a)
 enumerateDef (Def name args body) = do
   args <- mapM newVar args

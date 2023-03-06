@@ -109,8 +109,7 @@ local :: (Ord a, FreshName a, Show a) =>
 local f x = do
   oldVarMap <- gets getVarMap
   r <- f x
-  state <- get
-  put $ state { getVarMap = oldVarMap }
+  modify $ \s -> s { getVarMap = oldVarMap }
   return r
 
 flattenDef :: (Ord a, FreshName a, Show a) => Def S.G a -> State (FlattenState a) (Def Goal a)
@@ -127,6 +126,15 @@ flattenProg (Program defs goal) = do
 flatten :: (Ord a, FreshName a, Show a) => Program S.G a -> a -> Program Goal a
 flatten program nextVar =
   evalState (flattenProg program) (initFlattenState nextVar)
+
+flattenDefs :: (Ord a, FreshName a, Show a)
+            => [Def S.G a]
+            -> a
+            -> [Def Goal a]
+flattenDefs defs nextVar =
+    evalState go (initFlattenState nextVar)
+  where
+    go = mapM (local flattenDef) defs
 
 data FlattenState a = FlattenState
   { getVarSource :: a
