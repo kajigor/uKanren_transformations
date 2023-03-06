@@ -183,6 +183,7 @@ permuteConjs goals =
   where
     toConj = Conj . fromList
 
+
 prioritizeGround :: (Show a, Ord a)
                  => Goal (a, Mode)
                  -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Goal (a, Mode))
@@ -261,7 +262,7 @@ retrieveInsts goal =
                                        | otherwise = repeats ((k2, v2) : xs)
     repeats _ = False
 
-checkInsts :: (Show k, Ord k) => Goal (k, Mode) -> Goal (k, Mode) -> [Goal (k, Mode)] -> (Either ModeAnalysisError) (Map.Map k Mode)
+checkInsts :: (Show k, Ord k) => Goal (k, Mode) -> Goal (k, Mode) -> [Goal (k, Mode)] -> Either ModeAnalysisError (Map.Map k Mode)
 checkInsts x y xs = do
     instMap <- retrieveInsts x
     go instMap y xs
@@ -284,13 +285,19 @@ checkInsts x y xs = do
 
 enqueueModded :: (Ord a, Monad m, Show a) => String -> [(a, Mode)] -> StateT (AnalyzeState a) m ()
 enqueueModded name args = do
-  oldQueue <- gets getQueue
-  allSeenModes <- gets getAllModdedDefs
-  case Map.lookup name allSeenModes of
-    Just modes | args `elem` modes -> return () -- TODO not a good way to check compatibility
-    _ -> modify $ \s -> s { getAllModdedDefs = Map.insertWith (++) name [args] allSeenModes
-                          , getQueue = Set.insert (name, args) oldQueue
-                          }
+    oldQueue <- gets getQueue
+    allSeenModes <- gets getAllModdedDefs
+    case Map.lookup name allSeenModes of
+      Just modes | hasCompatibleMode args modes -> return ()
+      _ -> modify $ \s -> s { getAllModdedDefs = Map.insertWith (++) name [args] allSeenModes
+                            , getQueue = Set.insert (name, args) oldQueue
+                            }
+  where
+    hasCompatibleMode args modes =
+        any (sameMode args) modes
+      where
+        sameMode args mode =
+          all (uncurry (==)) $ zipWith (\x y -> (before $ snd x, before $ snd y)) args mode
 
 varInstsFromMode :: Ord a => [(a, Mode)] -> Map.Map a Inst
 varInstsFromMode = Map.fromList . map (before <$>)

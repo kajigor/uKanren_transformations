@@ -6,6 +6,7 @@ import           Data.List.NonEmpty  (NonEmpty (..))
 import qualified Data.Map            as Map
 import qualified Data.Set            as Set
 import           Def
+import           FreshNames
 import           Mode.Analysis
 import           Mode.Inst
 import qualified Mode.NormSyntax     as N
@@ -31,6 +32,28 @@ initModeForVar inputArgs (Var x) =
   where
     before = if Var x `elem` inputArgs then Ground else Free
     after = Just Ground
+
+prepareDefs :: (Show a, Ord a, FreshName a) => [Def S.G S.X] -> Either VarRenameError [Def N.Disj a]
+prepareDefs defs = do
+  (defs, nextVar) <- uniquelyRenameVarsInDefs defs
+  return $ N.normalizeDefs $ flattenDefs defs nextVar
+
+topLevelManyModes :: [Def S.G S.X] -> [(String, [Int])] -> Either ModeAnalysisError [Def N.Goal (S.S, Mode)]
+topLevelManyModes defs modes = do
+  defs <- prepareDefs defs
+  let defMap = makeDefMap defs
+  let state = emptyAnalyzeState { getDefinitions = defMap }
+  evalStateT (go defMap) state
+  where
+    go defMap = do
+      mapM_ (\(name, ins) -> enqueueModded name (prepareArgs defMap name ins)) modes
+      analyzeNewDefs
+
+    prepareArgs defMap name ins =
+      case Map.lookup name defMap of
+        Just (Def name args _) -> initMode args (Map.fromList $ zip ins $ repeat Ground)
+        Nothing -> fail ""
+
 
 topLevel :: Program S.G S.X -> [Int] -> Either ModeAnalysisError (Program N.Goal (S.S, Mode))
 topLevel program ins = do
