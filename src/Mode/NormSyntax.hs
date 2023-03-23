@@ -138,6 +138,9 @@ normalizeGoal name =
     goBase (S.Unif x t) = do
       modify $ addNewBoundVars (Set.insert (getVar x) (varsFromTerm t))
       return $ Unif x t
+    goBase (S.EtaD (S.Call n as)) = do
+      modify $ addNewBoundVars (Set.fromList $ map getVar as)
+      return $ Call Delayed n as
     goBase (S.EtaD goal) = do
       newCall Delayed goal
     goBase goal =
