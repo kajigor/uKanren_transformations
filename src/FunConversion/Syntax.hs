@@ -37,9 +37,9 @@ data Def = Def Name ([Term], Lang) deriving (Show, Eq)
 
 newtype TypeData = TypeData [(String, Int)] deriving (Show, Eq)
 
-data Program = Program { types :: TypeData, defs :: [Def], body :: Lang } deriving (Show, Eq)
+data Program = Program { types :: TypeData, defs :: [Def], body :: Maybe Lang } deriving (Show, Eq)
 
-data ProgramDec = ProgramDec { decs :: [TH.Dec], callGoal :: TH.Exp }
+data ProgramDec = ProgramDec { decs :: [TH.Dec], callGoal :: Maybe TH.Exp }
 
 addXZ :: Def
 addXZ =
@@ -96,12 +96,21 @@ class Haskell a where
 class Quotable a q | a -> q where
   toQuote :: a -> Either Error q
 
--- TODO: use goal to make rel-function
-embedProg :: Either String Program -> [TH.Dec]
-embedProg (Right p@(Program _ _ (Call _ n args))) = case toQuote p of
-  Left e -> [TH.FunD (TH.mkName n) [TH.Clause (map toPattern args) (TH.NormalB $ TH.VarE (TH.mkName "error") $: [TH.LitE $ TH.StringL $ T.unpack e]) []]]
-  Right (ProgramDec decs _) -> decs
-embedProg e = error $ "Invalid prog for embed: " ++ show e
+-- TODO: Separate type from function
+embedProg :: String -> Either String Program -> [TH.Dec]
+embedProg n (Right p@(Program _ _ call)) = case toQuote p of
+  Left e -> error (T.unpack e)
+  Right (ProgramDec decs body) -> callToDec n call body ++ decs
+embedProg n e = error $ "Invalid prog for embed: " ++ show e
+
+embedProgSafe :: String -> Program -> Either String [TH.Dec]
+embedProgSafe n p@(Program _ _ call) = case toQuote p of
+  Left e -> Left (T.unpack e)
+  Right (ProgramDec decs body) -> Right $ decs ++ callToDec n call body
+
+callToDec :: String -> Maybe Lang -> Maybe TH.Exp -> [TH.Dec]
+callToDec n (Just (Call _ _ args)) (Just body) = [TH.FunD (TH.mkName n) [TH.Clause (map toPattern args) (TH.NormalB body) []]]
+callToDec _ _ _ = []
 
 parenIfCon :: Term -> Doc ann -> Doc ann
 parenIfCon (Con _ []) = id
@@ -385,12 +394,12 @@ instance Haskell Program where
   toHaskell (Program types defs body) = do
     t <- toHaskell types
     d <- mapM toHaskell defs
-    b <- toHaskell body
+    b <- maybe (return "") toHaskell body
     return $ t <> line <> vsep d <> line <> b
 
 instance Quotable Program ProgramDec where
   toQuote (Program types defs body) = do
     t <- toQuote types
     d <- mapM toQuote defs
-    b <- toQuote body
+    b <- traverse toQuote body
     return $ ProgramDec (t:d) b

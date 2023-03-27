@@ -14,12 +14,12 @@ import qualified Syntax as S
 import Def
 
 import qualified Language.Haskell.TH as TH
--- TODO: use call to get mulo in right direction
-$(return $ embedProg $ transProg "mulo" [1, 2] (Program [addoDef, muloDef] (error "accesed original goal")))
+
+$(return $ embedProg "mulo" $ transProg "mulo" [1, 2] (Program [addoDef, muloDef] (error "accesed original goal")))
 
 
 testTrans :: IO ()
-testTrans = print $ takeS 1 $ muloOII (S (S O)) (S (S (S (S O))))
+testTrans = print $ takeS 1 $ mulo (S (S O)) (S (S (S (S O))))
 -- testTrans = case F.toQuote <$> transProg "mulo" [1, 2] (Program [addoDef, muloDef] (error "accesed original goal")) :: Either String (Either F.Error F.ProgramDec) of
 --   Left e -> print e
 --   Right (Left e) -> print e

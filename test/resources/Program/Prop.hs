@@ -273,21 +273,21 @@ evaloDef =
         fresh ["x", "y", "v", "w", "var"]
         (
           (
-            fm === C "conj" [x, y] &&&
+            call "ando" [v, w, u] &&&
             call "evalo" [st, x, v] &&&
             call "evalo" [st, y, w] &&&
-            call "ando" [v, w, u]
+            fm === C "conj" [x, y]
           ) |||
           (
-            fm === C "disj" [x, y] &&&
+            call "oro" [v, w, u] &&&
             call "evalo" [st, x, v] &&&
             call "evalo" [st, y, w] &&&
-            call "oro" [v, w, u]
+            fm === C "disj" [x, y]
           ) |||
           (
-            fm === C "neg" [x] &&&
+            call "noto" [v, u] &&&
             call "evalo" [st, x, v] &&&
-            call "noto" [v, u]
+            fm === C "neg" [x]
           ) |||
           (
             fm === C "var" [var] &&&

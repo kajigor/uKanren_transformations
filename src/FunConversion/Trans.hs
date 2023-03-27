@@ -14,7 +14,7 @@ import Data.List (nub)
 import Def
 import           Mode.Inst
 import           Program
-import Mode.Toplevel (topLevelWithDefaultCall)
+import Mode.Toplevel (topLevelWithDefaultCall, topLevelManyModes)
 import qualified Mode.Analysis as M
 import Mode.Pretty (prettyString)
 import Data.Either (fromRight)
@@ -55,7 +55,7 @@ makeTerm (M.FTVar v) = makeVar' v
 makeTerm (M.FTCon name xs) = F.Con name (map makeVar' xs)
 
 findDef :: String -> [S.S] -> [Def M.Goal (S.S, Mode)] -> Def M.Goal (S.S, Mode)
-findDef n outs [] = error $ "Def " ++ n ++ " not found"
+findDef n outs [] = error $ "Def " ++ n ++ " mode " ++ show outs ++ " not found"
 findDef n outs (d@(Def n' args _):ds) | n == n' && outId (map M.Var args) == outs = d
                               | otherwise = findDef n outs ds
 
@@ -65,21 +65,39 @@ transProg n inns p = do
   p' <- topLevelWithDefaultCall p n inns
   let (defs, body) = trans p'
   let types = collectConsPrg p'
-  return $ F.Program types defs body
+  return $ F.Program types defs (Just body)
 
+transMultiMode :: [Def S.G S.X] -> [(String, [S.S])] -> Either M.ModeAnalysisError F.Program
+transMultiMode defs modes = do
+  p' <- topLevelManyModes defs modes
+  let defs' = transDefs' p'
+  let types = F.TypeData $ nub $ p' >>= collecCons
+  return $ F.Program types defs' Nothing
 delay :: M.Delayed -> F.Delayed
 delay M.NotDelayed = F.NotDelayed
 delay M.Delayed = F.Delayed
 
-transRel :: String -> [S.S] -> Program S.G S.X -> Either M.ModeAnalysisError ([F.Def], F.Lang)
-transRel n outs p = trans <$> topLevelWithDefaultCall p n outs
-
 trans :: Program M.Goal (S.S, Mode) -> ([F.Def], F.Lang)
 trans p@(Program defs (M.Disj ((M.Conj ((M.Call d n args) NE.:| [])) NE.:| []))) = (
-  map (\(n, outs) -> transDef outs (findDef n outs defs)) (collectCallsPrg p),
+  transDefs defs (collectCallsPrg p),
   F.Call (delay d) (makeDefName (length args) (outId args) n) (callVars args)
   )
 trans _ = error "Except single call"
+
+trans' :: Program M.Goal (S.S, Mode) -> ([F.Def], F.Lang)
+trans' p@(Program defs (M.Disj ((M.Conj ((M.Call d n args) NE.:| [])) NE.:| []))) = (
+  transDefs' defs,
+  F.Call (delay d) (makeDefName (length args) (outId args) n) (callVars args)
+  )
+trans' _ = error "Except single call"
+
+transDefs' :: [Def M.Goal (S.S, Mode)] -> [F.Def]
+transDefs' = map (\d -> transDef (outId $ M.Var <$> getArgs d) d)
+
+-- TODO: Modcheck already gives directions
+-- TODO: Костыль на объеденение модчеков
+transDefs :: [Def M.Goal (S.S, Mode)] -> [(String, [S.S])] -> [F.Def]
+transDefs defs = map (\(n, outs) -> transDef outs (findDef n outs defs))
 
 collectDisjCalls :: M.Disj (S.S, Mode) -> [(String, [S.S])]
 collectDisjCalls (M.Disj (x NE.:| xs)) = (x:xs) >>= collectConjCalls
@@ -235,7 +253,7 @@ addoDef =
         (
           x S.=== zeroT S.&&& z S.=== y S.|||
           S.fresh ["x'", "z'"]
-            (x S.=== succT x' S.&&& z S.=== succT z' S.&&& S.call "addo" [x', y, z'] )
+            (z S.=== succT z' S.&&& S.call "addo" [x', y, z'] S.&&& x S.=== succT x')
         )
   where
     [x, y, z, x', z'] = map S.V ["x", "y", "z", "x'", "z'"]
@@ -254,12 +272,13 @@ muloDef = Def "mulo" ["x", "y", "z"]
 
 
 testTrans :: IO ()
-testTrans = case F.toQuote <$> transProg "mulo" [0, 2] (Program [addoDef, muloDef] (error "accesed original goal")) :: Either String (Either F.Error F.ProgramDec) of
+-- testTrans = print $ transProg "addo" [0, 1] (Program [addoDef, muloDef] (error "accesed original goal"))
+testTrans = case F.toQuote <$> transProg "addo" [2] (Program [addoDef] (error "accesed original goal")) :: Either String (Either F.Error F.ProgramDec) of
   Left e -> print e
   Right (Left e) -> print e
   Right (Right (F.ProgramDec decs _)) -> do
     putStrLn (TH.pprint decs)
--- testTrans = putStrLn $ fromRight "" $ prettyString . M.back <$> topLevelWithDefaultCall (Program [addoDef, muloDef] undefined) "mulo" [0, 2]
+-- testTrans = putStrLn $ fromRight "" $ prettyString . M.back <$> topLevelWithDefaultCall (Program [addoDef] undefined) "addo" [0, 1]
 -- testTrans = let (Right (Right x)) = F.toHaskell <$> transProg "mulo" [0, 2] (Program [addoDef, muloDef] (error "accesed original goal")) in print x
 -- testTrans = let (Just p) = M.normalize <$> topLevelWithDefaultCall (Program [addoDef, muloDef] undefined) "addo" [2] in print (F.toHaskell (collectConsPrg p))
 -- testTrans = let x = transDisj [2] consExample' in print (F.toHaskell x)

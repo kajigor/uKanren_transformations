@@ -1,20 +1,22 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Test.FunConversion.Num where
 
-import qualified Test.FunConversion.NumForward as NF
-import qualified Test.FunConversion.NumBackward as NB
+import Program.Num
+import Program (Program(Program))
+import qualified FunConversion.Trans as TR
+import qualified FunConversion.Syntax as S
+
+import Control.Monad (msum, guard)
 import Stream
+
 import Test.HUnit (assertEqual)
 
-ftb :: NF.Term -> NB.Term
-ftb NF.O = NB.O
-ftb (NF.S x) = NB.S (ftb x)
+$(return $ S.embedProg "mulo" $ TR.transMultiMode mulo [("mulo", [0, 1]), ("mulo", [1, 2])])
 
-btf :: NB.Term -> NF.Term
-btf NB.O = NF.O
-btf (NB.S x) = NF.S (btf x)
+runTestFtb :: Term -> Term -> IO ()
+runTestFtb a b = let [c] = takeS 1 $ muloIIO a b in 
+    let [a'] = takeS 1 $ muloOII b c in assertEqual "num" a a'
 
-runTestFtb :: NF.Term -> NF.Term -> IO ()
-runTestFtb a b = let [c] = takeS 1 $ NF.muloIIO a b in 
-    let [a'] = takeS 1 $ NB.muloOII (ftb b) (ftb c) in assertEqual "num" a (btf a')
+unit_TestMulDirections = runTestFtb (S (S O)) (S (S (S O)))
 
-unit_TestMulDirections = runTestFtb (NF.S (NF.S NF.O)) (NF.S (NF.S (NF.S NF.O)))
+-- TODO: Template test, run with main
