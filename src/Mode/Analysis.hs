@@ -4,7 +4,6 @@ module Mode.Analysis where
 
 import           Control.Applicative   ((<|>))
 import           Control.Monad.State
-import           Data.Function         (on)
 import           Data.List             (permutations, sortOn)
 import           Data.List.NonEmpty    (NonEmpty (..), fromList)
 import qualified Data.Map              as Map
@@ -56,20 +55,11 @@ updateAfterInst inst t =
 afterMode :: Var (a, Mode) -> Maybe Inst
 afterMode (Var (_, mode)) = after mode
 
-moreInstantiated :: (a, Mode) -> (a, Mode) -> Bool
-moreInstantiated (_, mode1) (_, mode2) =
-    go (before mode1) (before mode2)
-  where
-    go Free Ground = False
-    go _ _ = True
+suitableMode :: Show a => [Var (a, Mode)] -> [(a, Mode)] -> Bool
+suitableMode args = compatibleBeforeModes (map getVar args)
 
-suitableMode :: Show a => String -> [Var (a, Mode)] -> [(a, Mode)] -> Bool
-suitableMode name args as =
-  all (uncurry moreInstantiated) (zip (map getVar args) as)
-
-suitableMode' :: Show a => String -> [Var (a, Mode)] -> [(a, Mode)] -> Bool
-suitableMode' name args as =
-  all (uncurry ((==) `on` snd)) (zip (map getVar args) as)
+suitableMode' :: Show a => [Var (a, Mode)] -> [(a, Mode)] -> Bool
+suitableMode' args = identicalBeforeModes (map getVar args)
 
 runAnalyze :: (Show a, Ord a)
            => AllowFree
@@ -119,6 +109,50 @@ modifyModeTerm f (FTVar v) = do
 
 data AllowFree = AllowFree | DisallowFree
 
+isGuard :: Ord a => Base (a, Mode) -> Bool
+isGuard (Unif (Var v) t) =
+  isBeforeGround v && all isBeforeGround (varsFromTerm t)
+isGuard (Call _ _ args) =
+  all (isBeforeGround . getVar) args
+
+isDeconstruction :: Ord a => Base (a, Mode) -> Bool
+isDeconstruction (Unif (Var v) t) =
+  isBeforeGround v && not (all isBeforeGround (varsFromTerm t))
+isDeconstruction _ = False
+
+returnsOne :: Show a => Base (a, Mode) -> Bool
+returnsOne call@(Call _ _ args) =
+  1 == length (filter (not . isBeforeGround . getVar) args)
+returnsOne _ = False
+
+isConstruction :: Ord a => Base (a, Mode) -> Bool
+isConstruction (Unif (Var v) t) =
+  not (isBeforeGround v) && all isBeforeGround (varsFromTerm t)
+isConstruction _ = False
+
+popElem :: Show a => (a -> Bool) -> [a] -> Maybe (a, [a])
+popElem p =
+    go []
+  where
+    go _ [] = Nothing
+    go acc (x : xs) | p x = Just (x, reverse acc ++ xs)
+                    | otherwise = go (x : acc) xs
+
+simplest :: (Ord a, Show a) => Base (a, Mode) -> Bool
+simplest x =
+  isGuard x ||
+  isConstruction x ||
+  isDeconstruction x ||
+  returnsOne x
+
+completelyFree :: Ord a => Base (a, Mode) -> Bool
+completelyFree (Unif (Var v) t) =
+  (not . isBeforeGround) v && not (any isBeforeGround (varsFromTerm t))
+completelyFree (Call _ _ args) =
+  not (any (isBeforeGround . getVar) args)
+
+
+
 analyze :: (Show a, Ord a)
         => AllowFree
         -> Goal (a, Mode)
@@ -132,18 +166,62 @@ analyze allowFree goal = do
       x <- goConj x
       xs <- mapM (\g -> do modify (\s -> s { getInstMap = instMap }); goConj g) xs
       return (Disj (x :| xs))
-    goConj goal@(Conj (x :| xs)) = do
-        choice $ map processConj $ permuteConjs (x : xs)
-      where
-        processConj (Conj (x :| xs)) = do
+
+    doStuff p next x xs =
+      case popElem p (x : xs) of
+        Just (x, xs) -> do
           x <- goBase x
-          xs <- mapM (updateVars >=> goBase) xs
-          return (Conj (x :| xs))
+          xs <- mapM updateVars xs
+          case xs of
+            [] -> return $ Conj (x :| [])
+            (y : ys) -> do
+              Conj (y :| ys) <- goConj $ Conj (y :| ys)
+              return $ Conj (x :| (y : ys))
+        Nothing ->
+          next x xs
+
+    basicConj x xs = do
+      x <- goBase x
+      xs <- mapM (updateVars >=> goBase) xs
+      return $ Conj (x :| xs)
+
+    goConj goal@(Conj (x :| xs)) =
+      doStuff simplest (doStuff (not . completelyFree) basicConj ) x xs
+      -- case popElem simplest (x : xs) of
+      --   Just (x, xs) -> do
+      --     x <- goBase x
+      --     xs <- mapM updateVars xs
+      --     case xs of
+      --       [] -> return $ Conj (x :| [])
+      --       (y:ys) -> do
+      --         Conj (y :| ys) <- goConj (Conj (y :| ys))
+      --         return $ Conj (x :| (y : ys))
+      --   Nothing ->
+      --     case popElem (not . completelyFree) (x : xs) of
+      --       Just (x, xs) -> do
+      --         x <- goBase x
+      --         xs <- mapM updateVars xs
+      --         case xs of
+      --           [] -> return $ Conj (x :| [])
+      --           (y:ys) -> do
+      --             Conj (y :| ys) <- goConj (Conj (y :| ys))
+      --             return $ Conj (x :| (y : ys))
+      --       Nothing -> do
+      --         x <- goBase x
+      --         xs <- mapM (updateVars >=> goBase) xs
+      --         return (Conj (x :| xs))
+    -- goConj goal@(Conj (x :| xs)) = do
+    --     choice $ map processConj $ permuteConjs (x : xs)
+    --   where
+    --     processConj (Conj (x :| xs)) = do
+    --       x <- goBase x
+    --       xs <- mapM (updateVars >=> goBase) xs
+    --       return (Conj (x :| xs))
     goBase goal@(Call delayed name args) = do
       state <- get
       case Map.lookup name (getAllModdedDefs state) of
         Just ds ->
-          let suitable = filter (suitableMode' name args) ds in
+          let suitable = filter (suitableMode' args) ds in
           if null suitable
           then newSuitable goal
           else pickSuitable suitable goal
@@ -294,10 +372,7 @@ enqueueModded name args = do
                             }
   where
     hasCompatibleMode args modes =
-        any (sameMode args) modes
-      where
-        sameMode args mode =
-          all (uncurry (==)) $ zipWith (\x y -> (before $ snd x, before $ snd y)) args mode
+      any (identicalBeforeModes args) modes
 
 varInstsFromMode :: Ord a => [(a, Mode)] -> Map.Map a Inst
 varInstsFromMode = Map.fromList . map (before <$>)

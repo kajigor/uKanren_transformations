@@ -7,6 +7,7 @@ import           Syntax
 import           Test.Helper
 import           VarRename
 
+x, y, z, h, t, r, st, fm, u, v, w, n, m :: String
 x = "x"
 y = "y"
 z = "z"

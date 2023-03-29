@@ -6,14 +6,13 @@ import           Data.List.NonEmpty  (NonEmpty (..))
 import           Mode.Analysis
 import           Mode.Inst
 import qualified Mode.NormSyntax     as N
-import           Mode.Pretty         (prettyString)
-import           Mode.Syntax
 import           Mode.Term
 import           Mode.Toplevel
 import           Program
 import           Program.Num
 import           Syntax
 import           Test.Helper         ((@?=))
+import Mode.Pretty
 
 groundMode = Mode { before = Ground, after = Just Ground }
 freeMode = Mode { before = Free, after = Nothing }
@@ -25,7 +24,7 @@ unit_unifyAnalysis = do
   let actual = evalStateT (prioritizeGround (N.Disj (N.Conj (N.Unif (Var (0, groundMode)) (FTVar (Var (1, freeMode))) :| []) :| []))) emptyAnalyzeState :: Either ModeAnalysisError (N.Goal (Int, Mode))
   actual @?= Right expected
 
-run (Right r) = print r
+run (Right r) = putStrLn $ prettyString $ N.back r
 run (Left err) = putStrLn err
 
 unit_analysis :: IO ()

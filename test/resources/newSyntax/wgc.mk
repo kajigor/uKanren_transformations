@@ -4,7 +4,8 @@ eval state moves state' =
   (fresh move, moves', state'' in
     (moves == Cons move moves') &
     (step state move state'') &
-    (eval state'' moves' state'))
+    (eval state'' moves' state')
+    )
 ;
 
 swap state result =
