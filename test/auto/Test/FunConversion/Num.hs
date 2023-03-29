@@ -10,7 +10,6 @@ import Control.Monad (msum, guard)
 import Stream
 
 import Test.HUnit (assertEqual)
-
 $(return $ S.embedProg "mulo" $ TR.transMultiMode mulo [("mulo", [0, 1]), ("mulo", [1, 2])])
 
 runTestFtb :: Term -> Term -> IO ()

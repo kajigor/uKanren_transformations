@@ -1,7 +1,6 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
 module FunConversion.Trans where
 
 import qualified FunConversion.Syntax as F
@@ -18,6 +17,7 @@ import Mode.Toplevel (topLevelWithDefaultCall, topLevelManyModes)
 import qualified Mode.Analysis as M
 import Mode.Pretty (prettyString)
 import Data.Either (fromRight)
+import Debug.Trace
 
 import qualified Language.Haskell.TH as TH
 pattern In :: Mode
@@ -73,6 +73,14 @@ transMultiMode defs modes = do
   let defs' = transDefs' p'
   let types = F.TypeData $ nub $ p' >>= collecCons
   return $ F.Program types defs' Nothing
+
+transSingleMode :: [Def S.G S.X] -> (String, [S.S]) -> Either M.ModeAnalysisError F.Program
+transSingleMode defs (name, ground) = do
+  p' <- topLevelWithDefaultCall (Program defs undefined) name ground
+  let (defs, body) = trans p'
+  let types = collectConsPrg p'
+  return $ F.Program types defs (Just body)
+
 delay :: M.Delayed -> F.Delayed
 delay M.NotDelayed = F.NotDelayed
 delay M.Delayed = F.Delayed

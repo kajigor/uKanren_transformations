@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+-- {-# LANGUAGE TemplateHaskell #-}
 module FunConversion.TransTest where
 import FunConversion.Trans (transProg, addoDef, muloDef)
 import Program
@@ -15,11 +15,11 @@ import Def
 
 import qualified Language.Haskell.TH as TH
 
-$(return $ embedProg "mulo" $ transProg "mulo" [1, 2] (Program [addoDef, muloDef] (error "accesed original goal")))
+-- $(return $ embedProg "mulo" $ transProg "mulo" [1, 2] (Program [addoDef, muloDef] (error "accesed original goal")))
 
 
-testTrans :: IO ()
-testTrans = print $ takeS 1 $ mulo (S (S O)) (S (S (S (S O))))
+-- testTrans :: IO ()
+-- testTrans = print $ takeS 1 $ mulo (S (S O)) (S (S (S (S O))))
 -- testTrans = case F.toQuote <$> transProg "mulo" [1, 2] (Program [addoDef, muloDef] (error "accesed original goal")) :: Either String (Either F.Error F.ProgramDec) of
 --   Left e -> print e
 --   Right (Left e) -> print e
