@@ -17,14 +17,14 @@ noto x b =
 
 evalo st fm u =
   fresh x, y, v, w, z in
-    (fm == Conj x y & evalo st x v & evalo st y w & ando v w u) |
-    (fm == Disj x y & evalo st x v & evalo st y w & oro v w u) |
-    (fm == Neg x & evalo st x v & noto v u) |
+    (ando v w u & evalo st x v & evalo st y w & fm == Conj x y) |
+    (oro v w u & evalo st x v & evalo st y w & fm == Disj x y) |
+    (noto v u & evalo st x v & fm == Neg x) |
     (fm == Var z & elemo z st u);
 
 elemo n s v =
   fresh h, t, n' in
     (n == Zero & s == (h :: t) & v == h) |
-    (n == Succ n' & s == (h :: t) & elemo n' t v);
+    (s == (h :: t) & elemo n' t v & n == Succ n');
 
 ? evalo st fm Trueo

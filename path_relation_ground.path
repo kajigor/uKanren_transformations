@@ -1,0 +1,6 @@
+option --ground: cannot parse value `ground'
+
+Usage: exe (--conspd | --cpd | --parser | --eval | --norm | --pr2mk | --mode | 
+             --translate) [-i|--input INPUT] [-o|--output OUTPUT] [-p|--irina] 
+           [-n INT] [--ground GROUND] [--rel REL]
+  Various transformers for miniKanren programs
