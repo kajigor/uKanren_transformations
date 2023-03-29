@@ -310,11 +310,10 @@ instance Quotable Lang TH.Exp where
     return $ immature $ TH.VarE (TH.mkName n) $: xs -- TODO: Test immature
   toQuote (Return exprs) = do
     exprs <- mapM ((Just <$>) . toQuote) exprs
-    let e = (case exprs of
+    let e = case exprs of
           [] -> TH.TupE []
           [Just e] -> e
           es -> TH.TupE es
-          )
     return $ TH.VarE (TH.mkName "return") $: [e]
   toQuote (Mplus exprs) = do
     exprs <- mapM toQuote exprs
@@ -338,6 +337,8 @@ instance Quotable Lang TH.Exp where
     thn <- toQuote thn
     els <- toQuote els
     return $ TH.CondE cond thn els
+  toQuote (Bind [([], ret)]) = do
+    toQuote ret
   toQuote (Bind stmts) = do
     xs <- mapM go stmts
     return $ TH.DoE Nothing xs
