@@ -157,8 +157,9 @@ instance Haskell Def where
         b <- toHaskell body
         return (hsep as <+> equals <> line <> indent tabSize b)
 
+toPattern :: Term -> TH.Pat
 toPattern (Var n) = TH.VarP $ TH.mkName n
-toPattern (Con n args) = TH.ConP (TH.mkName n) (map toPattern args)
+toPattern (Con n args) = TH.ConP (TH.mkName n) [] (map toPattern args)
 
 instance Quotable Def TH.Dec where
   toQuote (Def name def) = do
@@ -339,7 +340,7 @@ instance Quotable Lang TH.Exp where
     return $ TH.CondE cond thn els
   toQuote (Bind stmts) = do
     xs <- mapM go stmts
-    return $ TH.DoE xs
+    return $ TH.DoE Nothing xs
     where
       go :: ([Var], Lang) -> Either Error TH.Stmt
       go (vars, Return exprs) | not (null vars) = do
