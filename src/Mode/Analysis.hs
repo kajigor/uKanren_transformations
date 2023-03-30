@@ -59,7 +59,8 @@ suitableMode :: Show a => [Var (a, Mode)] -> [(a, Mode)] -> Bool
 suitableMode args = compatibleBeforeModes (map getVar args)
 
 suitableMode' :: Show a => [Var (a, Mode)] -> [(a, Mode)] -> Bool
-suitableMode' args = identicalBeforeModes (map getVar args)
+suitableMode' args xs =
+  identicalBeforeModes (map getVar args) xs
 
 runAnalyze :: (Show a, Ord a)
            => AllowFree
@@ -84,11 +85,11 @@ data AnalyzeState a = AnalyzeState
   }
   deriving (Show)
 
-updateInstMap :: Ord a => a -> Mode -> StateT (AnalyzeState a) (Either ModeAnalysisError) ()
+updateInstMap :: (Show a, Ord a) => a -> Mode -> StateT (AnalyzeState a) (Either ModeAnalysisError) ()
 updateInstMap v mode = do
-  modify $ \state -> state { getInstMap = Map.insert v mode (getInstMap state) }
+  modify $ \s -> s { getInstMap = Map.insert v mode (getInstMap s) }
 
-modifyMode :: Ord a
+modifyMode :: (Ord a, Show a)
            => (Mode -> Either ModeAnalysisError Mode)
            -> Var (a, Mode)
            -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Var (a, Mode))
@@ -97,7 +98,7 @@ modifyMode f (Var (v, mode)) = do
   updateInstMap v m
   return (Var (v, m))
 
-modifyModeTerm :: Ord a
+modifyModeTerm :: (Show a, Ord a)
                => (Mode -> Either ModeAnalysisError Mode)
                -> FlatTerm (a, Mode)
                -> StateT (AnalyzeState a) (Either ModeAnalysisError) (FlatTerm (a, Mode))
@@ -361,15 +362,17 @@ checkInsts x y xs = do
     nothingIfNotEq _ x y | x /= y = Nothing
                          | otherwise  = Just x
 
-enqueueModded :: (Ord a, Monad m, Show a) => String -> [(a, Mode)] -> StateT (AnalyzeState a) m ()
+enqueueModded :: (Ord a, Show a) => String -> [(a, Mode)] -> StateT (AnalyzeState a) (Either ModeAnalysisError) ()
 enqueueModded name args = do
     oldQueue <- gets getQueue
     allSeenModes <- gets getAllModdedDefs
     case Map.lookup name allSeenModes of
       Just modes | hasCompatibleMode args modes -> return ()
-      _ -> modify $ \s -> s { getAllModdedDefs = Map.insertWith (++) name [args] allSeenModes
-                            , getQueue = Set.insert (name, args) oldQueue
-                            }
+      _ -> do
+        args <- mapM (modifyMode makeAfterModeGround) (map Var args)
+        modify $ \s -> s { getAllModdedDefs = Map.insertWith (++) name [map getVar args] allSeenModes
+                         , getQueue = Set.insert (name, map getVar args) oldQueue
+                         }
   where
     hasCompatibleMode args modes =
       any (identicalBeforeModes args) modes
@@ -399,7 +402,7 @@ newSuitable call@(Call delayed name args) = do
 newSuitable _ =
   lift $ Left "Unable to find newSuitable call"
 
-pickSuitable :: Ord a
+pickSuitable :: (Ord a, Show a)
              => [[(a, Mode)]]
              -> Base (a, b)
              -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Base (a, Mode))
