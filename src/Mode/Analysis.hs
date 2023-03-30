@@ -369,9 +369,9 @@ enqueueModded name args = do
     case Map.lookup name allSeenModes of
       Just modes | hasCompatibleMode args modes -> return ()
       _ -> do
-        args <- mapM (modifyMode makeAfterModeGround) (map Var args)
-        modify $ \s -> s { getAllModdedDefs = Map.insertWith (++) name [map getVar args] allSeenModes
-                         , getQueue = Set.insert (name, map getVar args) oldQueue
+        let args' = map (\(v, m) -> (v, m {after = Just Ground})) args
+        modify $ \s -> s { getAllModdedDefs = Map.insertWith (++) name [args'] allSeenModes
+                         , getQueue = Set.insert (name, args') oldQueue
                          }
   where
     hasCompatibleMode args modes =
