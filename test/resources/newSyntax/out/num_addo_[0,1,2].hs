@@ -1,28 +1,15 @@
-data Term = O | S Term deriving (Show, Eq)
+data Term
+    = O
+    | S Term
+    deriving (Show, Eq)
 addoIII x0 x1 x2 = msum [do {case x0 of
-                                 O -> do return ()
-                                 _ -> mzero;
+                             {O -> return (); _ -> mzero};
                              guard (x2 == x1);
                              return ()},
                          do {x3 <- case x0 of
-                                       S y3 -> do return y3
-                                       _ -> mzero;
-                             x4 <- addoIOI x3 x2;
-                             case x4 of
-                                 S y1 -> do {guard (x1 == y1); return ()}
-                                 _ -> mzero;
+                                   {S y3 -> return y3; _ -> mzero};
+                             x4 <- case x2 of
+                                   {S y4 -> return y4; _ -> mzero};
+                             addoIII x3 x1 x4;
                              return ()}]
-addoIOI x0 x2 = msum [do {case x0 of
-                              O -> do return ()
-                              _ -> mzero;
-                          let {x1 = x2};
-                          return x1},
-                      do {x3 <- case x0 of
-                                    S y3 -> do return y3
-                                    _ -> mzero;
-                          x4 <- addoIOI x3 x2;
-                          x1 <- case x4 of
-                                    S y1 -> do return y1
-                                    _ -> mzero;
-                          return x1}]
 addo x0 x1 x2 = addoIII x0 x1 x2

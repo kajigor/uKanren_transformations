@@ -11,7 +11,7 @@ addo x y z =
 addo x y z =
   (x == O & z == y) |
   (fresh x', z' in
-    x == S x' & addo x' (S y) z
+    x == S x' & z == S z' & addo x' y z'
   );
 
 

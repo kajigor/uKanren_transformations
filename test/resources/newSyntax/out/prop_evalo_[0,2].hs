@@ -27,70 +27,58 @@ evaloIOI x0 x2 = msum [do {(x5, x6) <- andoOOI x2;
 andoOOI x2 = msum [do {let {x0 = Trueo};
                        let {x1 = Trueo};
                        case x2 of
-                           Trueo -> do return ()
-                           _ -> mzero;
+                       {Trueo -> return (); _ -> mzero};
                        return (x0, x1)},
                    do {let {x0 = Falso};
                        let {x1 = Trueo};
                        case x2 of
-                           Falso -> do return ()
-                           _ -> mzero;
+                       {Falso -> return (); _ -> mzero};
                        return (x0, x1)},
                    do {let {x0 = Trueo};
                        let {x1 = Falso};
                        case x2 of
-                           Falso -> do return ()
-                           _ -> mzero;
+                       {Falso -> return (); _ -> mzero};
                        return (x0, x1)},
                    do {let {x0 = Falso};
                        let {x1 = Falso};
                        case x2 of
-                           Falso -> do return ()
-                           _ -> mzero;
+                       {Falso -> return (); _ -> mzero};
                        return (x0, x1)}]
 oroOOI x2 = msum [do {let {x0 = Trueo};
                       let {x1 = Trueo};
                       case x2 of
-                          Trueo -> do return ()
-                          _ -> mzero;
+                      {Trueo -> return (); _ -> mzero};
                       return (x0, x1)},
                   do {let {x0 = Falso};
                       let {x1 = Trueo};
                       case x2 of
-                          Trueo -> do return ()
-                          _ -> mzero;
+                      {Trueo -> return (); _ -> mzero};
                       return (x0, x1)},
                   do {let {x0 = Trueo};
                       let {x1 = Falso};
                       case x2 of
-                          Trueo -> do return ()
-                          _ -> mzero;
+                      {Trueo -> return (); _ -> mzero};
                       return (x0, x1)},
                   do {let {x0 = Falso};
                       let {x1 = Falso};
                       case x2 of
-                          Falso -> do return ()
-                          _ -> mzero;
+                      {Falso -> return (); _ -> mzero};
                       return (x0, x1)}]
 notoOI x1 = msum [do {let {x0 = Trueo};
                       case x1 of
-                          Falso -> do return ()
-                          _ -> mzero;
+                      {Falso -> return (); _ -> mzero};
                       return x0},
                   do {let {x0 = Falso};
                       case x1 of
-                          Trueo -> do return ()
-                          _ -> mzero;
+                      {Trueo -> return (); _ -> mzero};
                       return x0}]
 elemoOII x1 x2 = msum [do {let {x0 = Zero};
                            (x3, x4) <- case x1 of
-                                           Cons y3 y4 -> do return (y3, y4)
-                                           _ -> mzero;
+                                       {Cons y3 y4 -> return (y3, y4); _ -> mzero};
                            guard (x2 == x3);
                            return x0},
                        do {(x3, x4) <- case x1 of
-                                           Cons y3 y4 -> do return (y3, y4)
-                                           _ -> mzero;
+                                       {Cons y3 y4 -> return (y3, y4); _ -> mzero};
                            x5 <- elemoOII x4 x2;
                            let {x0 = Succ x5};
                            return x0}]

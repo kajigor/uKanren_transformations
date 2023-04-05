@@ -152,6 +152,10 @@ completelyFree (Unif (Var v) t) =
 completelyFree (Call _ _ args) =
   not (any (isBeforeGround . getVar) args)
 
+groundifies :: Ord a => Base (a, Mode) -> Bool
+groundifies (Call _ _ args) = True
+groundifies unif@(Unif (Var v) t) =
+  isAfterGround v || any isAfterGround (varsFromTerm t)
 
 
 analyze :: (Show a, Ord a)
@@ -187,7 +191,7 @@ analyze allowFree goal = do
       return $ Conj (x :| xs)
 
     goConj goal@(Conj (x :| xs)) =
-      doStuff simplest (doStuff (not . completelyFree) basicConj ) x xs
+      doStuff simplest (doStuff groundifies (doStuff (not . completelyFree) basicConj)) x xs
       -- case popElem simplest (x : xs) of
       --   Just (x, xs) -> do
       --     x <- goBase x

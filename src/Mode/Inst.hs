@@ -53,3 +53,9 @@ compatibleBeforeModes callArgs moddedDef =
 
 isBeforeGround :: (a, Mode) -> Bool
 isBeforeGround (_, mode) = before mode == Ground
+
+isAfterGround :: (a, Mode) -> Bool
+isAfterGround (_, mode) =
+  case after mode of
+    Just Ground -> True
+    _ -> False
