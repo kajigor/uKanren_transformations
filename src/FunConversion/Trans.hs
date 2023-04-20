@@ -5,7 +5,6 @@ module FunConversion.Trans where
 
 import qualified FunConversion.Syntax as F
 import qualified Mode.NormSyntax as M
-import qualified Mode.Syntax as MS
 import qualified Mode.Term as M
 import qualified Data.List.NonEmpty as NE
 import qualified Syntax as S
@@ -15,9 +14,6 @@ import           Mode.Inst
 import           Program
 import Mode.Toplevel (topLevelWithDefaultCall, topLevelManyModes)
 import qualified Mode.Analysis as M
-import Mode.Pretty (prettyString)
-import Data.Either (fromRight)
-import Debug.Trace
 
 import qualified Language.Haskell.TH as TH
 pattern In :: Mode
@@ -26,20 +22,29 @@ pattern In = Mode Ground (Just Ground)
 pattern Out :: Mode
 pattern Out = Mode Free (Just Ground)
 
+pattern Out' :: Mode
+pattern Out' <- Mode Free _
+
+pattern In' :: Mode
+pattern In' <- Mode Ground _
+
 pattern InV :: a -> M.Var (a, Mode)
 pattern InV v = M.Var (v, In)
 
 pattern OutV :: a -> M.Var (a, Mode)
 pattern OutV v = M.Var (v, Out)
 
+pattern InV' :: a -> M.Var (a, Mode)
+pattern InV' v <- M.Var (v, In')
+
+pattern OutV' :: a -> M.Var (a, Mode)
+pattern OutV' v <- M.Var (v, Out')
+
 makeName :: S.S -> String
 makeName n = "x" ++ show n
 
 makeMatchName :: S.S -> String
 makeMatchName n = "y" ++ show n
-
-makeVar :: S.S -> F.Expr
-makeVar n = F.T (F.Var (makeName n))
 
 makeMatch :: M.Var (S.S, a) -> F.Term
 makeMatch (M.Var (v, _)) = F.Var (makeMatchName v)
@@ -119,8 +124,8 @@ convertCall _ = []
 
 outId :: [M.Var (S.S, Mode)] -> [S.S]
 outId [] = []
-outId (OutV v : vs) = 0 : map (+1) (outId vs)
-outId (InV v : vs) = map (+1) (outId vs)
+outId (OutV' v : vs) = 0 : map (+1) (outId vs)
+outId (InV' v : vs) = map (+1) (outId vs)
 outId _ = []
 
 collectCalls :: Def M.Goal (S.S, Mode) -> [(String, [S.S])]
@@ -176,11 +181,11 @@ mapVars _ _ _ = error "Invalid mode"
 callVars :: [M.Var (S.S, Mode)] -> [F.Term]
 callVars = mapVars (Just . makeVar') (const Nothing)
 
-returnVars :: [M.Var (S.S, Mode)] -> [F.Expr]
-returnVars = mapVars (const Nothing) (Just . F.T . makeMatch)
+returnVars :: [M.Var (S.S, Mode)] -> [F.Term]
+returnVars = mapVars (const Nothing) (Just . makeMatch)
 
 bindGuards :: [M.Var (S.S, Mode)] -> [F.Lang]
-bindGuards = mapVars (\v@(InV v') -> Just $ F.If (F.BinOp "==" (makeVar v') (F.T (makeMatch v))) (F.Return []) F.Empty) (const Nothing)
+bindGuards = mapVars (\v@(InV v') -> Just $ F.Guard (makeName v') (makeMatchName v')) (const Nothing)
 
 isIn :: M.FlatTerm (S.S, Mode) -> Bool
 isIn (M.FTVar (InV _)) = True
@@ -189,23 +194,23 @@ isIn (M.FTCon s ((InV _):vs)) = isIn (M.FTCon s vs)
 isIn _ = False
 
 
-makeGuard :: S.S -> M.FlatTerm (S.S, a) -> F.Lang
-makeGuard a b = F.If (F.BinOp "==" (makeVar a) (F.T (makeTerm b))) (F.Return []) F.Empty
+makeGuard :: S.S -> S.S -> F.Lang
+makeGuard a b = F.Guard (makeName a) (makeName b)
 
 -- TODO: Totally free out-variable
 transBase :: M.Base (S.S, Mode) -> F.Lang
 transBase (M.Call d n args) = F.Call (delay d) (makeDefName (length args) (outId args) n) (callVars args) -- TODO: Immature
-transBase (M.Unif (InV v) (M.FTVar (OutV t))) = F.Return [makeVar v]
-transBase (M.Unif (InV v) t'@(M.FTVar (InV t))) = makeGuard v t' -- TODO: Replace with match
+transBase (M.Unif (InV v) (M.FTVar (OutV t))) = F.Return [makeVar'' v]
+transBase (M.Unif (OutV v) t) | isIn t = F.Return [makeTerm t]
+transBase (M.Unif (InV v) t'@(M.FTVar (InV t))) = makeGuard v t -- TODO: Replace with match
 transBase (M.Unif (InV v) t@(M.FTCon n xs)) = F.Match (makeVar'' v) [
     (F.Con n (map makeMatch xs), F.Bind (map ([],) (bindGuards xs) ++ [([], F.Return (returnVars xs))]))
   ]
-transBase (M.Unif (OutV v) t) | isIn t = F.Return [F.T $ makeTerm t]
 transBase (M.Unif (OutV v) (M.FTVar (OutV t))) = error "free/free unification" -- t <- genT; let v = t
 transBase g = error $ "Unknown Base: " ++ show g
 
 transConj :: [S.S] -> M.Conj (S.S, Mode) -> F.Lang
-transConj outs (M.Conj xs) = F.Bind (NE.toList (NE.map transBind xs) ++ [([], F.Return (map makeVar outs))])
+transConj outs (M.Conj xs) = F.Bind (NE.toList (NE.map transBind xs) ++ [([], F.Return (map makeVar'' outs))])
 
 transDisj :: [S.S] -> M.Disj (S.S, Mode) -> F.Lang
 transDisj outs (M.Disj xs) = F.Mplus (NE.toList $ NE.map (transConj outs) xs)
