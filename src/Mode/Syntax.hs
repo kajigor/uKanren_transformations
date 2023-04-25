@@ -2,7 +2,6 @@
 module Mode.Syntax where
 
 import           Control.Monad.State
-import           Data.List           (nub)
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
 import           Def
@@ -10,6 +9,7 @@ import           FreshNames
 import           Mode.Term
 import           Program
 import qualified Syntax              as S
+import           Text.Printf
 
 data Goal a = Call String [Var a]
             | Unif (Var a) (FlatTerm a)
@@ -68,21 +68,59 @@ disj x y rest = Disj x y rest
 
 toConj :: Goal a -> [Goal a] -> Goal a
 toConj x [] = x
-toConj x (h:t) = Conj x h t
+toConj x (h:t) = conj x h t
 
-makeConj :: Goal a -> State (FlattenState a) (Goal a)
-makeConj term = do
+makeConjFromList :: (Ord a, FreshName a, Show a) => [Goal a] -> State (FlattenState a) (Goal a)
+makeConjFromList goals = do
   state <- get
   put $ state { getNewVarMap = Map.empty }
-  return $ toConj term $ map (\(x, t) -> Unif (Var x) t) $ Map.toList (getNewVarMap state)
+  let newUnifs = map (\(x, t) -> Unif (Var x) t) $ Map.toList (getNewVarMap state)
+  let allGoals = goals ++ newUnifs
+  if null allGoals
+  then do
+    v <- freshVar
+    return (Unif (Var v) (FTVar (Var v)))
+  else return $ toConj (head allGoals) (tail allGoals)
+
+makeConj :: (Ord a, FreshName a, Show a) => Goal a -> State (FlattenState a) (Goal a)
+makeConj goal =
+  makeConjFromList [goal]
+
+transformUnification :: (Ord a, FreshName a, Show a) => S.Term a -> S.Term a -> State (FlattenState a) [Goal a]
+transformUnification (S.C n1 args1) (S.C n2 args2)
+  | n1 == n2 =
+    let args1Length = length args1 in
+    let args2Length = length args2 in
+    if args1Length == args2Length
+    then
+      if args1Length == 0
+      then
+        return []
+      else do
+        transformed <- zipWithM transformUnification args1 args2
+        return $ concat transformed
+    else
+      error $ printf "Cannot unify constructors with different arity: %s has arity %s and %s" n1 (show $ length args1) (show $ length args2)
+  | otherwise =
+    error $ printf "Cannot unify constructors with different names: %s and %s" n1 n2
+transformUnification c@(S.C _ _) (S.V v) = do
+  c <- flattenInternalTerms c
+  return [Unif (Var v) c]
+transformUnification (S.V v) t = do
+  t <- flattenInternalTerms t
+  return [Unif (Var v) t]
+
 
 flattenGoal :: (Ord a, FreshName a, Show a) => S.G a -> State (FlattenState a) (Goal a)
-flattenGoal ((S.:=:) x y) = do
-  x' <- flattenTerm x
-  y' <- flattenInternalTerms y
-  m <- gets getNewVarMap
-  -- let term = fromMaybe (FTVar $ Var y') $ (Map.!?) m y'
-  makeConj (Unif (Var x') y')
+flattenGoal (x S.:=: y) = do
+  goals <- transformUnification x y
+  makeConjFromList goals
+-- flattenGoal ((S.:=:) x y) = do
+--   x' <- flattenTerm x
+--   y' <- flattenInternalTerms y
+--   m <- gets getNewVarMap
+--   -- let term = fromMaybe (FTVar $ Var y') $ (Map.!?) m y'
+--   makeConj (Unif (Var x') y')
 flattenGoal (S.Invoke name args) = do
   args' <- mapM flattenTerm args
   m <- gets getVarMap
