@@ -76,7 +76,7 @@ transProg n inns p = do
 transMultiMode :: [Def S.G S.X] -> [(String, [S.S])] -> Either M.ModeAnalysisError F.Program
 transMultiMode defs modes = do
   p' <- topLevelManyModes defs modes
-  let defs' = transDefs' p'
+  let defs' = fixGens $ transDefs' p'
   let types = F.TypeData $ nub $ p' >>= collecCons
   return $ F.Program types defs' Nothing
 
