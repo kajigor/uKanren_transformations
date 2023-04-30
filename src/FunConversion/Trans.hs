@@ -192,7 +192,7 @@ outVarsT (M.FTVar v) = outVarsV v
 outVarsT (M.FTCon _ xs) = xs >>= outVarsV
 
 outVarsG :: (Eq a) => M.Base (a, Mode) -> [a]
-outVarsG (M.Unif a b) = nub $ outVarsV a ++ outVarsT b
+outVarsG (M.Unif a b) = outVarsV a ++ outVarsT b
 outVarsG (M.Call _ _ xs) = xs >>= outVarsV
 
 transBind :: String -> M.Base (S.S, Mode) -> ([F.Var], F.Lang)
@@ -225,10 +225,6 @@ makeGuard a b = F.Guard (makeName a) (makeName b)
 
 makeGen :: String -> F.Var -> ([F.Var], F.Lang)
 makeGen rel x = ([x], F.Gen ("gen_" ++ rel ++ "_" ++ x))
-
--- makePattern :: Int -> [a] -> [F.Var]
--- makePattern _ [] = []
--- makePattern n (_:xs) = makeMatchName n : makePattern (n + 1) xs
 
 -- TODO: Totally free out-variable
 transBase :: String -> M.Base (S.S, Mode) -> F.Lang

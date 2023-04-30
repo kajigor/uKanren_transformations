@@ -42,16 +42,44 @@ addTerm key value = do
               , getNewVarMap = Map.insert key value (getNewVarMap state)
               }
 
-flattenTerm :: (Ord a, FreshName a) => S.Term a -> State (FlattenState a) a
-flattenTerm (S.V v) = return v
+useVar :: Ord a => a -> State (UniqueVarFlattenState a) ()
+useVar v = modify $ \s -> s { usedVars = Set.insert v (usedVars s) }
+
+clearUsed :: State (UniqueVarFlattenState a) ()
+clearUsed = modify $ \s -> s { usedVars = Set.empty }
+
+withUniqueVars :: Ord a => [a] -> State (UniqueVarFlattenState a) x -> State (FlattenState a) x
+withUniqueVars vs act = do
+  b <- get
+  let (x, UniqueVar { baseState = b' }) = runState act (UniqueVar {usedVars = Set.fromList vs, baseState = b})
+  put b'
+  return x
+
+withBaseState :: State (FlattenState a) x -> State (UniqueVarFlattenState a) x
+withBaseState act = do
+  b <- gets baseState
+  let (x, b') = runState act b
+  modify $ \s -> s { baseState = b' }
+  return x
+
+flattenTerm :: (Ord a, FreshName a) => S.Term a -> State (UniqueVarFlattenState a) a
+flattenTerm (S.V v) = do
+  used <- gets usedVars
+  if v `elem` used then do
+    newVar <- withBaseState freshVar
+    withBaseState $ addTerm newVar (FTVar $ Var v)
+    return newVar
+  else do
+    useVar v
+    return v
 flattenTerm (S.C name args) = do
-  newVar <- freshVar
+  newVar <- withBaseState freshVar
   args' <- mapM flattenTerm args
-  addTerm newVar (FTCon name (map Var args'))
+  withBaseState $ addTerm newVar (FTCon name (map Var args'))
   return newVar
 
-flattenInternalTerms :: (Ord a, FreshName a) => S.Term a -> State (FlattenState a) (FlatTerm a)
-flattenInternalTerms (S.V v) = return $ FTVar $ Var v
+flattenInternalTerms :: (Ord a, FreshName a) => S.Term a -> State (UniqueVarFlattenState a) (FlatTerm a)
+flattenInternalTerms (S.V v) = FTVar . Var <$> flattenTerm (S.V v)
 flattenInternalTerms (S.C name args) = do
   args' <- mapM flattenTerm args
   return $ FTCon name $ map Var args'
@@ -104,10 +132,10 @@ transformUnification (S.C n1 args1) (S.C n2 args2)
   | otherwise =
     error $ printf "Cannot unify constructors with different names: %s and %s" n1 n2
 transformUnification c@(S.C _ _) (S.V v) = do
-  c <- flattenInternalTerms c
+  c <- withUniqueVars [v] $ flattenInternalTerms c
   return [Unif (Var v) c]
 transformUnification (S.V v) t = do
-  t <- flattenInternalTerms t
+  t <- withUniqueVars [v] $ flattenInternalTerms t
   return [Unif (Var v) t]
 
 
@@ -122,7 +150,7 @@ flattenGoal (x S.:=: y) = do
 --   -- let term = fromMaybe (FTVar $ Var y') $ (Map.!?) m y'
 --   makeConj (Unif (Var x') y')
 flattenGoal (S.Invoke name args) = do
-  args' <- mapM flattenTerm args
+  args' <- withUniqueVars [] $ mapM flattenTerm args
   m <- gets getVarMap
   makeConj (Call name (map Var args'))
 flattenGoal (S.Conjunction x y xs) = do
@@ -179,6 +207,8 @@ data FlattenState a = FlattenState
   , getVarMap    :: Map.Map a (FlatTerm a)
   , getNewVarMap :: Map.Map a (FlatTerm a)
   }
+
+data UniqueVarFlattenState a = UniqueVar { usedVars :: Set.Set a, baseState :: FlattenState a }
 
 initFlattenState :: a -> FlattenState a
 initFlattenState varSource =
