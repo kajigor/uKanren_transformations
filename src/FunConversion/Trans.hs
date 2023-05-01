@@ -3,11 +3,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module FunConversion.Trans where
 
+import qualified Data.Set as Set
 import qualified FunConversion.Syntax as F
 import qualified Mode.NormSyntax as M
 import qualified Mode.Term as M
 import qualified Data.List.NonEmpty as NE
 import qualified Syntax as S
+import Data.Foldable (fold)
 import Data.List (nub, sort)
 import Def
 import           Mode.Inst
@@ -191,7 +193,7 @@ outVarsT :: M.FlatTerm (a, Mode) -> [a]
 outVarsT (M.FTVar v) = outVarsV v
 outVarsT (M.FTCon _ xs) = xs >>= outVarsV
 
-outVarsG :: (Eq a) => M.Base (a, Mode) -> [a]
+outVarsG :: M.Base (a, Mode) -> [a]
 outVarsG (M.Unif a b) = outVarsV a ++ outVarsT b
 outVarsG (M.Call _ _ xs) = xs >>= outVarsV
 
@@ -236,7 +238,7 @@ transBase _ (M.Unif (InV v) t@(M.FTCon n xs)) = F.Match (makeName v) [
   ]
 transBase _ (M.Unif (OutV' v) t) | isIn t = F.Return [makeTerm t]
 transBase rel (M.Unif (OutV' v) (M.FTVar (OutV' t))) = let x = makeName t in F.Bind [makeGen rel x, ([], F.Return [F.Var x, F.Var x])] -- t <- genT; let v = t
-transBase rel (M.Unif (OutV' v) t@(M.FTCon n xs)) = 
+transBase rel (M.Unif (OutV' v) t@(M.FTCon n xs)) =
   let gens = mapVars (const Nothing) (\(OutV' v) -> Just $ makeName v) xs in F.Bind (
     map (makeGen rel) gens ++ [
       ([makeName v], F.Return [makeTerm t]),
@@ -245,11 +247,20 @@ transBase rel (M.Unif (OutV' v) t@(M.FTCon n xs)) =
   )
 transBase _ g = error $ "Unknown Base: " ++ show g
 
+boundVars :: M.Conj (S.S, Mode) -> Set.Set S.S
+boundVars (M.Conj xs) = fold (NE.map (Set.fromList . outVarsG) xs)
+
+unboundVars :: [S.S] -> M.Conj (S.S, Mode) -> [S.S]
+unboundVars outs r = let s = boundVars r in filter (`Set.notMember` s) outs
+
 transConj :: String -> [S.S] -> M.Conj (S.S, Mode) -> F.Lang
-transConj rel outs (M.Conj xs) = F.Bind (NE.toList (NE.map (transBind rel) xs) ++ [([], F.Return (map makeVar outs))])
+transConj rel outs r@(M.Conj xs) = F.Bind $ 
+     map (transBind rel) (NE.toList xs) 
+  ++ map (makeGen rel . makeName) (unboundVars outs r) 
+  ++ [([], F.Return (map makeVar outs))]
 
 transDisj :: String -> [S.S] -> M.Disj (S.S, Mode) -> F.Lang
-transDisj rel outs (M.Disj xs) = F.Sum (NE.toList $ NE.map (transConj rel outs) xs)
+transDisj rel outs (M.Disj xs) = F.Sum $ map (transConj rel outs) (NE.toList xs)
 
 transGoal :: String -> [S.S] -> M.Goal (S.S, Mode) -> F.Lang
 transGoal = transDisj
