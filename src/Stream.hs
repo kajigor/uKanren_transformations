@@ -1,5 +1,5 @@
 {-# LANGUAGE InstanceSigs #-}
-module Stream (takeS, maybeToStream, isMature, fmap, pure, (<*>), empty, (<|>), (>>=), mzero, mplus, Stream (..)) where
+module Stream (takeS, takeWhileS, maybeToStream, isMature, fmap, pure, (<*>), empty, (<|>), (>>=), mzero, mplus, Stream (..)) where
 
 import           Control.Applicative
 import           Control.Monad
@@ -16,6 +16,13 @@ takeS 0 _            = []
 takeS _ Empty        = []
 takeS n (Mature a s) = a : takeS (n-1) s
 takeS n (Immature s) = takeS n s
+
+takeWhileS :: (a -> Bool) -> Stream a -> [a]
+takeWhileS p Empty = []
+takeWhileS p (Mature a s) | p a = a : takeWhileS p s
+                          | otherwise = takeWhileS p s
+takeWhileS p (Immature s) = takeWhileS p s
+
 
 maybeToStream :: Maybe a -> Stream a
 maybeToStream Nothing  = Empty

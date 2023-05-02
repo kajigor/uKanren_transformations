@@ -11,6 +11,8 @@ do
   echo "stack run -- --translate -i $path --ground $ground --rel $relation"
   mkdir -p "$outputDir"
   cp "$path" "$outputDir"
-  stack run -- --translate -i "$path" --ground "$ground" --rel "$relation" > "$output" 2>&1
+  echo "import Stream" > "$output"
+  echo "import Control.Monad" >> "$output"
+  stack run -- --translate -i "$path" --ground "$ground" --rel "$relation" >> "$output" 2>&1
   echo ""
 done < <(tail -n +2 inputs.csv)
