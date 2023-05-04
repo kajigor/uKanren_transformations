@@ -162,7 +162,8 @@ instance FreeVariables G X where
       go (Conjunction x y gs) = concatMap go (x : y : gs)
       go (Disjunction x y gs) = concatMap go (x : y : gs)
       go (Invoke _ ts) = concatMap fv ts
-      go (Fresh x g)   = filter (x /=) $ go g
+      go (Fresh x g) = filter (x /=) $ go g
+      go (Delay g) = go g
 
 topLevelFreshVars :: G X -> ([X], G X)
 topLevelFreshVars (Fresh x g) =

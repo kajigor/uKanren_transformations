@@ -10,6 +10,7 @@ import qualified CPDApp
 import qualified ParseApp
 import qualified NormalizeApp
 import qualified ModeApp
+import qualified TranslateApp
 import Util.File (failIfNotExist, isDir, getFiles)
 import Util.Miscellaneous (mapLeft)
 import qualified Parser.Parser as Parser
@@ -17,6 +18,12 @@ import Syntax (X, G)
 import Program
 import Text.Printf (printf)
 
+import TranslatedExamples.WGCKarnen (mainWGC)
+import TranslatedExamples.EinsteinKarnen (mainEinstein)
+import TranslatedExamples.BridgeKarnen (mainBridges)
+import TranslatedExamples.EvalLoop (mainLoop)
+-- import FunConversion.TransTest (testTrans)
+import FunConversion.Trans (testTrans)
 data Transformation
   = CPD
   | ConsPD
@@ -25,6 +32,7 @@ data Transformation
   | Normalize
   | PrologToMk
   | Mode
+  | Translate
 
 data Action = Action { transformation :: Transformation
                      , input :: FilePath
@@ -127,6 +135,7 @@ parseTransformation =
   <|> normalizeParser
   <|> prologToMkParser
   <|> modeParser
+  <|> translateParser
 
 normalizeParser :: Parser Transformation
 normalizeParser = flag' Normalize
@@ -152,6 +161,12 @@ modeParser = flag' Mode
   <> help "Run mode analysis"
   )
 
+translateParser :: Parser Transformation
+translateParser = flag' Translate
+  ( long "translate"
+  <> help "Translate miniKanren to Haskell"
+  )
+
 cpdParser :: Parser Transformation
 cpdParser = flag' CPD
   (  long "cpd"
@@ -169,6 +184,8 @@ prologToMkParser = flag' PrologToMk
   (  long "pr2mk"
   <> help "Run prolog to miniKanren transformation"
   )
+
+-- main = testTrans
 
 main :: IO ()
 main = do
@@ -197,6 +214,7 @@ defaultOutputDir args =
       Normalize -> "norm"
       Parser -> "parse"
       Mode -> "mode"
+      Translate -> "translate"
 
 runAction :: Args -> IO ()
 runAction args = do
@@ -213,6 +231,8 @@ runAction args = do
       ParseApp.run parser (input action)
     PrologToMk ->
       Transformer.PrologToMk.transform (input action)
+    Translate ->
+      TranslateApp.runWithParser parser (input action) (relName action) (groundVars action)
     x -> do
       let transformer = chooseTransformer (transformation action)
       if isInputADir action

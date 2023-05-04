@@ -4,6 +4,7 @@ import Data.List (intercalate)
 import Data.Maybe (catMaybes)
 import Def ( Def(Def) )
 import Eval (run)
+import Mode.Toplevel (topLevel)
 import Program ( Program(Program) )
 import Stream (takeS)
 import Subst (Subst)
@@ -62,7 +63,7 @@ maxo a b out =
   unsafeDisj
     [ (a === zro) &&& (out === b),
       (b === zro) &&& (out === a),
-      fresh3' "maxo" $ \a' b' out' -> (a === suc a') &&& (b === suc b') &&& (out === suc out') &&& Delay (call "maxo" [a', b', out'])
+      fresh3' "maxo" $ \a' b' out' -> (a === suc a') &&& (b === suc b') &&& (out === suc out') &&& call "maxo" [a', b', out']
     ]
 
 maxoDef :: Def G X
@@ -72,21 +73,21 @@ addo :: Tx -> Tx -> Tx -> G X
 addo a b out =
   unsafeDisj
     [ (a === zro) &&& (out === b),
-      fresh2' "adoo" $ \a' out' -> (a === suc a') &&& (out === suc out') &&& Delay (call "addo" [a', b, out'])
+      fresh2' "adoo" $ \a' out' -> (a === suc a') &&& (out === suc out') &&& call "addo" [a', b, out']
     ]
 
 addoDef :: Def G X
 addoDef = Def "addo" ["a", "b", "out"] (addo (V "a") (V "b") (V "out"))
 
-lteo :: Tx -> Tx -> G X
-lteo a b =
+leo :: Tx -> Tx -> G X
+leo a b =
   unsafeDisj
     [ a === zro,
-      fresh2' "lteo" $ \a' b' -> a === suc a' &&& b === suc b' &&& Delay (call "lteo" [a', b'])
+      fresh2' "lteo" $ \a' b' -> a === suc a' &&& b === suc b' &&& call "leo" [a', b']
     ]
 
-lteoDef :: Def G X
-lteoDef = Def "lteo" ["a", "b"] (lteo (V "a") (V "b"))
+leoDef :: Def G X
+leoDef = Def "leo" ["a", "b"] (leo (V "a") (V "b"))
 
 
 qua :: Tx -> Tx -> Tx -> Tx -> Tx -> Tx
@@ -133,7 +134,7 @@ totalTime :: Tx -> Tx -> G X
 totalTime ms out =
   unsafeDisj
     [ ms === nil &&& out === zro,
-      fresh4' "totalTime" $ \h time t out' -> ms === cons h t &&& moveTime h time &&& Delay (call "totalTime" [t, out']) &&& addo time out' out
+      fresh4' "totalTime" $ \h time t out' -> ms === cons h t &&& moveTime h time &&& call "totalTime" [t, out'] &&& addo time out' out
     ]
 
 totalTimeDef :: Def G X
@@ -223,11 +224,14 @@ boundedEvalBridges :: Tx -> Tx -> Tx -> G X
 boundedEvalBridges state moves state' =
   unsafeConj
     [ call "evalBridges" [state, moves, state'],
-      fresh1' "boundedEvalBridges" $ \time -> call "totalTime" [moves, time] &&& call "lteo" [time, fromInt 15]
+      fresh1' "boundedEvalBridges" $ \time -> call "totalTime" [moves, time] &&& call "leo" [time, fromInt 15]
     ]
 
 evalBridgesDef :: Def G X
 evalBridgesDef = Def "evalBridges" ["state", "moves", "state'"] (evalBridges (V "state") (V "moves") (V "state'"))
+
+boundedEvalBridgesDef :: Def G X
+boundedEvalBridgesDef = Def "boundedEvalBridges" ["state", "moves", "state'"] (boundedEvalBridges (V "state") (V "moves") (V "state'"))
 
 startState :: Tx
 startState = state (qua' True True True True True) (qua' False False False False False)
@@ -267,13 +271,16 @@ showBridges (C "state" [l, r]) s = do
   return $ concat [sl, "/", sr]
 showBridges t s = Just $ show t
 
+bridgeProgram :: Program G X
+bridgeProgram = Program [boundedEvalBridgesDef, evalBridgesDef, totalTimeDef, addoDef, maxoDef, leoDef] $
+            fresh1' "mainBridges" $ \moves ->
+              call "boundedEvalBridges" [startState, moves, endState]
+
 mainBridges :: IO ()
-mainBridges =
-  mapM_
-    (print . showBridges (V 0))
-    ( takeS 1 $
-        run $
-          Program [evalBridgesDef, totalTimeDef, addoDef, maxoDef, lteoDef] $
-            fresh2' "mainBridges" $ \moves time ->
-              boundedEvalBridges startState moves endState &&& totalTime moves time
-    )
+mainBridges = print (topLevel bridgeProgram [0, 2])
+  -- mapM_
+  --   (print . showBridges (V 0))
+  --   ( takeS 1 $
+  --       run $
+  --         bridgeProgram
+  --   )

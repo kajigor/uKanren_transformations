@@ -39,12 +39,14 @@ dependencies:
 - tasty
 - tasty-hedgehog
 - tasty-hunit
+- tasty-bench
 - parsec
 - filepath
 - megaparsec
 - parser-combinators
 - optparse-applicative
 - prettyprinter
+- template-haskell >= 2.19.0.0
 
 ghc-options:
   - -fwarn-unused-imports
@@ -85,3 +87,25 @@ tests:
     - tasty
     - tasty-hedgehog
     - tasty-hunit
+
+benchmarks:
+  # uKanren-transformation-bench-mulo:
+  #   main: Main.hs
+  #   source-dirs:
+  #   - bench/Mulo
+  #   - test/resources
+  #   dependencies:
+  #   - uKanren-transformation
+  #   - tasty
+  #   - tasty-bench
+  #   ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  uKanren-transformation-bench-addo:
+    main: Main.hs
+    source-dirs:
+    - bench/Addo
+    - test/resources
+    dependencies:
+    - uKanren-transformation
+    - tasty
+    - tasty-bench
+    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"

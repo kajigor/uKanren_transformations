@@ -63,7 +63,7 @@ papers/miniKanren/prolog/len/len
 
 papers/miniKanren/prolog/len/bench.pl
 
-.*.swo 
+.*.swo
 .*.swp
 
 mk
@@ -103,3 +103,7 @@ papers/miniKanren/slides/presentation.vrb
 papers/miniKanren/slides/presentation.log
 
 .vscode/
+test/resources/newSyntax/out/*
+
+
+test/resources/newSyntax/out/

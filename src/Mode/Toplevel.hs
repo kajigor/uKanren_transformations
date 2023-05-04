@@ -15,7 +15,7 @@ import           Mode.Term
 import           Program
 import qualified Syntax              as S
 import           VarRename
-
+import Debug.Trace
 -- analyze :: (Show a, Ord a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
 
 runAnalyze :: (Show a, Ord a) => AllowFree -> N.Goal a -> [a] -> Either ModeAnalysisError (N.Goal (a, Mode))

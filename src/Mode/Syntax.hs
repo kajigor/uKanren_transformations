@@ -2,7 +2,6 @@
 module Mode.Syntax where
 
 import           Control.Monad.State
-import           Data.List           (nub)
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
 import           Def
@@ -10,6 +9,7 @@ import           FreshNames
 import           Mode.Term
 import           Program
 import qualified Syntax              as S
+import           Text.Printf
 
 data Goal a = Call String [Var a]
             | Unif (Var a) (FlatTerm a)
@@ -42,16 +42,44 @@ addTerm key value = do
               , getNewVarMap = Map.insert key value (getNewVarMap state)
               }
 
-flattenTerm :: (Ord a, FreshName a) => S.Term a -> State (FlattenState a) a
-flattenTerm (S.V v) = return v
+useVar :: Ord a => a -> State (UniqueVarFlattenState a) ()
+useVar v = modify $ \s -> s { usedVars = Set.insert v (usedVars s) }
+
+clearUsed :: State (UniqueVarFlattenState a) ()
+clearUsed = modify $ \s -> s { usedVars = Set.empty }
+
+withUniqueVars :: Ord a => [a] -> State (UniqueVarFlattenState a) x -> State (FlattenState a) x
+withUniqueVars vs act = do
+  b <- get
+  let (x, UniqueVar { baseState = b' }) = runState act (UniqueVar {usedVars = Set.fromList vs, baseState = b})
+  put b'
+  return x
+
+withBaseState :: State (FlattenState a) x -> State (UniqueVarFlattenState a) x
+withBaseState act = do
+  b <- gets baseState
+  let (x, b') = runState act b
+  modify $ \s -> s { baseState = b' }
+  return x
+
+flattenTerm :: (Ord a, FreshName a) => S.Term a -> State (UniqueVarFlattenState a) a
+flattenTerm (S.V v) = do
+  used <- gets usedVars
+  if v `elem` used then do
+    newVar <- withBaseState freshVar
+    withBaseState $ addTerm newVar (FTVar $ Var v)
+    return newVar
+  else do
+    useVar v
+    return v
 flattenTerm (S.C name args) = do
-  newVar <- freshVar
+  newVar <- withBaseState freshVar
   args' <- mapM flattenTerm args
-  addTerm newVar (FTCon name (map Var args'))
+  withBaseState $ addTerm newVar (FTCon name (map Var args'))
   return newVar
 
-flattenInternalTerms :: (Ord a, FreshName a) => S.Term a -> State (FlattenState a) (FlatTerm a)
-flattenInternalTerms (S.V v) = return $ FTVar $ Var v
+flattenInternalTerms :: (Ord a, FreshName a) => S.Term a -> State (UniqueVarFlattenState a) (FlatTerm a)
+flattenInternalTerms (S.V v) = FTVar . Var <$> flattenTerm (S.V v)
 flattenInternalTerms (S.C name args) = do
   args' <- mapM flattenTerm args
   return $ FTCon name $ map Var args'
@@ -68,23 +96,61 @@ disj x y rest = Disj x y rest
 
 toConj :: Goal a -> [Goal a] -> Goal a
 toConj x [] = x
-toConj x (h:t) = Conj x h t
+toConj x (h:t) = conj x h t
 
-makeConj :: Goal a -> State (FlattenState a) (Goal a)
-makeConj term = do
+makeConjFromList :: (Ord a, FreshName a, Show a) => [Goal a] -> State (FlattenState a) (Goal a)
+makeConjFromList goals = do
   state <- get
   put $ state { getNewVarMap = Map.empty }
-  return $ toConj term $ map (\(x, t) -> Unif (Var x) t) $ Map.toList (getNewVarMap state)
+  let newUnifs = map (\(x, t) -> Unif (Var x) t) $ Map.toList (getNewVarMap state)
+  let allGoals = goals ++ newUnifs
+  if null allGoals
+  then do
+    v <- freshVar
+    return (Unif (Var v) (FTVar (Var v)))
+  else return $ toConj (head allGoals) (tail allGoals)
+
+makeConj :: (Ord a, FreshName a, Show a) => Goal a -> State (FlattenState a) (Goal a)
+makeConj goal =
+  makeConjFromList [goal]
+
+transformUnification :: (Ord a, FreshName a, Show a) => S.Term a -> S.Term a -> State (FlattenState a) [Goal a]
+transformUnification (S.C n1 args1) (S.C n2 args2)
+  | n1 == n2 =
+    let args1Length = length args1 in
+    let args2Length = length args2 in
+    if args1Length == args2Length
+    then
+      if args1Length == 0
+      then
+        return []
+      else do
+        transformed <- zipWithM transformUnification args1 args2
+        return $ concat transformed
+    else
+      error $ printf "Cannot unify constructors with different arity: %s has arity %s and %s" n1 (show $ length args1) (show $ length args2)
+  | otherwise =
+    error $ printf "Cannot unify constructors with different names: %s and %s" n1 n2
+transformUnification c@(S.C _ _) (S.V v) = do
+  c <- withUniqueVars [v] $ flattenInternalTerms c
+  return [Unif (Var v) c]
+transformUnification (S.V v) t = do
+  t <- withUniqueVars [v] $ flattenInternalTerms t
+  return [Unif (Var v) t]
+
 
 flattenGoal :: (Ord a, FreshName a, Show a) => S.G a -> State (FlattenState a) (Goal a)
-flattenGoal ((S.:=:) x y) = do
-  x' <- flattenTerm x
-  y' <- flattenInternalTerms y
-  m <- gets getNewVarMap
-  -- let term = fromMaybe (FTVar $ Var y') $ (Map.!?) m y'
-  makeConj (Unif (Var x') y')
+flattenGoal (x S.:=: y) = do
+  goals <- transformUnification x y
+  makeConjFromList goals
+-- flattenGoal ((S.:=:) x y) = do
+--   x' <- flattenTerm x
+--   y' <- flattenInternalTerms y
+--   m <- gets getNewVarMap
+--   -- let term = fromMaybe (FTVar $ Var y') $ (Map.!?) m y'
+--   makeConj (Unif (Var x') y')
 flattenGoal (S.Invoke name args) = do
-  args' <- mapM flattenTerm args
+  args' <- withUniqueVars [] $ mapM flattenTerm args
   m <- gets getVarMap
   makeConj (Call name (map Var args'))
 flattenGoal (S.Conjunction x y xs) = do
@@ -141,6 +207,8 @@ data FlattenState a = FlattenState
   , getVarMap    :: Map.Map a (FlatTerm a)
   , getNewVarMap :: Map.Map a (FlatTerm a)
   }
+
+data UniqueVarFlattenState a = UniqueVar { usedVars :: Set.Set a, baseState :: FlattenState a }
 
 initFlattenState :: a -> FlattenState a
 initFlattenState varSource =

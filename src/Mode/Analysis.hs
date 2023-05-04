@@ -4,7 +4,6 @@ module Mode.Analysis where
 
 import           Control.Applicative   ((<|>))
 import           Control.Monad.State
-import           Data.Function         (on)
 import           Data.List             (permutations, sortOn)
 import           Data.List.NonEmpty    (NonEmpty (..), fromList)
 import qualified Data.Map              as Map
@@ -56,20 +55,12 @@ updateAfterInst inst t =
 afterMode :: Var (a, Mode) -> Maybe Inst
 afterMode (Var (_, mode)) = after mode
 
-moreInstantiated :: (a, Mode) -> (a, Mode) -> Bool
-moreInstantiated (_, mode1) (_, mode2) =
-    go (before mode1) (before mode2)
-  where
-    go Free Ground = False
-    go _ _ = True
+suitableMode :: Show a => [Var (a, Mode)] -> [(a, Mode)] -> Bool
+suitableMode args = compatibleBeforeModes (map getVar args)
 
-suitableMode :: Show a => String -> [Var (a, Mode)] -> [(a, Mode)] -> Bool
-suitableMode name args as =
-  all (uncurry moreInstantiated) (zip (map getVar args) as)
-
-suitableMode' :: Show a => String -> [Var (a, Mode)] -> [(a, Mode)] -> Bool
-suitableMode' name args as =
-  all (uncurry ((==) `on` snd)) (zip (map getVar args) as)
+suitableMode' :: Show a => [Var (a, Mode)] -> [(a, Mode)] -> Bool
+suitableMode' args xs =
+  identicalBeforeModes (map getVar args) xs
 
 runAnalyze :: (Show a, Ord a)
            => AllowFree
@@ -94,11 +85,11 @@ data AnalyzeState a = AnalyzeState
   }
   deriving (Show)
 
-updateInstMap :: Ord a => a -> Mode -> StateT (AnalyzeState a) (Either ModeAnalysisError) ()
+updateInstMap :: (Show a, Ord a) => a -> Mode -> StateT (AnalyzeState a) (Either ModeAnalysisError) ()
 updateInstMap v mode = do
-  modify $ \state -> state { getInstMap = Map.insert v mode (getInstMap state) }
+  modify $ \s -> s { getInstMap = Map.insert v mode (getInstMap s) }
 
-modifyMode :: Ord a
+modifyMode :: (Ord a, Show a)
            => (Mode -> Either ModeAnalysisError Mode)
            -> Var (a, Mode)
            -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Var (a, Mode))
@@ -107,7 +98,7 @@ modifyMode f (Var (v, mode)) = do
   updateInstMap v m
   return (Var (v, m))
 
-modifyModeTerm :: Ord a
+modifyModeTerm :: (Show a, Ord a)
                => (Mode -> Either ModeAnalysisError Mode)
                -> FlatTerm (a, Mode)
                -> StateT (AnalyzeState a) (Either ModeAnalysisError) (FlatTerm (a, Mode))
@@ -118,6 +109,54 @@ modifyModeTerm f (FTVar v) = do
   FTVar <$> modifyMode f v
 
 data AllowFree = AllowFree | DisallowFree
+
+isGuard :: Ord a => Base (a, Mode) -> Bool
+isGuard (Unif (Var v) t) =
+  isBeforeGround v && all isBeforeGround (varsFromTerm t)
+isGuard (Call _ _ args) =
+  all (isBeforeGround . getVar) args
+
+isDeconstruction :: Ord a => Base (a, Mode) -> Bool
+isDeconstruction (Unif (Var v) t) =
+  isBeforeGround v && not (all isBeforeGround (varsFromTerm t))
+isDeconstruction _ = False
+
+returnsOne :: Show a => Base (a, Mode) -> Bool
+returnsOne call@(Call _ _ args) =
+  1 == length (filter (not . isBeforeGround . getVar) args)
+returnsOne _ = False
+
+isConstruction :: Ord a => Base (a, Mode) -> Bool
+isConstruction (Unif (Var v) t) =
+  not (isBeforeGround v) && all isBeforeGround (varsFromTerm t)
+isConstruction _ = False
+
+popElem :: Show a => (a -> Bool) -> [a] -> Maybe (a, [a])
+popElem p =
+    go []
+  where
+    go _ [] = Nothing
+    go acc (x : xs) | p x = Just (x, reverse acc ++ xs)
+                    | otherwise = go (x : acc) xs
+
+simplest :: (Ord a, Show a) => Base (a, Mode) -> Bool
+simplest x =
+  isGuard x ||
+  isConstruction x ||
+  isDeconstruction x ||
+  returnsOne x
+
+completelyFree :: Ord a => Base (a, Mode) -> Bool
+completelyFree (Unif (Var v) t) =
+  (not . isBeforeGround) v && not (any isBeforeGround (varsFromTerm t))
+completelyFree (Call _ _ args) =
+  not (any (isBeforeGround . getVar) args)
+
+groundifies :: Ord a => Base (a, Mode) -> Bool
+groundifies (Call _ _ args) = True
+groundifies unif@(Unif (Var v) t) =
+  isAfterGround v || any isAfterGround (varsFromTerm t)
+
 
 analyze :: (Show a, Ord a)
         => AllowFree
@@ -132,18 +171,62 @@ analyze allowFree goal = do
       x <- goConj x
       xs <- mapM (\g -> do modify (\s -> s { getInstMap = instMap }); goConj g) xs
       return (Disj (x :| xs))
-    goConj goal@(Conj (x :| xs)) = do
-        choice $ map processConj $ permuteConjs (x : xs)
-      where
-        processConj (Conj (x :| xs)) = do
+
+    doStuff p next x xs =
+      case popElem p (x : xs) of
+        Just (x, xs) -> do
           x <- goBase x
-          xs <- mapM (updateVars >=> goBase) xs
-          return (Conj (x :| xs))
+          xs <- mapM updateVars xs
+          case xs of
+            [] -> return $ Conj (x :| [])
+            (y : ys) -> do
+              Conj (y :| ys) <- goConj $ Conj (y :| ys)
+              return $ Conj (x :| (y : ys))
+        Nothing ->
+          next x xs
+
+    basicConj x xs = do
+      x <- goBase x
+      xs <- mapM (updateVars >=> goBase) xs
+      return $ Conj (x :| xs)
+
+    goConj goal@(Conj (x :| xs)) =
+      doStuff simplest (doStuff groundifies (doStuff (not . completelyFree) basicConj)) x xs
+      -- case popElem simplest (x : xs) of
+      --   Just (x, xs) -> do
+      --     x <- goBase x
+      --     xs <- mapM updateVars xs
+      --     case xs of
+      --       [] -> return $ Conj (x :| [])
+      --       (y:ys) -> do
+      --         Conj (y :| ys) <- goConj (Conj (y :| ys))
+      --         return $ Conj (x :| (y : ys))
+      --   Nothing ->
+      --     case popElem (not . completelyFree) (x : xs) of
+      --       Just (x, xs) -> do
+      --         x <- goBase x
+      --         xs <- mapM updateVars xs
+      --         case xs of
+      --           [] -> return $ Conj (x :| [])
+      --           (y:ys) -> do
+      --             Conj (y :| ys) <- goConj (Conj (y :| ys))
+      --             return $ Conj (x :| (y : ys))
+      --       Nothing -> do
+      --         x <- goBase x
+      --         xs <- mapM (updateVars >=> goBase) xs
+      --         return (Conj (x :| xs))
+    -- goConj goal@(Conj (x :| xs)) = do
+    --     choice $ map processConj $ permuteConjs (x : xs)
+    --   where
+    --     processConj (Conj (x :| xs)) = do
+    --       x <- goBase x
+    --       xs <- mapM (updateVars >=> goBase) xs
+    --       return (Conj (x :| xs))
     goBase goal@(Call delayed name args) = do
       state <- get
       case Map.lookup name (getAllModdedDefs state) of
         Just ds ->
-          let suitable = filter (suitableMode' name args) ds in
+          let suitable = filter (suitableMode' args) ds in
           if null suitable
           then newSuitable goal
           else pickSuitable suitable goal
@@ -283,21 +366,20 @@ checkInsts x y xs = do
     nothingIfNotEq _ x y | x /= y = Nothing
                          | otherwise  = Just x
 
-enqueueModded :: (Ord a, Monad m, Show a) => String -> [(a, Mode)] -> StateT (AnalyzeState a) m ()
+enqueueModded :: (Ord a, Show a) => String -> [(a, Mode)] -> StateT (AnalyzeState a) (Either ModeAnalysisError) ()
 enqueueModded name args = do
     oldQueue <- gets getQueue
     allSeenModes <- gets getAllModdedDefs
     case Map.lookup name allSeenModes of
       Just modes | hasCompatibleMode args modes -> return ()
-      _ -> modify $ \s -> s { getAllModdedDefs = Map.insertWith (++) name [args] allSeenModes
-                            , getQueue = Set.insert (name, args) oldQueue
-                            }
+      _ -> do
+        let args' = map (\(v, m) -> (v, m {after = Just Ground})) args
+        modify $ \s -> s { getAllModdedDefs = Map.insertWith (++) name [args'] allSeenModes
+                         , getQueue = Set.insert (name, args') oldQueue
+                         }
   where
     hasCompatibleMode args modes =
-        any (sameMode args) modes
-      where
-        sameMode args mode =
-          all (uncurry (==)) $ zipWith (\x y -> (before $ snd x, before $ snd y)) args mode
+      any (identicalBeforeModes args) modes
 
 varInstsFromMode :: Ord a => [(a, Mode)] -> Map.Map a Inst
 varInstsFromMode = Map.fromList . map (before <$>)
@@ -324,7 +406,7 @@ newSuitable call@(Call delayed name args) = do
 newSuitable _ =
   lift $ Left "Unable to find newSuitable call"
 
-pickSuitable :: Ord a
+pickSuitable :: (Ord a, Show a)
              => [[(a, Mode)]]
              -> Base (a, b)
              -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Base (a, Mode))

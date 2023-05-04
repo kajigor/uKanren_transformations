@@ -17,9 +17,9 @@ noto x b =
 
 evalo st fm u =
   fresh x, y, v, w, z in
-    (ando v w u & Delay evalo st x v & Delay evalo st y w & fm == Conj x y) |
-    (oro v w u & Delay evalo st x v & Delay evalo st y w & fm == Disj x y) |
-    (noto v u & Delay evalo st x v & fm == Neg x) |
+    (ando v w u & evalo st x v & evalo st y w & fm == Conj x y) |
+    (oro v w u & evalo st x v & evalo st y w & fm == Disj x y) |
+    (noto v u & evalo st x v & fm == Neg x) |
     (fm == Var z & elemo z st u);
 
 elemo n s v =

@@ -74,11 +74,16 @@ instance ShowPretty a => ShowPretty (Goal a) where
     v <- showPretty v
     t <- showPretty t
     return (v <+> unifOp <+> t)
+  showPretty (EtaD p) = do
+    p <- showPretty p
+    return (pretty ("Delay" :: String) <+> p)
 
 precedence (Call _ _) = 9
 precedence (Unif _ _) = 9
+precedence (EtaD _) = 9
 precedence (Conj _ _ _) = 3
 precedence (Disj _ _ _) = 2
+precedence (EtaD _) = 9
 
 parensIfNeeded curr nested
   | precedence curr > precedence nested = parens

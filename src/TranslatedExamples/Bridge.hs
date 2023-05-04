@@ -32,15 +32,15 @@ data Nat = Zro | Suc Nat deriving (Show, Eq)
 addNat :: Nat -> Nat -> Stream Nat
 addNat Zro b = return b
 addNat (Suc a) b = do
-    out' <- addNat a b
-    return (Suc out')
+  out' <- addNat a b
+  return (Suc out')
 
 maxNat :: Nat -> Nat -> Stream Nat
 maxNat Zro b = return b
 maxNat a Zro = return a
 maxNat (Suc a) (Suc b) = do
-    out' <- maxNat a b
-    return (Suc out')
+  out' <- maxNat a b
+  return (Suc out')
 
 lte :: Nat -> Nat -> Stream ()
 lte Zro _ = yes
@@ -71,9 +71,9 @@ moveTime (Single a) = crossingTime a
 totalTime :: [Move] -> Stream Nat
 totalTime [] = return Zro
 totalTime (h : t) = do
-    time <- moveTime h
-    out' <- totalTime t
-    addNat time out'
+  time <- moveTime h
+  out' <- totalTime t
+  addNat time out'
 
 isTorch :: Qua -> Stream ()
 isTorch (Qua True _ _ _ _) = yes
@@ -162,18 +162,21 @@ step (State l r) =
     ]
 
 evalBridges :: State -> State -> Stream [Move]
-evalBridges s s' = (guard (s == s') $> []) `mplus`
+evalBridges s s' =
+  msum
+    [ guard (s == s') $> [],
       do
         (m, s'') <- step s
         m' <- Immature $ evalBridges s'' s'
         return (m : m')
+    ]
 
 boundedEvalBridges :: State -> State -> Stream [Move]
 boundedEvalBridges s s' = do
-    ms <- evalBridges s s'
-    t <- totalTime ms
-    _ <- lte t (fromInt 15)
-    return ms
+  ms <- evalBridges s s'
+  t <- totalTime ms
+  _ <- lte t (fromInt 15)
+  return ms
 
 startState :: State
 startState = State (Qua True True True True True) (Qua False False False False False)
