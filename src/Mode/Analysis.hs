@@ -232,7 +232,7 @@ analyze allowFree goal = do
           else pickSuitable suitable goal
         Nothing -> newSuitable goal
     goBase goal@(Unif v@(Var (var, mode)) t) =
-      let makeAfterModeFree m = return $ m { after = Just Free } in
+      let makeAfterModeGround m = return $ m { after = Just Ground } in
       case before mode of
         Ground -> do
           v <- modifyMode makeAfterModeGround v
@@ -245,8 +245,8 @@ analyze allowFree goal = do
             case allowFree of
               DisallowFree -> lift $ Left "Free variables in both sides of unification"
               AllowFree -> do
-                v <- modifyMode makeAfterModeFree v
-                t <- modifyModeTerm makeAfterModeFree t
+                v <- modifyMode makeAfterModeGround v
+                t <- modifyModeTerm makeAfterModeGround t
                 return (Unif v t)
           else do
             v <- modifyMode makeAfterModeGround v
@@ -295,9 +295,10 @@ analyzeNewDefs = do
           return (def : newModes)
   where
     updateAfterMode instMap var (_, before) =
-      case Map.lookup var instMap of
-        Just x -> return (var, before { after = after x })
-        Nothing -> return (var, before)
+      return (var, before { after = Just Ground })
+      -- case Map.lookup var instMap of
+      --   Just x -> return (var, before { after = after x })
+      --   Nothing -> return (var, before)
 
     updateMode instMap var =
       case Map.lookup var instMap of
