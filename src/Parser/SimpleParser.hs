@@ -80,7 +80,7 @@ parseInvocation :: Parser (G X)
 parseInvocation =
       Invoke
   <$> try ident
-  <*> try parseArguments
+  <*> (try parseArguments <|> roundBr (return []))
   <?> "parseInvocation"
 
 parseTerm :: Parser (Term X)
@@ -157,6 +157,7 @@ parseDef = do
 
 -- program
 parseProg :: Parser (Program G X)
-parseProg =
-  Program <$> many parseDef <*> (postEval [] <$> parseQuery)
+parseProg = do
+  let failureRel = Def "fail" [] (Invoke "fail" [])
+  Program <$> ((failureRel :) <$> many parseDef) <*> (postEval [] <$> parseQuery)
   <?> "parseProg"
