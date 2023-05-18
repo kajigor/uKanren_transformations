@@ -108,4 +108,14 @@ benchmarks:
     - uKanren-transformation
     - tasty
     - tasty-bench
+    - deepseq
     ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  # uKanren-transformation-bench-prop:
+  #   main: Main.hs
+  #   source-dirs:
+  #   - bench/Prop
+  #   dependencies:
+  #   - uKanren-transformation
+  #   - tasty
+  #   - tasty-bench
+  #   ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"

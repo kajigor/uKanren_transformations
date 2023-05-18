@@ -204,6 +204,7 @@ instance Show a => Show (G a) where
     printf "fresh %s (%s)" (unwords $ map show names) (show goal)
   show (Invoke name ts) =
     printf "%s %s" name (unwords $ map (parenthesize . show) ts)
+  show (Delay g) = printf "Delay (%s)" (show g)
 
 class Dot a where
   dot :: a -> String

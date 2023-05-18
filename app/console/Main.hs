@@ -18,12 +18,6 @@ import Syntax (X, G)
 import Program
 import Text.Printf (printf)
 
-import TranslatedExamples.WGCKarnen (mainWGC)
-import TranslatedExamples.EinsteinKarnen (mainEinstein)
-import TranslatedExamples.BridgeKarnen (mainBridges)
-import TranslatedExamples.EvalLoop (mainLoop)
--- import FunConversion.TransTest (testTrans)
-import FunConversion.Trans (testTrans)
 data Transformation
   = CPD
   | ConsPD
