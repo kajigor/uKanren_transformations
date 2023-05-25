@@ -226,7 +226,7 @@ runAction args = do
     PrologToMk ->
       Transformer.PrologToMk.transform (input action)
     Translate ->
-      TranslateApp.runWithParser parser (input action) (relName action) (groundVars action)
+      TranslateApp.runWithParser parser (input action) (output action) (relName action) (groundVars action)
     x -> do
       let transformer = chooseTransformer (transformation action)
       if isInputADir action
