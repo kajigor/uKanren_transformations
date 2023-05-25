@@ -1,6 +1,7 @@
 module TranslateApp where
 
 import Syntax
+import qualified FunConversion.DetCheck as Det
 import Program
 import FunConversion.Trans (transProg)
 import FunConversion.Syntax (embedProgSafe)

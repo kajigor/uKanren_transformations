@@ -87,10 +87,10 @@ instance ShowPretty Lang where
     return (guard <+> parens (x <+> equal <+> y))
   showPretty (Gen gen) =
     showPretty gen
-  showPretty (Match var branches) = do
+  showPretty (Match var branch) = do
       var <- showPretty var
-      branches <- mapM go branches
-      return (matchWith var (branches ++ [mzeroBranch]))
+      branch <- go branch
+      return (matchWith var ([branch, mzeroBranch]))
     where
       go (pattern, branch) = do
         pattrn <- showPretty pattern

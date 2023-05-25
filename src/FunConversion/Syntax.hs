@@ -19,7 +19,7 @@ data Lang = Empty
           | Call Delayed Name [Var] [Generator]
           | Return [Term]
           | Sum [Lang]
-          | Match Var [(Term, Lang)]
+          | Match Var (Term, Lang)
           | Bind [([Var], Lang)]
           | Guard Var Term
           | Gen Generator deriving (Show, Eq)
@@ -125,12 +125,12 @@ instance Quotable Lang TH.Exp where
     fn <- qname "msum"
     exprs <- mapM toQuote exprs
     return $ fn $: [TH.ListE exprs]
-  toQuote (Match v branches) = do
+  toQuote (Match v branch) = do
     fn <- qname "mzero"
     v' <- qvar v
-    bs <- mapM go branches
+    bs <- go branch
     let ot = TH.Match TH.WildP (TH.NormalB fn) []
-    return $ TH.CaseE v' (bs ++ [ot])
+    return $ TH.CaseE v' ([bs, ot])
     where
       go :: (Term, Lang) -> Either Error TH.Match
       go (patt, body) = do
