@@ -123,7 +123,7 @@ instance ShowPretty Lang where
       parensIfNeeded xs = parens $ hsep $ punctuate comma xs
 
 instance ShowPretty Def where
-  showPretty (Def name (args, gens, body)) = do
+  showPretty (Def name args gens body) = do
     name <- showPretty name
     args <- mapM showPretty args
     gens <- mapM showPretty gens
