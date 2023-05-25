@@ -9,7 +9,7 @@ addo x y z =
 -}
 
 addo x y z =
-  (x == O & z == y) |
+  (x == O & y == z) |
   (fresh x', z' in
     x == S x' & z == S z' & addo x' y z'
   );

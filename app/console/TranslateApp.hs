@@ -1,6 +1,7 @@
 module TranslateApp where
 
 import Syntax
+import qualified FunConversion.DetCheck as Det
 import Program
 import FunConversion.Trans (transProg)
 import FunConversion.Syntax (embedProgSafe)
@@ -16,8 +17,9 @@ runWithParser parser inputFile relName inputs = do
     Right hs -> do
       let ocamlPr = prettyString hs
       putStrLn ocamlPr
-
-      let pr = embedProgSafe relName hs
+      putStrLn "-------------------------"
+      -- let pr = embedProgSafe relName hs
+      let pr = Det.embedProgDet relName hs
       putStrLn $ case pr of
         Left err -> "Error: " ++ err
         Right hs -> pprint hs

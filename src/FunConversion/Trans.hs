@@ -113,7 +113,7 @@ ownGens d = d { F.generators = sort $ ownGens' (F.body d) }
     ownGens' (F.Call _ _ _ gens) = gens
     ownGens' (F.Sum s) = nub $ s >>= ownGens'
     ownGens' (F.Bind b) = nub $ b >>= (\(_, l) -> ownGens' l)
-    ownGens' (F.Match _ m) = nub $ m >>= (\(_, l) -> ownGens' l)
+    ownGens' (F.Match _ (_, l)) = nub $ ownGens' l
     ownGens' _ = []
 
 updateCalls :: [F.Def] -> F.Def -> F.Def
@@ -123,7 +123,7 @@ updateCalls defs d = d { F.body = updateCalls' defs (F.body d) }
     updateCalls' defs (F.Call d n args _) = F.Call d n args (getDefGens n defs)
     updateCalls' defs (F.Sum s) = F.Sum (map (updateCalls' defs) s)
     updateCalls' defs (F.Bind b) = F.Bind (map (second (updateCalls' defs)) b)
-    updateCalls' defs (F.Match x m) = F.Match x (map (second (updateCalls' defs)) m)
+    updateCalls' defs (F.Match x m) = F.Match x ((second (updateCalls' defs)) m)
     updateCalls' _ l = l
 
 outId :: [M.Var (S.S, Mode)] -> [S.S]
@@ -201,7 +201,7 @@ transBase _ (M.Call d n args) = F.Call (delay d) (nameFromArgs n args) (callVars
 transBase _ (M.Unif (OutV v) t) | isIn t = F.Return [makeTerm t]
 transBase _ (M.Unif (InV v) (M.FTVar (OutV t))) = F.Return [makeVar v]
 transBase _ (M.Unif (InV v) t) | isIn t = makeGuard v (makeTerm t)
-transBase _ (M.Unif (InV v) t@(M.FTCon n xs)) = F.Match (makeName v) [(F.Con n (map makeMatch xs), body)]
+transBase _ (M.Unif (InV v) t@(M.FTCon n xs)) = F.Match (makeName v) (F.Con n (map makeMatch xs), body)
   where
     body = F.Bind (guards ++ [([], F.Return (returnVars xs))])
     guards = map ([],) (bindGuards xs)

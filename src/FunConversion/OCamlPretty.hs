@@ -87,10 +87,10 @@ instance ShowPretty Lang where
     return (guard <+> parens (x <+> equal <+> y))
   showPretty (Gen gen) =
     showPretty gen
-  showPretty (Match var branches) = do
+  showPretty (Match var branch) = do
       var <- showPretty var
-      branches <- mapM go branches
-      return (matchWith var (branches ++ [mzeroBranch]))
+      branch <- go branch
+      return (matchWith var ([branch, mzeroBranch]))
     where
       go (pattern, branch) = do
         pattrn <- showPretty pattern
@@ -123,7 +123,7 @@ instance ShowPretty Lang where
       parensIfNeeded xs = parens $ hsep $ punctuate comma xs
 
 instance ShowPretty Def where
-  showPretty (Def name (args, gens, body)) = do
+  showPretty (Def name args gens body) = do
     name <- showPretty name
     args <- mapM showPretty args
     gens <- mapM showPretty gens

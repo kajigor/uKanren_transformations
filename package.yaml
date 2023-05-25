@@ -99,10 +99,32 @@ benchmarks:
   #   - tasty
   #   - tasty-bench
   #   ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-addo:
+  # uKanren-transformation-bench-addo:
+  #   main: Main.hs
+  #   source-dirs:
+  #   - bench/Addo
+  #   - test/resources
+  #   dependencies:
+  #   - uKanren-transformation
+  #   - tasty
+  #   - tasty-bench
+  #   - deepseq
+  #   ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  # uKanren-transformation-bench-addo-det:
+  #   main: Main.hs
+  #   source-dirs:
+  #   - bench/AddoDet
+  #   - test/resources
+  #   dependencies:
+  #   - uKanren-transformation
+  #   - tasty
+  #   - tasty-bench
+  #   - deepseq
+  #   ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  uKanren-transformation-bench-addo-det:
     main: Main.hs
     source-dirs:
-    - bench/Addo
+    - bench/MuloDet
     - test/resources
     dependencies:
     - uKanren-transformation
