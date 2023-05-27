@@ -53,7 +53,7 @@ instance Alternative Stream where
 
 instance Monad Stream where
   Empty >>= _ = mzero
-  Mature x xs >>= g = g x `mplus` (xs >>= g)
+  Mature x xs >>= g = g x <|> (xs >>= g)
   Immature x  >>= y = Immature $ x >>= y
 
 instance MonadPlus Stream where

@@ -4,8 +4,9 @@
 
 module FunConversion.OCamlPretty where
 
+import           Data.Char                 (isSpace)
 import qualified Data.Text                 as T
-import           FunConversion.Syntax hiding (Error)
+import           FunConversion.Syntax      hiding (Error)
 import           Prettyprinter
 import           Prettyprinter.Render.Text (renderStrict)
 import           Util.String
@@ -25,15 +26,22 @@ preamble =
   let mplus = define mplusKW (pretty' "OCanren.Stream.mplus") in
   let msum = define (msumKW <+> pretty' "xs") (pretty' "List.fold_right" <+> mplusKW <+> pretty' "xs" <+> mzeroKW) in
   let guardDef = define (pretty' "guard" <+> pretty' "p") (pretty' "if" <+> pretty' "p" <+> pretty' "then" <+> returnKW <+> pretty' "()" <+> pretty' "else" <+> mzeroKW) in
+  let delayDef = define (pretty' "make_lazy" <+> pretty' "f") (pretty' "OCanren.Stream.from_fun" <+> pretty' "f") in
   let imports = vsep [gtImport, ocanrenImport, streamImport] in
-  let definitions = vsep [letStar, retrn, mzero, mplus, msum, guardDef] in
+  let definitions = vsep [letStar, retrn, mzero, mplus, msum, guardDef, delayDef] in
   imports <> line <> line <> definitions
 
 prettyString :: ShowPretty a => a -> String
 prettyString x =
   case showPretty x of
     Left err -> T.unpack err
-    Right p -> T.unpack . renderStrict . layoutPretty defaultLayoutOptions $ preamble <> line <> p
+    Right p -> T.unpack . defaultRender $ preamble <> line <> p
+
+defaultRender = renderStrict . layoutPretty defaultLayoutOptions
+
+tuple [] = pretty' "()"
+tuple [x] = x
+tuple xs = parens $ hsep $ punctuate (pretty' ",") xs
 
 class ShowPretty a where
   showPretty :: a -> Either Error Prog
@@ -47,8 +55,12 @@ instance ShowPretty Term where
     | null name = Left "Constructor name cannot be empty"
     | otherwise = do
         let con = toUpper name
-        ts <- mapM showPretty args
-        return $ hsep (pretty con : ts)
+        if not $ null args
+        then do
+          args <- mapM showPretty args
+          return $ pretty con <+> tuple args
+        else
+          return $ pretty con
 
 pretty' :: T.Text -> Doc ann
 pretty' = pretty
@@ -64,13 +76,22 @@ mzeroKW = pretty' "mzero"
 mplusKW = pretty' "mplus"
 msumKW = pretty' "msum"
 
+parenthesizeIfSpace :: Doc ann -> Doc ann
+parenthesizeIfSpace doc =
+    if containsSpace doc
+    then parens doc
+    else doc
+  where
+    containsSpace doc =
+      let rendered = defaultRender doc in
+      T.any isSpace rendered
 
 letStar var value = letStarKW <+> var <+> pretty' "=" <+> value <+> pretty' "in"
 
 instance ShowPretty Lang where
   showPretty (Call Delayed name args generators) = do
     call <- showPretty (Call NotDelayed name args generators)
-    return $ pretty' "delay" <+> pretty' "@@" <+> pretty' "fun" <+> pretty' "()" <+> pretty' "->" <+> call
+    return $ pretty' "make_lazy" <+> pretty' "@@" <+> pretty' "fun" <+> pretty' "()" <+> pretty' "->" <+> call
   showPretty (Call _ name args generators)
     | null name = Left "Relation name cannot be empty"
     | otherwise = do
@@ -78,9 +99,12 @@ instance ShowPretty Lang where
         return (pretty name <+> hsep args)
   showPretty (Return []) = do
     return (returnKW <+> pretty' "()")
+  showPretty (Return [x]) = do
+    x <- showPretty x
+    return (returnKW <+> parenthesizeIfSpace x)
   showPretty (Return args) = do
-      args <- mapM showPretty args
-      return (returnKW <+> hsep (map parens args))
+    args <- mapM showPretty args
+    return (returnKW <+> parens (hsep (punctuate comma args)))
   showPretty (Guard x y) = do
     x <- showPretty x
     y <- showPretty y
@@ -128,7 +152,7 @@ instance ShowPretty Def where
     args <- mapM showPretty args
     gens <- mapM showPretty gens
     body <- showPretty body
-    return $ name <+> hsep args <+> pretty' "=" <> line <> indent tabSize body
+    return $ name <+> hsep args <+> hsep gens <+> pretty' "=" <> line <> indent tabSize body
 
 tabSize = 2
 
@@ -143,7 +167,7 @@ instance ShowPretty TypeData where
         then return constructor
         else return $ constructor <+> pretty' "of" <+> parensIfNeeded (pretty' "term") n
       parensIfNeeded elem 1 = elem
-      parensIfNeeded elem n = parens $ hsep $ punctuate (pretty' "*") (replicate n elem)
+      parensIfNeeded elem n = parens $ hsep $ punctuate (pretty' " *") (replicate n elem)
 
 instance ShowPretty Program where
   showPretty (Program types defs _) = do
