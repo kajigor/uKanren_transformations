@@ -96,7 +96,8 @@ instance ShowPretty Lang where
     | null name = Left "Relation name cannot be empty"
     | otherwise = do
         args <- mapM showPretty args
-        return (pretty name <+> hsep args)
+        generators <- mapM showPretty generators
+        return (pretty name <+> hsep args <+> hsep generators)
   showPretty (Return []) = do
     return (returnKW <+> pretty' "()")
   showPretty (Return [x]) = do

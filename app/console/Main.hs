@@ -1,22 +1,22 @@
 module Main where
 
-import Options.Applicative
-import Data.Maybe (fromMaybe)
-import qualified EvalApp
-import qualified Transformer.PrologToMk
-import System.Directory (getCurrentDirectory)
 import qualified ConsPDApp
 import qualified CPDApp
-import qualified ParseApp
-import qualified NormalizeApp
+import           Data.Maybe             (fromMaybe)
+import qualified EvalApp
 import qualified ModeApp
+import qualified NormalizeApp
+import           Options.Applicative
+import qualified ParseApp
+import qualified Parser.Parser          as Parser
+import           Program
+import           Syntax                 (G, X)
+import           System.Directory       (getCurrentDirectory)
+import           Text.Printf            (printf)
+import qualified Transformer.PrologToMk
 import qualified TranslateApp
-import Util.File (failIfNotExist, isDir, getFiles)
-import Util.Miscellaneous (mapLeft)
-import qualified Parser.Parser as Parser
-import Syntax (X, G)
-import Program
-import Text.Printf (printf)
+import           Util.File              (failIfNotExist, getFiles, isDir)
+import           Util.Miscellaneous     (mapLeft)
 
 data Transformation
   = CPD
@@ -29,23 +29,23 @@ data Transformation
   | Translate
 
 data Action = Action { transformation :: Transformation
-                     , input :: FilePath
-                     , output :: FilePath
-                     , isInputADir :: Bool
-                     , parserType :: Parser.ParserType
-                     , numAnswers :: Int
-                     , groundVars :: [Int]
-                     , relName :: String
+                     , input          :: FilePath
+                     , output         :: FilePath
+                     , isInputADir    :: Bool
+                     , parserType     :: Parser.ParserType
+                     , numAnswers     :: Int
+                     , groundVars     :: Maybe [Int]
+                     , relName        :: String
                      }
 
 data Args = Args
   { transformationArg :: Transformation
-  , inputArg :: Maybe FilePath
-  , outputArg :: Maybe FilePath
-  , parserTypeArg :: Maybe Parser.ParserType
-  , numAnswersArg :: Int
-  , groundVarsArg :: [Int]
-  , relNameArg :: String
+  , inputArg          :: Maybe FilePath
+  , outputArg         :: Maybe FilePath
+  , parserTypeArg     :: Maybe Parser.ParserType
+  , numAnswersArg     :: Int
+  , groundVarsArg     :: Maybe [Int]
+  , relNameArg        :: String
   }
 
 transform :: Args -> IO Action
@@ -70,7 +70,7 @@ actionParser =
         <*> optional outputParser
         <*> optional parserTypeParser
         <*> numAnswersParser
-        <*> groundVarsParser
+        <*> optional groundVarsParser
         <*> relationNameParser
 
 numAnswersParser :: Parser Int
@@ -86,7 +86,6 @@ groundVarsParser = option auto
   (  long "ground"
   <> help "Which variables are supposed to be treated as ground"
   <> showDefault
-  <> value []
   <> metavar "GROUND")
 
 relationNameParser :: Parser String
@@ -218,7 +217,7 @@ runAction args = do
     Eval ->
       EvalApp.runWithParser parser (input action) (numAnswers action)
     Mode ->
-      ModeApp.runWithParser parser (input action) (relName action) (groundVars action)
+      ModeApp.runWithParser parser (input action) (relName action) (fromMaybe [] $ groundVars action)
     Normalize ->
       NormalizeApp.runWithParser parser (input action)
     Parser ->

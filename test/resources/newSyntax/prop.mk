@@ -17,15 +17,15 @@ noto x b =
 
 evalo st fm u =
   fresh x, y, v, w, z in
-    (ando v w u & Delay evalo st x v & Delay evalo st y w & fm == Conj x y) |
-    (oro v w u & Delay evalo st x v & Delay evalo st y w & fm == Disj x y) |
+    (fm == Lit u) |
+    (fm == Var z & Delay elemo z st u) |
     (noto v u & Delay evalo st x v & fm == Neg x) |
-    (fm == Var z & elemo z st u) |
-    (fm == Lit u) ;
+    (oro v w u & Delay evalo st x v & Delay evalo st y w & fm == Disj x y) |
+    (ando v w u & Delay evalo st x v & Delay evalo st y w & fm == Conj x y) ;
 
 elemo n s v =
   fresh h, t, n' in
     (n == Zero & s == (h :: t) & v == h) |
-    (s == (h :: t) & elemo n' t v & n == Succ n');
+    (s == (h :: t) & Delay elemo n' t v & n == Succ n');
 
 ? evalo st fm Trueo

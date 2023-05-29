@@ -2,46 +2,20 @@
 
 module TranslateApp where
 
-import Syntax
-import qualified FunConversion.DetCheck as Det
-import Program
-import FunConversion.Trans (transProg, transMultiMode)
-import FunConversion.Syntax (embedProgSafe)
-import Language.Haskell.TH (pprint)
-import FunConversion.OCamlPretty (prettyString)
-import           System.FilePath        ((<.>), (</>), takeBaseName)
-import           Util.File              (createDirRemoveExisting)
-import System.Directory (copyFile)
-import Data.List (subsequences)
-import Util.String
+import           Data.List                 (find, subsequences)
+import           Def
+import           FunConversion.OCamlPretty (prettyString)
+import           FunConversion.Syntax      (embedProgSafe)
+import           FunConversion.Trans       (transMultiMode, transProg)
+import           Language.Haskell.TH       (pprint)
+import           Program
+import           Syntax
+import           System.Directory          (copyFile)
+import           System.FilePath           (takeBaseName, (<.>), (</>))
+import           Util.File                 (createDirRemoveExisting)
+import           Util.String
 
-runAllDirections :: (FilePath -> IO (Either String (Program G String))) -> FilePath -> FilePath -> String -> IO ()
-runAllDirections parser inputFile outDir relName = do
-  createDirRemoveExisting outDir
-  let baseName = takeBaseName inputFile
-  let uBaseName = toUpper baseName
-  let outFile = outDir </> baseName
-  let uOutFile = outDir </> uBaseName
-  let ocamlFile = uOutFile <.> "ml"
-  let haskellFile = uOutFile <.> "hs"
-  copyFile inputFile (outFile <.> "mk")
-
-  program <- parser inputFile
-  let inputs = subsequences [0..2]
-  let translatedProgram = program >>= \p -> transMultiMode (getDefs p) (map (relName,) inputs)
-  case translatedProgram of
-    Left err -> putStrLn $ "Error in translating: " ++ err
-    Right hs -> do
-      let ocamlPr = prettyString hs
-      writeFile ocamlFile ocamlPr
-
-      let pr = embedProgSafe relName hs
-      case pr of
-        Left err -> putStrLn $ "Template Haskell error: " ++ err
-        Right hs ->
-          writeFile haskellFile (pprint hs)
-
-runWithParser :: (FilePath -> IO (Either String (Program G String))) -> FilePath -> FilePath -> String -> [Int] -> IO ()
+runWithParser :: (FilePath -> IO (Either String (Program G String))) -> FilePath -> FilePath -> String -> Maybe [Int] -> IO ()
 runWithParser parser inputFile outDir relName inputs = do
   createDirRemoveExisting outDir
   let baseName = takeBaseName inputFile
@@ -53,19 +27,36 @@ runWithParser parser inputFile outDir relName inputs = do
   copyFile inputFile (outFile <.> "mk")
 
   program <- parser inputFile
-  let translatedProgram = program >>= transProg relName inputs
-  case translatedProgram of
-    Left err -> putStrLn $ "Error in translating: " ++ err
-    Right hs -> do
-      let ocamlPr = prettyString hs
-      writeFile ocamlFile ocamlPr
+  case program of
+    Right program ->
+      case inputs of
+        Just inputs -> do
+          let translatedProgram = transProg relName inputs program
+          outputProgram ocamlFile haskellFile uBaseName translatedProgram
+        Nothing -> do
+          let def = find (\def -> getName def == relName) (getDefs program)
+          case def of
+            Just def -> do
+              let inputs = subsequences [0 .. length (getArgs def) - 1]
+              let translatedProgram = transMultiMode (getDefs program) (map (relName,) inputs)
+              outputProgram ocamlFile haskellFile uBaseName translatedProgram
+            Nothing -> putStrLn $ relName ++ " undefined"
+    Left err -> putStrLn $ "Parsing error: " ++ err
+  where
+    outputProgram ocamlFile haskellFile uBaseName program = do
+      case program of
+        Left err -> putStrLn $ "Error in translating: " ++ err
+        Right hs -> do
+          let ocamlPr = prettyString hs
+          writeFile ocamlFile ocamlPr
 
-      let pr = embedProgSafe relName hs
-      case pr of
-        Left err -> putStrLn $ "Template Haskell error: " ++ err
-        Right hs ->
-          writeFile haskellFile (haskellPreamble uBaseName ++ pprint hs)
+          let pr = embedProgSafe relName hs
+          case pr of
+            Left err -> putStrLn $ "Template Haskell error: " ++ err
+            Right hs ->
+              writeFile haskellFile (haskellPreamble uBaseName ++ pprint hs)
 
+haskellPreamble :: String -> String
 haskellPreamble uBaseName =
   "module " ++ uBaseName ++ " where\n\n\
   \import Stream\n\
