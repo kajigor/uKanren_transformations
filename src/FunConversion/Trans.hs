@@ -14,10 +14,11 @@ import Data.List (nub, sort)
 import Def
 import           Mode.Inst
 import           Program
-import Mode.Toplevel (topLevelWithDefaultCall, topLevelManyModes)
+import qualified Mode.Toplevel as M
 import qualified Mode.Analysis as M
 import Data.Bifunctor (second)
 import Data.Maybe (maybeToList)
+
 pattern In :: Mode
 pattern In = Mode Ground (Just Ground)
 
@@ -65,21 +66,21 @@ getDefGens n (d : defs)
 
 transProg :: String -> [S.S] -> Program S.G S.X -> Either M.ModeAnalysisError F.Program
 transProg n inns p = do
-  p' <- topLevelWithDefaultCall p n inns
+  p' <- M.topLevelWithDefaultCall p n inns
   let (defs, body) = trans p'
   let types = collectConsPrg p'
   return $ F.Program types defs (Just body)
 
 transMultiMode :: [Def S.G S.X] -> [(String, [S.S])] -> Either M.ModeAnalysisError F.Program
 transMultiMode defs modes = do
-  p' <- topLevelManyModes defs modes
+  p' <- M.topLevelManyModes defs modes
   let defs' = transDefs p'
   let types = F.TypeData $ Set.toList $ collecCons p'
   return $ F.Program types defs' Nothing
 
 transSingleMode :: [Def S.G S.X] -> (String, [S.S]) -> Either M.ModeAnalysisError F.Program
 transSingleMode defs (name, ground) = do
-  p' <- topLevelWithDefaultCall (Program defs undefined) name ground
+  p' <- M.topLevelWithDefaultCall (Program defs undefined) name ground
   let (defs, body) = trans p'
   let types = collectConsPrg p'
   return $ F.Program types defs (Just body)
@@ -97,7 +98,7 @@ trans p@(Program defs (M.Disj ((M.Conj ((M.Call d n args) NE.:| [])) NE.:| [])))
 trans _ = error "Expected single call"
 
 transDefs :: [Def M.Goal (S.S, Mode)] -> [F.Def]
-transDefs = fixGens . map (\d -> transDef (outId $ M.Var <$> getArgs d) d)
+transDefs = fixGens . map (\d -> transDef (outIdPair $ M.Var <$> getArgs d) d)
 
 fixGens :: [F.Def] -> [F.Def]
 fixGens defs = let defs' = collectGens defs in if defs == defs' then defs' else fixGens defs'
@@ -131,6 +132,12 @@ outId [] = []
 outId (OutV v : vs) = 0 : map (+1) (outId vs)
 outId (InV v : vs) = map (+1) (outId vs)
 outId _ = []
+
+outIdPair :: [M.Var (S.S, Mode)] -> [(S.S, S.S)]
+outIdPair [] = []
+outIdPair (OutV v : vs) = (0, v) : map (\(i, x) -> (i+1, x)) (outIdPair vs)
+outIdPair (InV v : vs) = map (\(i, x) -> (i+1, x)) (outIdPair vs)
+outIdPair _ = []
 
 -- TODO: Check for same constructor with different arity
 collectConsPrg :: Program M.Goal (S.S, Mode) -> F.TypeData
@@ -236,12 +243,12 @@ transDisj rel outs (M.Disj xs) = F.Sum $ map (transConj rel outs) (NE.toList xs)
 transGoal :: String -> [S.S] -> M.Goal (S.S, Mode) -> F.Lang
 transGoal = transDisj
 
-transDef :: [S.S] -> Def M.Goal (S.S, Mode) -> F.Def
-transDef outs (Def n args body) = let n' = makeDefName n (length args) outs in F.Def {
+transDef :: [(S.S, S.S)] -> Def M.Goal (S.S, Mode) -> F.Def
+transDef outs (Def n args body) = let n' = makeDefName n (length args) (map fst outs) in F.Def {
   F.name = n',
-  F.args = map makeName (ins (length args) outs),
+  F.args = callVars $ M.Var <$> args,
   F.generators = [], -- Generators are filled in later, by fixGens
-  F.body = transGoal n' outs body
+  F.body = transGoal n' (map snd outs) body
   }
 
 mapOuts :: (Int -> Maybe a) -> (Int -> Maybe a) -> Int -> [S.S] -> [a]
