@@ -78,6 +78,13 @@ topLevel inns p = do
   let types = collectConsPrg p'
   return $ F.Program types defs (Just body)
 
+topLevel :: [S.S] -> Program S.G S.X -> Either M.ModeAnalysisError F.Program
+topLevel inns p = do
+  p' <- M.topLevel p inns
+  let (defs, body) = trans p'
+  let types = collectConsPrg p'
+  return $ F.Program types defs (Just body)
+
 transMultiMode :: [Def S.G S.X] -> [(String, [S.S])] -> Either M.ModeAnalysisError F.Program
 transMultiMode defs modes = do
   p' <- M.topLevelManyModes defs modes
