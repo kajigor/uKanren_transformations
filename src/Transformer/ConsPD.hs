@@ -3,13 +3,15 @@ module Transformer.ConsPD where
 
 import           ConsPD.Residualization
 import qualified ConsPD.Unfold          as ConsPD
-import           Control.Monad          (guard)
+import           Control.Monad          (guard, when)
 import           Data.Maybe             (fromJust, isJust)
+import           Data.Either            (isRight)
 import           Def
 import           NormalizedSyntax       (normalizeProg)
 import qualified OCanrenize             as OC
 import           Printer.ConsPDTree     ()
 import           Printer.Dot
+import           Language.Haskell.TH    (pprint)
 import           Program
 import           Purification
 import           Residualization        (vident)
@@ -20,6 +22,10 @@ import           Text.Printf
 import qualified Transformer.MkToProlog
 import           Util.File              (createDirRemoveExisting)
 import           Util.Miscellaneous     (escapeTick)
+
+import qualified FunConversion.Trans as F
+import qualified FunConversion.Syntax as F
+import Debug.Trace
 
 data TransformResult = Result { original           :: [Def G X]
                               , tree               :: ConsPD.ConsPDTree
@@ -51,11 +57,11 @@ toOcanren fileName (Program defs goal) names =
 
 runConsPD l = Transformer.ConsPD.transform "test/out/consPD" Nothing (ConsPD.topLevel l)
 
-runConsPD' :: [Char] -> FilePath -> Program G X -> IO ()
+runConsPD' :: [Char] -> Maybe [Int] -> FilePath -> Program G X -> IO ()
 runConsPD' outDir = Transformer.ConsPD.transform outDir Nothing (ConsPD.topLevel (-1))
 
-transform :: [Char] -> Maybe String -> (Program G X -> (ConsPD.ConsPDTree, G S, [S])) -> FilePath -> Program G X -> IO ()
-transform outDir env function filename prg = do
+transform :: [Char] -> Maybe String -> (Program G X -> (ConsPD.ConsPDTree, G S, [S])) -> Maybe [Int] -> FilePath -> Program G X -> IO ()
+transform outDir env function ground filename prg = do
   let norm = normalizeProg prg
   -- print norm
 
@@ -88,3 +94,17 @@ transform outDir env function filename prg = do
   writeFile (path </> filename <.> "pur") (show prog)
   let ocamlCodeFileName = path </> filename <.> "ml"
   OC.topLevel ocamlCodeFileName "topLevel" env pur
+
+  when (isJust ground) $ do
+    let (Invoke n _) = goal'
+    let trans = F.transProg n (fromJust ground) prog >>= F.embedProgSafe n
+    case trans of
+      Right t' -> writeFile (path </> "Translated.hs") $ haskellPreamble "Translated" ++ pprint t'
+      Left e -> print $ "Translation error: " ++ e
+
+
+haskellPreamble :: String -> String
+haskellPreamble uBaseName =
+  "module " ++ uBaseName ++ " where\n\n\
+  \import Stream\n\
+  \import Control.Monad\n\n"

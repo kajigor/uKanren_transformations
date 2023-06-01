@@ -90,4 +90,4 @@ replaceGoalWithDefaultCall program relName = do
     defaultArgs =
       case find (\(Def name _ _) -> name == relName) (getDefs program) of
         Just def -> return $ getArgs def
-        Nothing -> Left $ relName ++ " undefined"
+        Nothing -> Left $ "Rel " ++ relName ++ " undefined"

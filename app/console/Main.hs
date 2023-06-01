@@ -231,6 +231,6 @@ runAction args = do
       if isInputADir action
       then do
         files <- getFiles "mk" (input action)
-        mapM_ (transformer parser (output action)) files
+        mapM_ (transformer parser (output action) (groundVars action)) files
       else
-        transformer parser (output action) (input action)
+        transformer parser (output action) (groundVars action) (input action)

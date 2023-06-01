@@ -14,7 +14,7 @@ import Data.List (nub, sort)
 import Def
 import           Mode.Inst
 import           Program
-import Mode.Toplevel (topLevelWithDefaultCall, topLevelManyModes)
+import qualified Mode.Toplevel as M
 import qualified Mode.Analysis as M
 import Data.Bifunctor (second)
 import Data.Maybe (maybeToList)
@@ -65,21 +65,28 @@ getDefGens n (d : defs)
 
 transProg :: String -> [S.S] -> Program S.G S.X -> Either M.ModeAnalysisError F.Program
 transProg n inns p = do
-  p' <- topLevelWithDefaultCall p n inns
+  p' <- M.topLevelWithDefaultCall p n inns
+  let (defs, body) = trans p'
+  let types = collectConsPrg p'
+  return $ F.Program types defs (Just body)
+
+topLevel :: [S.S] -> Program S.G S.X -> Either M.ModeAnalysisError F.Program
+topLevel inns p = do
+  p' <- M.topLevel p inns
   let (defs, body) = trans p'
   let types = collectConsPrg p'
   return $ F.Program types defs (Just body)
 
 transMultiMode :: [Def S.G S.X] -> [(String, [S.S])] -> Either M.ModeAnalysisError F.Program
 transMultiMode defs modes = do
-  p' <- topLevelManyModes defs modes
+  p' <- M.topLevelManyModes defs modes
   let defs' = transDefs p'
   let types = F.TypeData $ Set.toList $ collecCons p'
   return $ F.Program types defs' Nothing
 
 transSingleMode :: [Def S.G S.X] -> (String, [S.S]) -> Either M.ModeAnalysisError F.Program
 transSingleMode defs (name, ground) = do
-  p' <- topLevelWithDefaultCall (Program defs undefined) name ground
+  p' <- M.topLevelWithDefaultCall (Program defs undefined) name ground
   let (defs, body) = trans p'
   let types = collectConsPrg p'
   return $ F.Program types defs (Just body)
