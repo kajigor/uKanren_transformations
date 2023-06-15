@@ -21,6 +21,7 @@ import qualified Subst
 import           Syntax
 import           Unfold              (findBestByComplexity, findTupling, isGoalStatic, oneStep)
 import           Util.ListZipper
+import Debug.Trace
 
 data ConsPDTree = Fail
                 | Success Subst.Subst Env.Env
@@ -413,7 +414,7 @@ simplify tree =
     removeTransient $ go tree
   where
     removeTransient tree =
-        replaceChildren (go <$> getChildren tree) tree
+        trace "removeTransient" $ replaceChildren (go <$> getChildren tree) tree
       where
         go (Or [Or ch g' s'] g s) = go $ Or ch g s
         go (Or ch g s) = Or (go <$> ch) g s
@@ -432,17 +433,18 @@ simplify tree =
     replaceChildren new (Split ch g s) = Split new g s
     replaceChildren new x = x
 
-    go (Or    ch g s)   = failOr ch (\x -> Or x g s)
-    go (Conj  ch g s)   = failConj ch (\x -> Conj x g s)
-    go (Split ch g s)   = failConj ch (\x -> Split x g s)
-    go (Gen   ch g g' gen s) = failOr [ch] (\[x] -> Gen x g g' gen s)
+    --(trace ((show my_tree) ++ "\n\n\n") $ ch)
+    go my_tree@(Or    ch g s)   = failOr ch (\x -> Or x g s)
+    go my_tree@(Conj  ch g s)   = failConj ch (\x -> Conj x g s)
+    go my_tree@(Split ch g s)   = failConj ch (\x -> Split x g s)
+    go my_tree@(Gen   ch g g' gen s) = failOr [ch] (\[x] -> Gen x g g' gen s)
     go x                = x
-    failOr ch f =
+    failOr ch f = --trace "failOr" $
       let simplified = filter (not . isFail) $ map go ch in
       if null simplified
       then Fail
       else f simplified
-    failConj ch f =
+    failConj ch f = --trace "failConj" $
       let simplified = map go ch in
       if Fail `elem` simplified
       then Fail

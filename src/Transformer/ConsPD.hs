@@ -39,9 +39,9 @@ type Transformer = Program G X -> (ConsPD.ConsPDTree, G S, [S])
 
 runTransformation :: Program G X -> Transformer -> TransformResult
 runTransformation goal@(Program original _) transformer =
-  let transformed@(tree, logicGoal, names) = transformer goal in
+  let transformed@(tree, logicGoal, names) = transformer (trace (show goal) $ goal) in
   let namesX = vident <$> reverse names in
-  let simplifiedTree = ConsPD.simplify tree in
+  let simplifiedTree = trace "simplify" $ ConsPD.simplify tree in
   if ConsPD.noPrune tree
   then
     let residualized = residualize transformed in
@@ -62,7 +62,7 @@ runConsPD' outDir = Transformer.ConsPD.transform outDir Nothing (ConsPD.topLevel
 
 transform :: [Char] -> Maybe String -> (Program G X -> (ConsPD.ConsPDTree, G S, [S])) -> Maybe [Int] -> FilePath -> Program G X -> IO ()
 transform outDir env function ground filename prg = do
-  let norm = normalizeProg prg
+  let norm = trace "transform" $ normalizeProg prg
   -- print norm
 
   -- let goal@(Program definitions _) = makeNormal prg
@@ -74,7 +74,7 @@ transform outDir env function ground filename prg = do
   Transformer.MkToProlog.transform (path </> "original.pl") definitions
 
 
-  let result = runTransformation goal function
+  let result = trace "transform runTransformation" $ runTransformation goal function
 
   writeFile (path </> "norm.txt") (show norm)
   toOcanren (path </> "original.ml") goal (names result)

@@ -73,6 +73,7 @@ instance OCanren (G X) where
   ocanren (Invoke "success" []) = "success"
   ocanren (Invoke "fail" []) = "fail"
   ocanren (Invoke f ts) = printf "(%s %s)" f (printArgs $ map ocanren ts)
+  ocanren (Delay g) = ocanren g -- TODO fix
 
 printArgs [] = "()"
 printArgs args = unwords $ map parenthesize args

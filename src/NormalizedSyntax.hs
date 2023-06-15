@@ -10,6 +10,7 @@ import           Def
 import           Program
 import           Syntax
 import           Text.Printf
+import Debug.Trace
 
 
 data Goal a = Goal (Disj a)
@@ -70,18 +71,18 @@ norm' g = return [norm'' g]
 norm'' :: G X -> Either (G X) (Base X)
 norm'' g@(Invoke _ _) = toBase g
 norm'' g@(_ :=: _) = toBase g
--- !!!
+norm'' (Delay g) = toBase g
 norm'' (Fresh _ g) = error "Fresh on the base level"
 norm'' g = Left g
 
 normalizeProg :: Program G X -> Prg
 normalizeProg (Program defs goal) =
   let d = mapM (\(Def name args body) -> do
-            b <- normalize body
+            b <- normalize (trace "normalizeProg" $ body)
             return $ Definition name args b
             ) defs
   in
-  let (ds, state) = runState d ([],0) in
+  let (ds, state) = trace "runState" $ runState d ([],0) in
   let (g, (defs, _)) = runState (normalize goal) state in
   Prg (ds ++ defs) g
 
@@ -89,9 +90,9 @@ normalize :: G X -> State ([Definition], Int) (Goal X)
 normalize goal = do
   let (normalized, topLevelFresh) = runState (norm goal) []
   let transformed = mapM (\ state ->
-        let (bases, fresh) = runState state [] in
+        let (bases, fresh) = runState (trace "normalize" state) [] in
         ((fresh,) <$> mapM generateNewDef bases)) normalized
-  goals <- transformed
+  goals <- (trace "getOut" $ transformed)
   let conjs = map (\(fresh, gs) -> Conj (reverse fresh) $ fromList gs) goals
   let disj = Disj (reverse topLevelFresh) (fromList conjs)
   let result = Goal disj
@@ -119,7 +120,7 @@ generateNewDef (Right b) = return b
 generateNewDef (Left g) = do
     newName <- generateNewName
     modify (\(ds, n) -> (ds, n+1))
-    body <- normalize g
+    body <- trace (show g) $ normalize g
     let def = Definition newName args body
     modify (\(ds, n) -> (def:ds, n))
     return $ Call newName (map V args)
