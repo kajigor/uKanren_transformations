@@ -15,6 +15,7 @@ import           Stream
 import qualified Subst
 import           Syntax
 import qualified VarInterpretation   as VI
+import Debug.Trace
 
 unifyG :: (Subst.Subst -> S -> Ts -> Bool)
           -> Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
@@ -151,25 +152,25 @@ topLevel (Program defs goal) =
 
 -- Evaluation relation
 eval :: Env.Env -> Subst.Subst -> G S -> Stream (Subst.Subst, FN.FreshNames)
-eval env s (t1 :=:  t2) = fmap (, Env.getFreshNames env) (maybeToStream $ unify (Just s) t1 t2)
+eval env s g@(t1 :=:  t2) = trace (":=: " ++ (show g)) (fmap (, Env.getFreshNames env) (maybeToStream $ unify (Just s) t1 t2))
 -- eval env s (g1 :\/: g2) = eval env s g1 `mplus` eval env s g2
-eval env s (Disjunction x y gs) =
-  foldr1 mplus (eval env s <$> (x : y : gs))
+eval env s g@(Disjunction x y gs) =
+  trace ("Disj " ++ (show g)) (foldr1 mplus (eval env s <$> (x : y : gs)))
 -- eval env s (g1 :/\: g2) = eval env s g1 >>= (\ (s', d') -> eval (Env.updateNames env d') s' g2)
-eval env s (Conjunction x y gs) =
-  eval env s x >>= \(s', d') ->
-  eval (Env.updateNames env d') s' (unsafeConj $ y : gs)
-eval env s (Invoke f as) =
-  let (Def _ fs g) = Env.getDef env f in
+eval env s g@(Conjunction x y gs) =
+  trace ("Conj " ++ (show g)) (eval env s x >>= \(s', d') ->
+  eval (Env.updateNames env d') s' (unsafeConj $ y : gs))
+eval env s g@(Invoke f as) =
+  trace ("Invoke " ++ (show g)) (let (Def _ fs g) = Env.getDef env f in
   let i' = foldl (\ i'' (f', a) -> VI.extend i'' f' a) (Env.getInterp env) $ zip fs as in
   let ((g', _), env') = runState (preEval g) (Env.updateInterp env i') in
-  eval env' s g'
-eval env s (Delay goal) =
-  Immature (eval env s goal)
+  eval env' s g')
+eval env s g@(Delay goal) =
+  trace ("Delay " ++ (show g)) (Immature (eval env s goal))
 eval _ _ _ = error "Impossible case in eval"
 
 run :: Program G X -> Stream Subst.Subst
 run (Program defs goal) =
   let env = Env.fromDefs defs in
   let ((goal',_), env') = runState (preEval goal) env in
-  fst <$> eval env' Subst.empty goal'
+  fst <$> eval env' Subst.empty (trace (show goal') goal')

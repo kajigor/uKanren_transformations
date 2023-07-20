@@ -6,6 +6,7 @@ import           Program
 import           Stream
 import qualified Subst
 import           Syntax
+import Debug.Trace
 
 reify :: Subst.Subst -> Ts -> Term S
 reify s x@(V v) =
@@ -16,7 +17,7 @@ reify s (C n ts) = C n $ map (reify s) ts
 
 toplevel :: Int -> (Term S -> String) -> Program G X -> [String]
 toplevel n printer program =
-  let stream = run program in
+  let stream = run (trace (show program) program) in
   map (\s -> printer $ reify s (V 0)) $ takeS n stream
 
 addVar :: Program G String -> Program G String
@@ -35,6 +36,6 @@ runWithParser parser inputFile num = do
     Left err ->
       putStrLn err
     Right p ->
-      mapM_ putStrLn (toplevel num show (addVar p))
+      mapM_ putStrLn (toplevel (trace (show num) num) show (addVar (trace (show p) p)))
 
 

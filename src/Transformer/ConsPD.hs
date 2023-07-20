@@ -46,7 +46,7 @@ runTransformation goal@(Program original _) transformer =
   then
     let residualized = residualize transformed in
     let beforePur = justTakeOutLetsProgram residualized namesX in
-    let purified = purification (residualized, namesX) in
+    let purified = purification (residualized, (trace (show namesX) namesX)) in
     Result original tree simplifiedTree namesX (Just beforePur) (Just purified)
   else
     Result original tree simplifiedTree namesX Nothing Nothing
@@ -62,7 +62,7 @@ runConsPD' outDir = Transformer.ConsPD.transform outDir Nothing (ConsPD.topLevel
 
 transform :: [Char] -> Maybe String -> (Program G X -> (ConsPD.ConsPDTree, G S, [S])) -> Maybe [Int] -> FilePath -> Program G X -> IO ()
 transform outDir env function ground filename prg = do
-  let norm = trace "transform" $ normalizeProg prg
+  let norm = normalizeProg (trace (show prg) prg)
   -- print norm
 
   -- let goal@(Program definitions _) = makeNormal prg
@@ -78,9 +78,9 @@ transform outDir env function ground filename prg = do
 
   writeFile (path </> "norm.txt") (show norm)
   toOcanren (path </> "original.ml") goal (names result)
-  Transformer.MkToProlog.transform (path </> "original.pl") definitions
+  Transformer.MkToProlog.transform (path </> "original.pl") definitions -- Aims?
   printTree (path </> "tree.dot") (tree result)
-  printTree (path </> "tree.after.dot") (simplifiedTree result)
+  printTree (path </> "tree.after.dot") (simplifiedTree (trace "Done" result))
   system (printf "dot -O -Tpdf %s/*.dot" (escapeTick path))
 
   guard (isJust $ beforePurification result)

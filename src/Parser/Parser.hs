@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Parser.Parser  ( importsParser, parser, ParserType(..), ParserError(..) ) where
+module Parser.Parser  ( importsParser, parser, ParserType(..), ParserError(..), parseImports ) where
 
 import           Control.Applicative.Lift (eitherToErrors, runErrors)
 import           Control.Monad.Except     (ExceptT (..), runExceptT)
@@ -46,14 +46,15 @@ runBundlingParser :: (Stream s, ShowErrorComponent e, VisualStream s, Traversabl
 runBundlingParser parser filePath =
     mapLeft (SyntaxError . errorBundlePretty) . runParser parser filePath
 
-parseImports :: Parser ([String], Program Syntax.G Syntax.X)
+parseImports :: (Functor (t Syntax.G), Semigroup (t Syntax.G Syntax.X)) => Parser ([String], t Syntax.G Syntax.X)
              -> FilePath
-             -> IO (Either (ParserError String) (Program Syntax.G Syntax.X))
+             -> IO (Either (ParserError String) (t Syntax.G Syntax.X))
 parseImports parser path = do
-    evalStateT (runExceptT $ go path) Set.empty
+    evalStateT (runExceptT $ go parser path) Set.empty
   where
-    go :: FilePath -> ExceptT (ParserError String) (StateT (Set.Set FilePath) IO) (Program Syntax.G Syntax.X)
-    go filePath = do
+    go :: (Functor (t Syntax.G), Semigroup (t Syntax.G Syntax.X)) => Parser ([String], t Syntax.G Syntax.X) -> 
+      FilePath -> ExceptT (ParserError String) (StateT (Set.Set FilePath) IO) (t Syntax.G Syntax.X)
+    go parser filePath = do
       (imports, program) <- ExceptT <$> liftIO $ parseFromFile parser filePath
       let paths = map (replaceBaseName filePath) imports
       modify (Set.insert filePath)
@@ -62,7 +63,7 @@ parseImports parser path = do
       ExceptT $ do
         mapM_ (modify . Set.insert) newImports
         imported <- runErrors . sequenceA <$> mapM (\newPath -> do
-            newResult <- runExceptT $ go newPath
+            newResult <- runExceptT $ go parser newPath
             eitherToErrors <$> case newResult of
               Left err ->
                 return $ Left [(\x -> printf "Failed to parse %s\n%s" newPath x :: String) <$> err]

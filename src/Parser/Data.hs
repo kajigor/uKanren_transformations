@@ -10,7 +10,7 @@ import           Text.Printf        (printf)
 
 type Parser = Parsec Void String
 
-data ParserType = Irina | Simple
+data ParserType = Irina | Simple | AnnotatedParser
 
 data ParserError a = SyntaxError a
                    | FileNotFound a

@@ -1,0 +1,17 @@
+fail  = Goal (Disj [] (Conj [] (Call "fail" [] :| []) :| []))
+
+notZero x = Goal (Disj ["y"] (Conj [] (Unif v."x" (1 + v."y") :| []) :| []))
+
+addo x y z = Goal (Disj ["x'","z'"] (Conj [] (Unif v."x" 0 :| [Unif v."y" v."z"]) :| [Conj [] (Unif v."x" (1 + v."x'") :| [Unif v."z" (1 + v."z'"),Call "addo" [v."x'",v."y",v."z'"]])]))
+
+mulo x y z = Goal (Disj ["x'","z'"] (Conj [] (Unif v."x" 0 :| [Unif v."z" 0]) :| [Conj [] (Unif v."x" (1 + v."x'") :| [Call "addo" [v."y",v."z'",v."z"],Call "mulo" [v."x'",v."y",v."z'"]])]))
+
+leo x y b = Goal (Disj ["zz","x'","y'"] (Conj [] (Unif v."x" 0 :| [Unif v."b" Trueo]) :| [Conj [] (Unif v."x" (1 + v."zz") :| [Unif v."y" 0,Unif v."b" Falso]),Conj [] (Unif v."x" (1 + v."x'") :| [Unif v."y" (1 + v."y'"),Call "leo" [v."x'",v."y'",v."b"]])]))
+
+gto x y b = Goal (Disj ["zz","x'","y'"] (Conj [] (Unif v."x" (1 + v."zz") :| [Unif v."y" 0,Unif v."b" Trueo]) :| [Conj [] (Unif v."x" 0 :| [Unif v."b" Falso]),Conj [] (Unif v."x" (1 + v."x'") :| [Unif v."y" (1 + v."y'"),Call "gto" [v."x'",v."y'",v."b"]])]))
+
+geo x y z = Goal (Disj [] (Conj [] (Call "leo" [v."y",v."x",v."z"] :| []) :| []))
+
+lto x y z = Goal (Disj [] (Conj [] (Call "gto" [v."y",v."x",v."z"] :| []) :| []))
+
+? Goal (Disj ["y","z"] (Conj [] (Call "addo" [2,v."y",v."z"] :| []) :| []))

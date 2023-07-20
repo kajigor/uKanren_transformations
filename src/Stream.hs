@@ -3,6 +3,7 @@ module Stream (takeS, takeWhileS, maybeToStream, isMature, fmap, pure, (<*>), em
 
 import           Control.Applicative
 import           Control.Monad
+import Debug.Trace
 
 -- Stream
 data Stream a = Empty

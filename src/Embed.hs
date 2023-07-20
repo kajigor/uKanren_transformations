@@ -89,7 +89,7 @@ class (Eq b, Show b, Show a) => Instance a b | b -> a where
   isVariant :: b -> b -> Bool
   isVariant x y = x == y || isInst x y && isInst y x
 
-  isRenaming :: b -> b -> Bool
+  isRenaming :: b -> b -> Bool --tests
   isRenaming x y =
     x == y || maybe False (all (\e -> case e of V _ -> True; _ -> False ) . Map.elems) (inst x y Map.empty)
 

@@ -6,10 +6,13 @@ import           Data.Maybe             (fromMaybe)
 import qualified EvalApp
 import qualified ModeApp
 import qualified NormalizeApp
+import qualified TerminationCheckApp
+import qualified Parser.AnnotatedParser as AnnotatedParser
 import           Options.Applicative
 import qualified ParseApp
 import qualified Parser.Parser          as Parser
 import           Program
+import           AnnotatedProgram
 import           Syntax                 (G, X)
 import           System.Directory       (getCurrentDirectory)
 import           Text.Printf            (printf)
@@ -27,6 +30,7 @@ data Transformation
   | PrologToMk
   | Mode
   | Translate
+  | TerminationCheck
 
 data Action = Action { transformation :: Transformation
                      , input          :: FilePath
@@ -59,8 +63,8 @@ transform (Args transformation input output parserType numAnswers groundVars rel
     let out = fromMaybe defaultOutput output
     -- forM_ output createDirRemoveExisting
 
-    let pType = fromMaybe Parser.Simple parserType
-
+    let pType = fromMaybe Parser.Simple parserType 
+    
     return $ Action transformation i out isInputADir pType numAnswers groundVars relName
 
 actionParser :: Parser Args
@@ -129,6 +133,13 @@ parseTransformation =
   <|> prologToMkParser
   <|> modeParser
   <|> translateParser
+  <|> terminationCheckParser
+
+terminationCheckParser :: Parser Transformation
+terminationCheckParser = flag' TerminationCheck
+  (  long "terminationCheck"
+  <> help "run check on safety unfolding"
+  )
 
 normalizeParser :: Parser Transformation
 normalizeParser = flag' Normalize
@@ -209,6 +220,11 @@ defaultOutputDir args =
       Mode -> "mode"
       Translate -> "translate"
 
+getAnnotationParser :: (String -> IO (Either String (AnnotatedProgram G X)))
+getAnnotationParser input = do 
+  res <- Parser.parseImports AnnotatedParser.parseProgramWithImports input
+  return $ mapLeft show res
+
 runAction :: Args -> IO ()
 runAction args = do
   action <- transform args
@@ -226,6 +242,8 @@ runAction args = do
       Transformer.PrologToMk.transform (input action)
     Translate ->
       TranslateApp.runWithParser parser (input action) (output action) (relName action) (groundVars action)
+    TerminationCheck -> 
+      TerminationCheckApp.runWithParser (getAnnotationParser) (input action) (output action)
     x -> do
       let transformer = chooseTransformer (transformation action)
       if isInputADir action

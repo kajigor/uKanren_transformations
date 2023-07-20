@@ -1,0 +1,1 @@
+Program {getDefs = [addo "y0" "y1" = v."y1" = (2 + v."y0")], getGoal = addo v."x0" v."x1"}
