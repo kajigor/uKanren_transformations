@@ -70,10 +70,10 @@ oneConjunct4MapConditions = fromList [("fun", ConditionDisj [ConditionConj [(Con
 oneConjunct4Graph = Graph ["x", "a", "0", "1"] (fromList [(("0", "a"), (Sum 0 empty, WeightedArc)), (("a", "0"), (Sum 0 empty, WeightedArc)), (("x", "1"), (Sum 1 (fromList [("a", 1)]), WeightedArc)), (("1", "x"), (Sum (-1) (fromList [("a", (-1))]), WeightedArc)), (("x", "0"), (Sum 1 empty, Arc)), (("x", "a"), (Sum 1 empty, Arc)), (("1", "0"), (Sum 1 empty, Arc)), (("a", "1"), (Sum 1 (fromList [("x", (-1)), ("a", 2)]), WeightedArc)), (("1", "a"), (Sum (-1) (fromList [("x", (1)), ("a", (-2))]), WeightedArc))])
 
 unit_goOneConjunct = do 
-    (fst $ runState (goOneConjunct ((Sum 1 (fromList [("x", 1), ("a", 1)])) :=: (Sum 4 (fromList [("a", 1), ("y", 1)]))) empty empty ["x1", "x2", "x3"] oneConjunct1MapVars) defaultNames) @?= [oneConjunct1Graph]
-    (cleanGraph ((fst $ runState (goOneConjunct (Invoke "fun" invoke1Terms Ann.Unfold) oneConjunct2MapDefs oneConjunct2MapConditions ["x", "y", "z"] (fromList [("x", "x"), ("y", "y"), ("z", "z")])) defaultNames)!! 0) ["x", "y", "z"]) @?= invoke1Graph
-    (cleanGraph ((fst $ runState (goOneConjunct (Invoke "fun" invoke2Terms Ann.Unfold) oneConjunct2MapDefs oneConjunct3MapConditions ["x", "y", "z"] (fromList [("x", "x"), ("y", "y"), ("z", "z")])) defaultNames)!! 0) ["x", "y", "z"]) @?= invoke2Graph
-    ((fst $ runState (goOneConjunct (Invoke "fun" invoke3Terms Ann.Unfold) oneConjunct4MapDefs oneConjunct4MapConditions ["x", "a"] (fromList [("x", "x"), ("a", "a")])) defaultNames) !! 0) @?= oneConjunct4Graph
+    (fst $ fst $ runState (goOneConjunct ((Sum 1 (fromList [("x", 1), ("a", 1)])) :=: (Sum 4 (fromList [("a", 1), ("y", 1)]))) empty empty ["x1", "x2", "x3"] oneConjunct1MapVars) defaultNames) @?= [oneConjunct1Graph]
+    (cleanGraph (fst (fst $ runState (goOneConjunct (Invoke "fun" invoke1Terms Ann.Unfold) oneConjunct2MapDefs oneConjunct2MapConditions ["x", "y", "z"] (fromList [("x", "x"), ("y", "y"), ("z", "z")])) defaultNames)!! 0) ["x", "y", "z"]) @?= invoke1Graph
+    (cleanGraph (fst (fst $ runState (goOneConjunct (Invoke "fun" invoke2Terms Ann.Unfold) oneConjunct2MapDefs oneConjunct3MapConditions ["x", "y", "z"] (fromList [("x", "x"), ("y", "y"), ("z", "z")])) defaultNames)!! 0) ["x", "y", "z"]) @?= invoke2Graph
+    (fst (fst $ runState (goOneConjunct (Invoke "fun" invoke3Terms Ann.Unfold) oneConjunct4MapDefs oneConjunct4MapConditions ["x", "a"] (fromList [("x", "x"), ("a", "a")])) defaultNames) !! 0) @?= oneConjunct4Graph
 
 goBody1MapConditions = fromList [("fun", ConditionDisj [ConditionConj [(Condition (Eq "y" "z")), (Condition (Eq "z" "y")), (Condition (Lt "y" "x"))]]), ("fun1", ConditionDisj [ConditionConj [(Condition (Lt "z" "x"))]])]
 goBody1MapDefs = fromList [("fun", AnnotatedDef "fun" ["x", "y", "z"] ((Sum 0 empty) :=: (Sum 1 empty)) [Dynamic, Dynamic, Dynamic]), ("fun1", AnnotatedDef "fun1" ["x", "y", "z"] ((Sum 0 empty) :=: (Sum 1 empty)) [Dynamic, Dynamic, Dynamic])] 
@@ -88,11 +88,11 @@ tr4 = goBody (Invoke "fun" invoke1Terms Ann.Unfold) goBody1MapDefs goBody1MapCon
 
 invokeBodyTerms = [(Sum 0 (fromList [("x'", 1)])), (Sum 0 (fromList [("x", 1)])), (Sum 1 (fromList [("z", 2)]))]
 goBody2MapVars = fromList [("x", "x"), ("y", "y"), ("z", "z"), ("x'", "x'")]
-goBody2MapConditionsRes = ConditionDisj [ConditionConj [(Condition (Eq "x" "x")), (Condition (Eq "y" "y")), (Condition (Eq "x'" "x'")), (Condition (Lt "x" "x'")), (Condition (Lt "z" "x'")), (Condition (Lt "y" "x'"))]] 
+goBody2MapConditionsRes = ConditionDisj [ConditionConj [(Condition (Lt "x" "x'")), (Condition (Lt "z" "x'")), (Condition (Lt "y" "x'"))]] 
 
 invokeBody2Terms = [(Sum 0 (fromList [("x'", 1)])), (Sum 0 (fromList [("x", 1)])), (Sum 0 (fromList [("y'", 1)]))]
 goBody3MapVars = fromList [("x", "x"), ("y", "y"), ("z", "z"), ("x'", "x'"), ("y'", "y'")]
-goBody3MapConditionsRes = ConditionDisj [ConditionConj [(Condition (Eq "x" "x")), (Condition (Eq "z" "z")), (Condition (Eq "y'" "y'")), (Condition (Lt "z" "y'")), (Condition (Lt "y'" "x'")), (Condition (Eq "y" "y")), (Condition (Eq "x'" "x'")), (Condition (Lt "x" "x'")), (Condition (Lt "z" "x'")), (Condition (Lt "y" "x'"))]]
+goBody3MapConditionsRes = ConditionDisj [ConditionConj [(Condition (Lt "z" "y'")), (Condition (Lt "y'" "x'")), (Condition (Lt "x" "x'")), (Condition (Lt "z" "x'")), (Condition (Lt "y" "x'"))]]
 
 
 
@@ -106,10 +106,31 @@ unit_goBody = do
 
 defAppend = AnnotatedDef "append" ["x", "y", "z"] (Disjunction (Conjunction ((Sum 0 (fromList [("x", 1)])) :=: (Sum 0 empty)) ((Sum 0 (fromList [("y", 1)])) :=: (Sum 0 (fromList [("z", 1)]))) []) (Invoke "append" [(Sum (-1) (fromList [("x", 1)])), (Sum (0) (fromList [("y", 1)])), (Sum (-1) (fromList [("z", 1)]))] Ann.Unfold) []) [Dynamic, Dynamic, Static]
 condsResAppend = ConditionDisj [ConditionConj [(Condition (Eq "y" "z"))]]
-resMapAppend1 = fromList [("append", ConditionDisj [ConditionConj [Condition (Eq "y" "y"),Condition (Eq "y" "z"),Condition (Eq "z" "y"),Condition (Eq "z" "z")]])]
+resMapAppend1 = fromList [("append", ConditionDisj [ConditionConj [Condition (Eq "y" "z"),Condition (Eq "z" "y")]])]
 
 tr5 = (goOneDef defAppend (fromList [("append", defAppend)]) empty) 
 
+invokeRevers = (Invoke "revers" [(Sum 0 (fromList [("t", 1)])), (Sum 0 (fromList [("rt", 1)]))]) Ann.Unfold
+invokeAppend = (Invoke "append" [(Sum 0 (fromList [("rt", 1)])), (Sum 2 (fromList [("h", 1)])), (Sum 0 (fromList [("y", 1)]))]) Ann.Unfold
+defRevers = AnnotatedDef "revers" ["x", "y"] (Fresh "h" (Fresh "t" (Fresh "rt" (Disjunction (Conjunction ((Sum 0 (fromList [("x", 1)])) :=: (Sum 1 empty)) ((Sum 0 (fromList [("y", 1)])) :=: (Sum 1 empty)) []) (Conjunction ((Sum 0 (fromList [("x", 1)])) :=: (Sum 1 (fromList [("h", 1), ("t", 1)]))) invokeRevers [invokeAppend]) [])))) [Dynamic, Static]
+-- defRevers = AnnotatedDef "revers" ["x", "y"] (Conjunction ((Sum 0 (fromList [("x", 1)])) :=: (Sum 1 empty)) ((Sum 0 (fromList [("y", 1)])) :=: (Sum 1 empty)) []) [Dynamic, Static]
+
+resMapAppRev1 = fromList [("revers", ConditionDisj [ConditionConj [Condition (Eq "x" "y"), Condition (Eq "y" "x")]])]
+resMapAppRev2 = fromList [("revers", ConditionDisj [ConditionConj [Condition (Eq "x" "y"), Condition (Eq "y" "x")]]), ("append", ConditionDisj [ConditionConj [Condition (Eq "y" "z"),Condition (Eq "z" "y")]])]
+
 unit_goOneCycle = do 
-    trace ("AAAAA" ++ show tr5) $ show (goOneDef defAppend (fromList [("append", defAppend)]) empty) @?= show resMapAppend1
-    trace ("BBBBB" ++ show tr5) $ show (goOneCycle [defAppend] (fromList [("append", defAppend)]) empty) @?= show resMapAppend1
+    trace ("AAAAA" ++ show tr5) $ (goOneDef defAppend (fromList [("append", defAppend)]) empty) @?= resMapAppend1
+    trace ("BBBBB" ++ show tr5) $ (goOneCycle [defAppend] (fromList [("append", defAppend)]) empty) @?= resMapAppend1
+    (goOneDef defRevers (fromList [("append", defAppend), ("revers", defRevers)]) empty) @?= resMapAppRev1
+    (goOneCycle [defRevers] (fromList [("append", defAppend), ("revers", defRevers)]) empty) @?= resMapAppRev1
+    (goOneCycle [defRevers, defAppend] (fromList [("append", defAppend), ("revers", defRevers)]) empty) @?= resMapAppRev2
+
+
+
+resMapGo1 = fromList [("append", ConditionDisj [ConditionConj [Condition (Eq "y" "z"),Condition (Eq "z" "y")], ConditionConj [Condition (Lt "y" "z")]])]
+resMapGo2 = fromList [("append", ConditionDisj [ConditionConj [Condition (Eq "y" "z"),Condition (Eq "z" "y")], ConditionConj [Condition (Lt "y" "z")]]), ("revers", ConditionDisj [ConditionConj []])]
+
+unit_go = do 
+    (go [defAppend] (fromList [("append", defAppend)]) empty) @?= resMapGo1
+    (go [defRevers] (fromList [("append", defAppend), ("revers", defRevers)]) resMapGo1) @?= resMapGo2
+    (go [defRevers, defAppend] (fromList [("append", defAppend), ("revers", defRevers)]) empty) @?= resMapGo2

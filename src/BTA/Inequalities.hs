@@ -2,7 +2,7 @@
 
 module BTA.Inequalities where 
 
-import Prelude hiding (lookup)
+import Prelude hiding (lookup, null)
 import BTA.SizeConversion
 import AnnotatedProgram
 import Data.Map hiding (map, foldl, difference, filter)
@@ -21,26 +21,26 @@ import Control.Monad.State
 go :: Show a => Ord a => [AnnotatedDef AbstractG a] -> Map (String) (AnnotatedDef AbstractG a) -> Map (String) (Conditions a) -> Map (String) (Conditions a)
 go defs mapDefs mapConditions = 
     let newMapConditions = goOneCycle defs mapDefs mapConditions in
-    case (newMapConditions Prelude.== mapConditions) of 
+    case (newMapConditions == mapConditions) of 
         True -> newMapConditions
         False -> go defs mapDefs newMapConditions
 
 
 goOneCycle :: Show a => Ord a => [AnnotatedDef AbstractG a] -> Map (String) (AnnotatedDef AbstractG a) -> Map (String) (Conditions a) -> Map (String) (Conditions a)
-goOneCycle [] mapDefs mapConditions = trace "mapConditions" mapConditions
+goOneCycle [] mapDefs mapConditions = mapConditions
 goOneCycle (def : otherDefs) mapDefs mapConditions = 
-    goOneCycle otherDefs mapDefs (goOneDef def mapDefs $ trace "Here" mapConditions)
+    goOneCycle otherDefs mapDefs (goOneDef def mapDefs $ mapConditions)
 
 
 goOneDef :: Show a => Ord a => (AnnotatedDef AbstractG a) ->  Map (String) (AnnotatedDef AbstractG a) -> Map (String) (Conditions a) -> Map (String) (Conditions a)
 goOneDef def@(AnnotatedDef name args body annotations) mapDefs mapConditions = 
-    let (namesInt, fn) = getNames (length args) $ trace "defaultNames" defaultNames :: ([Int], FreshNames) in 
-    let namesStr = map show (trace "namesInt" namesInt) :: [String] in 
+    let (namesInt, fn) = getNames (length args) $ defaultNames :: ([Int], FreshNames) in 
+    let namesStr = map show (namesInt) :: [String] in 
     let mapVars = fromList $ zip args namesStr in 
-    let condsString = (goBody body mapDefs mapConditions namesStr namesStr fn (trace "mapVars" mapVars)) in 
+    let condsString = (goBody body mapDefs mapConditions namesStr namesStr fn (mapVars)) in 
     let mapInverse = fromList . map (\(x, y) -> (y, x)) . toList $ mapVars in 
-    let condsA = (fmap (\x -> fromJust $ lookup x mapInverse) condsString) in 
-    insert name (getNewDisjunctionOr (trace "condsA" condsA) (fromMaybe (ConditionDisj []) (lookup name mapConditions))) mapConditions
+    let condsA = (fmap (\x -> fromJust $ lookup x mapInverse) (trace (show condsString) condsString)) in 
+    insert name (getNewDisjunctionOr condsA (fromMaybe (ConditionDisj []) (lookup name mapConditions))) mapConditions
 
 
 getCond :: Ord a => AbstractTerm a -> AbstractTerm a -> a -> a -> Maybe (Condition a)
@@ -75,7 +75,7 @@ handleOneInvokeConjunct :: [AbstractTerm String] -> [String] -> [String] -> Cond
 handleOneInvokeConjunct terms newVars oldVars conditions = 
     let initGraph = getFromConjunction conditions (oldVars ++ newVars) in 
     let conds = concatMap getCondsOneTerm (zip newVars terms) in 
-    let resGraph =  supplement $ foldl (\graph cond@(a, b, term) -> trace (show cond) $ addWeightCond graph a b term) initGraph conds in
+    let resGraph =  supplement $ foldl (\graph cond@(a, b, term) -> addWeightCond graph a b term) initGraph conds in
     resGraph 
     -- foldl removeVertex resGraph newVars
 
@@ -95,28 +95,33 @@ handleInvokeUnfold _ _ _ args _ = do
     return [Graph args empty]
 
                                         
-goOneConjunct :: Ord a => (AbstractG a) -> Map (String) (AnnotatedDef AbstractG a) -> Map (String) (Conditions a) -> [String] -> Map a String -> State FreshNames [Graph String]
-goOneConjunct invoke@(Invoke name terms ann) mapDefs mapConditions args mapVars = 
-    handleInvokeUnfold invoke mapDefs mapConditions args mapVars 
+goOneConjunct :: Ord a => (AbstractG a) -> Map (String) (AnnotatedDef AbstractG a) -> Map (String) (Conditions a) -> [String] -> Map a String -> State FreshNames ([Graph String], [(String, Int)])
+goOneConjunct invoke@(Invoke name terms ann) mapDefs mapConditions args mapVars = do
+    graphs <- handleInvokeUnfold invoke mapDefs mapConditions args mapVars
+    return (graphs, [])
 -- goOneConjunct delay@(Delay g) mapDefs mapConditions args fn mapVars  = 
 --     goOneConjunct g mapDefs mapConditions args fn mapVars 
 goOneConjunct (term1 :=: term2) mapDefs mapConditions args mapVars = do 
     let term1New@(Sum n1 mp1) = termfmap (\x -> fromMaybe "" (lookup x mapVars)) term1
     let term2New = termfmap (\x -> fromMaybe "" (lookup x mapVars)) term2
-    let conds = getCondsTermToTerm (trace (show term1New) term1New) (trace (show term2New) term2New)
-    let smth = concatMap (getCondsOneTerm . (\var -> trace (show (var, (Sum 0 (fromList [(var, 1)])) <> (difference term2New term1New))) $ (var, (Sum 0 (fromList [(var, 1)])) <> (difference term2New term1New)))) $ keys mp1 
-    return [supplement $ foldl (\graph cond@(a, b, term) -> trace (show cond) $ addWeightCond graph a b term) (Graph args empty) smth]
+    let constants = map (\(var, Sum n mp) -> (var, n)) $ filter (\(var, Sum n mp) -> null mp) [(var, ((Sum 0 (fromList [(var, 1)])) <> (difference term2New term1New))) | var <- args]
+    let conds = getCondsTermToTerm (term1New) (term2New)
+    let smth = concatMap (getCondsOneTerm . (\var -> (var, (Sum 0 (fromList [(var, 1)])) <> (difference term2New term1New)))) $ keys mp1 
+    return ([supplement $ foldl (\graph cond@(a, b, term) -> addWeightCond graph a b term) (Graph args empty) smth], constants)
 
 
 goConjunction :: Ord a => (AbstractG a) -> Map (String) (AnnotatedDef AbstractG a) -> Map (String) (Conditions a) -> [String] -> [String] -> Map a String -> State FreshNames (Conditions String)
 goConjunction (Conjunction g1 g2 lstG) mapDefs mapConditions baseArgs args mapVars = do 
     fn <- get 
     let graph = Graph args empty
-    variousGraphs <- mapM (\goal -> (goOneConjunct goal mapDefs mapConditions args mapVars)) (g1 : g2 : lstG)
-    let variousGraphSequences = foldl (\seqs elems -> [(elem : seq) | seq <- seqs, elem <- elems]) [[]] (trace ("Graphs " ++ show variousGraphs) variousGraphs)
-    let veriousGraphsUnited = map (\seq -> foldl unionGraphs (Graph args empty) seq) (trace (show variousGraphSequences) variousGraphSequences) 
-    let variousGraphsCleaned = map (\graph -> cleanGraph (supplement graph) baseArgs) veriousGraphsUnited 
-    return $ foldl getNewDisjunctionOr (ConditionDisj []) (map getConditionsFromGraph (trace (show variousGraphsCleaned) variousGraphsCleaned))
+    resS <- mapM (\goal -> (goOneConjunct goal mapDefs mapConditions args mapVars)) (g1 : g2 : lstG)
+    let (variousGraphs, constants1) = unzip resS
+    let constants = concat (trace ("CONSTANTS" ++ show constants1) constants1)
+    let variousGraphSequences = foldl (\seqs elems -> [(elem : seq) | seq <- seqs, elem <- elems]) [[]] (variousGraphs)
+    let variousGraphsUnited = map (\seq -> foldl unionGraphs (Graph args empty) seq) (variousGraphSequences) 
+    let variousGraphsWithConst = map (\curg -> foldl (\g ((v1 ,n1), (v2, n2)) -> addWeightCond g v1 v2 (Sum (n2 - n1) empty)) curg [(v1, v2) | v1 <- constants, v2 <- constants]) variousGraphsUnited
+    let variousGraphsCleaned = map (\graph -> cleanGraph (supplement graph) baseArgs) variousGraphsWithConst 
+    return $ foldl getNewDisjunctionOr (ConditionDisj []) (map getConditionsFromGraph (variousGraphsCleaned))
     
 
 goBody :: Ord a => (AbstractG a) -> Map (String) (AnnotatedDef AbstractG a) -> Map (String) (Conditions a) -> [String] -> [String] -> FreshNames -> Map a String -> (Conditions String) 
@@ -139,9 +144,9 @@ goBody (Fresh x g) mapDefs mapConditions baseArgs args fn mapVars =
 goBody (Delay g) mapDefs mapConditions baseArgs args fn mapVars = 
     goBody g mapDefs mapConditions baseArgs args fn mapVars
 goBody goal@(term1 :=: term2) mapDefs mapConditions baseArgs args fn mapVars = 
-    let graphs = fst $ runState (goOneConjunct goal mapDefs mapConditions args mapVars) fn in 
+    let graphs = fst $ fst $ runState (goOneConjunct goal mapDefs mapConditions args mapVars) fn in 
     ConditionDisj $ map (\graph -> getConditionsFromGraph $ cleanGraph (supplement graph) baseArgs) graphs
 goBody goal@(Invoke name terms ann) mapDefs mapConditions baseArgs args fn mapVars = 
-    let graphs = fst $ runState (goOneConjunct goal mapDefs mapConditions args mapVars) fn in 
+    let graphs = fst $ fst $ runState (goOneConjunct goal mapDefs mapConditions args mapVars) fn in 
     foldl getNewDisjunctionOr (ConditionDisj []) (map (\graph -> getConditionsFromGraph $ cleanGraph (supplement graph) baseArgs) graphs)
     

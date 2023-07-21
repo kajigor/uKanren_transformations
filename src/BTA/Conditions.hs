@@ -14,16 +14,16 @@ data Conditions a =
     Condition (Cond.Condition a)
     deriving (Functor, Show)
 
-instance (Eq a) => Eq (Conditions a) 
-(==) conj1@(ConditionConj conds1) conj2@(ConditionConj conds2) = (isAttachment conj1 conj2) && (isAttachment conj2 conj1)
-(==) disj1@(ConditionDisj conds1) disj2@(ConditionDisj conds2) = (isAttachment disj1 disj2) && (isAttachment disj2 disj1)
-(==) (Condition cond1) (Condition cond2) = cond1 Prelude.== cond2
-(==) _ _ = False
+instance (Eq a) => Eq (Conditions a) where
+    (==) conj1@(ConditionConj conds1) conj2@(ConditionConj conds2) = (isAttachment conj1 conj2) && (isAttachment conj2 conj1)
+    (==) disj1@(ConditionDisj conds1) disj2@(ConditionDisj conds2) = (isAttachment disj1 disj2) && (isAttachment disj2 disj1)
+    (==) (Condition cond1) (Condition cond2) = cond1 == cond2
+    (==) _ _ = False
 
 equalConds :: Eq a => Conditions a -> Conditions a -> Bool
 equalConds conj1@(ConditionConj conds1) conj2@(ConditionConj conds2) = (isAttachment conj1 conj2) && (isAttachment conj2 conj1)
 equalConds disj1@(ConditionDisj conds1) disj2@(ConditionDisj conds2) = (isAttachment disj1 disj2) && (isAttachment disj2 disj1)
-equalConds (Condition cond1) (Condition cond2) = cond1 Prelude.== cond2
+equalConds (Condition cond1) (Condition cond2) = cond1 == cond2
 equalConds _ _ = False
 
 isAttachment :: Eq a => Conditions a -> Conditions a -> Bool

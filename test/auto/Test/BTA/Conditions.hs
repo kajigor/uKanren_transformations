@@ -7,6 +7,8 @@ import qualified BTA.Inequalities as Ineq
 import           BTA.Condition
 
 
+condEq = Conds.ConditionDisj [Conds.ConditionConj [(Conds.Condition (Eq "x" "x")), (Conds.Condition (Eq "z" "z")), (Conds.Condition (Eq "y'" "y'")), (Conds.Condition (Lt "z" "y'")), (Conds.Condition (Lt "y'" "x'")), (Conds.Condition (Eq "y" "y")), (Conds.Condition (Eq "x'" "x'")), (Conds.Condition (Lt "x" "x'")), (Conds.Condition (Lt "z" "x'")), (Conds.Condition (Lt "y" "x'"))]]
+
 unit_equalConds = do
     ((Lt "a" "b") == (Lt "a" "b")) @?= True
     ((Lt "c" "d") /= (Lt "a" "b")) @?= True
@@ -18,6 +20,7 @@ unit_equalConds = do
     (Conds.equalConds (Conds.ConditionDisj [] :: Conds.Conditions String) (Conds.ConditionDisj [Conds.ConditionConj [] :: Conds.Conditions String])) @?= False
     (Conds.equalConds (Conds.ConditionDisj [] :: Conds.Conditions String) (Conds.ConditionDisj [Conds.ConditionConj [(Conds.Condition (Eq "a" "a"))]])) @?= False
     (Conds.equalConds (Conds.ConditionDisj [] :: Conds.Conditions String) (Conds.ConditionDisj [] :: Conds.Conditions String)) @?= True
+    (condEq == condEq) @?= True
 
 
 unit_attachment = do

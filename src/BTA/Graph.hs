@@ -4,10 +4,10 @@ module BTA.Graph where
 import Prelude hiding (lookup)
 import Data.Map hiding (map, foldl, foldr)
 import qualified Data.List as List
-import BTA.Conditions hiding ((==))
+import BTA.Conditions 
 import BTA.SizeConversion
 import Data.Maybe
-import BTA.Condition hiding ((==))
+import BTA.Condition
 
 
 data TypeEdge = 
@@ -87,7 +87,7 @@ getState graph (a, b) | (positivePath a b graph) && (zeroPath a b graph) = [(Con
 
 getConditionsFromGraph :: Ord a => Graph a -> Conditions a 
 getConditionsFromGraph graph@(Graph vars graphMap) = 
-    let tuples = [(a, b) | a <- vars, b <- vars] in 
+    let tuples = [(a, b) | a <- vars, b <- vars, a/= b] in 
     let conjuncts = concatMap (getState graph) tuples in 
     ConditionDisj [ConditionConj conjuncts]
 
