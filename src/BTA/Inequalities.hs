@@ -39,7 +39,7 @@ goOneDef def@(AnnotatedDef name args body annotations) mapDefs mapConditions =
     let mapVars = fromList $ zip args namesStr in 
     let condsString = (goBody body mapDefs mapConditions namesStr namesStr fn (mapVars)) in 
     let mapInverse = fromList . map (\(x, y) -> (y, x)) . toList $ mapVars in 
-    let condsA = (fmap (\x -> fromJust $ lookup x mapInverse) (trace (show condsString) condsString)) in 
+    let condsA = (fmap (\x -> fromJust $ lookup x mapInverse) condsString) in 
     insert name (getNewDisjunctionOr condsA (fromMaybe (ConditionDisj []) (lookup name mapConditions))) mapConditions
 
 
@@ -116,7 +116,7 @@ goConjunction (Conjunction g1 g2 lstG) mapDefs mapConditions baseArgs args mapVa
     let graph = Graph args empty
     resS <- mapM (\goal -> (goOneConjunct goal mapDefs mapConditions args mapVars)) (g1 : g2 : lstG)
     let (variousGraphs, constants1) = unzip resS
-    let constants = concat (trace ("CONSTANTS" ++ show constants1) constants1)
+    let constants = concat constants1
     let variousGraphSequences = foldl (\seqs elems -> [(elem : seq) | seq <- seqs, elem <- elems]) [[]] (variousGraphs)
     let variousGraphsUnited = map (\seq -> foldl unionGraphs (Graph args empty) seq) (variousGraphSequences) 
     let variousGraphsWithConst = map (\curg -> foldl (\g ((v1 ,n1), (v2, n2)) -> addWeightCond g v1 v2 (Sum (n2 - n1) empty)) curg [(v1, v2) | v1 <- constants, v2 <- constants]) variousGraphsUnited

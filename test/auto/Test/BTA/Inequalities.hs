@@ -97,14 +97,14 @@ goBody3MapConditionsRes = ConditionDisj [ConditionConj [(Condition (Lt "z" "y'")
 
 
 unit_goBody = do 
-    (equalConds (trace (show tr) $ goBody (Conjunction (Invoke "fun" invoke1Terms Ann.Unfold) (Invoke "fun1" invoke2Terms Ann.Unfold) []) goBody1MapDefs goBody1MapConditions ["x", "y", "z"] ["x", "y", "z"] defaultNames goBody1MapVars) goBody1MapConditionsRes) @?= True
-    (equalConds (trace (show tr1) $ goBody (Conjunction ((Sum 0 (fromList [("x'", 1)])) :=: (Sum 1 (fromList [("x", 1), ("y", 1)]))) (Invoke "fun1" invokeBodyTerms Ann.Unfold) []) goBody1MapDefs goBody1MapConditions ["x", "y", "z", "x'"] ["x", "y", "z", "x'"] defaultNames goBody2MapVars) goBody2MapConditionsRes) @?= True
-    (equalConds (trace (show tr2) $ goBody (Conjunction ((Sum 0 (fromList [("x'", 1)])) :=: (Sum 1 (fromList [("x", 1), ("y", 1)]))) (Invoke "fun1" invokeBody2Terms Ann.Unfold) [(Sum 0 (fromList [("y'", 1)])) :=: (Sum 1 (fromList [("z", 2)]))]) goBody1MapDefs goBody1MapConditions ["x", "y", "z", "x'", "y'"] ["x", "y", "z", "x'", "y'"] defaultNames goBody3MapVars) goBody3MapConditionsRes) @?= True
-    (equalConds (trace (show tr3) $ goBody (Fresh "x'" (Fresh "y'" (Conjunction ((Sum 0 (fromList [("x'", 1)])) :=: (Sum 1 (fromList [("x", 1), ("y", 1)]))) (Invoke "fun" invokeBody2Terms Ann.Unfold) [(Sum 0 (fromList [("y'", 1)])) :=: (Sum 1 (fromList [("z", 2)]))]))) goBody1MapDefs goBody1MapConditions ["x", "y", "z"] ["x", "y", "z"] defaultNames goBody1MapVars) goBody1MapConditionsRes) @?= True
+    (equalConds (goBody (Conjunction (Invoke "fun" invoke1Terms Ann.Unfold) (Invoke "fun1" invoke2Terms Ann.Unfold) []) goBody1MapDefs goBody1MapConditions ["x", "y", "z"] ["x", "y", "z"] defaultNames goBody1MapVars) goBody1MapConditionsRes) @?= True
+    (equalConds (goBody (Conjunction ((Sum 0 (fromList [("x'", 1)])) :=: (Sum 1 (fromList [("x", 1), ("y", 1)]))) (Invoke "fun1" invokeBodyTerms Ann.Unfold) []) goBody1MapDefs goBody1MapConditions ["x", "y", "z", "x'"] ["x", "y", "z", "x'"] defaultNames goBody2MapVars) goBody2MapConditionsRes) @?= True
+    (equalConds (goBody (Conjunction ((Sum 0 (fromList [("x'", 1)])) :=: (Sum 1 (fromList [("x", 1), ("y", 1)]))) (Invoke "fun1" invokeBody2Terms Ann.Unfold) [(Sum 0 (fromList [("y'", 1)])) :=: (Sum 1 (fromList [("z", 2)]))]) goBody1MapDefs goBody1MapConditions ["x", "y", "z", "x'", "y'"] ["x", "y", "z", "x'", "y'"] defaultNames goBody3MapVars) goBody3MapConditionsRes) @?= True
+    (equalConds (goBody (Fresh "x'" (Fresh "y'" (Conjunction ((Sum 0 (fromList [("x'", 1)])) :=: (Sum 1 (fromList [("x", 1), ("y", 1)]))) (Invoke "fun" invokeBody2Terms Ann.Unfold) [(Sum 0 (fromList [("y'", 1)])) :=: (Sum 1 (fromList [("z", 2)]))]))) goBody1MapDefs goBody1MapConditions ["x", "y", "z"] ["x", "y", "z"] defaultNames goBody1MapVars) goBody1MapConditionsRes) @?= True
     (equalConds (goBody (Fresh "x'" (Fresh "y'" (Conjunction ((Sum 0 (fromList [("x'", 1)])) :=: (Sum 1 (fromList [("x", 1), ("y", 1)]))) (Invoke "fun" invokeBody2Terms Ann.Unfold) [(Sum 0 (fromList [("y'", 1)])) :=: (Sum 1 (fromList [("z", 2)]))]))) goBody1MapDefs empty ["x", "y", "z"] ["x", "y", "z"] defaultNames goBody1MapVars) (ConditionDisj [])) @?= True
-    (equalConds (trace (show tr4) $ goBody (Invoke "fun" invoke1Terms Ann.Unfold) goBody1MapDefs goBody1MapConditions ["x", "y", "z"] ["x", "y", "z"] defaultNames goBody1MapVars) goBody1MapConditionsRes) @?= True
+    (equalConds (goBody (Invoke "fun" invoke1Terms Ann.Unfold) goBody1MapDefs goBody1MapConditions ["x", "y", "z"] ["x", "y", "z"] defaultNames goBody1MapVars) goBody1MapConditionsRes) @?= True
 
-defAppend = AnnotatedDef "append" ["x", "y", "z"] (Disjunction (Conjunction ((Sum 0 (fromList [("x", 1)])) :=: (Sum 0 empty)) ((Sum 0 (fromList [("y", 1)])) :=: (Sum 0 (fromList [("z", 1)]))) []) (Invoke "append" [(Sum (-1) (fromList [("x", 1)])), (Sum (0) (fromList [("y", 1)])), (Sum (-1) (fromList [("z", 1)]))] Ann.Unfold) []) [Dynamic, Dynamic, Static]
+defAppend = AnnotatedDef "append" ["x", "y", "z"] (Disjunction (Conjunction ((Sum 0 (fromList [("x", 1)])) :=: (Sum 0 empty)) ((Sum 0 (fromList [("y", 1)])) :=: (Sum 0 (fromList [("z", 1)]))) []) (Invoke "append" [(Sum (-1) (fromList [("x", 1)])), (Sum (0) (fromList [("y", 1)])), (Sum (-1) (fromList [("z", 1)]))] Ann.Unfold) []) [Dynamic, Static, Static]
 condsResAppend = ConditionDisj [ConditionConj [(Condition (Eq "y" "z"))]]
 resMapAppend1 = fromList [("append", ConditionDisj [ConditionConj [Condition (Eq "y" "z"),Condition (Eq "z" "y")]])]
 
@@ -113,14 +113,13 @@ tr5 = (goOneDef defAppend (fromList [("append", defAppend)]) empty)
 invokeRevers = (Invoke "revers" [(Sum 0 (fromList [("t", 1)])), (Sum 0 (fromList [("rt", 1)]))]) Ann.Unfold
 invokeAppend = (Invoke "append" [(Sum 0 (fromList [("rt", 1)])), (Sum 2 (fromList [("h", 1)])), (Sum 0 (fromList [("y", 1)]))]) Ann.Unfold
 defRevers = AnnotatedDef "revers" ["x", "y"] (Fresh "h" (Fresh "t" (Fresh "rt" (Disjunction (Conjunction ((Sum 0 (fromList [("x", 1)])) :=: (Sum 1 empty)) ((Sum 0 (fromList [("y", 1)])) :=: (Sum 1 empty)) []) (Conjunction ((Sum 0 (fromList [("x", 1)])) :=: (Sum 1 (fromList [("h", 1), ("t", 1)]))) invokeRevers [invokeAppend]) [])))) [Dynamic, Static]
--- defRevers = AnnotatedDef "revers" ["x", "y"] (Conjunction ((Sum 0 (fromList [("x", 1)])) :=: (Sum 1 empty)) ((Sum 0 (fromList [("y", 1)])) :=: (Sum 1 empty)) []) [Dynamic, Static]
 
 resMapAppRev1 = fromList [("revers", ConditionDisj [ConditionConj [Condition (Eq "x" "y"), Condition (Eq "y" "x")]])]
 resMapAppRev2 = fromList [("revers", ConditionDisj [ConditionConj [Condition (Eq "x" "y"), Condition (Eq "y" "x")]]), ("append", ConditionDisj [ConditionConj [Condition (Eq "y" "z"),Condition (Eq "z" "y")]])]
 
 unit_goOneCycle = do 
-    trace ("AAAAA" ++ show tr5) $ (goOneDef defAppend (fromList [("append", defAppend)]) empty) @?= resMapAppend1
-    trace ("BBBBB" ++ show tr5) $ (goOneCycle [defAppend] (fromList [("append", defAppend)]) empty) @?= resMapAppend1
+    (goOneDef defAppend (fromList [("append", defAppend)]) empty) @?= resMapAppend1
+    (goOneCycle [defAppend] (fromList [("append", defAppend)]) empty) @?= resMapAppend1
     (goOneDef defRevers (fromList [("append", defAppend), ("revers", defRevers)]) empty) @?= resMapAppRev1
     (goOneCycle [defRevers] (fromList [("append", defAppend), ("revers", defRevers)]) empty) @?= resMapAppRev1
     (goOneCycle [defRevers, defAppend] (fromList [("append", defAppend), ("revers", defRevers)]) empty) @?= resMapAppRev2

@@ -7,17 +7,22 @@ import qualified Data.List as List
 import BTA.Conditions 
 import BTA.SizeConversion
 import Data.Maybe
+import Data.Bifunctor
 import BTA.Condition
+import Debug.Trace
 
 
 data TypeEdge = 
     Arc | 
     WeightedArc 
-    deriving (Eq, Show)
+    deriving (Eq, Show, Ord)
 
 data Graph a = 
     Graph [a] (Map (a, a) (AbstractTerm String, TypeEdge))
-    deriving (Eq, Show)
+    deriving (Eq, Show, Ord)
+
+graphfmap :: Ord b => (a -> b) -> Graph a -> Graph b 
+graphfmap f (Graph vars mp) = (Graph (map f vars) (mapKeys (bimap f f) mp))
 
 addCond :: Ord a => (Map (a, a) (AbstractTerm String, TypeEdge)) -> Condition a -> (Map (a, a) (AbstractTerm String, TypeEdge))
 addCond mp (Lt a b) = (insert (b, a) (Sum 1 empty, Arc) mp)
@@ -49,6 +54,13 @@ positivePath a b graph@(Graph vars graphMap) =
     let perms = concatMap List.permutations subs in 
     any (isPositive . (getPathLength graphMap) . (\x -> [a] ++ x ++ [b])) perms
 
+atLeastZeroPath :: Ord a => a -> a -> Graph a -> Bool 
+atLeastZeroPath a b graph@(Graph vars graphMap) = 
+    let availableVert = List.delete a (List.delete b vars) in
+    let subs = List.subsequences availableVert in 
+    let perms = concatMap List.permutations subs in 
+    any ((not . isPositive . negative) . (getPathLength graphMap) . (\x -> [a] ++ x ++ [b])) perms
+
 
 zeroPath :: Ord a => a -> a -> Graph a -> Bool 
 zeroPath a b graph@(Graph vars graphMap) = 
@@ -72,6 +84,9 @@ supplement graph@(Graph vars _) =
 
 addVertex :: Ord a => Graph a -> a -> Graph a
 addVertex (Graph vars graphMap) var = (Graph (var : vars) graphMap)
+
+addVertexes :: Ord a => [a] -> Graph a -> Graph a 
+addVertexes vars graph = foldl addVertex graph vars
 
 removeVertex :: Ord a => Graph a -> a -> Graph a 
 removeVertex (Graph vars graphMap) vertex = 

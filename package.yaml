@@ -47,6 +47,7 @@ dependencies:
 - optparse-applicative
 - prettyprinter
 - template-haskell >= 2.19.0.0
+- split
 
 ghc-options:
   - -fwarn-unused-imports
