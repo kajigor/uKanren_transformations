@@ -35,7 +35,7 @@ evalo st fm u =
     (ando v w u & Delay evalo st x v & Delay evalo st y w & fm == Conj x y) |
     (implicationo v w u & Delay evalo st x v & Delay evalo st y w & fm == Impl x y);
 
-filter (static static static)
+filter (static static dynamic)
 elemo n s v =
   fresh h, t, n' in
     (n == Zero & s == (h :: t) & v == h) |

@@ -2,8 +2,9 @@
 module BTA.Graph where
 
 import Prelude hiding (lookup)
-import Data.Map hiding (map, foldl, foldr)
+import Data.Map hiding (map, foldl, foldr, filter)
 import qualified Data.List as List
+import qualified Data.Set as Set
 import BTA.Conditions 
 import BTA.SizeConversion
 import Data.Maybe
@@ -41,33 +42,33 @@ getPathLength graphMap (start : path) | (any (\(a, b) -> not (member (a, b) grap
                                       | otherwise = (foldl (<>) (Sum 0 empty) (map (\x -> fst $ fromJust $ lookup x graphMap) (zip (start : path) path)))
 
 
-checkZeroPath :: Ord a => Map (a, a) (AbstractTerm String, TypeEdge) -> [a] -> Bool 
-checkZeroPath graphMap (start : path) = 
-    let pathMaybe = (map (\x -> lookup x graphMap) (zip (start : path) path)) in 
-    let path = map fromJust pathMaybe in 
-    (all ( ((==) WeightedArc) . snd) path)
+zeroPathHelp :: Ord a => AbstractTerm String -> Int -> Graph a -> a -> a -> Set.Set a -> Bool
+zeroPathHelp (Sum 0 mp) n graph a b visited | a == b && mp == empty = True
+zeroPathHelp curSum 0 graph a b visited = False
+zeroPathHelp curSum n graph@(Graph vars graphMap) a b visited = 
+    let next_pos = filter (\v -> member (a, v) graphMap && (not $ Set.member v visited)) vars in 
+    any (\nxt -> zeroPathHelp (curSum <> (fst $ graphMap ! (a, nxt))) (n - 1) graph nxt b (Set.insert nxt visited)) $ filter (\v -> (snd $ graphMap ! (a, v)) == WeightedArc) next_pos
+
+
+positivePathHelp :: Ord a => AbstractTerm String -> Int -> Graph a -> a -> a -> Set.Set a -> Bool
+positivePathHelp curSum n graph a b visited | isPositive curSum && a == b = True
+positivePathHelp curSum 0 graph a b visited = False
+positivePathHelp curSum n graph@(Graph vars graphMap) a b visited = 
+    let next_pos = filter (\v -> member (a, v) graphMap && (not $ Set.member v visited)) vars in 
+    any (\nxt -> positivePathHelp (curSum <> (fst $ graphMap ! (a, nxt))) (n - 1) graph nxt b (Set.insert nxt visited)) next_pos
 
 positivePath :: Ord a => a -> a -> Graph a -> Bool 
 positivePath a b graph@(Graph vars graphMap) = 
-    let availableVert = List.delete a (List.delete b vars) in
-    let subs = List.subsequences availableVert in 
-    let perms = concatMap List.permutations subs in 
-    any (isPositive . (getPathLength graphMap) . (\x -> [a] ++ x ++ [b])) perms
+    positivePathHelp (Sum 0 empty) (length vars - 1) graph a b $ Set.fromList [a]
 
 atLeastZeroPath :: Ord a => a -> a -> Graph a -> Bool 
 atLeastZeroPath a b graph@(Graph vars graphMap) = 
-    let availableVert = List.delete a (List.delete b vars) in
-    let subs = List.subsequences availableVert in 
-    let perms = concatMap List.permutations subs in 
-    any ((not . isPositive . negative) . (getPathLength graphMap) . (\x -> [a] ++ x ++ [b])) perms
+    positivePath a b graph || zeroPath a b graph
 
 
 zeroPath :: Ord a => a -> a -> Graph a -> Bool 
 zeroPath a b graph@(Graph vars graphMap) = 
-    let availableVert = List.delete a (List.delete b vars) in
-    let subs = List.subsequences availableVert in 
-    let perms = concatMap List.permutations subs in 
-    any ((\path -> (getPathLength graphMap path == (Sum 0 empty)) && (checkZeroPath graphMap path)) . (\x -> [a] ++ x ++ [b])) perms
+    zeroPathHelp (Sum 0 empty) (length vars - 1) graph a b $ Set.fromList [a]
 
 
 addEdge :: Ord a => Graph a -> (a, a) -> Graph a 
@@ -118,3 +119,7 @@ unionGraphs graph1@(Graph vars1 mp1) graph2@(Graph vars2 mp2) =
 cleanGraph :: Ord a => Graph a -> [a] -> Graph a
 cleanGraph graph@(Graph vars mp) vertexes = 
     foldl removeVertex graph (vars List.\\ vertexes)
+
+withoutPositiveCycle :: Ord a => Graph a -> Bool 
+withoutPositiveCycle graph@(Graph vars mp) = 
+    not $ any (\v -> positivePath v v graph) vars

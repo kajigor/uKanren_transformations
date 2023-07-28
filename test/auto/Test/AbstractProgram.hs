@@ -42,30 +42,30 @@ sumAnn = AnnotatedProgram ([
 
 sumAnnInvoke :: AnnotatedProgram InvA.AnnG S.X
 sumAnnInvoke = AnnotatedProgram ([
-    (AnnotatedDef "fail" [] (InvA.Invoke "fail" [] InvA.Unfold) []),
+    (AnnotatedDef "fail" [] (InvA.Invoke "fail" [] InvA.Memo) []),
     (AnnotatedDef "addo" ["x", "y", "z"] (
     InvA.Disjunction (InvA.Conjunction ((S.V "x") InvA.:=: (S.C "Zero" [])) ((S.V "z") InvA.:=: (S.V "y")) [])
-     (InvA.Fresh "x'" (InvA.Conjunction ((S.V "x") InvA.:=: (S.C "Succ" [S.V "x'"])) (InvA.Invoke "addo" [(S.V "x'"), (S.C "Succ" [S.V "y"]), (S.V "z")] InvA.Unfold) []))
+     (InvA.Fresh "x'" (InvA.Conjunction ((S.V "x") InvA.:=: (S.C "Succ" [S.V "x'"])) (InvA.Invoke "addo" [(S.V "x'"), (S.C "Succ" [S.V "y"]), (S.V "z")] InvA.Memo) []))
      []
      )
       [Static, Dynamic, Dynamic]), 
       (AnnotatedDef "evalo" ["fm", "r"] (
         InvA.Disjunction ((S.V "fm") InvA.:=: (S.C "Num" [(S.V "r")])) 
         (InvA.Fresh "x" (InvA.Fresh "y" (InvA.Fresh "xr" (InvA.Fresh "yr" (
-            InvA.Conjunction (InvA.Invoke "evalo" [(S.V "x"), (S.V "xr")] InvA.Unfold) 
-                (InvA.Invoke "evalo" [(S.V "y"), (S.V "yr")] InvA.Unfold)
-                [((S.V "fm") InvA.:=: (S.C "Sum" [(S.V "x"), (S.V "y")])), (InvA.Invoke "addo" [(S.V "xr"), (S.V "yr"), (S.V "r")] InvA.Unfold)]
+            InvA.Conjunction (InvA.Invoke "evalo" [(S.V "x"), (S.V "xr")] InvA.Memo) 
+                (InvA.Invoke "evalo" [(S.V "y"), (S.V "yr")] InvA.Memo)
+                [((S.V "fm") InvA.:=: (S.C "Sum" [(S.V "x"), (S.V "y")])), (InvA.Invoke "addo" [(S.V "xr"), (S.V "yr"), (S.V "r")] InvA.Memo)]
             )
         )))) []
       ) [Static, Dynamic])
-      ]) (InvA.Fresh "y" (InvA.Invoke "addo" [(S.C "Zero" []), (S.V "y"), (S.C "Succ" [(S.C "Succ" [(S.C "Zero" [])])])] InvA.Unfold))
+      ]) (InvA.Fresh "y" (InvA.Invoke "addo" [(S.C "Zero" []), (S.V "y"), (S.C "Succ" [(S.C "Succ" [(S.C "Zero" [])])])] InvA.Memo))
 
 unit_parseAnnotations = do 
     program <- getAnnotationParser "test/resources/newSyntax/withTypeAnnotations/sum.mk"
     program @?= (Right sumAnn :: Either String (AnnotatedProgram S.G S.X) )
     program1 <- getAnnotationParser "test/resources/newSyntax/withTypeAnnotations/prop.mk"
     let annotations = either (\x -> [[]]) (\x -> (map getAnnotations) $ getDefs x) program1
-    annotations @?= [[], [Static, Static, Dynamic], [Static, Static, Dynamic], [Static, Static], [Static, Static, Dynamic], [Static, Static, Dynamic], [Static, Static, Static]] 
+    annotations @?= [[], [Static, Static, Dynamic], [Static, Static, Dynamic], [Static, Static], [Static, Static, Dynamic], [Static, Static, Dynamic], [Static, Static, Dynamic]] 
     program2 <- getAnnotationParser "test/resources/newSyntax/withTypeAnnotations/incorrect.mk"
     isLeft program2 @?= True
     program3 <- getAnnotationParser "test/resources/newSyntax/withTypeAnnotations/num.mk"
@@ -80,7 +80,7 @@ oneAnnInvoke = (InvA.Fresh "h" (InvA.Fresh "t" (InvA.Fresh "n'"
             [(S.V "v") InvA.:=: (S.V "h")]) 
         (InvA.Conjunction 
             ((S.V "s") InvA.:=: (S.C "Cons" [(S.V "h"), (S.V "t")]))
-            (InvA.Delay (InvA.Invoke "elemo" [(S.V "n'"), (S.V "t"), (S.V "v")] InvA.Unfold)) 
+            (InvA.Delay (InvA.Invoke "elemo" [(S.V "n'"), (S.V "t"), (S.V "v")] InvA.Memo)) 
             [(S.V "n") InvA.:=: (S.C "Succ" [(S.V "n'")])]) 
         []) 
     )))
@@ -121,7 +121,7 @@ appendoAbst = (
             ) (
                 (ABS.Sum 0 (Map.fromList [("xy", 1)])) ABS.:=: (ABS.Sum 1 (Map.fromList [("h", 1), ("ty", 1)]))
             ) [
-                ABS.Invoke "appendo" [(ABS.Sum 0 (Map.fromList [("t", 1)])), (ABS.Sum 0 (Map.fromList [("y", 1)])), (ABS.Sum 0 (Map.fromList [("ty", 1)]))] InvA.Unfold
+                ABS.Invoke "appendo" [(ABS.Sum 0 (Map.fromList [("t", 1)])), (ABS.Sum 0 (Map.fromList [("y", 1)])), (ABS.Sum 0 (Map.fromList [("ty", 1)]))] InvA.Memo
             ]
        ))) 
     )
@@ -134,9 +134,9 @@ reversoAbst = (
             ABS.Conjunction (
                 (ABS.Sum 0 (Map.fromList [("x", 1)])) ABS.:=: (ABS.Sum 1 (Map.fromList [("h", 1), ("t", 1)]))
             ) (
-                (ABS.Invoke "reverso" [(ABS.Sum 0 (Map.fromList [("t", 1)])), (ABS.Sum 0 (Map.fromList [("rt", 1)]))] InvA.Unfold)
+                (ABS.Invoke "reverso" [(ABS.Sum 0 (Map.fromList [("t", 1)])), (ABS.Sum 0 (Map.fromList [("rt", 1)]))] InvA.Memo)
             ) [
-                (ABS.Invoke "appendo" [(ABS.Sum 0 (Map.fromList [("rt", 1)])), (ABS.Sum 2 (Map.fromList [("h", 1)])), (ABS.Sum 0 (Map.fromList [("y", 1)]))] InvA.Unfold)
+                (ABS.Invoke "appendo" [(ABS.Sum 0 (Map.fromList [("rt", 1)])), (ABS.Sum 2 (Map.fromList [("h", 1)])), (ABS.Sum 0 (Map.fromList [("y", 1)]))] InvA.Memo)
             ]
         )))
     )

@@ -15,7 +15,7 @@ import           AnnotatedDef
 data Ann = 
     Memo | 
     Unfold
-    deriving (Show, Eq)
+    deriving (Show, Eq, Ord)
 
 -- Goals
 data AnnG a
@@ -24,7 +24,7 @@ data AnnG a
   | Disjunction (AnnG a) (AnnG a) [AnnG a] -- a list of disjuncts: at least 2 disjuncts should be present
   | Fresh a (AnnG a)
   | Invoke Name [Term a] Ann
-  | Delay (AnnG a)  deriving (Eq)
+  | Delay (AnnG a)  deriving (Eq, Ord)
 
 
 freshVars :: [a] -> AnnG a -> ([a], AnnG a)
@@ -60,5 +60,5 @@ annotateInvokes (Syntax.Fresh x body) =
 annotateInvokes (Syntax.Delay body) =
     Delay (annotateInvokes body)
 annotateInvokes (Syntax.Invoke name terms) =
-    Invoke name terms Unfold 
+    Invoke name terms Memo 
 annotateInvokes (a Syntax.:=: b) = (a :=: b)

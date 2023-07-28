@@ -22,12 +22,12 @@ import Debug.Trace
 import Control.Monad  (join)
 import Data.Bifunctor (bimap)
 
-terminationCheck :: Ord a => AnnotatedProgram AbstractG a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> Bool 
+terminationCheck :: Show a => Ord a => AnnotatedProgram AbstractG a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> Bool 
 terminationCheck program@(AnnotatedProgram defs goal) mapConditions mapDefs = 
     let (defsGraphs, defsVars) = unzip $ map (getPairsDef mapConditions mapDefs) defs in 
     let defsVarsRes = Map.unions defsVars in 
     let defsGraphsRes = goGraphMap (Map.unions defsGraphs) defsVarsRes (map getName defs) in 
-    all (\name -> checkDecreasing (Map.findWithDefault Set.empty (name, name) defsGraphsRes) (filterArgs (getAnnotations $ mapDefs Map.! name) $ defsVarsRes Map.! (name, name))) $ map getName defs
+    all (\name -> checkDecreasing (Map.findWithDefault Set.empty (name, name) defsGraphsRes) (filterArgs (getAnnotations $ mapDefs Map.! name) $ fromJust $ Map.lookup (name, name) defsVarsRes)) $ map getName defs
     where filterArgs :: [AnnotationType] -> ([String], [String]) -> ([String], [String])
           filterArgs annotations (inArgs, outArgs) = 
             let indices = List.elemIndices Static annotations in 
@@ -45,20 +45,17 @@ checkPossibleZero graph curPossible (inArgs, outArgs) =
 checkSubSequences :: ([String], [String]) -> Graph String -> Bool 
 checkSubSequences ([], []) graph = False
 checkSubSequences (inArgs, outArgs) graph =
-    let mapZero = foldl (checkPossibleZero (trace ("subseq" ++ show graph) graph)) (Map.fromList [(([], []), True)]) $ filter (\(ins, outs) -> length ins == length outs) [(seq1, seq2) | seq1 <- List.subsequences inArgs, seq2 <- List.subsequences outArgs] in 
+    let mapZero = foldl (checkPossibleZero graph) (Map.fromList [(([], []), True)]) $ filter (\(ins, outs) -> length ins == length outs) [(seq1, seq2) | seq1 <- List.subsequences inArgs, seq2 <- List.subsequences outArgs] in 
     any (\(inArg, outArg) -> Map.findWithDefault False (List.delete inArg inArgs, List.delete outArg outArgs) mapZero && positivePath inArg outArg graph) [(inArg, outArg) | inArg <- inArgs, outArg <- outArgs]
 
 checkDecreasing :: Set.Set (Graph String) -> ([String], [String]) -> Bool
 checkDecreasing setGraphs (inArgs, outArgs) = 
-    any (\subseq -> all (checkSubSequences $ traceShow subseq subseq) $ trace ("graphs" ++ show setGraphs ++ show inArgs ++ show outArgs) setGraphs) $ zip (List.subsequences inArgs) (List.subsequences outArgs)
+    any (\subseq -> all (checkSubSequences subseq) setGraphs) $ zip (List.subsequences inArgs) (List.subsequences outArgs)
 
 
 goGraphMap :: Map.Map (String, String) (Set.Set (Graph String)) -> Map.Map (String, String) ([String], [String]) -> [String] -> Map.Map (String, String) (Set.Set (Graph String)) 
 goGraphMap defsGraphs defsVars defs = 
-    let newDefsGraphs = goGraphsOneCycle defsGraphs defsVars defs in 
-    case (newDefsGraphs == defsGraphs) of 
-        True -> newDefsGraphs 
-        False -> goGraphMap newDefsGraphs defsVars defs
+    until (\x -> goGraphsOneCycle x defsVars defs == x) (\x -> goGraphsOneCycle x defsVars defs) defsGraphs
 
 goGraphsOneCycle :: Map.Map (String, String) (Set.Set (Graph String)) -> Map.Map (String, String) ([String], [String]) -> [String] -> Map.Map (String, String) (Set.Set (Graph String)) 
 goGraphsOneCycle defsGraphs defsVars defs =
@@ -96,12 +93,12 @@ renamingPair name mapDefsArgs (nameTo, graph, inArgs, outArgs) =
     ((name, nameTo), newGraph) 
 
 
-getPairsDef :: Ord a => Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> AnnotatedDef AbstractG a -> (Map.Map (String, String) (Set.Set (Graph String)), Map.Map (String, String) ([String], [String]))
+getPairsDef :: Show a => Ord a => Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> AnnotatedDef AbstractG a -> (Map.Map (String, String) (Set.Set (Graph String)), Map.Map (String, String) ([String], [String]))
 getPairsDef mapConditions mapDefs def@(AnnotatedDef name args body annotations) = 
     let (namesInt, fn) = getNames (length args) $ defaultNames :: ([Int], FreshNames) in 
     let namesStr = map show (namesInt) :: [String] in 
     let mapVars = Map.fromList $ zip args namesStr in 
-    let (namesDefsInt, fnNew) = getNames (sum $ map (length . getArgs) (Map.elems mapDefs)) fn in 
+    let (namesDefsInt, fnNew) = getNames ((sum $ map (length . getArgs) (Map.elems mapDefs)) + 1) fn in 
     let namesDefsStr = Split.splitPlaces (map (length . getArgs) (Map.elems mapDefs)) $ map show namesDefsInt in 
     let mapDefsArgs = Map.fromList $ zip (Map.keys mapDefs) namesDefsStr in 
     let pairs = (goPairsBody body mapConditions mapDefs namesStr namesStr mapVars fnNew) in 
@@ -115,8 +112,10 @@ formPair goal@(Invoke name terms ann) mapConditions mapDefs baseArgs args mapVar
     let (newArgsInt, newFn) = getNames (length terms) fn in 
     let newArgsStr = map show newArgsInt in 
     let newTerms =  map (termfmap (\x -> fromJust (Map.lookup x mapVars))) terms in
-    let graph = handleOneInvokeConjunct newTerms newArgsStr args (ConditionConj []) in    
-    [(name, cleanGraph graph (baseArgs ++ newArgsStr), baseArgs, newArgsStr)]
+    let graph = handleOneInvokeConjunct newTerms newArgsStr args (ConditionConj []) in  
+    case withoutPositiveCycle graph of 
+        True -> [(name, cleanGraph graph (baseArgs ++ newArgsStr), baseArgs, newArgsStr)]
+        False -> []
 formPair goal@(Invoke name terms ann) mapConditions mapDefs baseArgs args mapVars fn | otherwise = []
 
 
@@ -129,11 +128,11 @@ goPairConjunct g@(Invoke name terms ann) mapConditions mapDefs args newArgs mapV
     let graphs = map (addVertexes newArgsStr) graphs1
     let mapArgs = Map.fromList $ zip (getArgs . fromJust $ Map.lookup name mapDefs) newArgsStr ---WHAT
     let conds = concatMap getCondsOneTerm (zip newArgsStr termsNew) 
-    let graphsNew = map (\initGraph -> supplement $ foldl (\graph cond@(a, b, term) -> addWeightCond graph a b term) initGraph conds) graphs 
+    let graphsNew = filter withoutPositiveCycle $ map (\initGraph -> supplement $ foldl (\graph cond@(a, b, term) -> addWeightCond graph a b term) initGraph conds) graphs 
     let res = map (\graph -> (name, cleanGraph graph (args ++ newArgsStr), args, newArgsStr)) graphsNew
     let condsFun = (fromMaybe (ConditionDisj []) (Map.lookup name mapConditions))
     let newConds@(ConditionDisj disjuncts) = fmap (\x -> fromJust $ Map.lookup x mapArgs) condsFun 
-    let graphsRes = [unionGraphs graph (getFromConjunction cond newArgsStr) | graph <- graphsNew, cond <- disjuncts] 
+    let graphsRes = filter withoutPositiveCycle $ [unionGraphs graph (getFromConjunction cond newArgsStr) | graph <- graphsNew, cond <- disjuncts] 
     put (graphsRes, consts, fnNew)
     return res
 goPairConjunct g@(Invoke name terms ann) mapConditions mapDefs args newArgs mapVars | otherwise = do 
@@ -142,7 +141,7 @@ goPairConjunct g@(term1 :=: term2) mapConditions mapDefs args newArgs mapVars = 
     (graphs, consts, fn) <- get 
     let ((graphs1, consts1), fn1) = runState (goOneConjunct g Map.empty mapConditions args mapVars) fn 
     let resGraphs = [unionGraphs graph graph1 | graph <- graphs, graph1 <- graphs1] 
-    let resGraphsWithConsts = map (\curg -> foldl (\g ((v1 ,n1), (v2, n2)) -> addWeightCond g v1 v2 (Sum (n2 - n1) Map.empty)) curg [(v1, v2) | v1 <- consts, v2 <- consts1]) resGraphs
+    let resGraphsWithConsts = filter withoutPositiveCycle $ map (\curg -> foldl (\g ((v1 ,n1), (v2, n2)) -> addWeightCond g v1 v2 (Sum (n2 - n1) Map.empty)) curg [(v1, v2) | v1 <- consts, v2 <- consts1]) resGraphs
     put (resGraphsWithConsts, List.union consts consts1, fn1)
     return []
 
