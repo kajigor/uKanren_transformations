@@ -32,7 +32,7 @@ check program =
     let abstractProgram@(AnnotatedProgram defs goal) = makeNormal $ convert program in 
     let mapDefs = Map.fromList $ zip (map getName defs) defs in
     let mapConditions = go defs mapDefs Map.empty in 
-    terminationCheck abstractProgram mapConditions mapDefs
+    terminationCheck (trace ("AAAAAAAAA\n" ++ show (convert program) ++ "\n\n" ++ (show $ (makeNormal . convert) program)) abstractProgram) mapConditions mapDefs
     
 severalGoalsAnnotations :: Inv.AnnG String -> Inv.AnnG String -> [Inv.AnnG String] -> (Inv.AnnG String -> Inv.AnnG String -> [Inv.AnnG String] -> Inv.AnnG String) -> (Inv.AnnG String -> AnnotatedProgram Inv.AnnG String) -> Inv.AnnG String
 severalGoalsAnnotations g1 g2 lstG constructor recovery = 

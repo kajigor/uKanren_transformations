@@ -26,8 +26,9 @@ terminationCheck :: Show a => Ord a => AnnotatedProgram AbstractG a -> Map.Map S
 terminationCheck program@(AnnotatedProgram defs goal) mapConditions mapDefs = 
     let (defsGraphs, defsVars) = unzip $ map (getPairsDef mapConditions mapDefs) defs in 
     let defsVarsRes = Map.unions defsVars in 
-    let defsGraphsRes = goGraphMap (Map.unions defsGraphs) defsVarsRes (map getName defs) in 
-    all (\name -> checkDecreasing (Map.findWithDefault Set.empty (name, name) defsGraphsRes) (filterArgs (getAnnotations $ mapDefs Map.! name) $ fromJust $ Map.lookup (name, name) defsVarsRes)) $ map getName defs
+    let defsGraphsRes = goGraphMap (Map.unions $ traceShow defsGraphs defsGraphs) defsVarsRes (map getName defs) in 
+    let filtered = map (\(name, graphs) -> name) $ filter (\(name, graphs) -> not $ checkDecreasing graphs (filterArgs (getAnnotations $ mapDefs Map.! name) $ fromJust $ Map.lookup (name, name) defsVarsRes)) (map (\name -> (name, Map.findWithDefault Set.empty (name, name) defsGraphsRes)) $ map getName defs) in 
+    all (\name -> checkDecreasing (Map.findWithDefault Set.empty (name, name) defsGraphsRes) (filterArgs (getAnnotations $ mapDefs Map.! name) $ fromJust $ Map.lookup (name, name) defsVarsRes)) $ traceShow filtered $ map getName defs
     where filterArgs :: [AnnotationType] -> ([String], [String]) -> ([String], [String])
           filterArgs annotations (inArgs, outArgs) = 
             let indices = List.elemIndices Static annotations in 
@@ -119,7 +120,7 @@ formPair goal@(Invoke name terms ann) mapConditions mapDefs baseArgs args mapVar
 formPair goal@(Invoke name terms ann) mapConditions mapDefs baseArgs args mapVars fn | otherwise = []
 
 
-goPairConjunct :: Ord a => AbstractG a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> [String] -> [String] -> Map.Map a String -> State ([Graph String], [(String, Int)], FreshNames) [(String, Graph String, [String], [String])]
+goPairConjunct :: Show a => Ord a => AbstractG a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> [String] -> [String] -> Map.Map a String -> State ([Graph String], [(String, Int)], FreshNames) [(String, Graph String, [String], [String])]
 goPairConjunct g@(Invoke name terms ann) mapConditions mapDefs args newArgs mapVars | ann == Inv.Unfold = do 
     (graphs1, consts, fn) <- get 
     let termsNew = map (termfmap (\x -> fromJust (Map.lookup x mapVars))) (terms) 
@@ -145,12 +146,12 @@ goPairConjunct g@(term1 :=: term2) mapConditions mapDefs args newArgs mapVars = 
     put (resGraphsWithConsts, List.union consts consts1, fn1)
     return []
 
-goPairsConjunction :: Ord a => [AbstractG a] -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> [String] -> [String] -> Map.Map a String -> State ([Graph String], [(String, Int)], FreshNames) [(String, Graph String, [String], [String])]
+goPairsConjunction :: Show a => Ord a => [AbstractG a] -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> [String] -> [String] -> Map.Map a String -> State ([Graph String], [(String, Int)], FreshNames) [(String, Graph String, [String], [String])]
 goPairsConjunction lstG mapConditions mapDefs args newArgs mapVars = do
     res <- mapM (\goal -> goPairConjunct goal mapConditions mapDefs args newArgs mapVars) lstG
     return $ concat res
 
-goPairsBody :: Ord a => AbstractG a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> [String] -> [String] -> Map.Map a String -> FreshNames ->  [(String, Graph String, [String], [String])]
+goPairsBody :: Show a => Ord a => AbstractG a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> [String] -> [String] -> Map.Map a String -> FreshNames ->  [(String, Graph String, [String], [String])]
 goPairsBody goal@(Conjunction g1 g2 lstG) mapConditions mapDefs args newArgs mapVars fn = 
     let (pairs, state) = runState (goPairsConjunction (g1 : g2 : lstG) mapConditions mapDefs args newArgs mapVars) ([Graph newArgs Map.empty], [], fn) in 
     pairs
