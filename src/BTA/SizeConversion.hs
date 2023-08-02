@@ -29,8 +29,8 @@ data AbstractTerm a =
 
 isLess :: Ord a => AbstractTerm a -> AbstractTerm a -> Bool
 isLess t1@(Sum n1 mp1) t2@(Sum n2 mp2) = 
-  let (Sum n3 mp3) = (getWeight t2 t1) in 
-  (n3 >= 0 && (all ((<=) 0) (Map.elems mp3))) && (n3 > 0 || (any (0 < ) (Map.elems mp3)))
+  let (Sum n3 mp3) = getWeight t2 t1 in 
+  (n3 >= 0 && (all (0 <=) $ Map.elems mp3)) && (n3 > 0 || (any (0 < ) $ Map.elems mp3))
 
 isPositive :: Ord a => AbstractTerm a -> Bool
 isPositive term = isLess (Sum 0 Map.empty) term
@@ -42,7 +42,7 @@ getWeight :: Ord a => AbstractTerm a -> AbstractTerm a -> AbstractTerm a
 getWeight term1@(Sum n1 mp1) term2@(Sum n2 mp2) = term1 <> (negative term2)
 
 negative :: Ord a => AbstractTerm a -> AbstractTerm a 
-negative term@(Sum n mp) = (Sum (-n) (fmap negate mp))
+negative term@(Sum n mp) = Sum (-n) $ fmap negate mp
 
 difference :: Ord a => AbstractTerm a -> AbstractTerm a -> AbstractTerm a 
 difference term1 term2 = term1 <> (negative term2)
@@ -50,14 +50,14 @@ difference term1 term2 = term1 <> (negative term2)
 instance Ord a => Semigroup (AbstractTerm a) where
   (<>) :: AbstractTerm a -> AbstractTerm a -> AbstractTerm a
   (Sum a1 mp1) <> (Sum a2 mp2) =
-    Sum (a1 + a2) (Map.filter (/= 0) (Map.unionWith (+) mp1 mp2))
+    Sum (a1 + a2) $ Map.filter (/= 0) $ Map.unionWith (+) mp1 mp2
 
 instance (Show a) => Show (AbstractTerm a) where
-    show (Sum a mp) = (show a) ++ (unwords (map (\x -> " + " ++ (show x)) (Map.toList mp)))
+    show (Sum a mp) = show a ++ unwords (map (\x -> " + " ++ show x) $ Map.toList mp)
 
 
 termfmap :: Ord b => (a -> b)-> AbstractTerm a -> AbstractTerm b
-termfmap f (Sum a mp) = Sum a (Map.mapKeys f mp)
+termfmap f (Sum a mp) = Sum a $ Map.mapKeys f mp
 
 data AbstractG a = 
     AbstractTerm a :=: AbstractTerm a
@@ -85,7 +85,7 @@ instance (Show a) => Show (AbstractG a) where
   show (Delay g) = printf "Delay (%s)" (show g)
 
 convert :: (AnnotatedProgram Inv.AnnG String) -> (AnnotatedProgram AbstractG String)
-convert (AnnotatedProgram defs goal) = (AnnotatedProgram (map convertDef defs) (convertGoal goal))
+convert (AnnotatedProgram defs goal) = AnnotatedProgram (map convertDef defs) (convertGoal goal)
 
 convertDef :: Ord a => (AnnotatedDef Inv.AnnG a) -> (AnnotatedDef AbstractG a) 
 convertDef (AnnotatedDef name args body annotations) =
@@ -100,6 +100,6 @@ convertGoal (Inv.Delay g) = Delay (convertGoal g)
 convertGoal (g1 Inv.:=: g2) = (convertTerm g1) :=: (convertTerm g2)
 
 convertTerm :: Ord a => (Syntax.Term a) -> (AbstractTerm a) 
-convertTerm (Syntax.V v) = (Sum 0 (Map.insert v 1 Map.empty))
+convertTerm (Syntax.V v) = Sum 0 (Map.insert v 1 Map.empty)
 convertTerm (Syntax.C name lst) = 
-  sconcat ((Sum 1 Map.empty) :| (map convertTerm lst))
+  sconcat $ (Sum 1 Map.empty) :| (map convertTerm lst)

@@ -32,7 +32,7 @@ check program =
     let abstractProgram@(AnnotatedProgram defs goal) = makeNormal $ convert program in 
     let mapDefs = Map.fromList $ zip (map getName defs) defs in
     let mapConditions = go defs mapDefs Map.empty in 
-    terminationCheck (trace ("AAAAAAAAA\n" ++ show (convert program) ++ "\n\n" ++ (show $ (makeNormal . convert) program)) abstractProgram) mapConditions mapDefs
+    terminationCheck abstractProgram mapConditions mapDefs
     
 severalGoalsAnnotations :: Inv.AnnG String -> Inv.AnnG String -> [Inv.AnnG String] -> (Inv.AnnG String -> Inv.AnnG String -> [Inv.AnnG String] -> Inv.AnnG String) -> (Inv.AnnG String -> AnnotatedProgram Inv.AnnG String) -> Inv.AnnG String
 severalGoalsAnnotations g1 g2 lstG constructor recovery = 
@@ -52,5 +52,5 @@ goBodyAnnotations goal@(Inv.Delay g) recovery =
     Inv.Delay $ goBodyAnnotations g (\g1 -> recovery (Inv.Delay g1))
 goBodyAnnotations goal@(term1 Inv.:=: term2) recovery = 
     goal
-goBodyAnnotations goal@(Inv.Invoke name terms ann) recovery | ann == Inv.Memo && (check $ recovery (Inv.Invoke name terms Inv.Unfold)) = (Inv.Invoke name terms Inv.Unfold)
+goBodyAnnotations goal@(Inv.Invoke name terms ann) recovery | ann == Inv.Memo && (check $ recovery (Inv.Invoke name terms Inv.Unfold)) = Inv.Invoke name terms Inv.Unfold
                                                             | otherwise = goal

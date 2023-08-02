@@ -52,14 +52,6 @@ unit_handleOneInvokeConjunct = do
 oneConjunct1Graph = Graph ["x1", "x2", "x3"] (fromList [(("x1", "x3"), (Sum 3 empty, WeightedArc)), (("x3", "x1"), (Sum (-3) empty, WeightedArc))])
 oneConjunct1MapVars = fromList [("x", "x1"), ("a", "x2"), ("y", "x3")] 
 
-
--- data AnnotatedDef g a = AnnotatedDef
---   { getName :: String
---   , getArgs :: [a]
---   , getBody :: g a
---   , getAnnotations :: [AnnotationType]
---   }
-
 oneConjunct2MapDefs = fromList [("fun", AnnotatedDef "fun" ["x", "y", "z"] ((Sum 0 empty) :=: (Sum 1 empty)) [Dynamic, Dynamic, Dynamic])] 
 oneConjunct2MapConditions = fromList [("fun", ConditionDisj [ConditionConj [(Condition (Eq "y" "z")), (Condition (Eq "z" "y")), (Condition (Lt "y" "x"))]])]
 

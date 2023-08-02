@@ -146,7 +146,7 @@ reversoAbst = (
 unit_convert = do
     let sumAnnAbstract1 = ABS.convert sumAnnInvoke
     sumAnnAbstract @?= sumAnnAbstract
-    program <- getAnnotationParser "test/resources/newSyntax/withTypeAnnotations/list.mk"
+    program <- getAnnotationParser "test/resources/newSyntax/withTypeAnnotations/list/list.mk"
     let propAnnAbstractDefs = either (\x -> []) (\x -> (map getBody) $ getDefs $ ABS.convert $ InvA.annotateInvokesPr x) program
     (propAnnAbstractDefs !! 1) @?= appendoAbst
     (propAnnAbstractDefs !! 2) @?= reversoAbst

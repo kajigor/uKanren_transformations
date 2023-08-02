@@ -42,14 +42,14 @@ unit_getPairsDef = do
     
     let (mapPairs1, mapVars1) = getPairsDef (mapConds1) mapDefs1 defRevers 
     let (vars11, vars21) = fromJust (Map.lookup ("revers", "revers") mapVars1)
-    let st1 = toList $ fromJust (Map.lookup ("revers", "revers") (traceShow mapPairs1 mapPairs1))
+    let st1 = toList $ fromJust (Map.lookup ("revers", "revers") mapPairs1)
     let graph1 = st1 !! 0 
     (positivePath (vars11 !! 0) (vars21 !! 0) graph1) @?= True
     (positivePath (vars11 !! 1) (vars21 !! 1) graph1) @?= False
 
     let (mapPairs2, mapVars2) = getPairsDef (mapConds2) mapDefs2 defFun 
     let (vars12, vars22) = fromJust (Map.lookup ("fun", "fun") mapVars2)
-    let st1 = toList $ fromJust (Map.lookup ("fun", "fun") (traceShow mapPairs2 mapPairs2))
+    let st1 = toList $ fromJust (Map.lookup ("fun", "fun") mapPairs2)
     let graph2 = st1 !! 0 
     (positivePath (vars12 !! 0) (vars22 !! 1) graph2) @?= True
     (positivePath (vars12 !! 1) (vars22 !! 0) graph2) @?= False
@@ -57,7 +57,7 @@ unit_getPairsDef = do
     
     let (mapPairs3, mapVars3) = getPairsDef (mapConds3) mapDefs3 newDefRevers 
     let (vars13, vars23) = fromJust (Map.lookup ("revers", "revers") mapVars3)
-    let st3 = toList $ fromJust (Map.lookup ("revers", "revers") (traceShow mapPairs3 mapPairs3))
+    let st3 = toList $ fromJust (Map.lookup ("revers", "revers") mapPairs3)
     let graph3 = st3 !! 1
     (positivePath (vars13 !! 0) (vars23 !! 0) graph3) @?= True
     (positivePath (vars13 !! 1) (vars23 !! 1) graph3) @?= True
@@ -74,7 +74,7 @@ unit_goGraphMap = do
     let (vars1, vars2) = fromJust (Map.lookup ("append", "append") mapVarsRes)
     let st = toList $ fromJust (Map.lookup ("append", "append") resGraphMap)
     -- (length st) @?= 1
-    let graph = (traceShow st st) !! 0 
+    let graph = st !! 0 
     (positivePath (vars1 !! 0) (vars2 !! 0) graph) @?= True
     (positivePath (vars1 !! 2) (vars2 !! 2) graph) @?= True
 
