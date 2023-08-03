@@ -16,8 +16,8 @@ import qualified Subst
 import           Syntax
 import qualified VarInterpretation   as VI
 
-unifyG :: (Subst.Subst -> S -> Ts -> Bool)
-          -> Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
+unifyG :: (Ord v) => (Subst.Subst v -> v -> Term v -> Bool)
+          -> Maybe (Subst.Subst v) -> Term v -> Term v -> Maybe (Subst.Subst v)
 unifyG _ Nothing _ _ = Nothing
 unifyG f st@(Just subst) u v =
     unify' (walk subst u) (walk subst v)
@@ -36,17 +36,17 @@ unifyG f st@(Just subst) u v =
       foldl (\ st' (u', v') -> unifyG f st' u' v') st $ zip as bs
     unify' _ _ = Nothing
 
-walk :: Subst.Subst -> Ts -> Ts
+walk :: (Ord v) => Subst.Subst v -> Term v -> Term v
 walk s x@(V v) =
   maybe x (walk s) $ Subst.lookup v s
 walk _ u = u
 
 -- Unification
-unify :: Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
+unify :: (Ord v) => Maybe (Subst.Subst v) -> Term v -> Term v -> Maybe (Subst.Subst v)
 unify =
     unifyG occursCheck
   where
-    occursCheck :: Subst.Subst -> S -> Ts -> Bool
+    occursCheck :: (Ord v) => Subst.Subst v -> v -> Term v -> Bool
     occursCheck s u t =
       case walk s t of
         V v -> v == u
@@ -54,7 +54,7 @@ unify =
 
     -- occursCheck u' t s = if elem u' $ fv t then Nothing else s
 
-unifySubsts :: Subst.Subst -> Subst.Subst -> Maybe Subst.Subst
+unifySubsts :: Subst.Subst S -> Subst.Subst S -> Maybe (Subst.Subst S)
 unifySubsts (Subst.Subst one) (Subst.Subst two) =
     let maximumVar = max (findUpper one) (findUpper two) in
     let one' = manifactureTerm maximumVar one in
@@ -68,7 +68,7 @@ unifySubsts (Subst.Subst one) (Subst.Subst two) =
     supplement upper lst = lst --  [(x, y) | x <- [0..upper], let y = maybe (V x) id (lookup x lst)]
     manifactureTerm upper subst = C "ManifacturedTerm" $ Map.elems $ supplement upper subst
 
-unifyNoOccursCheck :: Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst
+unifyNoOccursCheck :: (Ord v) => Maybe (Subst.Subst v) -> Term v -> Term v -> Maybe (Subst.Subst v)
 unifyNoOccursCheck = unifyG (\_ _ -> const False)
 
 -- Pre-evaluation
@@ -143,14 +143,14 @@ closeFresh as goal = goal
 
   --   getFresh goal as = fv goal \\ as
 
-topLevel :: Program G X -> Stream (Subst.Subst, FN.FreshNames)
+topLevel :: Program G X -> Stream (Subst.Subst S, FN.FreshNames)
 topLevel (Program defs goal) =
   let env = Env.updateDefs Env.empty defs in
   let ((goal', _), env') = runState (preEval goal) env in
   eval env' Subst.empty goal'
 
 -- Evaluation relation
-eval :: Env.Env -> Subst.Subst -> G S -> Stream (Subst.Subst, FN.FreshNames)
+eval :: Env.Env -> Subst.Subst S -> G S -> Stream (Subst.Subst S, FN.FreshNames)
 eval env s (t1 :=:  t2) = fmap (, Env.getFreshNames env) (maybeToStream $ unify (Just s) t1 t2)
 -- eval env s (g1 :\/: g2) = eval env s g1 `mplus` eval env s g2
 eval env s (Disjunction x y gs) =
@@ -168,7 +168,7 @@ eval env s (Delay goal) =
   Immature (eval env s goal)
 eval _ _ _ = error "Impossible case in eval"
 
-run :: Program G X -> Stream Subst.Subst
+run :: Program G X -> Stream (Subst.Subst S)
 run (Program defs goal) =
   let env = Env.fromDefs defs in
   let ((goal',_), env') = runState (preEval goal) env in
