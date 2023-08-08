@@ -48,6 +48,7 @@ dependencies:
 - prettyprinter
 - template-haskell >= 2.19.0.0
 - split
+- groups >= 0.5.3
 
 ghc-options:
   - -fwarn-unused-imports

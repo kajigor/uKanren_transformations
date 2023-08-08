@@ -1,16 +1,18 @@
+{-# LANGUAGE InstanceSigs #-}
 
 module BTA.Graph where
 
-import Prelude hiding (lookup)
-import Data.Map hiding (map, foldl, foldr, filter, mapMaybe)
-import qualified Data.List as List
-import qualified Data.Set as Set
-import BTA.Conditions 
-import BTA.SizeConversion
-import Data.Maybe
-import Data.Bifunctor
-import BTA.Condition
-import Debug.Trace
+import           Data.Bifunctor  (bimap)
+import           Data.Group
+import           Data.Map        hiding (map, foldl, foldr, filter, mapMaybe)
+import           Data.Maybe
+import           Debug.Trace
+import           Prelude         hiding (lookup)
+import           BTA.Condition
+import           BTA.Conditions 
+import           BTA.SizeConversion
+import qualified Data.List       as List
+import qualified Data.Set        as Set
 
 
 data TypeEdge = 
@@ -22,6 +24,11 @@ data Graph a =
     Graph [a] (Map (a, a) (AbstractTerm a, TypeEdge))
     deriving (Eq, Show, Ord)
 
+instance Ord a => Semigroup (Graph a) where
+    (<>) :: Graph a -> Graph a -> Graph a
+    graph1@(Graph vars1 mp1) <> graph2@(Graph vars2 mp2) = 
+        foldl addCondDifTypes (Graph (List.union vars1 vars2) mp1) $ assocs mp2
+
 graphfmap :: Ord b => (a -> b) -> Graph a -> Graph b 
 graphfmap f (Graph vars mp) = Graph (map f vars) $ fmap (\(a, b) -> (termfmap f a, b)) $ mapKeys (bimap f f) mp
 
@@ -30,16 +37,12 @@ addCond mp (Lt a b) = insert (b, a) (Sum 1 empty, Arc) mp
 addCond mp (Eq a b) = insert (a, b) (Sum 0 empty, WeightedArc) $ insert (b, a) (Sum 0 empty, WeightedArc) mp
 
 addWeightCond :: Ord a => Graph a -> a -> a -> (AbstractTerm a) -> Graph a 
-addWeightCond graph@(Graph vars mp) a b term = Graph vars (insert (a, b) (term, WeightedArc) (insert (b, a) (negative term, WeightedArc) mp))
+addWeightCond graph@(Graph vars mp) a b term = Graph vars (insert (a, b) (term, WeightedArc) (insert (b, a) (invert term, WeightedArc) mp))
 
 getFromConjunction :: Ord a => Conditions a -> [a] -> Graph a
 getFromConjunction initCond@(ConditionConj conjuncts) vars = 
     let graphMap = foldl (\mp -> \x@(Condition cond) -> (addCond mp cond)) (empty :: Map (a, a) (AbstractTerm a, TypeEdge)) conjuncts in
     supplement (Graph vars graphMap)
-
-getPathLength :: Ord a => Map (a, a) (AbstractTerm a, TypeEdge) -> [a] -> (AbstractTerm a)
-getPathLength graphMap (start : path) | any (\(a, b) -> not $ member (a, b) graphMap) $ zip (start : path) path = Sum (-1) empty
-                                      | otherwise = foldl (<>) (Sum 0 empty) $ map (\x -> fst $ fromJust $ lookup x graphMap) $ zip (start : path) path
 
 
 zeroPathHelp :: Ord a => AbstractTerm a -> Int -> Graph a -> a -> a -> Set.Set a -> Bool
@@ -83,11 +86,8 @@ supplement graph@(Graph vars _) =
     let tuples = [(a, b) | a <- vars, b <- vars] in 
     foldl addEdge graph tuples
 
-addVertex :: Ord a => Graph a -> a -> Graph a
-addVertex (Graph vars graphMap) var = (Graph (var : vars) graphMap)
-
 addVertexes :: Ord a => [a] -> Graph a -> Graph a 
-addVertexes vars graph = foldl addVertex graph vars
+addVertexes vars1 graph@(Graph vars graphMap) = Graph (List.union vars vars1) graphMap
 
 removeVertex :: Ord a => Graph a -> a -> Graph a 
 removeVertex (Graph vars graphMap) vertex = 
@@ -111,10 +111,6 @@ addCondDifTypes :: Ord a => Graph a -> ((a, a), (AbstractTerm a, TypeEdge)) -> G
 addCondDifTypes graph@(Graph vars mp) ((a, b), (weight, t)) | t == WeightedArc = addWeightCond graph a b weight 
                                                             | (member (a, b) mp) = graph
                                                             | otherwise = Graph vars $ insert (a, b) (weight, t) mp
-
-unionGraphs :: Ord a => Graph a -> Graph a -> Graph a 
-unionGraphs graph1@(Graph vars1 mp1) graph2@(Graph vars2 mp2) = 
-    foldl addCondDifTypes (Graph (List.union vars1 vars2) mp1) $ assocs mp2
 
 relaxPair :: Ord a => Graph a -> (a, a) -> Maybe (a, a, Bool, Bool)
 relaxPair graph@(Graph vars graphMap) (a, b) = 

@@ -7,7 +7,7 @@
 module BTA.Condition where
 import Data.Maybe (mapMaybe)
 
-data Condition a = 
-    Lt a a | 
-    Eq a a
+data Condition a 
+    = Lt a a 
+    | Eq a a
     deriving (Eq, Functor, Show)

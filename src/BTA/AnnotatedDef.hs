@@ -1,9 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE InstanceSigs     #-}
-module AnnotatedDef where
+module BTA.AnnotatedDef where
 
 import           Text.Printf (printf)
-import           AnnotationType
+import           BTA.AnnotationType
 
 data AnnotatedDef g a = AnnotatedDef
   { getName :: String

@@ -2,66 +2,58 @@
 module Test.BTA.Conditions where
 
 import           Test.Helper
-import qualified BTA.Conditions as Conds
-import qualified BTA.Inequalities as Ineq
+import           BTA.Conditions
 import           BTA.Condition
 
 
-condEq = Conds.ConditionDisj [Conds.ConditionConj [(Conds.Condition (Eq "x" "x")), (Conds.Condition (Eq "z" "z")), (Conds.Condition (Eq "y'" "y'")), (Conds.Condition (Lt "z" "y'")), (Conds.Condition (Lt "y'" "x'")), (Conds.Condition (Eq "y" "y")), (Conds.Condition (Eq "x'" "x'")), (Conds.Condition (Lt "x" "x'")), (Conds.Condition (Lt "z" "x'")), (Conds.Condition (Lt "y" "x'"))]]
+
+ltAB = Lt "a" "b"
+ltCD = Lt "c" "d"
+eqAB = Eq "a" "b"
+eqCD = Eq "c" "d"
+eqCA = Eq "c" "a"
+eqDA = Eq "a" "d"
+condEq = ConditionDisj [ConditionConj [Condition (Eq "x" "x"), Condition (Eq "z" "z"), Condition (Eq "y'" "y'"), Condition (Lt "z" "y'"), Condition (Lt "y'" "x'"), Condition (Eq "y" "y"), Condition (Eq "x'" "x'"), Condition (Lt "x" "x'"), Condition (Lt "z" "x'"), Condition (Lt "y" "x'")]]
+
+condCeqD = ConditionDisj [ConditionConj [Condition eqCD]]
+condAeqB = ConditionDisj [ConditionConj [Condition eqAB]] 
+condAeqBorCeqD = ConditionDisj [ConditionConj [Condition eqCD], ConditionConj [Condition eqAB]]
+condAeqBCeqD = ConditionDisj [ConditionConj [Condition eqAB, Condition eqCD]]
+condCltD = ConditionDisj [ConditionConj [Condition ltCD]]
+condCeqDCltD = ConditionDisj [ConditionConj [Condition eqCD], ConditionConj [Condition ltCD]]
 
 unit_equalConds = do
-    ((Lt "a" "b") == (Lt "a" "b")) @?= True
-    ((Lt "c" "d") /= (Lt "a" "b")) @?= True
-    ((Eq "a" "b") /= (Lt "a" "b")) @?= True
-    ((Eq "a" "b") /= (Eq "c" "b")) @?= True
-    (Conds.equalConds (Conds.ConditionDisj [(Conds.Condition (Lt "a" "b")), (Conds.Condition (Eq "c" "d"))]) (Conds.ConditionDisj [(Conds.Condition (Eq "c" "d")), (Conds.Condition (Lt "a" "b"))])) @?= True
-    (Conds.equalConds (Conds.ConditionDisj [(Conds.Condition (Eq "c" "d"))]) (Conds.ConditionDisj [(Conds.Condition (Eq "c" "d")), (Conds.Condition (Lt "a" "b"))])) @?= False
-    (Conds.equalConds (Conds.ConditionDisj [(Conds.Condition (Lt "c" "d")), (Conds.Condition (Eq "c" "d"))]) (Conds.ConditionDisj [(Conds.Condition (Eq "c" "d")), (Conds.Condition (Lt "a" "b"))])) @?= False
-    (Conds.equalConds (Conds.ConditionDisj [] :: Conds.Conditions String) (Conds.ConditionDisj [Conds.ConditionConj [] :: Conds.Conditions String])) @?= False
-    (Conds.equalConds (Conds.ConditionDisj [] :: Conds.Conditions String) (Conds.ConditionDisj [Conds.ConditionConj [(Conds.Condition (Eq "a" "a"))]])) @?= False
-    (Conds.equalConds (Conds.ConditionDisj [] :: Conds.Conditions String) (Conds.ConditionDisj [] :: Conds.Conditions String)) @?= True
-    (condEq == condEq) @?= True
+    test2True (==) ltAB ltAB
+    test2False (==) ltCD ltAB
+    test2False (==) eqAB ltAB
+    test2True (/=) eqAB eqCD
+    ConditionDisj [Condition ltAB, Condition eqCD] @?= ConditionDisj [Condition eqCD, Condition ltAB]
+    ConditionDisj [Condition eqCD] /= ConditionDisj [Condition eqCD, Condition ltAB] @?= True
+    ConditionDisj [Condition ltCD, Condition eqCD] /= ConditionDisj [Condition eqCD, Condition ltAB] @?= True
+    test2True (/=) (disjEmpty :: Conditions String) conjEmpty
+    test2False (==) disjEmpty $ ConditionDisj [ConditionConj [Condition (Eq "a" "a")]]
+    (disjEmpty :: Conditions String) @?= disjEmpty
+    condEq @?= condEq
 
 
 unit_attachment = do
-    (Conds.isAttachment (Conds.ConditionDisj [(Conds.Condition (Eq "c" "d"))]) (Conds.ConditionDisj [(Conds.Condition (Eq "c" "d")), (Conds.Condition (Lt "a" "b"))])) @?= True
-    (Conds.isAttachment (Conds.ConditionDisj [(Conds.Condition (Eq "c" "d"))]) (Conds.ConditionDisj [(Conds.Condition (Eq "c" "a")), (Conds.Condition (Lt "a" "b"))])) @?= False
-    (Conds.isAttachment (Conds.ConditionDisj [(Conds.Condition (Lt "a" "b")), (Conds.Condition (Eq "c" "d"))]) (Conds.ConditionDisj [(Conds.Condition (Eq "c" "d")), (Conds.Condition (Lt "a" "b")), (Conds.Condition (Eq "a" "d"))])) @?= True
+    test2True isAttachment (ConditionDisj [Condition eqCD]) $ ConditionDisj [Condition eqCD, Condition ltAB]
+    test2False isAttachment (ConditionDisj [Condition eqCD]) $ ConditionDisj [Condition eqCA, Condition ltAB]
+    test2True isAttachment (ConditionDisj [Condition ltAB, Condition eqCD]) $ ConditionDisj [Condition eqCD, Condition ltAB, Condition eqDA]
 
-    (Conds.isAttachment (Conds.ConditionConj [(Conds.Condition (Eq "c" "d")), (Conds.Condition (Lt "a" "b"))]) (Conds.ConditionConj [(Conds.Condition (Eq "c" "d"))])) @?= True
-    (Conds.isAttachment (Conds.ConditionConj [(Conds.Condition (Eq "c" "d"))]) (Conds.ConditionConj [(Conds.Condition (Eq "c" "a")), (Conds.Condition (Lt "a" "b"))])) @?= False
-    (Conds.isAttachment (Conds.ConditionConj [(Conds.Condition (Eq "c" "d")), (Conds.Condition (Lt "a" "b")), (Conds.Condition (Eq "a" "d"))]) (Conds.ConditionConj [(Conds.Condition (Lt "a" "b")), (Conds.Condition (Eq "c" "d"))])) @?= True
-
-
-condCeqD = (Conds.ConditionDisj [(Conds.ConditionConj [Conds.Condition (Eq "c" "d")])]) 
-condAeqB = (Conds.ConditionDisj [(Conds.ConditionConj [Conds.Condition (Eq "a" "b")])]) 
-condEmpty = (Conds.ConditionDisj [])
-condAeqBorCeqD = (Conds.ConditionDisj [(Conds.ConditionConj [Conds.Condition (Eq "c" "d")]), (Conds.ConditionConj [Conds.Condition (Eq "a" "b")])]) 
-condAeqBCeqD = (Conds.ConditionDisj [(Conds.ConditionConj [Conds.Condition (Eq "a" "b"), Conds.Condition (Eq "c" "d")])])
-condCltD = (Conds.ConditionDisj [(Conds.ConditionConj [Conds.Condition (Lt "c" "d")])])
-condCeqDCltD = (Conds.ConditionDisj [(Conds.ConditionConj [Conds.Condition (Eq "c" "d")]), (Conds.ConditionConj [Conds.Condition (Lt "c" "d")])])
+    test2True isAttachment (ConditionConj [Condition eqCD, Condition ltAB]) $ ConditionConj [Condition eqCD]
+    test2False isAttachment (ConditionConj [Condition eqCD]) $ ConditionConj [Condition eqCA, Condition ltAB]
+    test2True isAttachment (ConditionConj [Condition eqCD, Condition ltAB, Condition eqDA]) $ ConditionConj [Condition ltAB, Condition eqCD]
 
 unit_newDisjunction = do 
-    (Conds.equalConds (Conds.getNewDisjunctionOr condCeqD condCeqD) condCeqD) @?= True
+    test2 getNewDisjunctionOr condCeqD condCeqD condCeqD
 
-    (Conds.equalConds (Conds.getNewDisjunctionOr condCeqD condAeqB) condAeqB) @?= False
-    (Conds.equalConds (Conds.getNewDisjunctionOr condCeqD condAeqB) condAeqBorCeqD) @?= True
+    test2True ((/=) . uncurry getNewDisjunctionOr) (condCeqD, condAeqB) condAeqB
+    test2 getNewDisjunctionOr condCeqD condAeqB condAeqBorCeqD
 
-    (Conds.equalConds (Conds.getNewDisjunctionOr condCeqD  condAeqBCeqD) condCeqD) @?= True
-    (Conds.equalConds (Conds.getNewDisjunctionOr condEmpty condAeqB) condAeqB) @?= True
+    test2 getNewDisjunctionOr condCeqD condAeqBCeqD condCeqD
+    test2 getNewDisjunctionOr disjEmpty condAeqB condAeqB
 
-    (Conds.equalConds (Conds.getNewDisjunctionOr condCeqD condCltD) condCeqDCltD) @?= True
-    (Conds.equalConds (Conds.getNewDisjunctionOr condCeqDCltD condCltD) condCeqDCltD) @?= True
-
-unit_newConjunction = do
-    (Conds.equalConds (Conds.getNewDisjunctionAnd condCeqD condCeqD) condCeqD) @?= True
-
-    (Conds.equalConds (Conds.getNewDisjunctionAnd condCeqD condAeqB) condAeqB) @?= False
-    (Conds.equalConds (Conds.getNewDisjunctionAnd condCeqD condAeqB) condAeqBCeqD) @?= True
-
-    (Conds.equalConds (Conds.getNewDisjunctionAnd condCeqD condAeqBCeqD) condAeqBCeqD) @?= True
-    (Conds.equalConds (Conds.getNewDisjunctionAnd condEmpty condAeqB) condEmpty) @?= True
-
-    (Conds.equalConds (Conds.getNewDisjunctionAnd condCeqD condCeqDCltD) condCeqD) @?= True
-    (Conds.equalConds (Conds.getNewDisjunctionAnd condCeqDCltD condCltD) condCltD) @?= True
+    test2 getNewDisjunctionOr condCeqD condCltD condCeqDCltD
+    test2 getNewDisjunctionOr condCeqDCltD condCltD condCeqDCltD
 

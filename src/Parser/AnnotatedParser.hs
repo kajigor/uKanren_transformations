@@ -3,12 +3,12 @@
 module Parser.AnnotatedParser where
 
 import           Parser.SimpleParser (parseImport, ident, parseGoal, parseQuery)
-import           AnnotatedDef
-import           AnnotationType
+import           BTA.AnnotatedDef
+import           BTA.AnnotationType
 import           Eval            (postEval)
 import           Parser.Data     (Parser)
 import           Parser.Lexer    (boxBr, comma, lIdentifier, lexeme, roundBr, sc, symbol, uIdentifier)
-import           AnnotatedProgram
+import           BTA.AnnotatedProgram
 import           Syntax          (G (..), Term (..), X, unsafeConj, unsafeDisj)
 import           Text.Megaparsec (MonadParsec (try), many, sepBy, sepBy1, some, (<?>), (<|>))
 

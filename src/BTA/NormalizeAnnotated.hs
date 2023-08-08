@@ -11,25 +11,25 @@ import           Control.Monad.State
 import           Data.List                (intercalate, nub)
 import           Data.List.NonEmpty       (NonEmpty (..), toList)
 import           Data.List.NonEmpty.Extra (fromList)
-import qualified Data.Map as Map
-import           AnnotatedDef
-import           AnnotatedProgram
-import           AnnotationType
-import qualified InvokeAnnotation as Ann
+import           Debug.Trace
 import           Text.Printf
+import           BTA.AnnotatedDef
+import           BTA.AnnotatedProgram
+import           BTA.AnnotationType
+import           BTA.InvokeAnnotation
 import           BTA.SizeConversion
-import Debug.Trace
+import qualified Data.Map as Map
 
 
-goalFromList :: (AbstractG a -> AbstractG a -> [AbstractG a] -> AbstractG a) -> [AbstractG a] -> AbstractG a
+goalFromList :: (AnnG AbstractTerm a -> AnnG AbstractTerm a -> [AnnG AbstractTerm a] -> AnnG AbstractTerm a) -> [AnnG AbstractTerm a] -> AnnG AbstractTerm a
 goalFromList f (x : y : xs) = f x y xs
 goalFromList _ [x] = x
 goalFromList _ [] = error "Empty list"
 
-unsafeConj :: [AbstractG a] -> AbstractG a
+unsafeConj :: [AnnG AbstractTerm a] -> AnnG AbstractTerm a
 unsafeConj = goalFromList Conjunction
 
-unsafeDisj :: [AbstractG a] -> AbstractG a
+unsafeDisj :: [AnnG AbstractTerm a] -> AnnG AbstractTerm a
 unsafeDisj = goalFromList Disjunction
 
 
@@ -44,7 +44,7 @@ data Conj a = Conj [a] (NonEmpty (Base a))
             deriving (Eq, Show)
 
 data Base a = Unif (AbstractTerm a) (AbstractTerm a)
-            | Call String [AbstractTerm a] Ann.Ann
+            | Call String [AbstractTerm a] Ann
             deriving (Eq, Show)
 
 -- Definitions
@@ -63,12 +63,12 @@ instance Show Prg where
     let shownGoal = show goal in
     printf "%s\n\n? %s" shownDefs shownGoal
 
-toBase :: AbstractG String -> Either (AbstractG String) (Base String)
+toBase :: AnnG AbstractTerm String -> Either (AnnG AbstractTerm String) (Base String)
 toBase (Invoke name args ann) = Right $ Call name args ann
 toBase (t1 :=: t2) = Right $ Unif t1 t2
 toBase g = Left g
 
-norm :: AbstractG String -> State [String] [State [String] [Either (AbstractG String) (Base String)]] -- disjunction of conjunctions of calls and unifications
+norm :: AnnG AbstractTerm String -> State [String] [State [String] [Either (AnnG AbstractTerm String) (Base String)]] -- disjunction of conjunctions of calls and unifications
 norm (Fresh x g) = do
   modify (x:)
   norm g
@@ -78,7 +78,7 @@ norm (Disjunction x y gs) = do
   return (x' ++ y')
 norm g = return [norm' g]
 
-norm' :: AbstractG String -> State [String] [Either (AbstractG String) (Base String)]
+norm' :: AnnG AbstractTerm String -> State [String] [Either (AnnG AbstractTerm String) (Base String)]
 norm' (Conjunction x y gs) = do
   x' <- norm' x
   y' <- norm' (unsafeConj (y : gs))
@@ -88,14 +88,14 @@ norm' (Fresh x g) = do
   norm' g
 norm' g = return [norm'' g]
 
-norm'' :: AbstractG String -> Either (AbstractG String) (Base String)
+norm'' :: AnnG AbstractTerm String -> Either (AnnG AbstractTerm String) (Base String)
 norm'' g@(Invoke _ _ _) = toBase g
 norm'' g@(_ :=: _) = toBase g
 norm'' (Delay g) = toBase g
 norm'' (Fresh _ g) = error "Fresh on the base level"
 norm'' g = Left g
 
-normalizeProg :: AnnotatedProgram AbstractG String -> Prg
+normalizeProg :: AnnotatedProgram (AnnG AbstractTerm) String -> Prg
 normalizeProg (AnnotatedProgram defs goal) =
   let d = mapM (\(AnnotatedDef name args body anns) -> do
             b <- normalize body
@@ -106,7 +106,7 @@ normalizeProg (AnnotatedProgram defs goal) =
   let (g, (defs, _)) = runState (normalize goal) state in
   Prg (ds ++ defs) g
 
-normalize :: AbstractG String -> State ([Definition], Int) (Goal String)
+normalize :: AnnG AbstractTerm String -> State ([Definition], Int) (Goal String)
 normalize goal = do
   let (normalized, topLevelFresh) = runState (norm goal) []
   let transformed = mapM (\ state ->
@@ -116,18 +116,7 @@ normalize goal = do
   let conjs = map (\(fresh, gs) -> Conj (reverse fresh) $ fromList gs) goals
   let disj = Disj (reverse topLevelFresh) (fromList conjs)
   let result = Goal disj
-  -- let result = undefined -- Goal topLevelFresh $ map (\(fresh, gs) -> Disj fresh (fromList (Conj $ fromList gs)) goals
   return result
-
--- normalize :: G String -> State ([Definition], Int) (Goal String)
--- normalize goal = do
---   let (normalized, topLevelFresh) = runState (norm goal) []
---   let transformed = mapM (\ state ->
---         let (bases, fresh) = runState state [] in
---         ((fresh,) <$> mapM generateNewDef bases)) normalized
---   goals <- transformed
---   let result = Goal topLevelFresh $ map  Disj [] $ fromList $ map (\g -> Conj $ fromList g) goals
---   return result
 
 generateFreshName :: String -> [String] -> String
 generateFreshName n names =
@@ -145,18 +134,17 @@ instance Eq a => FreeVariables AbstractTerm a where
     where
       go (Sum n mp)    = Map.keys mp
 
-instance FreeVariables AbstractG Int where
-  fv :: AbstractG Int -> [Int]
+instance FreeVariables (AnnG AbstractTerm) Int where
+  fv :: AnnG AbstractTerm Int -> [Int]
   fv = nub . go
     where
       go (t1 :=:  t2) = fv t1 ++ fv t2
       go (Conjunction x y gs) = concatMap go (x : y : gs)
       go (Disjunction x y gs) = concatMap go (x : y : gs)
       go (Invoke _ ts _) = concatMap fv ts
-      -- go (Fresh x g)   = filter (x /=) $ go g
 
-instance FreeVariables AbstractG String where
-  fv :: AbstractG String -> [String]
+instance FreeVariables (AnnG AbstractTerm) String where
+  fv :: AnnG AbstractTerm String -> [String]
   fv = nub . go
     where
       go (t1 :=: t2) = fv t1 ++ fv t2
@@ -166,7 +154,7 @@ instance FreeVariables AbstractG String where
       go (Fresh x g) = filter (x /=) $ go g
       go (Delay g) = go g
 
-generateNewDef :: Either (AbstractG String) (Base String) -> State ([Definition], Int) (Base String)
+generateNewDef :: Either (AnnG AbstractTerm String) (Base String) -> State ([Definition], Int) (Base String)
 generateNewDef (Right b) = return b
 generateNewDef (Left g) = do
     newName <- generateNewName
@@ -174,7 +162,7 @@ generateNewDef (Left g) = do
     body <- normalize g
     let def = Definition newName args body $ take (length args) $ repeat Static
     modify (\(ds, n) -> (def:ds, n))
-    return $ Call newName (map (\x -> Sum 0 (Map.fromList [(x, 1)])) args) Ann.Unfold
+    return $ Call newName (map (\x -> Sum 0 (Map.fromList [(x, 1)])) args) Unfold
   where
     generateNewName = do
       (defs, n) <- get
@@ -183,10 +171,10 @@ generateNewDef (Left g) = do
     args = fv g
 
 
-fresh :: [a] -> AbstractG a -> AbstractG a
+fresh :: [a] -> AnnG AbstractTerm a -> AnnG AbstractTerm a
 fresh xs g = foldr Fresh g xs
 
-toSyntax :: Prg -> AnnotatedProgram AbstractG String
+toSyntax :: Prg -> AnnotatedProgram (AnnG AbstractTerm) String
 toSyntax (Prg defs g) =
     AnnotatedProgram definitions goal
   where
@@ -194,21 +182,21 @@ toSyntax (Prg defs g) =
 
     definitions = map (\(Definition name args g ann) -> AnnotatedDef name args (go g) ann) defs
 
-    baseToG :: Base a -> AbstractG a
+    baseToG :: Base a -> AnnG AbstractTerm a
     baseToG (Unif t1 t2) = t1 :=: t2
     baseToG (Call name args ann) = Invoke name args ann
 
-    conjToG :: Conj a -> AbstractG a
+    conjToG :: Conj a -> AnnG AbstractTerm a
     conjToG (Conj names bases) =
       let conj = unsafeConj $ baseToG <$> toList bases in
       fresh names conj
 
-    disjToG :: Disj a -> AbstractG a
+    disjToG :: Disj a -> AnnG AbstractTerm a
     disjToG (Disj names conjs) =
       let disj = unsafeDisj $ conjToG <$> toList conjs in
       fresh names disj
 
     go (Goal disj) = disjToG disj
 
-makeNormal :: AnnotatedProgram AbstractG String -> AnnotatedProgram AbstractG String
+makeNormal :: AnnotatedProgram (AnnG AbstractTerm) String -> AnnotatedProgram (AnnG AbstractTerm) String
 makeNormal = toSyntax . normalizeProg

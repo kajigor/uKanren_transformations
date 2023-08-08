@@ -1,7 +1,7 @@
 {-# LANGUAGE InstanceSigs #-}
-module AnnotatedProgram where
+module BTA.AnnotatedProgram where
 
-import           AnnotatedDef
+import           BTA.AnnotatedDef
 
 data AnnotatedProgram g a = AnnotatedProgram
   { getDefs :: [AnnotatedDef g a]

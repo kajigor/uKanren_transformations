@@ -12,7 +12,7 @@ import           Options.Applicative
 import qualified ParseApp
 import qualified Parser.Parser          as Parser
 import           Program
-import           AnnotatedProgram
+import           BTA.AnnotatedProgram
 import           Syntax                 (G, X)
 import           System.Directory       (getCurrentDirectory)
 import           Text.Printf            (printf)

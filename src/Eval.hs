@@ -15,7 +15,7 @@ import           Stream
 import qualified Subst
 import           Syntax
 import qualified VarInterpretation   as VI
-import Debug.Trace
+import           Debug.Trace
 
 unifyG :: (Subst.Subst -> S -> Ts -> Bool)
           -> Maybe Subst.Subst -> Ts -> Ts -> Maybe Subst.Subst

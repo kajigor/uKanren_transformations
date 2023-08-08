@@ -1,39 +1,40 @@
 
 module BTA.TerminationCheck where 
 
-import AnnotatedProgram
-import BTA.SizeConversion 
-import AnnotatedDef
-import AnnotationType
-import BTA.Conditions
-import qualified Data.Map as Map
-import FreshNames
-import Control.Monad.State
-import BTA.Inequalities 
-import BTA.Graph
-import qualified InvokeAnnotation as Inv
-import qualified Data.List as List
-import qualified Data.List.Split as Split
-import Data.Maybe
-import Data.Map as Map hiding (foldl, foldr, map, fmap, filter)
-import Data.Set as Set hiding (map, foldl, foldr, fmap, filter)
-import Debug.Trace
+import           Control.Monad.State
+import           Data.Group
+import           Debug.Trace
+import           BTA.AnnotatedDef
+import           BTA.AnnotatedProgram
+import           BTA.AnnotationType
+import           BTA.SizeConversion
+import           BTA.Conditions
+import           BTA.Graph
+import           BTA.Inequalities 
+import           BTA.InvokeAnnotation 
+import           FreshNames
+import qualified Data.Map             as Map
+import qualified Data.List            as List
+import qualified Data.List.Split      as Split
+import qualified Data.Set             as Set
 
-terminationCheck :: Show a => Ord a => AnnotatedProgram AbstractG a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> Bool 
+
+terminationCheck :: Show a => Ord a => AnnotatedProgram (AnnG AbstractTerm) a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef (AnnG AbstractTerm) a) -> Bool 
 terminationCheck program@(AnnotatedProgram defs goal) mapConditions mapDefs = 
     let (defsGraphs, defsVars) = unzip $ map (getPairsDef mapConditions mapDefs) defs in 
     let defsVarsRes = Map.unions defsVars in 
     let defsGraphsRes = goGraphMap (Map.unions defsGraphs) defsVarsRes $ map getName defs in 
     all (\name -> checkDecreasing (Map.findWithDefault Set.empty (name, name) defsGraphsRes) (filterArgs (getAnnotations $ mapDefs Map.! name) $ defsVarsRes Map.! (name, name))) $ map getName defs
-    where filterArgs :: [AnnotationType] -> ([String], [String]) -> ([String], [String])
-          filterArgs annotations (inArgs, outArgs) = 
-            let indices = List.elemIndices Static annotations in 
-            (map (inArgs !!) indices, map (outArgs !!) indices)
+  where 
+    filterArgs :: [AnnotationType] -> ([String], [String]) -> ([String], [String])
+    filterArgs annotations (inArgs, outArgs) = 
+        let indices = List.elemIndices Static annotations in 
+        (map (inArgs !!) indices, map (outArgs !!) indices)
     
 
 checkPossibleZero :: Graph String -> Map.Map ([String], [String]) Bool -> ([String], [String]) -> Map.Map ([String], [String]) Bool 
 checkPossibleZero graph curPossible (inArgs, outArgs) = 
-    let isPossible = any (\(inArg, outArg) -> Map.findWithDefault False (List.delete inArg inArgs, List.delete outArg outArgs) curPossible && atLeastZeroPath inArg outArg graph) [(inArg, outArg) | inArg <- inArgs, outArg <- outArgs] in
+    let isPossible = or $ (\inArg outArg -> Map.findWithDefault False (List.delete inArg inArgs, List.delete outArg outArgs) curPossible && atLeastZeroPath inArg outArg graph) <$> inArgs <*> outArgs in
     case isPossible of 
         True -> Map.insert (inArgs, outArgs) True curPossible 
         False -> curPossible
@@ -66,21 +67,22 @@ relaxTriple defsVars defsGraphs (a, b, c) =
     let curGraphs = Map.findWithDefault Set.empty (a, c) defsGraphs in 
     let addGraphs = Set.fromList [newGraph graph1 graph2 | graph1 <- graphs1, graph2 <- graphs2] in 
     Map.insert (a, c) (Set.union curGraphs addGraphs) defsGraphs
-    where   newGraph :: Graph String -> Graph String -> Graph String
-            newGraph graph1 graph2 = 
-                let (in1, out1) = defsVars Map.! (a, b) in 
-                let (in2, out2) = defsVars Map.! (b, c) in 
-                let (inRes, outRes) = defsVars Map.! (a, c) in  
-                let (newNamesInt, fn) = getNames (length in1 + length out1 + length out2) $ defaultNames :: ([Int], FreshNames) in 
-                let newNames = map show newNamesInt in 
-                let mapVars1 = Map.fromList (zip (in1 ++ out1) newNames) in 
-                let mapVars2 = Map.fromList (zip (in2 ++ out2) (List.drop (length in1) newNames)) in 
-                let graph1New = graphfmap (mapVars1 Map.!) graph1 in 
-                let graph2New = graphfmap (mapVars2 Map.!) graph2 in 
-                let coreVertexes = List.take (length in1) newNames ++ List.drop (length in1 + length out1) newNames in 
-                let graphNew = cleanGraph (supplement $ unionGraphs graph1New graph2New) coreVertexes in 
-                let mapVars3 = Map.fromList $ zip coreVertexes (inRes ++ outRes) in 
-                graphfmap (mapVars3 Map.!) graphNew 
+  where 
+    newGraph :: Graph String -> Graph String -> Graph String
+    newGraph graph1 graph2 = 
+        let (in1, out1) = defsVars Map.! (a, b) in 
+        let (in2, out2) = defsVars Map.! (b, c) in 
+        let (inRes, outRes) = defsVars Map.! (a, c) in  
+        let (newNamesInt, fn) = getNames (length in1 + length out1 + length out2) $ defaultNames :: ([Int], FreshNames) in 
+        let newNames = map show newNamesInt in 
+        let mapVars1 = Map.fromList (zip (in1 ++ out1) newNames) in 
+        let mapVars2 = Map.fromList (zip (in2 ++ out2) (List.drop (length in1) newNames)) in 
+        let graph1New = graphfmap (mapVars1 Map.!) graph1 in 
+        let graph2New = graphfmap (mapVars2 Map.!) graph2 in 
+        let coreVertexes = List.take (length in1) newNames ++ List.drop (length in1 + length out1) newNames in 
+        let graphNew = cleanGraph (supplement $ graph1New <> graph2New) coreVertexes in 
+        let mapVars3 = Map.fromList $ zip coreVertexes (inRes ++ outRes) in 
+        graphfmap (mapVars3 Map.!) graphNew 
 
 renamingPair :: String -> Map.Map String [String] -> (String, Graph String, [String], [String]) -> ((String, String), Graph String)
 renamingPair name mapDefsArgs (nameTo, graph, inArgs, outArgs) = 
@@ -90,7 +92,7 @@ renamingPair name mapDefsArgs (nameTo, graph, inArgs, outArgs) =
     ((name, nameTo), newGraph) 
 
 
-getPairsDef :: Show a => Ord a => Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> AnnotatedDef AbstractG a -> (Map.Map (String, String) (Set.Set (Graph String)), Map.Map (String, String) ([String], [String]))
+getPairsDef :: Show a => Ord a => Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef (AnnG AbstractTerm) a) -> AnnotatedDef (AnnG AbstractTerm) a -> (Map.Map (String, String) (Set.Set (Graph String)), Map.Map (String, String) ([String], [String]))
 getPairsDef mapConditions mapDefs def@(AnnotatedDef name args body annotations) = 
     let (namesInt, fn) = getNames (length args) $ defaultNames :: ([Int], FreshNames) in 
     let namesStr = map show namesInt :: [String] in 
@@ -104,11 +106,11 @@ getPairsDef mapConditions mapDefs def@(AnnotatedDef name args body annotations) 
     Map.fromList $ map (\(key, val) -> ((name, key), (namesStr, val))) $ Map.toList mapDefsArgs)
 
 
-formPair :: Ord a => AbstractG a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> [String] -> [String] -> Map.Map a String -> FreshNames -> [(String, Graph String, [String], [String])]
-formPair goal@(Invoke name terms ann) mapConditions mapDefs baseArgs args mapVars fn | ann == Inv.Unfold = 
+formPair :: Ord a => (AnnG AbstractTerm) a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef (AnnG AbstractTerm) a) -> [String] -> [String] -> Map.Map a String -> FreshNames -> [(String, Graph String, [String], [String])]
+formPair goal@(Invoke name terms ann) mapConditions mapDefs baseArgs args mapVars fn | ann == Unfold = 
     let (newArgsInt, newFn) = getNames (length terms) fn in 
     let newArgsStr = map show newArgsInt in 
-    let newTerms =  map (termfmap (\x -> mapVars Map.! x)) terms in
+    let newTerms =  map (termfmap (mapVars Map.!)) terms in
     let graph = handleOneInvokeConjunct newTerms newArgsStr args (ConditionConj []) in  
     case withoutPositiveCycle graph of 
         True -> [(name, cleanGraph graph (baseArgs ++ newArgsStr), baseArgs, newArgsStr)]
@@ -116,10 +118,10 @@ formPair goal@(Invoke name terms ann) mapConditions mapDefs baseArgs args mapVar
 formPair goal@(Invoke name terms ann) mapConditions mapDefs baseArgs args mapVars fn | otherwise = []
 
 
-goPairConjunct :: Ord a => AbstractG a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> [String] -> [String] -> Map.Map a String -> State ([Graph String], [(String, Int)], FreshNames) [(String, Graph String, [String], [String])]
-goPairConjunct g@(Invoke name terms ann) mapConditions mapDefs args newArgs mapVars | ann == Inv.Unfold = do 
+goPairConjunct :: Ord a => (AnnG AbstractTerm) a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef (AnnG AbstractTerm) a) -> [String] -> [String] -> Map.Map a String -> State ([Graph String], [(String, AbstractTerm String)], FreshNames) [(String, Graph String, [String], [String])]
+goPairConjunct g@(Invoke name terms ann) mapConditions mapDefs args newArgs mapVars | ann == Unfold = do 
     (graphs1, consts, fn) <- get 
-    let termsNew = map (termfmap (\x -> mapVars Map.! x)) terms 
+    let termsNew = map (termfmap (mapVars Map.!)) terms 
     let (newArgsInt, fnNew) = getNames (length terms) fn 
     let newArgsStr = map show newArgsInt 
     let graphs = map (addVertexes newArgsStr) graphs1
@@ -127,9 +129,9 @@ goPairConjunct g@(Invoke name terms ann) mapConditions mapDefs args newArgs mapV
     let conds = concatMap getCondsOneTerm $ zip newArgsStr termsNew 
     let graphsNew = filter withoutPositiveCycle $ map (\initGraph -> supplement $ foldl (\graph cond@(a, b, term) -> addWeightCond graph a b term) initGraph conds) graphs 
     let res = map (\graph -> (name, cleanGraph graph (args ++ newArgsStr), args, newArgsStr)) graphsNew
-    let condsFun = Map.findWithDefault (ConditionDisj []) name mapConditions
-    let newConds@(ConditionDisj disjuncts) = fmap (\x -> mapArgs Map.! x) condsFun 
-    let graphsRes = filter withoutPositiveCycle $ [unionGraphs graph (getFromConjunction cond newArgsStr) | graph <- graphsNew, cond <- disjuncts] 
+    let condsFun = Map.findWithDefault disjEmpty name mapConditions
+    let newConds@(ConditionDisj disjuncts) = fmap (mapArgs Map.!) condsFun 
+    let graphsRes = filter withoutPositiveCycle $ [graph <> (getFromConjunction cond newArgsStr) | graph <- graphsNew, cond <- disjuncts] 
     put (graphsRes, consts, fnNew)
     return res
 goPairConjunct g@(Invoke name terms ann) mapConditions mapDefs args newArgs mapVars | otherwise = do 
@@ -137,17 +139,17 @@ goPairConjunct g@(Invoke name terms ann) mapConditions mapDefs args newArgs mapV
 goPairConjunct g@(term1 :=: term2) mapConditions mapDefs args newArgs mapVars = do
     (graphs, consts, fn) <- get 
     let ((graphs1, consts1), fn1) = runState (goOneConjunct g Map.empty mapConditions args mapVars) fn 
-    let resGraphs = [unionGraphs graph graph1 | graph <- graphs, graph1 <- graphs1] 
-    let resGraphsWithConsts = filter withoutPositiveCycle $ map (\curg -> foldl (\g ((v1 ,n1), (v2, n2)) -> addWeightCond g v1 v2 (Sum (n2 - n1) Map.empty)) curg [(v1, v2) | v1 <- consts, v2 <- consts1]) resGraphs
+    let resGraphs = [graph <> graph1 | graph <- graphs, graph1 <- graphs1] 
+    let resGraphsWithConsts = filter withoutPositiveCycle $ map (\curg -> foldl (\g ((v1, t1), (v2, t2)) -> addWeightCond g v1 v2 (t2 ~~ t1)) curg [(v1, v2) | v1 <- consts, v2 <- consts1]) resGraphs
     put (resGraphsWithConsts, List.union consts consts1, fn1)
     return []
 
-goPairsConjunction :: Ord a => [AbstractG a] -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> [String] -> [String] -> Map.Map a String -> State ([Graph String], [(String, Int)], FreshNames) [(String, Graph String, [String], [String])]
+goPairsConjunction :: Ord a => [AnnG AbstractTerm a] -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef (AnnG AbstractTerm) a) -> [String] -> [String] -> Map.Map a String -> State ([Graph String], [(String, AbstractTerm String)], FreshNames) [(String, Graph String, [String], [String])]
 goPairsConjunction lstG mapConditions mapDefs args newArgs mapVars = do
     res <- mapM (\goal -> goPairConjunct goal mapConditions mapDefs args newArgs mapVars) lstG
     return $ concat res
 
-goPairsBody :: Ord a => AbstractG a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef AbstractG a) -> [String] -> [String] -> Map.Map a String -> FreshNames ->  [(String, Graph String, [String], [String])]
+goPairsBody :: Ord a => AnnG AbstractTerm a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef (AnnG AbstractTerm) a) -> [String] -> [String] -> Map.Map a String -> FreshNames ->  [(String, Graph String, [String], [String])]
 goPairsBody goal@(Conjunction g1 g2 lstG) mapConditions mapDefs args newArgs mapVars fn = 
     let (pairs, state) = runState (goPairsConjunction (g1 : g2 : lstG) mapConditions mapDefs args newArgs mapVars) ([Graph newArgs Map.empty], [], fn) in 
     pairs

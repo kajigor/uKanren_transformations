@@ -1,29 +1,23 @@
 module TerminationCheckApp where
-import qualified Parser.AnnotatedParser as AnnotatedParser
-import AnnotatedProgram
-import InvokeAnnotation
-import AnnotatedDef
-import qualified Syntax
-import BTA.SizeConversion (convert)
-import Debug.Trace
-import BTA.AnnotationsSetting (setAnnotations)
-import BTA.NormalizeAnnotated (makeNormal)
-import BTA.TerminationCheck (goGraphMap, getPairsDef)
-import BTA.Inequalities (go)
-import BTA.SizeConversion (AbstractG)
-import BTA.Graph
-import BTA.DotAbstract (printTree)
-import System.FilePath (takeBaseName)
-import BTA.DotAbstract
-import qualified Data.Map as Map
-import qualified Data.Set as Set
-import System.FilePath ((<.>), (</>))
-import System.Directory (createDirectoryIfMissing)
-import           Util.File              (createDirRemoveExisting)
-import           Util.Miscellaneous                (escapeTick)
-import           System.Process                    (system)
-import           Text.Printf
 
+
+import           Debug.Trace
+import           System.FilePath                   ((</>))
+import           Util.File                         (createDirRemoveExisting)
+import           System.FilePath                   (takeBaseName)
+import           BTA.AnnotatedDef
+import           BTA.AnnotatedProgram
+import           BTA.AnnotationsSetting            (setAnnotations)
+import           BTA.DotAbstract                   (printTree)
+import           BTA.Graph
+import           BTA.Inequalities                  (go)
+import           BTA.InvokeAnnotation
+import           BTA.NormalizeAnnotated            (makeNormal)
+import           BTA.TerminationCheck              (goGraphMap, getPairsDef)
+import           BTA.SizeConversion                (convert, AbstractTerm)
+import qualified Data.Map                          as Map
+import qualified Data.Set                          as Set
+import qualified Syntax
 
 runWithParser :: (FilePath -> IO (Either String (AnnotatedProgram Syntax.G String))) -> FilePath -> FilePath -> IO ()
 runWithParser parser inputFile outDir = do
@@ -38,9 +32,9 @@ runWithParser parser inputFile outDir = do
             writeFile (dir </> "ans.mk") $ show annotatedProgram
 
 
-showGraphs :: AnnotatedProgram AnnG String -> FilePath -> IO ()
+showGraphs :: AnnotatedProgram (AnnG Syntax.Term) String -> FilePath -> IO ()
 showGraphs annotatedProgram dir = do 
-    let abstractProgram@(AnnotatedProgram defs goal) = makeNormal $ convert annotatedProgram 
+    let defs = getDefs $ makeNormal $ convert annotatedProgram 
     let mapDefs = Map.fromList $ zip (map getName defs) defs
     let mapConditions = go defs mapDefs Map.empty 
     let (defsGraphs, defsVars) = unzip $ map (getPairsDef mapConditions mapDefs) defs
@@ -51,7 +45,7 @@ showGraphs annotatedProgram dir = do
     mapM_ (\(i, ((from, to), graph)) -> printTree (dir </> from </> to) (show i ++ ".dot") graph) graphsPairs
 
 
-normalView :: Map.Map String (AnnotatedDef AbstractG String) -> Map.Map (String, String) ([String], [String]) -> ((String, String), Graph String) -> ((String, String), Graph String) 
+normalView :: Map.Map String (AnnotatedDef (AnnG AbstractTerm) String) -> Map.Map (String, String) ([String], [String]) -> ((String, String), Graph String) -> ((String, String), Graph String) 
 normalView mapDefs defsVars ((a, b), graph) = 
     let (inVars, outVars) = defsVars Map.! (a, b) in 
     let inVarsReal = map ("from_" ++ ) $ getArgs $ mapDefs Map.! a in 
