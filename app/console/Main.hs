@@ -6,7 +6,7 @@ import           Data.Maybe             (fromMaybe)
 import qualified EvalApp
 import qualified ModeApp
 import qualified NormalizeApp
-import qualified TerminationCheckApp
+import qualified AnnotationsSettingApp
 import qualified Parser.AnnotatedParser as AnnotatedParser
 import           Options.Applicative
 import qualified ParseApp
@@ -30,7 +30,7 @@ data Transformation
   | PrologToMk
   | Mode
   | Translate
-  | TerminationCheck
+  | AnnotationsSetting
 
 data Action = Action { transformation :: Transformation
                      , input          :: FilePath
@@ -133,12 +133,12 @@ parseTransformation =
   <|> prologToMkParser
   <|> modeParser
   <|> translateParser
-  <|> terminationCheckParser
+  <|> annotationsSettingParser
 
-terminationCheckParser :: Parser Transformation
-terminationCheckParser = flag' TerminationCheck
-  (  long "terminationCheck"
-  <> help "run check on safety unfolding"
+annotationsSettingParser :: Parser Transformation
+annotationsSettingParser = flag' AnnotationsSetting
+  (  long "annotationsSetting"
+  <> help "Run check on safety unfolding, unfold in safe points"
   )
 
 normalizeParser :: Parser Transformation
@@ -242,8 +242,8 @@ runAction args = do
       Transformer.PrologToMk.transform (input action)
     Translate ->
       TranslateApp.runWithParser parser (input action) (output action) (relName action) (groundVars action)
-    TerminationCheck -> 
-      TerminationCheckApp.runWithParser (getAnnotationParser) (input action) (output action)
+    AnnotationsSetting -> 
+      AnnotationsSettingApp.runWithParser (getAnnotationParser) (input action) (output action)
     x -> do
       let transformer = chooseTransformer (transformation action)
       if isInputADir action

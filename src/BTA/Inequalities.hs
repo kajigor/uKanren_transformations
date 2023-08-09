@@ -31,8 +31,7 @@ goOneCycle (def : otherDefs) mapDefs mapConditions =
 
 goOneDef :: Ord a => AnnotatedDef (AnnG AbstractTerm) a ->  Map String (AnnotatedDef (AnnG AbstractTerm) a) -> Map String (Conditions a) -> Map String (Conditions a)
 goOneDef def@(AnnotatedDef name args body annotations) mapDefs mapConditions = 
-    let (namesInt, fn) = getNames (length args) $ defaultNames :: ([Int], FreshNames) in 
-    let namesStr = map show namesInt :: [String] in 
+    let (namesStr, fn) = getNamesStr (length args) $ defaultNames in 
     let mapVars = fromList $ zip args namesStr in 
     let condsString = goBody body mapDefs mapConditions namesStr namesStr fn mapVars in 
     let mapInverse = fromList . map swap . toList $ mapVars in 
@@ -63,9 +62,8 @@ handleInvokeUnfold term@(Invoke name terms ann) mapDefs mapConditions args mapVa
     fn <- get 
     let condsFun = findWithDefault disjEmpty name mapConditions
     let termsNew = map (termfmap (mapVars !)) terms
-    let (newArgsInt, fnNew) = getNames (length terms) fn 
+    let (newArgsStr, fnNew) = getNamesStr (length terms) fn 
     put fnNew
-    let newArgsStr = map show newArgsInt 
     let mapArgs = fromList $ zip (getArgs $ mapDefs ! name) newArgsStr 
     let newConds@(ConditionDisj disjuncts) = fmap (mapArgs !) condsFun 
     return $ filter withoutPositiveCycle $ map (handleOneInvokeConjunct termsNew newArgsStr args) disjuncts

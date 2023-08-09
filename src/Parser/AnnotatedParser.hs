@@ -22,13 +22,13 @@ parseStatic :: Parser AnnotationType
 parseStatic = do
     symbol "static"
     return $ Static
-    <?> "parseStatic"
+    <?> "static type"
 
 parseDynamic :: Parser AnnotationType
 parseDynamic = do
     symbol "dynamic"
     return $ Dynamic
-    <?> "parseDynamic"
+    <?> "dynamic type"
 
 parseTypeConstructor :: Parser AnnotationType
 parseTypeConstructor = do
@@ -37,19 +37,19 @@ parseTypeConstructor = do
     types <- many parseType
     symbol ")"
     return $ TypeC name types
-    <?> "parseTypeConstructor"
+    <?> "type constructor"
 
 parseType :: Parser AnnotationType
 parseType = 
     parseStatic <|>
     parseDynamic <|>
     parseTypeConstructor 
-    <?> "parseType"
+    <?> "type"
 
 parseTypes :: Parser [AnnotationType]
 parseTypes = 
     many parseType 
-    <?> "parseTypes"
+    <?> "types"
 
 parseArgs :: Int -> Parser [X] 
 parseArgs num | num == 0 = do
@@ -71,7 +71,7 @@ parseTypeDef = do
   goal <- parseGoal
   symbol ";"
   return $ AnnotatedDef name args goal types
-  <?> "parseTypeDef"
+  <?> "typed Definition"
 
 -- program
 parseProg :: Parser (AnnotatedProgram G X)

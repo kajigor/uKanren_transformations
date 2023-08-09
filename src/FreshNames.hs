@@ -5,6 +5,7 @@
 module FreshNames where
 
 import           Prelude hiding ((<))
+import           Data.Bifunctor
 
 newtype PolyFreshNames a = FreshNames { unFreshNames :: a }
                          deriving (Show, Eq, Ord, Functor)
@@ -22,3 +23,9 @@ instance FreshName Int where
   getNames n (FreshNames x) =
     let (xs, h:_) = splitAt n $ enumFrom x
     in (xs, FreshNames h)
+
+getNameStr :: FreshNames -> (String, FreshNames) 
+getNameStr fn = first show $ getFreshName fn 
+
+getNamesStr :: Int -> FreshNames -> ([String], FreshNames)
+getNamesStr n fn = first (map show) $ getNames n fn 

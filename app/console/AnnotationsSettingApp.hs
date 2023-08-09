@@ -1,4 +1,4 @@
-module TerminationCheckApp where
+module AnnotationsSettingApp where
 
 
 import           Debug.Trace
