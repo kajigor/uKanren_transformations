@@ -1,10 +1,10 @@
-:: whatToDoTodayo today weather proposal = 
+:: whatToDoTodayo today weather proposal =
   [ daykind weatherkind:
-      {kindOfDayo today daykind} /\ 
-      {kindOfWeathero weather weatherkind} /\ 
+      {kindOfDayo today daykind} /\
+      {kindOfWeathero weather weatherkind} /\
       {proposalo daykind weatherkind proposal}]
 
-:: kindOfDayo day daykind = conde 
+:: kindOfDayo day daykind = conde
   (day === <monday:>        /\ daykind === <workday:>)
   (day === <tuesday:>       /\ daykind === <workday:>)
   (day === <wednesday:>     /\ daykind === <workday:>)
@@ -18,13 +18,13 @@
   (day === <newYearsDay:>   /\ daykind === <badday:>)
   (day === <fridayThe13th:> /\ daykind === <badday:>)
 
-:: kindOfWeathero weather weatherKind = conde 
+:: kindOfWeathero weather weatherKind = conde
   (weather === <sunny:> /\ weatherKind === <nice:>)
   (weather === <rainy:> /\ weatherKind === <nasty:>)
   (weather === <foggy:> /\ weatherKind === <nasty:>)
   (weather === <windy:> /\ weatherKind === <nasty:>)
 
-:: proposalo daykind weatherkind proposal = conde 
+:: proposalo daykind weatherkind proposal = conde
   (daykind === <workday:>  /\ proposal === <goToWork:>)
   (daykind === <weekend:>  /\ weatherkind === <nice:>  /\ proposal === <goOutToTheNature:>)
   (daykind === <weekend:>  /\ weatherkind === <nice:>  /\ proposal === <visitTheGolfClub:>)
@@ -35,3 +35,5 @@
   (daykind === <weekend:>  /\ proposal === <itIsFunToLearnJapanese:>)
   (daykind === <badday:>   /\ proposal === <youHadBetterStayInBed:>)
   (daykind === <feastday:> /\ {proposalo weekend weather proposal})
+
+? {whatToDoTodayo today weather proposal}

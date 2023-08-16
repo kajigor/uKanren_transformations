@@ -16,20 +16,20 @@ data Nop = Nop
 instance Show Nop where
   show x = ""
 
-fresh1' :: (Show x) => x -> (Tx -> G X) -> G X
-fresh1' i f = fresh ["a" ++ show i] (f (V $ "a" ++ show i))
+fresh1' :: X -> (Tx -> G X) -> G X
+fresh1' i f = fresh ["a" ++ i] (f (V $ "a" ++ i))
 
-fresh2' :: (Show x) => x -> (Tx -> Tx -> G X) -> G X
-fresh2' i f = fresh ["a" ++ show i, "b" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i))
+fresh2' :: X -> (Tx -> Tx -> G X) -> G X
+fresh2' i f = fresh ["a" ++ i, "b" ++ i] (f (V $ "a" ++ i) (V $ "b" ++ i))
 
-fresh3' :: (Show x) => x -> (Tx -> Tx -> Tx -> G X) -> G X
-fresh3' i f = fresh ["a" ++ show i, "b" ++ show i, "c" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i) (V $ "c" ++ show i))
+fresh3' :: X -> (Tx -> Tx -> Tx -> G X) -> G X
+fresh3' i f = fresh ["a" ++ i, "b" ++ i, "c" ++ i] (f (V $ "a" ++ i) (V $ "b" ++ i) (V $ "c" ++ i))
 
-fresh4' :: (Show x) => x -> (Tx -> Tx -> Tx -> Tx -> G X) -> G X
-fresh4' i f = fresh ["a" ++ show i, "b" ++ show i, "c" ++ show i, "d" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i) (V $ "c" ++ show i) (V $ "d" ++ show i))
+fresh4' :: X -> (Tx -> Tx -> Tx -> Tx -> G X) -> G X
+fresh4' i f = fresh ["a" ++ i, "b" ++ i, "c" ++ i, "d" ++ i] (f (V $ "a" ++ i) (V $ "b" ++ i) (V $ "c" ++ i) (V $ "d" ++ i))
 
-fresh5' :: (Show x) => x -> (Tx -> Tx -> Tx -> Tx -> Tx -> G X) -> G X
-fresh5' i f = fresh ["a" ++ show i, "b" ++ show i, "c" ++ show i, "d" ++ show i, "e" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i) (V $ "c" ++ show i) (V $ "d" ++ show i) (V $ "e" ++ show i))
+fresh5' :: X -> (Tx -> Tx -> Tx -> Tx -> Tx -> G X) -> G X
+fresh5' i f = fresh ["a" ++ i, "b" ++ i, "c" ++ i, "d" ++ i, "e" ++ i] (f (V $ "a" ++ i) (V $ "b" ++ i) (V $ "c" ++ i) (V $ "d" ++ i) (V $ "e" ++ i))
 
 inj :: (Show a) => a -> Tx
 inj x = C (show x) []
@@ -183,10 +183,10 @@ chainDoubleMove oldQua newQua a b = fresh2' "chainMove" $ \q1 q2 ->
     ]
 
 applyMove :: Tx -> Tx -> Tx -> Tx -> G X
-applyMove m l r newState = fresh2' "apply#quas" $ \l' r' ->
+applyMove m l r newState = fresh2' "apply_quas" $ \l' r' ->
   (newState === state l' r')
     &&& fresh2'
-      "apply#people"
+      "apply_people"
       ( \a b ->
           unsafeDisj
             [ unsafeConj
@@ -206,11 +206,11 @@ swap :: Tx -> Tx -> G X
 swap s s' = fresh2' "swap" $ \l r -> (s === state l r) &&& (s' === state r l)
 
 step :: Tx -> Tx -> Tx -> G X
-step s m s' = fresh2' "step#state" $ \l r ->
+step s m s' = fresh2' "step_state" $ \l r ->
   (s === state l r)
     &&& unsafeDisj
       [ isTorch l &&& noTorch r &&& applyMove m l r s',
-        isTorch r &&& noTorch l &&& fresh1' "step#s''" (\s'' -> applyMove m r l s'' &&& swap s'' s')
+        isTorch r &&& noTorch l &&& fresh1' "step_s''" (\s'' -> applyMove m r l s'' &&& swap s'' s')
       ]
 
 evalBridges :: Tx -> Tx -> Tx -> G X
