@@ -77,14 +77,14 @@ instance SimplePretty a => SimplePretty (G a) where
   toSimplePretty (Invoke name args)
     | null name =  Left "Relation name cannot be empty"
     | otherwise = do
-        args <- mapM toSimplePretty args
+        args <- mapM parenIfCon' args
         return (pretty name <+> hsep args)
   toSimplePretty g@(Disjunction x y xs) = do
     disjuncts <- mapM (\h -> parensIfNeeded g h <$> toSimplePretty h) (x:y:xs)
     return $ vcat $ punctuate disjOp disjuncts
   toSimplePretty g@(Conjunction x y xs) = do
     conjuncts <- mapM (\h -> parensIfNeeded g h <$> toSimplePretty h) (x:y:xs)
-    return $ hcat $ punctuate conjOp conjuncts
+    return $ vcat $ punctuate conjOp conjuncts
   toSimplePretty g@(Fresh _ b) = do
     let (names, goal) = collectFreshVars g
     goal <- toSimplePretty goal
@@ -151,4 +151,4 @@ instance SimplePretty a => SimplePretty (Program G a) where
   toSimplePretty (Program defs goal) = do
     defs <- mapM toSimplePretty defs
     goal <- toSimplePretty goal
-    return $ vsep (intersperse mempty defs) <> line <> line <> questionMark <+> goal
+    return $ vsep (intersperse mempty (map (<> semi) defs)) <> line <> line <> questionMark <+> goal
