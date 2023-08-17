@@ -25,7 +25,7 @@ subTerm (V x) (V y)  = x == y
 subTerm _ _ = False
 
 -- Checks if the current goal should be unfolded more than once.
-checkWhenUnfolding :: G S -> Env.Env -> Subst.Subst -> Bool
+checkWhenUnfolding :: G S -> Env.Env -> Subst.Subst S -> Bool
 checkWhenUnfolding g@(Invoke n xs) env subst =
   let gs = evalState (oneStep g subst) env in
   not $ any (\(goals, s) -> any (\g' -> check g (Subst.substitute s g')) goals) gs

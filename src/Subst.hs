@@ -61,6 +61,8 @@ instance ApplySubst G where
   substitute _ g = error "We have only planned to substitute into calls."
   --substitute _ g = error $ printf "We have only planned to substitute into calls, and you are trying to substitute into:\n%s" (show g)
 
+substituteList :: (Ord v) => Subst v -> [G v] -> [G v]
+substituteList = map . substitute
 
 -- instance ApplySubst (forall v. [G v]) where
 --   substitute = map . substitute

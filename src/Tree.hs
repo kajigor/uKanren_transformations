@@ -7,14 +7,14 @@ import           Text.Printf
 
 type Id = Int
 data Tree =
-  Prune   [G S]                                     |
-  Fail                                              |
-  Success Subst.Subst                               |
-  Or      Tree Tree (G S) Subst.Subst               |
-  Rename  Id (G S) Subst.Subst Renaming Subst.Subst |
-  Gen     Id Generalizer Tree (G S) Subst.Subst     |
-  Call    Id Tree (G S) Subst.Subst                 |
-  Split   Id [Tree] (G S) Subst.Subst               deriving Show
+  Prune   [G S]                                             |
+  Fail                                                      |
+  Success (Subst.Subst S)                                   |
+  Or      Tree Tree (G S) (Subst.Subst S)                   |
+  Rename  Id (G S) (Subst.Subst S) Renaming (Subst.Subst S) |
+  Gen     Id Generalizer Tree (G S) (Subst.Subst S)         |
+  Call    Id Tree (G S) (Subst.Subst S)                     |
+  Split   Id [Tree] (G S) (Subst.Subst S)                   deriving Show
 
 -- Renaming
 type Renaming = [(S, S)]

@@ -52,7 +52,7 @@ fromInt :: Int -> Tx
 fromInt 0 = zro
 fromInt n = suc (fromInt (n - 1))
 
-toInt :: Ts -> Subst -> Maybe Int
+toInt :: Ts -> Subst Int -> Maybe Int
 toInt (V n) s = Subst.lookup n s >>= (`toInt` s)
 toInt (C "zro" []) s = Just 0
 toInt (C "suc" [t]) s = (+ 1) <$> toInt t s
@@ -239,7 +239,7 @@ startState = state (qua' True True True True True) (qua' False False False False
 endState :: Tx
 endState = state (qua' False False False False False) (qua' True True True True True)
 
-showBridges :: Ts -> Subst -> Maybe String
+showBridges :: Ts -> Subst Int -> Maybe String
 showBridges (V n) s = Subst.lookup n s >>= (`showBridges` s)
 showBridges (C "zro" []) s = Just "0"
 showBridges t@(C "suc" _) s = show <$> toInt t s

@@ -15,6 +15,7 @@ import           System.Directory       (getCurrentDirectory)
 import           Text.Printf            (printf)
 import qualified Transformer.PrologToMk
 import qualified TranslateApp
+import qualified DepApp
 import           Util.File              (failIfNotExist, getFiles, isDir)
 import           Util.Miscellaneous     (mapLeft)
 
@@ -27,6 +28,7 @@ data Transformation
   | PrologToMk
   | Mode
   | Translate
+  | Dependence
 
 data Action = Action { transformation :: Transformation
                      , input          :: FilePath
@@ -129,6 +131,7 @@ parseTransformation =
   <|> prologToMkParser
   <|> modeParser
   <|> translateParser
+  <|> dependenceParser
 
 normalizeParser :: Parser Transformation
 normalizeParser = flag' Normalize
@@ -158,6 +161,12 @@ translateParser :: Parser Transformation
 translateParser = flag' Translate
   ( long "translate"
   <> help "Translate miniKanren to Haskell"
+  )
+
+dependenceParser :: Parser Transformation
+dependenceParser = flag' Dependence
+  (  long "dep"
+  <> help "Run dependence check on miniKanren"
   )
 
 cpdParser :: Parser Transformation
@@ -208,6 +217,7 @@ defaultOutputDir args =
       Parser -> "parse"
       Mode -> "mode"
       Translate -> "translate"
+      Dependence -> "dep"
 
 runAction :: Args -> IO ()
 runAction args = do
@@ -226,6 +236,8 @@ runAction args = do
       Transformer.PrologToMk.transform (input action)
     Translate ->
       TranslateApp.runWithParser parser (input action) (output action) (relName action) (groundVars action)
+    Dependence -> 
+      DepApp.runWithParser parser (input action)
     x -> do
       let transformer = chooseTransformer (transformation action)
       if isInputADir action

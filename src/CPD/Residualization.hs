@@ -35,7 +35,7 @@ residualizeGlobalTree tree =
   let definitions = foldl (\defs gs -> fst3 (renameGoals gs defs) ) [] $ map fst nodes  in
   mapMaybe (\(gs, sld) -> residualizeSldTree gs sld definitions) nodes
 
-unifyInvocationLists :: [G S] -> [G S] -> Maybe Subst.Subst -> Maybe Subst.Subst
+unifyInvocationLists :: [G S] -> [G S] -> Maybe (Subst.Subst S) -> Maybe (Subst.Subst S)
 unifyInvocationLists [] [] subst = subst
 unifyInvocationLists xs@(Invoke name args : gs) ys@(Invoke name' args' : gs') subst | name == name' && length args == length args' = do
   let subst' = unifyArgs args args' subst
@@ -163,7 +163,7 @@ residualizeSldTree rootGoals tree definitions = do
 residualizeGoals :: [G S] -> Definitions -> G X
 residualizeGoals = generateInvocation
 
-residualizeSubst :: Subst.Subst -> G X
+residualizeSubst :: Subst.Subst S -> G X
 residualizeSubst subst =
   unsafeConj $ map (\(s, ts) -> Res.toX (V s) === Res.toX ts) $ reverse (Subst.toList subst)
 

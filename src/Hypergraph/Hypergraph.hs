@@ -6,19 +6,17 @@ import Prelude hiding (tail, head)
 import qualified Data.List as List
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-import Control.Monad (guard, liftM2)
-import Data.List (subsequences)
+import Control.Monad (guard)
+import Data.List (subsequences, intercalate)
 import Data.Maybe (catMaybes, isJust)
-import Debug.Trace
 import Syntax ( Term(..) )
 import Subst (Subst, empty)
 import Eval (unify)
-import Control.Applicative ((<|>))
 
 type Var = Integer
 type Node n = n
-data Hyperarc n l = Arc { tail :: Set.Set n, head :: n, arcLabel :: l } deriving (Eq, Show, Functor)
-data Hypergraph n al = Hypergraph { nodes :: [Node n], groundNodes :: Set.Set n, arcs :: [Hyperarc n al] } deriving (Eq, Show, Functor)
+data Hyperarc n l = Arc { tail :: Set.Set n, head :: n, arcLabel :: l } deriving (Eq, Show)
+data Hypergraph n al = Hypergraph { nodes :: [Node n], groundNodes :: Set.Set n, arcs :: [Hyperarc n al] } deriving (Eq, Show)
 
 data Mode = Ground | NonGround deriving (Eq, Show, Ord)
 data DetLabel = Bot | Det | Nondet deriving (Eq, Show, Ord, Bounded)
@@ -28,13 +26,35 @@ type DepArc n = Hyperarc n DetLabel
 type DepNode n = Node n
 type AbstractSubst v = DepRep v
 
+prettyDet Bot = "⊥"
+prettyDet Det = "d"
+prettyDet Nondet = "?"
+
+
+varnames = ["x", "y", "z", "w"]
+
+prettyArc :: DepArc String -> String
+prettyArc (Arc tail head label) = concat ["{", intercalate ", " $ Set.toList tail, "}", "-", prettyDet label, "->", head]
+
+prettyVars :: Hypergraph Integer l -> Hypergraph String l
+prettyVars d@(Hypergraph { nodes = n}) | length n <= length varnames = hypergraphmap (\i -> varnames !! fromInteger i) d
+                                       | otherwise = hypergraphmap show d
+prettyGraph' :: DepRep String -> String
+prettyGraph' (Hypergraph { groundNodes = g, arcs = a }) = concat ["<", intercalate ", " $ Set.toList g, ">[", intercalate ", " $ map prettyArc a, "]"]
+
+prettyGraph :: (Show n) => DepRep n -> String
+prettyGraph = prettyGraph' . hypergraphmap show
+
+prettyVarGraph :: DepRep Integer -> String
+prettyVarGraph = prettyGraph' . prettyVars
+
 isSatisfied :: (Ord n) => Set.Set n -> Hyperarc n l -> Bool
 isSatisfied n e = tail e `Set.isSubsetOf` n
 
 type Connection n l = [Hyperarc n l]
 
 loops :: (Ord n) => Hypergraph n l -> n -> [Hyperarc n l]
-loops g v = filter (\e -> v `Set.member` (tail e) && head e == v) (arcs g)
+loops g v = filter (\e -> v `Set.member` tail e && head e == v) (arcs g)
 
 findConnections :: (Ord n) => Hypergraph n DetLabel -> Set.Set n -> n -> [Connection n DetLabel]
 findConnections g@(Hypergraph nodes _ arcs) s n
@@ -68,6 +88,9 @@ isRedundant g e@(Arc tail head l) = case relevantDependence (g {arcs = List.dele
 clearRedundant :: (Ord n) => DepRep n -> DepRep n
 clearRedundant g = foldl (\g' e -> if isRedundant g' e then g' {arcs = List.delete e (arcs g')} else g') g (arcs g)
 
+clearUnimportant :: (Ord n) => DepRep n -> DepRep n
+clearUnimportant g = g { arcs = filter (\e -> arcLabel e < Nondet || head e `Set.notMember` groundNodes g) (arcs g) }
+
 isRedundantTail :: (Ord n) => DepRep n -> Set.Set n -> n -> DetLabel -> Bool
 isRedundantTail g t i l = case relevantDependence g (Set.delete i t) i of
     Nothing -> False
@@ -80,16 +103,22 @@ simplifyArcs :: (Ord n) => DepRep n -> DepRep n
 simplifyArcs g = g { arcs = map (simplifyArc g) (arcs g) }
 
 simplify :: (Ord n) => DepRep n -> DepRep n
-simplify = simplifyArcs . clearRedundant
+simplify = clearRedundant . simplifyArcs
 
 arcmap :: (Ord b) => (a -> b) -> Hyperarc a l -> Hyperarc b l
 arcmap f a = a { tail = Set.mapMonotonic f (tail a), head = f (head a) }
+
+hypergraphmap :: (Ord b) => (a -> b) -> Hypergraph a l -> Hypergraph b l
+hypergraphmap f (Hypergraph nodes ground arcs) = Hypergraph (f <$> nodes) (Set.mapMonotonic f ground) (arcmap f <$> arcs)
 
 type Predicate = String
 type Constructor = String
 
 data Atom v = Atom Predicate [Term v] deriving (Eq, Show, Functor)
 data AbstractAtom = AAtom Predicate (DepRep Integer) deriving (Eq, Show)
+
+type Rule v = (Atom v, [Atom v])
+type Program v = [Rule v]
 
 vars :: (Eq v) => Term v -> [v]
 vars (V v) = [v]
@@ -216,7 +245,7 @@ takeSequence (i:is) (x:xs) | i == 0 = x : rest
 collectPaths [] = Det
 collectPaths xs = lub xs
 
-applyConnections :: (Ord v, Show v) => [(Atom v, AbstractSubst v)] -> [DepRep (ApplyNodes v)] -> [Integer] -> [Hyperarc Integer DetLabel]
+applyConnections :: (Show v, Ord v) => [(Atom v, AbstractSubst v)] -> [DepRep (ApplyNodes v)] -> [Integer] -> [Hyperarc Integer DetLabel]
 applyConnections atoms d n = do
     t <- filter (/= []) (subsequences n)
     h <- n
@@ -230,7 +259,7 @@ applyConnections atoms d n = do
             then Nondet else l'
     return $ Arc (Set.fromList t) h l
 
-applySinglePred :: (Ord v, Show v) => [(Atom v, AbstractSubst v)] -> AbstractAtom
+applySinglePred :: (Show v, Ord v) => [(Atom v, AbstractSubst v)] -> AbstractAtom
 applySinglePred [] = error "Empty alpha-apply"
 applySinglePred atoms@((Atom p ts,_):_) =
     let d = propagateGround . applyDep <$> atoms in
@@ -242,10 +271,10 @@ applySinglePred atoms@((Atom p ts,_):_) =
 groupByPred :: [(Atom v, AbstractSubst v)] -> Map.Map Predicate [(Atom v, AbstractSubst v)]
 groupByPred atoms = Map.fromList $ (\v@((Atom p _, _):_) -> (p,v)) <$> List.groupBy (\(Atom p _, _) (Atom p' _, _) -> p == p') atoms
 
-alphaApply :: (Ord v, Show v) => [(Atom v, AbstractSubst v)] -> Map.Map Predicate AbstractAtom
+alphaApply :: (Show v, Ord v) => [(Atom v, AbstractSubst v)] -> Map.Map Predicate AbstractAtom
 alphaApply atoms = let s = groupByPred atoms in Map.map applySinglePred s
 
-alphaConsequence :: (Ord v, Show v) => [(Atom v, [Atom v])] -> Map.Map Predicate AbstractAtom -> Map.Map Predicate AbstractAtom
+alphaConsequence :: (Show v, Ord v) => Program v -> Map.Map Predicate AbstractAtom -> Map.Map Predicate AbstractAtom
 alphaConsequence prog interp = alphaApply $ catMaybes $ do
     (h, bs) <- prog
     return $ do
@@ -253,8 +282,17 @@ alphaConsequence prog interp = alphaApply $ catMaybes $ do
         s <- alphaMgu (zip bs bs')
         return (h, s)
 
-alphaInterp :: (Ord v, Show v) => [(Atom v, [Atom v])] -> Map.Map Predicate AbstractAtom
-alphaInterp prog = simpleFixpoint (alphaConsequence prog) Map.empty
+alphaInterp' :: (Show v, Ord v) => Program v -> Map.Map Predicate AbstractAtom
+alphaInterp' prog = simpleFixpoint (alphaConsequence prog) Map.empty
+
+alphaInterp :: (Show v, Ord v) => Program v -> Map.Map Predicate AbstractAtom
+alphaInterp prog = Map.map (\(AAtom p d) -> AAtom p (clearUnimportant d)) $ alphaInterp' prog
+
+showDependence :: AbstractAtom -> String
+showDependence (AAtom p d) = let d' = prettyVars d in concat [p, "(", intercalate "," (nodes d'), "): ", prettyGraph' d']
+
+showDependences :: Map.Map Predicate AbstractAtom -> String
+showDependences = unlines . map showDependence . Map.elems
 
 sumlistExample = [
     (Atom "plus" [V "X", C "0" [], V "X"], []),
@@ -271,8 +309,16 @@ appendExample = [
     (Atom "append" [C ":" [V "X", V "Xs"], V "Y", C ":" [V "X", V "Ys"]], [Atom "append" [V "Xs", V "Y", V "Ys"]])
     ]
 
-test = let (Just x) = Map.lookup "plus" (alphaInterp sumlistExample) in x
+appendApplyTest :: [(Atom String, AbstractSubst String)]
+appendApplyTest = [
+    (Atom "append" [C "[]" [], V "X", V "X"], Hypergraph [] Set.empty []),
+    (Atom "append" [C ":" [V "X", V "Y"], V "Z", C ":" [V "X", V "U"]],
+     Hypergraph ["Y", "Z", "U"] (Set.singleton "Y") [Arc (Set.fromList ["Y"]) "Y" Det, Arc (Set.fromList ["Z"]) "U" Det, Arc (Set.fromList ["U"]) "Z" Det])]
+
+test = let (Just x) = Map.lookup "check" (alphaInterp sumlistExample) in x
 
 -- a1 = Map.fromList [("check",AAtom "check" (Hypergraph {nodes = [0,1,2], groundNodes = Set.fromList [], arcs = [Arc {tail = Set.fromList [0], head = 1, arcLabel = Det},Arc {tail = Set.fromList [1], head = 2, arcLabel = Nondet},Arc {tail = Set.fromList [2], head = 0, arcLabel = Det}]})),("plus",AAtom "plus" (Hypergraph {nodes = [0,1,2], groundNodes = Set.fromList [1], arcs = [Arc {tail = Set.fromList [0], head = 2, arcLabel = Nondet},Arc {tail = Set.fromList [0,1], head = 2, arcLabel = Det},Arc {tail = Set.fromList [2], head = 1, arcLabel = Nondet},Arc {tail = Set.fromList [1,2], head = 0, arcLabel = Nondet}]})),("select",AAtom "select" (Hypergraph {nodes = [0,1,2], groundNodes = Set.fromList [], arcs = [Arc {tail = Set.fromList [1], head = 2, arcLabel = Nondet},Arc {tail = Set.fromList [0,2], head = 1, arcLabel = Nondet},Arc {tail = Set.fromList [1,2], head = 0, arcLabel = Nondet}]})),("sumlist",AAtom "sumlist" (Hypergraph {nodes = [0,1], groundNodes = Set.fromList [], arcs = [Arc {tail = Set.fromList [0], head = 1, arcLabel = Det},Arc {tail = Set.fromList [1], head = 0, arcLabel = Nondet}]}))]
 -- a2 = alphaConsequence [(Atom "check" [V "X", V "Y", V "R"], [Atom "select" [V "Y", V "X", V "R"], Atom "sumlist" [V "X", V "Y"]])] a1
 -- test = let (Just (AAtom "check" g)) = Map.lookup "check" a2 in length (arcs g)
+
+unifyAtom = (Atom "==" [V "X", V "X"], [])

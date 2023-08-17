@@ -18,9 +18,9 @@ import qualified Subst
 import           Syntax
 import           Util.Miscellaneous
 
-data GlobalTree = Leaf  (Descend [G S]) Generalizer Subst.Subst
+data GlobalTree = Leaf  (Descend [G S]) Generalizer (Subst.Subst S)
                 | Node  (Descend [G S]) Generalizer LC.SldTree [GlobalTree]
-                | Prune (Descend [G S]) Subst.Subst
+                | Prune (Descend [G S]) (Subst.Subst S)
 
 sequence :: Descend a -> [a]
 sequence = getAncs
@@ -74,7 +74,7 @@ generalize m b d =
     where
       project gen goals = (goals, {- filter (\(x, _) -> (V x) `elem` concatMap LC.vars goals) -} gen)
 
-abstractChild :: [[G S]] -> (Subst.Subst, [G S], Maybe Env.Env) -> [(Subst.Subst, [G S], Generalizer, Env.Env)]
+abstractChild :: [[G S]] -> (Subst.Subst S, [G S], Maybe Env.Env) -> [(Subst.Subst S, [G S], Generalizer, Env.Env)]
 abstractChild _ (_, _, Nothing) = []
 abstractChild ancs (subst, g, Just env) =
   let (abstracted, d') = abstract (Descend.Descend g ancs) g (Env.getFreshNames env) in

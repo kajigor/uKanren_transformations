@@ -18,7 +18,7 @@ import           Syntax
 import           Text.Printf            (printf)
 import           Util.Miscellaneous     (map1in3)
 
-type Generalizer = Subst.Subst
+type Generalizer = Subst.Subst Int
 
 class Generalization a g | g -> a where
   generalize :: Generalizer -> Generalizer -> g -> g -> State (FN.PolyFreshNames a) (g, Generalizer, Generalizer)
@@ -80,7 +80,7 @@ refine msg@(g, Subst.Subst s1, Subst.Subst s2, d) =
     let sim1 = map (map fst) similar1 in
     let sim2 = map (map fst) similar2 in
     let toSwap = concatMap (\(x:xs) -> map (, V x) xs) (sim1 `intersect` sim2) in
-    let newGoal = Subst.substitute (Subst.Subst $ Map.fromList toSwap) g in
+    let newGoal = Subst.substituteList (Subst.Subst $ Map.fromList toSwap) g in
     let s2' = filter (\(x,_) -> x `notElem` map fst toSwap) (Map.toList s2) in
     let s1' = filter (\(x,_) -> x `notElem` map fst toSwap) (Map.toList s1) in
     (newGoal, Subst.Subst $ Map.fromList s1', Subst.Subst $ Map.fromList s2', d)

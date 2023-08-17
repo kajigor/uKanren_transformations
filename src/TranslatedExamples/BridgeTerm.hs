@@ -29,7 +29,7 @@ fromInt :: Int -> Tx
 fromInt 0 = zro
 fromInt n = suc (fromInt (n - 1))
 
-toInt :: Ts -> Subst -> Maybe Int
+toInt :: Ts -> Subst Int -> Maybe Int
 toInt (V n) s = Subst.lookup n s >>= (`toInt` s)
 toInt (C "zro" []) s = Just 0
 toInt (C "suc" [t]) s = (+ 1) <$> toInt t s
