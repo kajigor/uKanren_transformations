@@ -10,6 +10,7 @@ import           Mode.Term
 import           Program
 import qualified Syntax              as S
 import           Text.Printf
+import Debug.Trace
 
 data Goal a = Call String [Var a]
             | Unif (Var a) (FlatTerm a)
@@ -84,19 +85,34 @@ flattenInternalTerms (S.C name args) = do
   args' <- mapM flattenTerm args
   return $ FTCon name $ map Var args'
 
-conj :: Goal a -> Goal a -> [Goal a] -> Goal a
-conj (Conj x y xs) (Conj x' y' xs') rest = Conj x y (xs ++ x' : y' : xs' ++ rest)
-conj g (Conj x y xs) rest = Conj g x (y : xs ++ rest)
-conj x y rest = Conj x y rest
+conj :: Show a => Goal a -> Goal a
+conj goal = trace (printf "\nin conj: %s" (show goal)) $
+  safeListToConj $ floatConjs goal
 
-disj :: Goal a -> Goal a -> [Goal a] -> Goal a
-disj (Disj x y xs) (Disj x' y' xs') rest = Disj x y (xs ++ x' : y' : xs' ++ rest)
-disj g (Disj x y xs) rest = Disj g x (y : xs ++ rest)
-disj x y rest = Disj x y rest
+disj :: Show a => Goal a -> Goal a
+disj goal = trace (printf "\nin disj: %s" (show goal)) $
+  safeListToDisj $ floatDisjs goal
 
-toConj :: Goal a -> [Goal a] -> Goal a
-toConj x [] = x
-toConj x (h:t) = conj x h t
+success :: Goal a
+success = Call "success" []
+
+safeListToConj :: [Goal a] -> Goal a
+safeListToConj (x:y:xs) = Conj x y xs
+safeListToConj [x] = x
+safeListToConj [] = success
+
+safeListToDisj :: [Goal a] -> Goal a
+safeListToDisj (x:y:xs) = Disj x y xs
+safeListToDisj [x] = x
+safeListToDisj [] = success
+
+floatConjs :: Goal a -> [Goal a]
+floatConjs (Conj x y xs) = concatMap floatConjs (x:y:xs)
+floatConjs g = [g]
+
+floatDisjs :: Goal a -> [Goal a]
+floatDisjs (Disj x y xs) = concatMap floatDisjs (x:y:xs)
+floatDisjs g = [g]
 
 makeConjFromList :: (Ord a, FreshName a, Show a) => [Goal a] -> State (FlattenState a) (Goal a)
 makeConjFromList goals = do
@@ -104,11 +120,7 @@ makeConjFromList goals = do
   put $ state { getNewVarMap = Map.empty }
   let newUnifs = map (\(x, t) -> Unif (Var x) t) $ Map.toList (getNewVarMap state)
   let allGoals = goals ++ newUnifs
-  if null allGoals
-  then do
-    v <- freshVar
-    return (Unif (Var v) (FTVar (Var v)))
-  else return $ toConj (head allGoals) (tail allGoals)
+  return $ conj $ safeListToConj allGoals
 
 makeConj :: (Ord a, FreshName a, Show a) => Goal a -> State (FlattenState a) (Goal a)
 makeConj goal =
@@ -154,15 +166,17 @@ flattenGoal (S.Invoke name args) = do
   m <- gets getVarMap
   makeConj (Call name (map Var args'))
 flattenGoal (S.Conjunction x y xs) = do
-  x' <- flattenGoal x
+  x' <- trace (printf "Flattening conjunction:\n%s \\/ %s \\/ %s" (show x) (show y) (show xs)) $
+        flattenGoal x
   y' <- flattenGoal y
   xs' <- mapM flattenGoal xs
-  return $ conj x' y' xs'
+  return $ conj (Conj x' y' xs')
 flattenGoal (S.Disjunction x y xs) = do
-  x' <- local flattenGoal x
+  x' <- trace (printf "Flattening disjunction:\n%s \\/ %s \\/ %s" (show x) (show y) (show xs)) $
+        local flattenGoal x
   y' <- local flattenGoal y
   xs' <- mapM (local flattenGoal) xs
-  return $ disj x' y' xs'
+  return $ disj (Disj x' y' xs')
 flattenGoal (S.Fresh _ g) =
   flattenGoal g
 flattenGoal (S.Delay g) =

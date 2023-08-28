@@ -14,6 +14,7 @@ import           System.Directory          (copyFile)
 import           System.FilePath           (takeBaseName, (<.>), (</>))
 import           Util.File                 (createDirRemoveExisting)
 import           Util.String
+import qualified Transformer.MkToProlog
 
 runWithParser :: (FilePath -> IO (Either String (Program G String))) -> FilePath -> FilePath -> String -> Maybe [Int] -> IO ()
 runWithParser parser inputFile outDir relName inputs = do
@@ -24,11 +25,13 @@ runWithParser parser inputFile outDir relName inputs = do
   let uOutFile = outDir </> uBaseName
   let ocamlFile = uOutFile <.> "ml"
   let haskellFile = uOutFile <.> "hs"
+  let prologFile = uOutFile <.> "pl"
   copyFile inputFile (outFile <.> "mk")
 
   program <- parser inputFile
   case program of
-    Right program ->
+    Right program -> do
+      Transformer.MkToProlog.transform prologFile (getDefs program)
       case inputs of
         Just inputs -> do
           let translatedProgram = transProg relName inputs program
