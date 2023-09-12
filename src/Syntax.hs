@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Syntax where
 
@@ -53,7 +54,7 @@ infix  8 ===
 (&&&) :: G a -> G a -> G a
 (&&&) g1 g2 = goalFromList Conjunction [g1, g2]
 
-goalFromList :: (G a -> G a -> [G a] -> G a) -> [G a] -> G a
+goalFromList :: (g a -> g a -> [g a] -> g a) -> [g a] -> g a
 goalFromList f (x : y : xs) = f x y xs
 goalFromList _ [x] = x
 goalFromList _ [] = error "Empty list"
@@ -264,8 +265,17 @@ isPair s = map toLower s == "pair"
 dotVar :: Dot a => a -> String
 dotVar = printf "v<SUB>%s</SUB>" . dot
 
-showVar :: Show a => a -> String
-showVar = printf "v.%s" . show
+-- showVar :: Show a => a -> String
+-- showVar = printf "v.%s" . show
+
+class Show a => ShowVar a where
+  showVar :: a -> String 
+
+instance {-# OVERLAPPING #-} ShowVar String where
+  showVar = id
+
+instance Show a => ShowVar a where
+  showVar = show
 
 predec :: Term a -> Term a
 predec c@(C _ [a]) | isSucc c = a

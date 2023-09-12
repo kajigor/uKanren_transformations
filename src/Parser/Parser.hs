@@ -46,14 +46,14 @@ runBundlingParser :: (Stream s, ShowErrorComponent e, VisualStream s, Traversabl
 runBundlingParser parser filePath =
     mapLeft (SyntaxError . errorBundlePretty) . runParser parser filePath
 
-parseImports :: (Functor (t Syntax.G), Semigroup (t Syntax.G Syntax.X)) => Parser ([String], t Syntax.G Syntax.X)
+parseImports :: (Functor a, Functor (t a), Semigroup (t a Syntax.X)) => Parser ([String], t a Syntax.X)
              -> FilePath
-             -> IO (Either (ParserError String) (t Syntax.G Syntax.X))
+             -> IO (Either (ParserError String) (t a Syntax.X))
 parseImports parser path = do
     evalStateT (runExceptT $ go parser path) Set.empty
   where
-    go :: (Functor (t Syntax.G), Semigroup (t Syntax.G Syntax.X)) => Parser ([String], t Syntax.G Syntax.X) -> 
-      FilePath -> ExceptT (ParserError String) (StateT (Set.Set FilePath) IO) (t Syntax.G Syntax.X)
+    go :: (Functor a, Functor (t a), Semigroup (t a Syntax.X)) => Parser ([String], t a Syntax.X) -> 
+      FilePath -> ExceptT (ParserError String) (StateT (Set.Set FilePath) IO) (t a Syntax.X)
     go parser filePath = do
       (imports, program) <- ExceptT <$> liftIO $ parseFromFile parser filePath
       let paths = map (replaceBaseName filePath) imports

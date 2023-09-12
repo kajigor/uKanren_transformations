@@ -10,7 +10,7 @@ module BTA.InvokeAnnotation where
 import           Data.List          (intercalate)
 import           Text.Printf        (printf)
 import           Util.Miscellaneous (parenthesize)
-import           Syntax             (Term, Name)
+import           Syntax             (Term, Name, goalFromList)
 import           BTA.AnnotatedProgram
 import           BTA.AnnotatedDef
 import qualified Syntax
@@ -29,6 +29,12 @@ data AnnG termType a
   | Delay (AnnG termType a)  
   deriving (Eq, Ord, Functor)
 
+
+unsafeAnnConj :: [AnnG t a] -> AnnG t a
+unsafeAnnConj = goalFromList Conjunction
+
+unsafeAnnDisj :: [AnnG t a] -> AnnG t a
+unsafeAnnDisj = goalFromList Disjunction
 
 freshVars :: [a] -> AnnG termType a -> ([a], AnnG termType a)
 freshVars names (Fresh name goal) = freshVars (name : names) goal

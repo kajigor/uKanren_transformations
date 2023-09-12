@@ -7,13 +7,15 @@ import qualified EvalApp
 import qualified ModeApp
 import qualified NormalizeApp
 import qualified AnnotationsSettingApp
+import qualified OfflineDeductionApp
 import qualified Parser.AnnotatedParser as AnnotatedParser
 import           Options.Applicative
 import qualified ParseApp
 import qualified Parser.Parser          as Parser
 import           Program
 import           BTA.AnnotatedProgram
-import           Syntax                 (G, X)
+import qualified BTA.InvokeAnnotation   as Inv
+import           Syntax                 (G, X, Term)
 import           System.Directory       (getCurrentDirectory)
 import           Text.Printf            (printf)
 import qualified Transformer.PrologToMk
@@ -31,6 +33,7 @@ data Transformation
   | Mode
   | Translate
   | AnnotationsSetting
+  | OfflineDeduction
 
 data Action = Action { transformation :: Transformation
                      , input          :: FilePath
@@ -134,11 +137,18 @@ parseTransformation =
   <|> modeParser
   <|> translateParser
   <|> annotationsSettingParser
+  <|> offlineDeductionParser
+
+offlineDeductionParser :: Parser Transformation
+offlineDeductionParser = flag' OfflineDeduction 
+  (  long "offlineDeduction"
+  <> help "offline partial deduction"
+  )
 
 annotationsSettingParser :: Parser Transformation
 annotationsSettingParser = flag' AnnotationsSetting
   (  long "annotationsSetting"
-  <> help "Run check on safety unfolding, unfold in safe points"
+  <> help "Run check on safety unfolding"
   )
 
 normalizeParser :: Parser Transformation
@@ -220,9 +230,14 @@ defaultOutputDir args =
       Mode -> "mode"
       Translate -> "translate"
 
-getAnnotationParser :: (String -> IO (Either String (AnnotatedProgram G X)))
-getAnnotationParser input = do 
+getAnnotationTypeParser :: (String -> IO (Either String (AnnotatedProgram G X)))
+getAnnotationTypeParser input = do 
   res <- Parser.parseImports AnnotatedParser.parseProgramWithImports input
+  return $ mapLeft show res
+
+getAnnotationActParser :: (String -> IO (Either String (AnnotatedProgram (Inv.AnnG Term) X)))
+getAnnotationActParser input = do 
+  res <- Parser.parseImports AnnotatedParser.parseAnnProgramWithImports input
   return $ mapLeft show res
 
 runAction :: Args -> IO ()
@@ -243,7 +258,9 @@ runAction args = do
     Translate ->
       TranslateApp.runWithParser parser (input action) (output action) (relName action) (groundVars action)
     AnnotationsSetting -> 
-      AnnotationsSettingApp.runWithParser (getAnnotationParser) (input action) (output action)
+      AnnotationsSettingApp.runWithParser getAnnotationTypeParser (input action) (output action)
+    OfflineDeduction -> 
+      OfflineDeductionApp.runWithParser getAnnotationActParser (input action) (output action)
     x -> do
       let transformer = chooseTransformer (transformation action)
       if isInputADir action
