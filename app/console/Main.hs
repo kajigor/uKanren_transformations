@@ -229,6 +229,7 @@ defaultOutputDir args =
       Parser -> "parse"
       Mode -> "mode"
       Translate -> "translate"
+      AnnotationsSetting -> "annotationsSetting"
 
 getAnnotationTypeParser :: (String -> IO (Either String (AnnotatedProgram G X)))
 getAnnotationTypeParser input = do 

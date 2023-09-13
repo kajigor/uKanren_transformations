@@ -21,10 +21,6 @@ import qualified Data.Map                           as Map
 instance Dot TypeEdge where 
     dot = show 
 
-instance (Dot a, Ord a) => Dot (AbstractTerm a) where 
-    dot (Sum n mp) | mp == Map.empty = dot n
-    dot (Sum n mp) = dot n ++ " + " ++ (intercalate " + " $ map (\(key, val) -> dot val ++ "*" ++ dot key) $ Map.toList mp)
-
 treeToGraph :: Graph String -> Gr Text Text
 treeToGraph (Graph vars edgesMap) =
   let vs = zip [0..] $ map dot vars in 

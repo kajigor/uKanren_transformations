@@ -17,6 +17,7 @@ import           BTA.AnnotatedDef
 import           BTA.InvokeAnnotation
 import qualified Syntax
 import qualified Data.Map            as Map
+import Syntax    (Dot, dot)
 
 
 data AbstractTerm a = Sum 
@@ -34,7 +35,7 @@ isLess t1@(Sum n1 mp1) t2@(Sum n2 mp2) =
   n3 >= 0 && (all (0 <= ) $ Map.elems mp3) && (n3 > 0 || (any (0 < ) $ Map.elems mp3))
 
 isPositive :: Ord a => AbstractTerm a -> Bool
-isPositive term = isLess mempty term
+isPositive = isLess mempty
 
 instance Ord a => Semigroup (AbstractTerm a) where
   (<>) :: AbstractTerm a -> AbstractTerm a -> AbstractTerm a
@@ -52,6 +53,9 @@ instance Ord a => Group (AbstractTerm a) where
 instance Show a => Show (AbstractTerm a) where
   show (Sum a mp) = show a ++ intercalate " + " (map show $ Map.toList mp)
 
+instance Dot a => Dot (AbstractTerm a) where
+  dot (Sum a mp) = dot a ++ intercalate " + " (map dot $ Map.toList mp)
+
 termfmap :: Ord b => (a -> b) -> AbstractTerm a -> AbstractTerm b
 termfmap f (Sum a mp) = Sum a $ Map.mapKeys f mp
 
@@ -68,7 +72,7 @@ convertGoal (Disjunction g1 g2 gl) = Disjunction (convertGoal g1) (convertGoal g
 convertGoal (Fresh name g) = Fresh name (convertGoal g)
 convertGoal (Invoke name lst ann) = Invoke name (map convertTerm lst) ann
 convertGoal (Delay g) = Delay (convertGoal g)
-convertGoal (g1 :=: g2) = (convertTerm g1) :=: (convertTerm g2)
+convertGoal (g1 :=: g2) = convertTerm g1 :=: convertTerm g2
 
 convertTerm :: Ord a => Syntax.Term a -> AbstractTerm a
 convertTerm (Syntax.V v) = Sum 0 (Map.insert v 1 Map.empty)

@@ -1,5 +1,6 @@
 
 module BTA.AnnotationType where
+import Syntax (Dot, dot)
 
 data AnnotationType 
     = Static 
@@ -10,4 +11,9 @@ data AnnotationType
 instance Show AnnotationType where
     show Static = "static"
     show Dynamic = "dynamic"
-    show (TypeC name args) = name ++ "(" ++ (unwords $ map show args) ++ ")"
+    show (TypeC name args) = name ++ "(" ++ unwords (map show args) ++ ")"
+    
+instance Dot AnnotationType where
+    dot Static = "static"
+    dot Dynamic = "dynamic"
+    dot (TypeC name args) = name ++ "(" ++ unwords (map dot args) ++ ")"

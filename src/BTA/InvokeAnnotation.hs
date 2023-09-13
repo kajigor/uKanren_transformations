@@ -10,15 +10,16 @@ module BTA.InvokeAnnotation where
 import           Data.List          (intercalate)
 import           Text.Printf        (printf)
 import           Util.Miscellaneous (parenthesize)
-import           Syntax             (Term, Name, goalFromList)
-import           BTA.AnnotatedProgram
-import           BTA.AnnotatedDef
+import           Syntax             (Term, Name, goalFromList, Dot, dot)
 import qualified Syntax
 
 data Ann 
   = Memo 
   | Unfold
   deriving (Show, Eq, Ord)
+  
+instance Dot Ann where
+  dot = show
 
 data AnnG termType a
   = termType a :=: termType a
@@ -41,25 +42,43 @@ freshVars names (Fresh name goal) = freshVars (name : names) goal
 freshVars names goal = (reverse names, goal)
 
 instance (Show a, Show (termType a)) => Show (AnnG termType a) where
-  show (t1 :=: t2) = printf "%s = %s" (show t1) (show t2)
-  show (Conjunction x y gs) = printf "(%s)" (intercalate " /\\ " $ show <$> (x : y : gs))
-  show (Disjunction x y gs) = printf "(%s)" (intercalate " \\/ " $ show <$> (x : y : gs))
+  show (t1 :=: t2) = printf "%s == %s" (show t1) (show t2)
+  show (Conjunction x y gs) = printf "(%s)" (intercalate " & " $ show <$> (x : y : gs))
+  show (Disjunction x y gs) = printf "(%s)" (intercalate " | " $ show <$> (x : y : gs))
   show (Fresh name g) =
     let (names, goal) = freshVars [name] g in
-    printf "fresh %s (%s)" (unwords $ map show names) (show goal)
+    printf "(fresh %s in (%s))" (intercalate ", " $ map show names) (show goal)
+  show (Invoke name ts ann) | null ts =
+    printf "%s %s []" (show ann) name
   show (Invoke name ts ann) =
     printf "%s %s %s" (show ann) name (unwords $ map (parenthesize . show) ts)
   show (Delay g) = printf "Delay (%s)" (show g)
+  
+instance {-# OVERLAPPING #-} (Show (termType String)) => Show (AnnG termType String) where
+  show (t1 :=: t2) = printf "%s == %s" (show t1) (show t2)
+  show (Conjunction x y gs) = printf "(%s)" (intercalate " & " $ show <$> (x : y : gs))
+  show (Disjunction x y gs) = printf "(%s)" (intercalate " | " $ show <$> (x : y : gs))
+  show (Fresh name g) =
+    let (names, goal) = freshVars [name] g in
+    printf "(fresh %s in (%s))" (intercalate ", " names) (show goal)
+  show (Invoke name ts ann) | null ts =
+    printf "%s %s []" (show ann) name
+  show (Invoke name ts ann) =
+    printf "%s %s %s" (show ann) name (unwords $ map (parenthesize . show) ts)
+  show (Delay g) = printf "Delay (%s)" (show g)
+  
+instance (Dot a, Dot (termType a)) => Dot (AnnG termType a) where
+  dot (t1 :=: t2) = printf "%s = %s" (dot t1) (dot t2)
+  dot (Conjunction x y gs) = printf "(%s)" (intercalate " /\\ " $ dot <$> (x : y : gs))
+  dot (Disjunction x y gs) = printf "(%s)" (intercalate " \\/ " $ dot <$> (x : y : gs))
+  dot (Fresh name g) =
+    let (names, goal) = freshVars [name] g in
+    printf "(fresh %s (%s))" (unwords $ map dot names) (dot goal)
+  dot (Invoke name ts ann) =
+    printf "%s %s %s" (dot ann) name (unwords $ map (parenthesize . dot) ts)
+  dot (Delay g) = printf "Delay (%s)" (dot g)
 
-annotateInvokesPr :: AnnotatedProgram Syntax.G String -> AnnotatedProgram (AnnG Term) String
-annotateInvokesPr (AnnotatedProgram defs goal) =
-  AnnotatedProgram (map annotateInvokesDef defs) (annotateInvokes goal)
-
-annotateInvokesDef :: AnnotatedDef Syntax.G String -> AnnotatedDef (AnnG Term) String
-annotateInvokesDef (AnnotatedDef name args body annotations) =
-  AnnotatedDef name args (annotateInvokes body) annotations
-
-annotateInvokes :: (Syntax.G String) -> (AnnG Term String)
+annotateInvokes :: Syntax.G String -> AnnG Term String
 annotateInvokes (Syntax.Conjunction g1 g2 gl) = 
   Conjunction (annotateInvokes g1) (annotateInvokes g2) (map annotateInvokes gl)
 annotateInvokes (Syntax.Disjunction g1 g2 gl) = 

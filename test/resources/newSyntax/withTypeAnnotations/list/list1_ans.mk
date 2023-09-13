@@ -1,8 +1,8 @@
-filter (dynamic dynamic) 
- reverso "x" "y" = ((v."x" = [] /\ v."y" = []) \/ fresh "h" "t" "rt" ((v."x" = (v."h" : v."t") /\ Memo reverso v."t" v."rt" /\ Unfold appendo v."rt" ((v."h" : [])) v."y")))
-filter (static dynamic dynamic) 
- appendo "x" "y" "xy" = ((v."x" = [] /\ v."y" = v."xy") \/ fresh "h" "t" "ty" ((v."x" = (v."h" : v."t") /\ v."xy" = (v."h" : v."ty") /\ Unfold appendo v."t" v."y" v."ty")))
-filter () 
- fail  = Memo fail 
+filter (dynamic dynamic)
+ reverso x y = ((x == [] & y == []) | (fresh h, t, rt in ((x == (h :: t) & Memo reverso t rt & Unfold appendo rt h y))));
+filter (static dynamic dynamic)
+ appendo x y xy = ((x == [] & y == xy) | (fresh h, t, ty in ((x == (h :: t) & xy == (h :: ty) & Unfold appendo t y ty))));
+filter ()
+ fail  = Memo fail [];
 
-fresh "xs" "ys" "ts" ((Memo appendo v."xs" v."ys" v."ts" /\ Memo reverso v."ts" v."ys"))
+(fresh xs, ys, ts in ((Memo appendo xs ys ts & Memo reverso ts ys)))

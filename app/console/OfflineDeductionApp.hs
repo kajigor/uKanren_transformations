@@ -19,4 +19,4 @@ runWithParser parser inputFile outDir = do
         Left err -> 
             putStrLn err 
         Right originalPr -> do
-            putStrLn $ show originalPr
+            print originalPr

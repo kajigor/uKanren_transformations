@@ -12,6 +12,7 @@ import           BTA.AnnotatedProgram
 import           Syntax          (G (..), Term (..), X, unsafeConj, unsafeDisj)
 import           Text.Megaparsec (MonadParsec (try), many, sepBy, sepBy1, some, (<?>), (<|>))
 import qualified BTA.InvokeAnnotation as Inv
+import           Debug.Trace
 
 parseProgramWithImports :: Parser ([String], AnnotatedProgram G X)
 parseProgramWithImports = sc *> do
@@ -22,13 +23,13 @@ parseProgramWithImports = sc *> do
 parseStatic :: Parser AnnotationType
 parseStatic = do
     symbol "static"
-    return $ Static
+    return Static
     <?> "static type"
 
 parseDynamic :: Parser AnnotationType
 parseDynamic = do
     symbol "dynamic"
-    return $ Dynamic
+    return Dynamic
     <?> "dynamic type"
 
 parseTypeConstructor :: Parser AnnotationType
@@ -57,7 +58,7 @@ parseArgs num | num == 0 = do
     return []
 parseArgs num = do
     name <- ident
-    others <- (parseArgs $ num - 1)
+    others <- parseArgs $ num - 1
     return $ name : others
 
 
@@ -65,9 +66,9 @@ parseArgs num = do
 parseTypeDef :: Parser (AnnotatedDef G X)
 parseTypeDef = do
   symbol "filter"
-  types <- (roundBr parseTypes)
+  types <- roundBr parseTypes
   name <- ident
-  args <- (parseArgs $ length types)
+  args <- parseArgs $ length types
   symbol "="
   goal <- parseGoal
   symbol ";"
@@ -91,7 +92,7 @@ parseMemo = do
 parseUnfold :: Parser Inv.Ann 
 parseUnfold = do 
     symbol "Unfold"
-    return Inv.Memo
+    return Inv.Unfold
     <?> "Unfold ann"
 
 parseAnnType :: Parser Inv.Ann
@@ -171,7 +172,7 @@ parseAnnQuery = do
 
 parseAnnotatedProg :: Parser (AnnotatedProgram (Inv.AnnG Term) X) 
 parseAnnotatedProg = do 
-    AnnotatedProgram <$> (many parseTypeAnnDef) <*> parseAnnQuery
+    AnnotatedProgram <$> (many parseTypeAnnDef) <*> parseAnnGoal
 
 
 parseAnnProgramWithImports :: Parser ([String], AnnotatedProgram (Inv.AnnG Term) X)

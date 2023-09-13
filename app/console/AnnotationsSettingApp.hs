@@ -17,7 +17,8 @@ import           BTA.TerminationCheck              (goGraphMap, getPairsDef)
 import           BTA.SizeConversion                (convert, AbstractTerm)
 import qualified Data.Map                          as Map
 import qualified Data.Set                          as Set
-import qualified Syntax
+import qualified Syntax                            
+import           Syntax                            (Dot, dot)
 
 runWithParser :: (FilePath -> IO (Either String (AnnotatedProgram Syntax.G String))) -> FilePath -> FilePath -> IO ()
 runWithParser parser inputFile outDir = do
@@ -27,7 +28,7 @@ runWithParser parser inputFile outDir = do
             putStrLn err 
         Right originalPr -> do
             let annotatedProgram = setAnnotations $ annotateInvokesPr originalPr
-            let dir = outDir </> (takeBaseName inputFile)
+            let dir = outDir </> takeBaseName inputFile
             showGraphs annotatedProgram $ dir </> "conds"
             writeFile (dir </> "ans.mk") $ show annotatedProgram
 
@@ -38,7 +39,7 @@ showGraphs annotatedProgram dir = do
     let mapDefs = Map.fromList $ zip (map getName defs) defs
     let mapConditions = go defs mapDefs Map.empty 
     let (defsGraphs, defsVars) = unzip $ map (getPairsDef mapConditions mapDefs) defs
-    let defsVarsRes = Map.unions $ traceShow defsGraphs defsVars 
+    let defsVarsRes = Map.unions defsVars 
     let defsGraphsRes = goGraphMap (Map.unions defsGraphs) defsVarsRes $ map getName defs
     let graphsPairs = zip [0..] $ map (normalView mapDefs defsVarsRes) $ concatMap (\((a, b), graphs) -> zip (repeat (a, b)) $ Set.toList graphs) $ Map.assocs defsGraphsRes
     createDirRemoveExisting dir
