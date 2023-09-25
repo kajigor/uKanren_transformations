@@ -3,4 +3,4 @@ filter (dynamic static dynamic)
 filter ()
  fail  = Memo fail [];
 
-(fresh xs, n, r in (Memo nthOpt xs n r))
+(fresh xs, n, r in (Unfold nthOpt xs (Succ (Succ (Succ Zero))) r))

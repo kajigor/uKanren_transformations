@@ -90,7 +90,7 @@ sumAnnInvoke = AnnotatedProgram
                 ]
         ) []
     ) [Static, Dynamic]
-    ] (Fresh "y" $ Invoke "addo" [S.C "Zero" [], S.V "y", S.C "Succ" [S.C "Succ" [S.C "Zero" []]]] Memo)
+    ] (Fresh "y" $ Invoke "addo" [S.C "Zero" [], S.V "y", S.C "Succ" [S.C "Succ" [S.C "Zero" []]]] Unfold)
 
 unit_parseAnnotations = do 
     program <- getAnnotationParser "test/resources/newSyntax/withTypeAnnotations/sum.mk"
@@ -164,7 +164,7 @@ sumAnnAbstract = AnnotatedProgram
                 ]
         ) []
     ) [Static, Dynamic]
-    ] (Fresh "y" $ Invoke "addo" [Sum 1 Map.empty, Sum 0 $ Map.fromList [("y", 1)], Sum 3 Map.empty] Memo)
+    ] (Fresh "y" $ Invoke "addo" [Sum 1 Map.empty, Sum 0 $ Map.fromList [("y", 1)], Sum 3 Map.empty] Unfold)
 
 appendoAbst :: (AnnG AbstractTerm) S.X
 appendoAbst = 

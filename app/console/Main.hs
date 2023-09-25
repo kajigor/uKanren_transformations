@@ -230,6 +230,7 @@ defaultOutputDir args =
       Mode -> "mode"
       Translate -> "translate"
       AnnotationsSetting -> "annotationsSetting"
+      OfflineDeduction -> "offlineDeduction"
 
 getAnnotationTypeParser :: (String -> IO (Either String (AnnotatedProgram G X)))
 getAnnotationTypeParser input = do 

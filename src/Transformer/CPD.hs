@@ -4,7 +4,7 @@ module Transformer.CPD where
 
 import           Control.Monad
 import qualified CPD.GlobalControl      as GC
-import qualified CPD.LocalControl       as LC
+import qualified CPD.LocalControl       as LC 
 import           CPD.Residualization
 import           Data.List
 import           Data.Maybe

@@ -4,7 +4,6 @@ import           Program
 import           Syntax
 import           System.FilePath    (takeBaseName)
 import qualified Transformer.ConsPD
-import Debug.Trace
 
 runWithParser :: (String -> IO (Either String (Program G X))) -> FilePath -> Maybe [Int] -> FilePath -> IO ()
 runWithParser parser outDir ground inputFile = do
@@ -13,4 +12,4 @@ runWithParser parser outDir ground inputFile = do
     Left err ->
       putStrLn err
     Right program ->
-      Transformer.ConsPD.runConsPD' outDir ground (takeBaseName inputFile) (trace "runConsPD'" program)
+      Transformer.ConsPD.runConsPD' outDir ground (takeBaseName inputFile) program

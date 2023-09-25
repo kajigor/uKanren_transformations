@@ -43,4 +43,4 @@ min x n m =
   );
 
 
-? maxmin x a i
+? maxmin a mi ma

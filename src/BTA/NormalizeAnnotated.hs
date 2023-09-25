@@ -21,15 +21,15 @@ import           BTA.SizeConversion
 import qualified Data.Map as Map
 
 
-goalFromList :: (AnnG AbstractTerm a -> AnnG AbstractTerm a -> [AnnG AbstractTerm a] -> AnnG AbstractTerm a) -> [AnnG AbstractTerm a] -> AnnG AbstractTerm a
+goalFromList :: (AnnG t a -> AnnG t a -> [AnnG t a] -> AnnG t a) -> [AnnG t a] -> AnnG t a
 goalFromList f (x : y : xs) = f x y xs
 goalFromList _ [x] = x
 goalFromList _ [] = error "Empty list"
 
-unsafeConj :: [AnnG AbstractTerm a] -> AnnG AbstractTerm a
+unsafeConj :: [AnnG t a] -> AnnG t a
 unsafeConj = goalFromList Conjunction
 
-unsafeDisj :: [AnnG AbstractTerm a] -> AnnG AbstractTerm a
+unsafeDisj :: [AnnG t a] -> AnnG t a
 unsafeDisj = goalFromList Disjunction
 
 
@@ -171,7 +171,7 @@ generateNewDef (Left g) = do
     args = fv g
 
 
-fresh :: [a] -> AnnG AbstractTerm a -> AnnG AbstractTerm a
+fresh :: [a] -> AnnG termType a -> AnnG termType a
 fresh xs g = foldr Fresh g xs
 
 toSyntax :: Prg -> AnnotatedProgram (AnnG AbstractTerm) String

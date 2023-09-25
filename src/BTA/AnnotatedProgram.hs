@@ -35,7 +35,6 @@ instance (Dot a, Dot (g a)) => Dot (AnnotatedProgram g a) where
   dot :: AnnotatedProgram g a -> String 
   dot (AnnotatedProgram defs goal) = unlines (map dot defs) ++ "\n" ++ dot goal
 
-
 annotateInvokesPr :: AnnotatedProgram Syntax.G String -> AnnotatedProgram (AnnG Term) String
 annotateInvokesPr (AnnotatedProgram defs goal) =
-  AnnotatedProgram (map annotateInvokesDef defs) (annotateInvokes goal)
+  AnnotatedProgram (map annotateInvokesDef defs) (annotateInvokes Unfold goal)

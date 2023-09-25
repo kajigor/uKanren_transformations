@@ -7,4 +7,4 @@ filter (static static)
 filter ()
  fail  = Memo fail [];
 
-(fresh a, b, c, d in (Memo splito a b c d))
+(fresh a, b, c, d in (Unfold splito (Succ (Succ Zero)) ([Succ Zero, Succ (Succ (Succ Zero)), Succ Zero, Zero, Succ (Succ Zero)]) c d))

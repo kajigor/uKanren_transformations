@@ -15,4 +15,4 @@ filter (static static dynamic)
 filter ()
  fail  = Memo fail [];
 
-(fresh x, m, l in (Memo maxMino x m l))
+(fresh x, m, l in (Unfold maxMino [Succ Zero, Zero, Succ (Succ Zero)] m l))

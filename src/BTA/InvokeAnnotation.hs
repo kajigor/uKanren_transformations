@@ -78,16 +78,44 @@ instance (Dot a, Dot (termType a)) => Dot (AnnG termType a) where
     printf "%s %s %s" (dot ann) name (unwords $ map (parenthesize . dot) ts)
   dot (Delay g) = printf "Delay (%s)" (dot g)
 
-annotateInvokes :: Syntax.G String -> AnnG Term String
-annotateInvokes (Syntax.Conjunction g1 g2 gl) = 
-  Conjunction (annotateInvokes g1) (annotateInvokes g2) (map annotateInvokes gl)
-annotateInvokes (Syntax.Disjunction g1 g2 gl) = 
-  Disjunction (annotateInvokes g1) (annotateInvokes g2) (map annotateInvokes gl)
-annotateInvokes (Syntax.Fresh x body) =
-  Fresh x (annotateInvokes body)
-annotateInvokes (Syntax.Delay body) =
-  Delay (annotateInvokes body)
-annotateInvokes (Syntax.Invoke name terms) =
-  Invoke name terms Memo 
-annotateInvokes (a Syntax.:=: b) = 
+annotateInvokes :: Ann -> Syntax.G t -> AnnG Term t
+annotateInvokes ann (Syntax.Conjunction g1 g2 gl) = 
+  Conjunction (annotateInvokes ann g1) (annotateInvokes ann g2) (map (annotateInvokes ann) gl)
+annotateInvokes ann (Syntax.Disjunction g1 g2 gl) = 
+  Disjunction (annotateInvokes ann g1) (annotateInvokes ann g2) (map (annotateInvokes ann) gl)
+annotateInvokes ann (Syntax.Fresh x body) =
+  Fresh x (annotateInvokes ann body)
+annotateInvokes ann (Syntax.Delay body) =
+  Delay (annotateInvokes ann body)
+annotateInvokes ann (Syntax.Invoke name terms) =
+  Invoke name terms ann 
+annotateInvokes ann (a Syntax.:=: b) = 
   a :=: b
+  
+convertToSimple :: AnnG Term t -> Syntax.G t 
+convertToSimple (Conjunction g1 g2 gl) = 
+  Syntax.Conjunction (convertToSimple g1) (convertToSimple g2) (map convertToSimple gl)
+convertToSimple (Disjunction g1 g2 gl) = 
+  Syntax.Disjunction (convertToSimple g1) (convertToSimple g2) (map convertToSimple gl)
+convertToSimple (Fresh x body) =
+  Syntax.Fresh x $ convertToSimple body
+convertToSimple (Delay body) =
+  Syntax.Delay $ convertToSimple body
+convertToSimple (Invoke name terms _) =
+  Syntax.Invoke name terms 
+convertToSimple (a :=: b) = 
+  a Syntax.:=: b
+  
+infix  8 :=:
+infixr 7 &&&
+infixr 6 |||
+infix  8 ===
+
+(===) :: t a -> t a -> AnnG t a
+(===) = (:=:)
+
+(|||) :: AnnG t a -> AnnG t a -> AnnG t a
+(|||) g1 g2 = goalFromList Disjunction [g1, g2]
+
+(&&&) :: AnnG t a -> AnnG t a -> AnnG t a
+(&&&) g1 g2 = goalFromList Conjunction [g1, g2]

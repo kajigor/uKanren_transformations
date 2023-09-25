@@ -189,7 +189,7 @@ substInGoal v t (Invoke n ts) = Invoke n $ map (substInTerm v t) ts
 instance Show a => Show (Term a) where
   show (V v) = showVar v
   show (C name []) | isNil name = "[]"
-  show (C name [h, C name1 []]) | isCons name && isNil name1 = printf "%s" (show h)
+  show (C name [h, C name1 []]) | isCons name && isNil name1 = printf "[%s]" (show h)
   show (C name [h, t]) | isCons name = printf "(%s :: %s)" (show h) (show t)
   show (C name [x, y]) | isPair name = printf "(%s, %s)" (show x) (show y)
   show t@(C name ts) =
@@ -203,7 +203,7 @@ instance Show a => Show (Term a) where
 instance {-# OVERLAPPING #-} Show (Term String) where
   show (V v) = showVar v
   show (C name []) | isNil name = "[]"
-  show (C name [h, C name1 []]) | isCons name && isNil name1 = printf "%s" (show h)
+  show (C name [h, C name1 []]) | isCons name && isNil name1 = printf "[%s]" (show h)
   show (C name [h, t]) | isCons name = printf "(%s :: %s)" (show h) (show t)
   show (C name [x, y]) | isPair name = printf "(%s, %s)" (show x) (show y)
   show t@(C name ts) =

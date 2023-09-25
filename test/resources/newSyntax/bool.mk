@@ -11,4 +11,4 @@ oro a b c =
 
 ando a b c = nando a b ab & nando ab ab c ; 
 
-? noto x nx & oro x nx t & ando Trueo t z
+? noto x nx

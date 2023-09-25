@@ -6,9 +6,9 @@ module BTA.AnnotatedDef where
 
 import           Text.Printf (printf)
 import           BTA.AnnotationType
-import           BTA.InvokeAnnotation (AnnG, annotateInvokes)
+import           BTA.InvokeAnnotation (AnnG, annotateInvokes, Ann (..))
 import           Syntax (Dot, dot, showVar, G, Term)
-import Debug.Trace (trace)
+import           Debug.Trace (trace)
 
 data AnnotatedDef g a = AnnotatedDef
   { getName :: String
@@ -36,4 +36,4 @@ instance (Dot a, Dot (g a)) => Dot (AnnotatedDef g a) where
 
 annotateInvokesDef :: AnnotatedDef Syntax.G String -> AnnotatedDef (AnnG Term) String
 annotateInvokesDef (AnnotatedDef name args body annotations) =
-  AnnotatedDef name args (annotateInvokes body) annotations
+  AnnotatedDef name args (annotateInvokes Memo body) annotations

@@ -1,15 +1,9 @@
 module OfflineDeductionApp where
 
 
-import           Debug.Trace
-import           System.FilePath                   ((</>))
-import           Util.File                         (createDirRemoveExisting)
-import           System.FilePath                   (takeBaseName)
-import           BTA.AnnotatedDef
 import           BTA.AnnotatedProgram
 import           BTA.InvokeAnnotation
-import qualified Data.Map                          as Map
-import qualified Data.Set                          as Set
+import qualified Transformer.OfflinePD
 import qualified Syntax
 
 runWithParser :: (FilePath -> IO (Either String (AnnotatedProgram (AnnG Syntax.Term) String))) -> FilePath -> FilePath -> IO ()
@@ -18,5 +12,5 @@ runWithParser parser inputFile outDir = do
     case program of 
         Left err -> 
             putStrLn err 
-        Right originalPr -> do
-            print originalPr
+        Right program -> do
+            Transformer.OfflinePD.transform' outDir inputFile program Nothing 
