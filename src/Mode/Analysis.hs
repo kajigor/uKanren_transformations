@@ -118,14 +118,19 @@ modifyModeTerm f (FTVar v) = do
 data AllowFree = AllowFree | DisallowFree
 
 isGuard :: (Ord a) => Base (a, Mode) -> Bool
-isGuard (Unif (Var v) t) =
-  isBeforeGround v && all isBeforeGround (varsFromTerm t)
+isGuard (Unif (Var v) (FTVar (Var t))) =
+  isBeforeGround v && isBeforeGround t
 isGuard (Call _ _ args) =
   all (isBeforeGround . getVar) args
+isGuard _ = False
+
+-- isDeconstruction :: (Ord a) => Base (a, Mode) -> Bool
+-- isDeconstruction (Unif (Var v) t) =
+--   isBeforeGround v && not (all isBeforeGround (varsFromTerm t))
+-- isDeconstruction _ = False
 
 isDeconstruction :: (Ord a) => Base (a, Mode) -> Bool
-isDeconstruction (Unif (Var v) t) =
-  isBeforeGround v && not (all isBeforeGround (varsFromTerm t))
+isDeconstruction (Unif (Var v) (FTCon _ _)) = isBeforeGround v
 isDeconstruction _ = False
 
 returnsOne :: Base (a, Mode) -> Bool
@@ -133,8 +138,13 @@ returnsOne call@(Call _ _ args) =
   1 == length (filter (not . isBeforeGround . getVar) args)
 returnsOne _ = False
 
+isAssignment :: (Ord a) => Base (a, Mode) -> Bool
+isAssignment (Unif (Var v) (FTVar (Var t))) =
+  not (isBeforeGround v) && isBeforeGround t
+isAssignment _ = False
+
 isConstruction :: (Ord a) => Base (a, Mode) -> Bool
-isConstruction (Unif (Var v) t) =
+isConstruction (Unif (Var v) t@(FTCon _ _)) =
   not (isBeforeGround v) && all isBeforeGround (varsFromTerm t)
 isConstruction _ = False
 
@@ -167,8 +177,11 @@ groundifies (Call _ _ args) = True
 groundifies unif@(Unif (Var v) t) =
   isAfterGround v || any isAfterGround (varsFromTerm t)
 
+varGenerator :: (Ord a) => Base (a, Mode) -> Bool
+varGenerator (Unif (Var v) (FTVar (Var t))) = isBeforeFree v && isBeforeFree t
+varGenerator _ = False
 -- Selects the first goal which
-select :: [a -> Bool] -> a -> [a] -> (a, [a])
+select :: (Show a) => [a -> Bool] -> a -> [a] -> (a, [a])
 select predicates x xs =
     fromMaybe (x, xs) $ msum $ map (\p -> findElem p (x:xs)) predicates
   where
@@ -185,9 +198,9 @@ generator _ = False
 directRecursion (Just (Call _ name args)) (Call _ name' args') | name == name' = identicalBeforeModes (map getVar args) (map getVar args')
 directRecursion _ _ = False
 
-prioritySelection :: Ord a => Maybe (Base (a, Mode)) -> Base (a, Mode) -> [Base (a, Mode)] -> (Base (a, Mode), [Base (a, Mode)])
+prioritySelection :: (Show a, Ord a) => Maybe (Base (a, Mode)) -> Base (a, Mode) -> [Base (a, Mode)] -> (Base (a, Mode), [Base (a, Mode)])
 prioritySelection currentRelation x =
-  select [isGuard, isConstruction, isDeconstruction, returnsOne, directRecursion currentRelation, not.completelyFreeCall, not.completelyFreeUnif, groundifies] x
+  select [isGuard, isConstruction, isDeconstruction, isAssignment, returnsOne, directRecursion currentRelation, not.completelyFreeCall, varGenerator, not.completelyFreeUnif, groundifies] x
 
 analyze :: (Show a, Ord a)
         => AllowFree

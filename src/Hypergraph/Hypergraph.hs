@@ -12,6 +12,7 @@ import Data.Maybe (catMaybes, isJust)
 import Syntax ( Term(..) )
 import Subst (Subst, empty)
 import Eval (unify)
+import Debug.Trace
 
 type Var = Integer
 type Node n = n
@@ -238,9 +239,9 @@ pairs (x:xs) = ((x,) <$> xs) ++ pairs xs
 takeSequence :: [Integer] -> [a] -> [a]
 takeSequence [] _ = []
 takeSequence _ [] = []
-takeSequence (i:is) (x:xs) | i == 0 = x : rest
-                           | otherwise = rest
-                           where rest = takeSequence (map (subtract 1) is) xs
+takeSequence (i:is) (x:xs) | i == 0 = x : rest is
+                           | otherwise = rest (i:is)
+                           where rest ii = takeSequence (map (subtract 1) ii) xs
 
 collectPaths [] = Det
 collectPaths xs = lub xs
@@ -275,7 +276,7 @@ alphaApply :: (Show v, Ord v) => [(Atom v, AbstractSubst v)] -> Map.Map Predicat
 alphaApply atoms = let s = groupByPred atoms in Map.map applySinglePred s
 
 alphaConsequence :: (Show v, Ord v) => Program v -> Map.Map Predicate AbstractAtom -> Map.Map Predicate AbstractAtom
-alphaConsequence prog interp = alphaApply $ catMaybes $ do
+alphaConsequence prog interp = trace "iter" $ alphaApply $ catMaybes $ do
     (h, bs) <- prog
     return $ do
         bs' <- mapM (\(Atom p _) -> Map.lookup p interp) bs
@@ -314,6 +315,16 @@ appendApplyTest = [
     (Atom "append" [C "[]" [], V "X", V "X"], Hypergraph [] Set.empty []),
     (Atom "append" [C ":" [V "X", V "Y"], V "Z", C ":" [V "X", V "U"]],
      Hypergraph ["Y", "Z", "U"] (Set.singleton "Y") [Arc (Set.fromList ["Y"]) "Y" Det, Arc (Set.fromList ["Z"]) "U" Det, Arc (Set.fromList ["U"]) "Z" Det])]
+
+notExample = [
+    (Atom "not" [C "true" [], C "false" []], []),
+    (Atom "not" [C "false" [], C "true" []], [])
+    ]
+
+pureNot = [
+    (Atom "not" [C "true" [], C "false" []], Hypergraph [] Set.empty []),
+    (Atom "not" [C "false" [], C "true" []], Hypergraph [] Set.empty [])
+    ]
 
 test = let (Just x) = Map.lookup "check" (alphaInterp sumlistExample) in x
 

@@ -1,4 +1,4 @@
-import nat
+import num
 
 listo x = x == [] | (fresh h, t in x == (h :: t) & listo t);
 
