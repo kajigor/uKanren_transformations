@@ -160,7 +160,7 @@ generateNewDef (Left g) = do
     newName <- generateNewName
     modify (\(ds, n) -> (ds, n+1))
     body <- normalize g
-    let def = Definition newName args body $ take (length args) $ repeat Static
+    let def = Definition newName args body $ replicate (length args) Dynamic
     modify (\(ds, n) -> (def:ds, n))
     return $ Call newName (map (\x -> Sum 0 (Map.fromList [(x, 1)])) args) Unfold
   where

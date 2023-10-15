@@ -32,6 +32,7 @@ data SldTree = Fail
              | Or [SldTree] (Maybe (G S)) Subst.Subst
              | Conj SldTree [DescendGoal] Subst.Subst
              | Leaf [DescendGoal] Subst.Subst Env.Env
+             deriving (Show)
 
 select :: [DescendGoal] -> Maybe DescendGoal
 select = find (\x -> isSelectable embed (getCurr x) (getAncs x))
@@ -70,9 +71,9 @@ sldResolutionStep gs env s seen isFirstTime heuristic =
   then
     Leaf gs s env
   else
-    -- if temp > 13
-    --   then Leaf gs s env
-    --   else
+--     if temp > 13
+--       then Leaf gs s env
+--       else
         unfoldNext (toZipper gs) isFirstTime gs s env
       where
         go g' env' zipper isFirstTime =

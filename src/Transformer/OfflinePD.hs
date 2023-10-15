@@ -45,10 +45,6 @@ data TransformResult = Result { original   :: [AnnotatedDef (AnnG Term) X]
                               , purified   :: (G X, [X], [Def G X])
                               }
 
---                              Leaf  (Descend [AnnG Term S]) Generalizer Subst.Subst
---                                              | Node  (Descend [AnnG Term S]) Generalizer LC.SldTree [GlobalTree]
---                                              | Prune (Descend [AnnG Term S]) Subst.Subst
-
 transnformDef :: AnnotatedDef (AnnG Term) t -> Def G t
 transnformDef (AnnotatedDef name args body anns) = (Def name args (convertToSimple  body))
 
@@ -97,7 +93,7 @@ transform' outDir filename program@(AnnotatedProgram defs goal) env = do
     let cpdFile = path </> "cpd"
     mapM_ createDirRemoveExisting [path, localDir]
 
-    let result = runTransformation program
+    let result = runTransformation $ traceShow program program
 --
 --    let env = Env.fromDefs defs
 --    let ((logicGoal, names), env') = runState (E.preEval goal) env
@@ -112,10 +108,10 @@ transform' outDir filename program@(AnnotatedProgram defs goal) env = do
 --    printf $ show bodies
 
 --    Transformer.MkToProlog.transform (path </> "original.pl") definitions
-
+--
 --    let (globalTree, logicGoal, names) = GC.topLevel program
 --    let localTrees = GC.getNodes globalTree
---    printTree (path </> "global.dot") (transformGlobal $ globalTree)
+--    printTree (path </> "global.dot") (transformGlobal globalTree)
 --    mapM_ (uncurry (renderLocalTree localDir)) localTrees
 
 

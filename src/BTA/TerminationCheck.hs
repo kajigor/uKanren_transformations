@@ -17,10 +17,10 @@ import qualified Data.Map             as Map
 import qualified Data.List            as List
 import qualified Data.List.Split      as Split
 import qualified Data.Set             as Set
-
+import           Control.Exception
 
 terminationCheck :: Ord a => AnnotatedProgram (AnnG AbstractTerm) a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef (AnnG AbstractTerm) a) -> Bool 
-terminationCheck program@(AnnotatedProgram defs goal) mapConditions mapDefs = 
+terminationCheck (AnnotatedProgram defs _) mapConditions mapDefs = 
     let (defsGraphs, defsVars) = unzip $ map (getPairsDef mapConditions mapDefs) defs in 
     let defsVarsRes = Map.unions defsVars in 
     let defsGraphsRes = goGraphMap (Map.unions defsGraphs) defsVarsRes $ map getName defs in 
@@ -35,9 +35,11 @@ terminationCheck program@(AnnotatedProgram defs goal) mapConditions mapDefs =
 checkPossibleZero :: Graph String -> Set.Set ([String], [String]) -> ([String], [String]) -> Set.Set ([String], [String]) 
 checkPossibleZero graph curPossible (inArgs, outArgs) = 
     let isPossible = or $ (\inArg outArg -> Set.member (List.delete inArg inArgs, List.delete outArg outArgs) curPossible && atLeastZeroPath inArg outArg graph) <$> inArgs <*> outArgs in
-    case isPossible of 
-        True -> Set.insert (inArgs, outArgs) curPossible 
-        False -> curPossible
+    if isPossible 
+    then
+      Set.insert (inArgs, outArgs) curPossible 
+    else 
+      curPossible
 
 
 checkSubSequences :: ([String], [String]) -> Graph String -> Bool 
@@ -70,9 +72,9 @@ relaxTriple defsVars defsGraphs (a, b, c) =
   where 
     newGraph :: Graph String -> Graph String -> Graph String
     newGraph graph1 graph2 = 
-        let (in1, out1) = defsVars Map.! (a, b) in 
-        let (in2, out2) = defsVars Map.! (b, c) in 
-        let (inRes, outRes) = defsVars Map.! (a, c) in  
+        let (in1, out1) = defsVars Map.! assert (Map.member (a, b) defsVars) (a, b) in 
+        let (in2, out2) = defsVars Map.! assert (Map.member (b, c) defsVars) (b, c) in 
+        let (inRes, outRes) = defsVars Map.! assert (Map.member (a, c) defsVars) (a, c) in  
         let (newNames, fn) = getNamesStr (length in1 + length out1 + length out2) $ defaultNames in 
         let mapVars1 = Map.fromList (zip (in1 ++ out1) newNames) in 
         let mapVars2 = Map.fromList (zip (in2 ++ out2) (List.drop (length in1) newNames)) in 

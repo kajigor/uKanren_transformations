@@ -10,6 +10,7 @@ import           Data.List       (find, subsequences)
 import qualified Data.Map.Strict as Map
 import           Data.Maybe      (isJust)
 import           Syntax
+import           Debug.Trace
 
 -- ordered subconjunctions of the proper length
 subconjs :: [a] -> Int -> [[a]]
@@ -151,4 +152,4 @@ instance (Ord a, Eq a, Show a) => Embed a (G a)
 instance (Ord a, Eq a, Show a) => Embed a [G a] where
   embed gs hs =
     let subs = subconjs hs (length gs) in
-    any (and . zipWith embed gs) subs
+    any (and . zipWith embed gs) $ trace (show gs ++ show hs ++ show (any (and . zipWith embed gs) subs)) subs

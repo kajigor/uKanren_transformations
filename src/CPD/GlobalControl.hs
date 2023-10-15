@@ -17,6 +17,7 @@ import           Program
 import qualified Subst
 import           Syntax
 import           Util.Miscellaneous
+import           Debug.Trace
 
 data GlobalTree = Leaf  (Descend [G S]) Generalizer Subst.Subst
                 | Node  (Descend [G S]) Generalizer LC.SldTree [GlobalTree]
@@ -118,8 +119,9 @@ topLevel (Program defs goal) heuristic =
                             let (t, s) = go seen (Descend.Descend g (goal : ancs)) env subst gen in
                             (t:trees, s)
                         )
-                        ([], newNodes)
-                        toUnfold in
+                        ([], newNodes) toUnfold in 
+--                        $ traceShow ("toUnfold" ++ show toUnfold) toUnfold in
+--                        toUnfold in
           let forgetEnv = map (\(x, y, _) -> (x, y, Subst.empty)) in
           let forgetStuff = map (\(x, y, gen, _) -> (x,y, gen)) in
           let substLeaves = forgetEnv substs in

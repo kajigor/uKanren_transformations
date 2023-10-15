@@ -66,7 +66,7 @@ flatConj :: G a -> G a -> G a
 flatConj g1 g2 =
     case (getFirstNonConj g1, getFirstNonConj g2) of
       (Just (x1, y1, gs1), Just (x2, y2, gs2)) ->
-        Conjunction x1 x2 $ gs1 ++ (x2 : y2 : gs2)
+        Conjunction x1 x2 $ gs1 ++ (y1 : y2 : gs2)
       (Just (x1, y1, gs1), Nothing) ->
         Conjunction x1 y1 (gs1 ++ [g2])
       (Nothing, Just (x2, y2, gs2)) ->
@@ -198,7 +198,7 @@ instance Show a => Show (Term a) where
       Nothing ->
         case ts of
           [] -> name
-          _  -> printf "%s %s" name (intercalate ", " $ map show ts)
+          _  -> printf "%s %s" name (intercalate " " $ map show ts)
           
 instance {-# OVERLAPPING #-} Show (Term String) where
   show (V v) = showVar v
@@ -212,7 +212,7 @@ instance {-# OVERLAPPING #-} Show (Term String) where
       Nothing ->
         case ts of
           [] -> name
-          _  -> printf "%s %s" name (intercalate ", " $ map show ts)
+          _  -> printf "%s %s" name (intercalate " " $ map show ts)
 
 instance Show a => Show (G a) where
   show (t1 :=:  t2) = printf "%s = %s" (show t1) (show t2)
@@ -221,6 +221,18 @@ instance Show a => Show (G a) where
   show (Fresh name g) =
     let (names, goal) = freshVars [name] g in
     printf "fresh %s (%s)" (unwords $ map showVar names) (show goal)
+  show (Invoke name ts) =
+    printf "%s %s" name (unwords $ map (parenthesize . show) ts)
+  show (Delay g) = printf "Delay (%s)" (show g)
+  
+  
+instance {-# OVERLAPPING #-} Show (G String) where
+  show (t1 :=: t2) = printf "%s = %s" (show t1) (show t2)
+  show (Conjunction x y gs) = printf "(%s)" (intercalate " /\\ " $ show <$> (x : y : gs))
+  show (Disjunction x y gs) = printf "(%s)" (intercalate " \\/ " $ show <$> (x : y : gs))
+  show (Fresh name g) =
+    let (names, goal) = freshVars [name] g in
+    printf "fresh %s (%s)" (unwords names) (show goal)
   show (Invoke name ts) =
     printf "%s %s" name (unwords $ map (parenthesize . show) ts)
   show (Delay g) = printf "Delay (%s)" (show g)

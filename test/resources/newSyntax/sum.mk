@@ -8,9 +8,9 @@ evalo fm r =
   ( fm == Num r) | 
   ( fresh x, y, xr, yr in
     evalo x xr & 
-    evalo y yr & 
-    fm == Sum x y & 
+    evalo y yr &
+    fm == Sum x y &
     addo xr yr r 
   );
 
-? evalo y (Succ (Succ Zero)) 
+? evalo (Sum (Num Zero) (Sum (Num a) (Sum (Num (Succ Zero)) (Num b)))) (Succ (Succ (Succ Zero)))

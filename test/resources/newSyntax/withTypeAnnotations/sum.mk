@@ -9,10 +9,10 @@ filter (static dynamic)
 evalo fm r = 
   ( fm == Num r) | 
   ( fresh x, y, xr, yr in
-    evalo x xr & 
-    evalo y yr & 
     fm == Sum x y & 
+    evalo x xr & 
+    evalo y yr &
     addo xr yr r 
   );
 
-? addo (Zero) y (Succ (Succ Zero)) 
+? evalo (Sum (Num Zero) (Sum (Num a) (Sum (Num (Succ Zero)) (Num b)))) (Succ (Succ (Succ Zero)))

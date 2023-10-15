@@ -1,8 +1,8 @@
 filter (static dynamic) 
- evalo "fm" "r" = (v."fm" = C Num [v."r"] \/ fresh "x" "y" "xr" "yr" ((Memo evalo v."x" v."xr" /\ Memo evalo v."y" v."yr" /\ v."fm" = C Sum [v."x", v."y"] /\ Unfold addo v."xr" v."yr" v."r")))
-filter (static dynamic dynamic) 
- addo "x" "y" "z" = ((v."x" = Zero /\ v."z" = v."y") \/ fresh "x'" ((v."x" = C Succ [v."x'"] /\ Unfold addo v."x'" (C Succ [v."y"]) v."z")))
-filter () 
- fail  = Memo fail 
+ evalo fm r = (fm == Num r | (fresh x, y, xr, yr in ((fm == Sum x y & Unfold evalo x xr & Unfold evalo y yr & Unfold addo xr yr r))));
+filter (static dynamic dynamic)
+ addo x y z = ((x == Zero & z == y) | (fresh x' in ((x == Succ x' & Unfold addo x' (Succ y) z))));
+filter ()
+ fail  = Memo fail [];
 
-fresh "y" (Memo addo Zero v."y" (C Succ [C Succ [Zero]]))
+(fresh a, b in (Unfold evalo (Sum (Num Zero) (Sum (Num a) (Sum (Num (Succ Zero)) (Num b)))) (Succ (Succ (Succ Zero)))))

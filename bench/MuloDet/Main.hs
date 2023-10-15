@@ -88,8 +88,8 @@ natToFTerm :: Integer -> Term
 natToFTerm 0 = O
 natToFTerm n = S $ natToFTerm (n - 1)
 
-natGen :: (MonadPlus m) => m Term
-natGen = return O <|> (S <$> natGen)
+--natGen :: (MonadPlus m) => m Term
+--natGen = return O <|> (S <$> natGen)
 
 eval :: (m r -> [r]) -> (a -> m r) -> a -> [r]
 eval listify f = listify . f

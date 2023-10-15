@@ -87,6 +87,8 @@ parseTerm :: Parser (Term X)
 parseTerm =
   try (C <$> try constructorName <*> parseArguments)
   <|> parseSimpleTerm
+  <|> roundBr parseSimpleTerm
+  <|> roundBr (try (C <$> try constructorName <*> parseArguments))
   <?> "parseTerm"
 
 parseArguments :: Parser [Term X]

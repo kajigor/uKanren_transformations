@@ -2,9 +2,9 @@ module Purification where
 
 import           Control.Monad.State
 import           Data.List
+import           Debug.Trace         (trace)
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
-import           Debug.Trace         (trace)
 import           Def
 import           Program
 import           Syntax
@@ -118,8 +118,9 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
     -- defsAfterPurification  = {- filter (not . null . snd3) $ -} map (\(Def n a g) -> let (a', g') = purify n a g in (Def n a' g')) defs
 
     purify :: Name -> [X] -> G X -> ([X], G X)
-    purify n a = let a' = applyErasure erasure n a in
-      ((,) a') . renameFreshVars . closeByFresh a' . purifyUni a' . applyErasureToG erasure . snd . freshVars []
+    purify n a g = let a' = applyErasure erasure n a in
+      let g1 = (purifyUni a' .applyErasureToG erasure . snd . freshVars []) g in 
+      (((,) a') . renameFreshVars . closeByFresh a' . purifyUni a' . applyErasureToG erasure . snd . freshVars []) g 
 
     purifyUni :: [X] -> G X -> G X
     purifyUni a g = snd $ purifyU (Set.fromList a) [] g where

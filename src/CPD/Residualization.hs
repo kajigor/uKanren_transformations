@@ -18,6 +18,7 @@ import qualified Subst
 import           Syntax
 import           Text.Printf
 import           Util.Miscellaneous
+import           Debug.Trace
 
 type Set = Set.Set
 
@@ -65,7 +66,7 @@ unifyInvocationLists _ _ _ = Nothing
 generateInvocation :: [G S] -> Definitions -> G X
 generateInvocation goals defs = do
   fromMaybe
-    (error "Residualization failed: invocation of the undefined relation.")
+    (error $ "Residualization failed: invocation of the undefined relation." ++ show goals ++ show defs)
     (conj =<< conjInvocation goals defs)
   where
     generate args subst = map (\a -> Res.toX $ fromMaybe (V a) (Subst.lookup a subst)) args
@@ -143,8 +144,7 @@ residualizeSldTree rootGoals tree definitions = do
                        let g = go subst goals definitions
                        in  g : gs
                     )
-                    []
-                    resultants
+                    [] resultants
   let defArgs = Res.vident <$> rootVars
   let body = Eval.postEval defArgs $
                 unsafeDisj (reverse goals)

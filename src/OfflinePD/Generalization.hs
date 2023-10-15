@@ -16,7 +16,7 @@ import qualified Subst
 import           Text.Printf            (printf)
 import           Util.Miscellaneous     (map1in3)
 import           Descend
-
+import           Debug.Trace
 
 instance Subst.ApplySubst (AnnG Term S) where
   substitute s (Invoke name as ann) = Invoke name (map (Subst.substitute s) as) ann
@@ -28,12 +28,6 @@ instance Subst.ApplySubst [AnnG Term S] where
 instance Subst.ApplySubst [Descend (AnnG Term S)] where
   substitute s =
     map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
-    
-instance Ground (AnnG Term a) where
-  isGround (Conjunction x y gs) = all isGround (x : y : gs)
-  isGround (Disjunction x y gs) = all isGround (x : y : gs)
-  isGround (u :=: v) = isGround u && isGround v
-  isGround (Invoke _ args _ ) = isGround args
   
 instance Show a => Homeo (AnnG Term a) where
   couple goal@(Invoke f as _) (Invoke g bs _) | isAlwaysEmbeddable goal || f == g && length as == length bs =
@@ -47,7 +41,6 @@ instance Show a => Homeo [AnnG Term a] where
 
   homeo gs hs =
     any (all (uncurry homeo) . zip gs) (subconjs hs (length gs))
-
 
 instance (Eq a, Ord a, Show a) => Instance a (AnnG Term a) where
   inst (Invoke f as _) (Invoke g bs _) subst | f == g && length as == length bs =
@@ -72,7 +65,7 @@ instance (Ord a, Eq a, Show a) => Embed a (AnnG Term a)
 instance (Ord a, Eq a, Show a) => Embed a [AnnG Term a] where
   embed gs hs =
     let subs = subconjs hs (length gs) in
-    any (and . zipWith embed gs) subs
+    any (and . zipWith embed gs) $ trace (show gs ++ show hs ++ show (any (and . zipWith embed gs) subs)) subs -- $ trace (show gs ++ show hs ++ show (any (and . zipWith embed gs) subs))
     
 instance Generalization S (AnnG Term S) where
   generalize gen1 gen2 (Invoke f as ann) (Invoke g bs _) | f == g =

@@ -39,27 +39,31 @@ conjToList x = [x]
 
 selecter :: Zipper DescendGoal -> Maybe (Zipper DescendGoal)
 selecter =
-  goRightWhile (\x -> not $ isSelectable (getCurr x) (getAncs x))
-    -- not $ isSelectable embed (getCurr x) (getAncs x)) gs
---
----- TODO reconsider hardcoded list of basic function names
-isSelectable :: Show a => AnnG Term a -> [AnnG Term a] -> Bool
--- isSelectable _ _ ancs | Set.null ancs = True
-isSelectable (Invoke f _ Unfold) ancs = True
-isSelectable _ _ = False
+  goRightWhile (\x -> not $ isSelectable (\x y -> embed (convertToSimple x) (convertToSimple y) || isInst (convertToSimple x) (convertToSimple y)) (getCurr x) (getAncs x))
+  
+
+isSelectable :: Show a =>  (AnnG Term a -> AnnG Term a -> Bool) -> AnnG Term a -> [AnnG Term a] -> Bool
+isSelectable _ (Invoke _ _ Unfold) _ = True
+isSelectable emb goal@Invoke {} ancs = not (any (`emb` goal) ancs) || null ancs --trace (show goal ++ " " ++ show ancs ++ show (not (any (`emb` goal) ancs))) ancs))
+isSelectable _ _ _ = False
 
 
 sldResolution :: [AnnG Term S] -> Env.Env -> Subst.Subst -> [[AnnG Term S]] -> SldTree
-sldResolution goal env subst seen =
-  -- sldResolutionStep (map (\x -> Descend x Set.empty) goal) env subst Set.empty True
-  sldResolutionStep (map (`Descend` []) goal) env subst
+sldResolution goal = sldResolutionStep (map (`Descend` []) goal) True
 
-sldResolutionStep :: [DescendGoal] -> Env.Env -> Subst.Subst -> SldTree
-sldResolutionStep gs env s =
-    unfoldNext (toZipper gs) gs s env
+
+sldResolutionStep :: [DescendGoal] -> Bool -> Env.Env -> Subst.Subst -> [[AnnG Term S]] -> SldTree
+sldResolutionStep gs isFirstTime env s seen =
+  let (temp, _) = FN.getFreshName (Env.getFreshNames env) in
+  let curs = map getCurr gs in
+  if instanceCheck curs seen
+  then
+    Leaf gs s env
+  else
+    unfoldNext (toZipper gs) isFirstTime gs s env
   where
-    go :: AnnG Term S -> Env.Env -> Zipper (Descend (AnnG Term S)) -> SldTree  
-    go g' env' zipper =
+    go :: AnnG Term S -> Env.Env -> Zipper (Descend (AnnG Term S)) -> Bool -> SldTree  
+    go g' env' zipper isFirstTime =
       let Descend g ancs = cursor zipper in
       let normalized = normalize g' in
       let unified = mapMaybe (unifyStuff s) normalized in
@@ -72,24 +76,30 @@ sldResolutionStep gs env s =
       in
       case unified of
         [] -> Fail
-        ns ->
+        ns | needsUnfolding env' g ns isFirstTime ->
             Or (map step ns) (Just g) s
           where
             step (xs, s') =
               if null xs && isLeftmost zipper && isRightmost zipper
               then Success s'
               else let newDescends = addDescends xs s' in
-                   Conj (sldResolutionStep newDescends env' s') newDescends s'
+                   Conj (sldResolutionStep newDescends (isFirstTime && length ns == 1) env' s' (map getCurr gs : seen)) newDescends s'
+        ns | not $ isRightmost zipper ->
+          unfoldNext (goRight zipper) False gs s env
+        ns ->
+          Leaf gs s env
+                     
 
-    unfoldNext :: Maybe (Zipper (Descend (AnnG Term S))) -> [DescendGoal] -> Subst.Subst -> Env.Env -> SldTree 
-    unfoldNext zipper gs s env =
+    unfoldNext :: Maybe (Zipper (Descend (AnnG Term S))) -> Bool -> [DescendGoal] -> Subst.Subst -> Env.Env -> SldTree 
+    unfoldNext zipper isFirstTime gs s env =
       maybe (Leaf gs s env)
             (\z ->
-                let (g', env') = runState (oneStepUnfold (getCurr $ cursor z)) env in
-                go g' env' z
+                let (g', env') = runState (oneStepUnfold (getCurr $ cursor z)) env in -- $ trace (show (getCurr $ cursor z) ++ " " ++ show (length seen) ++ " " ++ show seen)
+                go g' env' z isFirstTime
             )
             (zipper >>= selecter)
 
+    needsUnfolding env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
 
 bodies :: SldTree -> [[AnnG Term S]]
 bodies = leaves

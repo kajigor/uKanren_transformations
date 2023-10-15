@@ -90,7 +90,7 @@ topLevel :: AnnotatedProgram (AnnG Term) X -> (GlobalTree, AnnG Term S, [S])
 topLevel (AnnotatedProgram defs goal) =
   let env = Env.fromDefs defs in
   let ((logicGoal, names), env') = runState (E.preEval goal) env in
-  let nodes = [[logicGoal]] in
+  let nodes = [LC.conjToList logicGoal] in
   (fst $ go nodes (Descend.Descend [logicGoal] []) env' Subst.empty Subst.empty, logicGoal, names) where
     go nodes d@(Descend.Descend goal ancs) env subst generalizer =
       -- if head (Env.getFreshNames env) > 10
@@ -110,15 +110,15 @@ topLevel (AnnotatedProgram defs goal) =
           (Node d Subst.empty sldTree [], nodes)
         else
           let ancs' = goal : ancs in
-          let abstracted = map (abstractChild ancs') $ traceShow bodies bodies in
+          let abstracted = map (abstractChild ancs') bodies in -- $ traceShow bodies bodies in
           let (toUnfold, toNotUnfold, newNodes) =
                   foldl (\ (yes, no, seen) gs ->
                               let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (Embed.isVariant g) seen) gs in
                               -- let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (LC.isInst g) seen) gs in
                               (yes ++ brandNew, no ++ variants, map snd4 brandNew ++ seen)
                         )
-                        ([], [], nodes)
-                        $ traceShow abstracted abstracted
+                        ([], [], nodes) abstracted
+                      --  $ traceShow ("Abstracted" ++ show abstracted) abstracted
           in
           let (ch, everythingSeenSoFar) =
                   (swap . (reverse <$>) . swap) $
@@ -126,8 +126,9 @@ topLevel (AnnotatedProgram defs goal) =
                             let (t, s) = go seen (Descend.Descend g (goal : ancs)) env subst gen in
                             (t:trees, s)
                         )
-                        ([], newNodes)
-                        toUnfold in
+                        ([], newNodes) toUnfold
+--                        $ traceShow ("toUnfold" ++ show toUnfold) toUnfold 
+          in
           let forgetEnv = map (\(x, y, _) -> (x, y, Subst.empty)) in
           let forgetStuff = map (\(x, y, gen, _) -> (x,y, gen)) in
           let substLeaves = forgetEnv substs in

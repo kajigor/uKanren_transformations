@@ -1,5 +1,5 @@
 filter (static dynamic)
- reverso x y = ((x == [] & y == []) | (fresh h, t, rt in ((Memo reverso t rt & x == (h :: t) & Unfold appendo rt [h] y))));
+ reverso x y = ((x == [] & y == []) | (fresh h, t, rt in ((x == (h :: t) & Unfold reverso t rt & Unfold appendo rt [h] y))));
 filter (static static dynamic)
  appendo x y xy = ((x == [] & y == xy) | (fresh h, t, ty in ((x == (h :: t) & xy == (h :: ty) & Unfold appendo t y ty))));
 filter ()
@@ -8,4 +8,4 @@ filter ()
 filter (static static static dynamic)
   help xs ys zs ts = Unfold appendo xs ys ts & Unfold reverso zs ts;
 
-(fresh ts in ((Unfold help [Zero, Cons Zero] [Cons Zero, Zero, Cons (Cons Zero)] [Cons (Cons Zero), Zero, Cons Zero, Cons Zero, Zero, Cons Zero] (Zero :: ts))))
+(fresh x, y, ts in ((Unfold help [x, y] [Succ Zero, Zero, Succ (Succ Zero)] [Succ (Succ Zero), Zero, Succ Zero, Succ Zero, Zero] (Zero :: ts))))
