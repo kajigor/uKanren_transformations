@@ -16,4 +16,7 @@ reverso x y =
     appendo rt [h] y
   );
 
+filter (static static static dynamic)
+  help xs ys zs ts = appendo xs ys ts & reverso zs ts;
+
 ? appendo xs ys ts & reverso ts ys

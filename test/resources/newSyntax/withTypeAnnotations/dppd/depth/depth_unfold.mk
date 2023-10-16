@@ -1,3 +1,6 @@
-depth y0 = (y0 = 7 \/ y0 = 9 \/ y0 = 12 \/ y0 = 13)
+depth y0 = ((y0 == S (S (S (S (S (S (S O))))))) |
+      (y0 == S (S (S (S (S (S (S (S (S O))))))))) |
+      (y0 == S (S (S (S (S (S (S (S (S (S (S (S O)))))))))))) |
+      (y0 == S (S (S (S (S (S (S (S (S (S (S (S O)))))))))))));
 
-depth x1
+? depth x1
