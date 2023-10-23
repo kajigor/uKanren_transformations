@@ -17,7 +17,7 @@ reify s (C n ts) = C n $ map (reify s) ts
 
 toplevel :: Int -> (Term S -> String) -> Program G X -> [String]
 toplevel n printer program =
-  let stream = run (trace (show program) program) in
+  let stream = run program in
   map (\s -> printer $ reify s (V 0)) $ takeS n stream
 
 addVar :: Program G String -> Program G String

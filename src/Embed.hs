@@ -152,4 +152,4 @@ instance (Ord a, Eq a, Show a) => Embed a (G a)
 instance (Ord a, Eq a, Show a) => Embed a [G a] where
   embed gs hs =
     let subs = subconjs hs (length gs) in
-    any (and . zipWith embed gs) $ trace (show gs ++ show hs ++ show (any (and . zipWith embed gs) subs)) subs
+    any (and . zipWith embed gs) subs

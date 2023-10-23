@@ -9,6 +9,7 @@ data Term
     | Succ Term
     | Zero
     deriving (Show, Eq)
+    
 sortoI x0 = msum [do {(x1, x2) <- case x0 of
                                   {Cons y1 y2 -> return (y1, y2); _ -> mzero};
                       guard (x1 == Zero);
@@ -34,6 +35,8 @@ sortoI x0 = msum [do {(x1, x2) <- case x0 of
                       guard (x13 == Zero);
                       guard (x14 == Nil);
                       return ()}]
+
+sortoO :: MonadPlus m => m Term
 sortoO = msum [do {let {x1 = Zero};
                    let {x3 = Zero};
                    let {x6 = Zero};
@@ -50,3 +53,8 @@ sortoO = msum [do {let {x1 = Zero};
                    let {x2 = Cons x3 x4};
                    let {x0 = Cons x1 x2};
                    return x0}]
+                   
+                   
+main :: IO() 
+main = 
+  print (takeS 1 sortoO)

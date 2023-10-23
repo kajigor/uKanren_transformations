@@ -1,0 +1,88 @@
+  ApplastRun       (known x and ans)
+    offline1:  OK (0.57s)
+      65.2 ns ± 1.3 ns
+    online1:   OK (0.28s)
+      66.2 ns ± 2.9 ns
+    applasto1: OK (0.16s)
+      289  ns ±  23 ns
+    offlineGen: Fail
+    onlineGen: Fail
+
+  Deforestation1 (known input list) -- just pass other parameter
+    offline1: OK (0.18s)
+      73.0 ns ± 6.2 ns
+    online1:  OK (1.49s)
+      86.3 ns ± 1.9 ns
+    offline2: OK (0.28s)
+      128  ns ± 6.2 ns
+    online2:  OK (0.18s)
+      168  ns ±  12 ns
+
+  Deforestation2 (known answer) -- just pass other parameter
+    offline1: OK (0.60s)
+      273  ns ±  23 ns
+    online1:  OK (0.20s)
+      362  ns ±  23 ns
+    offline2: OK (0.33s)
+      1.30 μs ± 120 ns
+    online2: Fail
+
+  DepthRun (known expression)      -- pass other parameter
+    offline1:   OK (0.20s)
+      173  ns ±  15 ns
+    online1:    OK (0.43s)
+      199  ns ± 5.9 ns
+    offline2:   OK (1.65s)
+      389  ns ± 7.6 ns
+    online2:    OK (0.21s)
+      196  ns ±  12 ns
+  DepthGen      -- gen other parameter
+    offlineGen: OK (0.28s)
+      16.6 ns ± 712 ps
+    onlineGen:  OK (0.47s)
+      883  ns ±  55 ns
+
+  List4 (maxMin known list)     -- pass other parameters -- cosmetic -- maxmin
+    offline1: OK (0.17s)
+      35.6 ns ± 2.9 ns
+    online1:  OK (1.03s)
+      60.0 ns ± 2.1 ns
+    offline2: OK (0.27s)
+      122  ns ±  11 ns
+    online2:  OK (0.64s)
+      150  ns ± 7.3 ns
+
+  nthOpt                  -- list/ans
+    offlineII:  OK (0.46s)
+      211  ns ± 7.6 ns
+    onlineII:   OK (0.68s)
+      160  ns ±  11 ns
+    offlineIO:  OK (0.14s)
+      144  ns ±  13 ns
+    onlineIO:   OK (0.29s)
+      141  ns ± 5.7 ns
+    offlineOI1: OK (0.22s) -- None
+      97.2 ns ± 7.3 ns
+    onlineOI1: Fail
+    offlineOI2: OK (0.19s) -- Succ Zero
+      92.4 ns ± 7.8 ns
+    onlineOI2:  OK (0.12s)
+      251  ns ±  23 ns
+    offlineOO:  OK (0.18s)
+      84.0 ns ± 6.0 ns
+    onlineOO: Fail
+
+  SortRun                           -- deleting generators
+    offline1:   OK (0.21s)
+      369  ns ±  22 ns
+    online1: Fail
+  SortGen
+    offlineGen: OK (2.42s)
+      35.0 ns ± 1.7 ns
+    onlineGen: Fail
+
+
+
+  flip1 - same (known one of the trees)
+  contains1 - same (known pattern)
+  hanoi - something strange happens

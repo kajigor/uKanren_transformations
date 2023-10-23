@@ -39,14 +39,14 @@ type Transformer = Program G X -> (ConsPD.ConsPDTree, G S, [S])
 
 runTransformation :: Program G X -> Transformer -> TransformResult
 runTransformation goal@(Program original _) transformer =
-  let transformed@(tree, logicGoal, names) = transformer (trace (show goal) $ goal) in
+  let transformed@(tree, logicGoal, names) = transformer (goal) in
   let namesX = vident <$> reverse names in
-  let simplifiedTree = trace "simplify" $ ConsPD.simplify tree in
+  let simplifiedTree = ConsPD.simplify tree in
   if ConsPD.noPrune tree
   then
     let residualized = residualize transformed in
     let beforePur = justTakeOutLetsProgram residualized namesX in
-    let purified = purification (residualized, (trace (show namesX) namesX)) in
+    let purified = purification (residualized, namesX) in
     Result original tree simplifiedTree namesX (Just beforePur) (Just purified)
   else
     Result original tree simplifiedTree namesX Nothing Nothing
@@ -62,7 +62,7 @@ runConsPD' outDir = Transformer.ConsPD.transform outDir Nothing (ConsPD.topLevel
 
 transform :: [Char] -> Maybe String -> (Program G X -> (ConsPD.ConsPDTree, G S, [S])) -> Maybe [Int] -> FilePath -> Program G X -> IO ()
 transform outDir env function ground filename prg = do
-  let norm = normalizeProg (trace (show prg) prg)
+  let norm = normalizeProg prg
   -- print norm
 
   -- let goal@(Program definitions _) = makeNormal prg
@@ -74,13 +74,13 @@ transform outDir env function ground filename prg = do
   Transformer.MkToProlog.transform (path </> "original.pl") definitions
 
 
-  let result = trace "transform runTransformation" $ runTransformation goal function
+  let result = runTransformation goal function
 
   writeFile (path </> "norm.txt") (show norm)
   toOcanren (path </> "original.ml") goal (names result)
   Transformer.MkToProlog.transform (path </> "original.pl") definitions -- Aims?
   printTree (path </> "tree.dot") (tree result)
-  printTree (path </> "tree.after.dot") (simplifiedTree (trace "Done" result))
+  printTree (path </> "tree.after.dot") (simplifiedTree result)
   system (printf "dot -O -Tpdf %s/*.dot" (escapeTick path))
 
   guard (isJust $ beforePurification result)

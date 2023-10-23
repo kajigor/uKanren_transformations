@@ -48,5 +48,3 @@ gt y69 y70 =
 sorto1 y73 y74 =
   fresh q1, q2, q3, q4, q5, q6 in
     (((y74 == [] & y73 == []) | (y73 == (q1 :: q2) & splitoAppendo y74 q1 q2 q3 q4 q5 & sorto1 q3 q4 & sorto1 q6 q5)));
-
-? sorto x0

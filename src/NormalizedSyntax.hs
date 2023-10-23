@@ -79,11 +79,11 @@ norm'' g = Left g
 normalizeProg :: Program G X -> Prg
 normalizeProg (Program defs goal) =
   let d = mapM (\(Def name args body) -> do
-            b <- normalize (trace "normalizeProg" $ body)
+            b <- normalize (body)
             return $ Definition name args b
             ) defs
   in
-  let (ds, state) = trace "runState" $ runState d ([],0) in
+  let (ds, state) = runState d ([],0) in
   let (g, (defs, _)) = runState (normalize goal) state in
   Prg (ds ++ defs) g
 
@@ -91,9 +91,9 @@ normalize :: G X -> State ([Definition], Int) (Goal X)
 normalize goal = do
   let (normalized, topLevelFresh) = runState (norm goal) []
   let transformed = mapM (\ state ->
-        let (bases, fresh) = runState (trace "normalize" state) [] in
+        let (bases, fresh) = runState state [] in
         ((fresh,) <$> mapM generateNewDef bases)) normalized
-  goals <- (trace "getOut" $ transformed)
+  goals <- transformed
   let conjs = map (\(fresh, gs) -> Conj (reverse fresh) $ fromList gs) goals
   let disj = Disj (reverse topLevelFresh) (fromList conjs)
   let result = Goal disj
@@ -121,7 +121,7 @@ generateNewDef (Right b) = return b
 generateNewDef (Left g) = do
     newName <- generateNewName
     modify (\(ds, n) -> (ds, n+1))
-    body <- trace (show g) $ normalize g
+    body <- normalize g
     let def = Definition newName args body
     modify (\(ds, n) -> (def:ds, n))
     return $ Call newName (map V args)

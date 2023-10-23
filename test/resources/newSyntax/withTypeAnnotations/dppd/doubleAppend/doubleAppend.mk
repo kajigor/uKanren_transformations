@@ -1,4 +1,4 @@
-filter (dynamic dynamic dynamic)
+filter (dynamic dynamic static)
 appendo x y xy =
   x == [] & y == xy |
   (fresh h, t, ty in
@@ -7,10 +7,10 @@ appendo x y xy =
     appendo t y ty
   );
 
-filter (dynamic dynamic dynamic dynamic)
-double_apppendo x y z res =
+filter (dynamic dynamic dynamic static)
+double_appendo x y z res =
   fresh t in
-    appendo x y t &
-    appendo t z res;
+    appendo t z res &
+    appendo x y t;
 
-? double_apppendo x y z res
+? double_appendo x y z res

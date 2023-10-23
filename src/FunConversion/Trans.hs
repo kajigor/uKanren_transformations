@@ -57,7 +57,7 @@ findDef n outs [] = error $ "Def " ++ n ++ " mode " ++ show outs ++ " not found"
 findDef n outs (d@(Def n' args _):ds) | n == n' && outId (map M.Var args) == outs = d
                               | otherwise = findDef n outs ds
 
-getDefGens n [] = error "Def not found"
+getDefGens n [] = error $ "Def " ++ n ++ " not found"
 getDefGens n (d : defs)
   | n == F.name d = F.generators d
   | otherwise = getDefGens n defs

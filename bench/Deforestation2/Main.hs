@@ -7,13 +7,9 @@ import Control.Monad (msum, guard, MonadPlus)
 
 import qualified Control.DeepSeq as DS
 import Control.Applicative (Alternative)
+import Debug.Trace (traceShow)
 
-data Term
-    = Cons Term Term
-    | Nil
-    | O
-    | S Term
-    deriving (Show, Eq, Generic, DS.NFData)
+import Simple (Term (Cons, O, S, Nil) , rrIISimple)
 
 rrOffline x0 = msum [do {(x1, x3) <- case x0 of
                            {Cons y1 y3 -> return (y1, y3); _ -> mzero};
@@ -632,17 +628,43 @@ rR2O gen_rR102O_x28 gen_rR112O_x23 gen_rR122O_x20 gen_rR131O_x13 gen_rR132O_x18 
 rR1O gen_rR102O_x28 gen_rR112O_x23 gen_rR122O_x20 gen_rR131O_x13 gen_rR132O_x18 gen_rR62O_x46 gen_rR72O_x43 gen_rR82O_x40 gen_rR92O_x35 = msum [do {x0 <- rR13O gen_rR102O_x28 gen_rR112O_x23 gen_rR122O_x20 gen_rR131O_x13 gen_rR132O_x18 gen_rR62O_x46 gen_rR72O_x43 gen_rR82O_x40 gen_rR92O_x35;
                                                                                                                                                     return x0}]
 
-eval :: (m r -> [r]) -> (a -> m r) -> a -> [r]
+
+natGen :: (MonadPlus m) => m Term
+natGen = return O <|> (S <$> natGen)
+
+eval :: Show r => (m r -> [r]) -> (a -> m r) -> a -> [r]
 eval listify f = listify . f
+
+eval9 :: Show r => (m r -> [r]) -> (a -> x1 -> x2 -> x3 -> x4 -> x5 -> x6 -> x7 -> x8 -> x9 -> m r) -> (a, x1, x2, x3, x4, x5, x6, x7, x8, x9) -> [r]
+eval9 listify f = eval listify  $ \(b, y1, y2, y3, y4, y5, y6, y7, y8, y9) -> f b y1 y2 y3 y4 y5 y6 y7 y8 y9
+
+
+eval14 :: Show r => (m r -> [r]) -> (x1 -> x2 -> x3 -> x4 -> x5 -> x6 -> x7 -> x8 -> x9 -> x10 -> x11 -> x12 -> x13 -> x14 -> m r) -> (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14) -> [r]
+eval14 listify f = eval listify $ \(y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12, y13, y14) -> f y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 y12 y13 y14
+
+put14 x y = 
+  (x, y, natGen, natGen, natGen, natGen, natGen, natGen, natGen, natGen, natGen, natGen, natGen, natGen)
+
+rightTerm :: Term
+rightTerm = Cons (S O) (Cons (S O) (Cons (S O) (Cons (S O) (Cons O (Cons O (Cons O (Cons O (Cons (S (S O)) (Cons (S (S O)) (Cons (S (S O)) (Cons (S (S O)) (Cons O (Cons O (Cons O (Cons O (Cons O (Cons O (Cons O (Cons O Nil)))))))))))))))))))
+
+wrongGen :: (Term, Stream Term, Stream Term, Stream Term, Stream Term, Stream Term, Stream Term, Stream Term, Stream Term, Stream Term)
+wrongGen = (Cons (S O) Nil, natGen, natGen, natGen, natGen, natGen, natGen, natGen, natGen, natGen)
+rightGen :: (Term, Stream Term, Stream Term, Stream Term, Stream Term, Stream Term, Stream Term, Stream Term, Stream Term, Stream Term)
+rightGen = (rightTerm, natGen, natGen, natGen, natGen, natGen, natGen, natGen, natGen, natGen)
+
+--[S O, O, S (S O), O, O]
+secondTerm = Cons (S O) (Cons O (Cons (S (S O)) (Cons O (Cons O Nil))))
 
 main :: IO ()
 main = defaultMain
   [
     bgroup "Deforestation2"
      [ bench "offline1"    $ nf (eval (takeS 1) rrOffline) (Cons (S O) Nil)
-     , bench "online1"     $ nf (eval (takeS 1) rrOnline) (Cons (S O) Nil)
-     , bench "offline2"    $ nf (eval (takeS 1) rrOffline) (Cons (S O) (Cons (S O) (Cons (S O) (Cons (S O) (Cons O (Cons O (Cons O (Cons O (Cons (S (S O)) (Cons (S (S O)) (Cons (S (S O)) (Cons O (Cons O (Cons O (Cons O (Cons O (Cons O (Cons O (Cons O Nil)))))))))))))))))))
-     , bench "online2"     $ nf (eval (takeS 1) rrOnline) (Cons (S O) (Cons (S O) (Cons (S O) (Cons (S O) (Cons O (Cons O (Cons O (Cons O (Cons (S (S O)) (Cons (S (S O)) (Cons (S (S O)) (Cons O (Cons O (Cons O (Cons O (Cons O (Cons O (Cons O (Cons O Nil)))))))))))))))))))
+     , bench "online1"     $ nf (eval9 (takeS 1) rrOnline) wrongGen
+--     , bench "simple1"     $ nf (eval14 (takeS 1) rrIISimple) $ put14 rightTerm secondTerm  -- failing
+     , bench "offline2"    $ nf (eval (takeS 1) rrOffline) rightTerm
+     --, bench "online2"     $ nf (eval9 (takeS 1) rrOnline) rightGen --failing
      ]
   ]
 

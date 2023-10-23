@@ -414,7 +414,7 @@ simplify tree =
     removeTransient $ go tree
   where
     removeTransient tree =
-        trace "removeTransient" $ replaceChildren (go <$> getChildren tree) tree
+        replaceChildren (go <$> getChildren tree) tree
       where
         go (Or [Or ch g' s'] g s) = go $ Or ch g s
         go (Or ch g s) = Or (go <$> ch) g s

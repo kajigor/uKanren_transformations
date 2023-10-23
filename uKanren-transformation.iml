@@ -9,6 +9,12 @@
       <sourceFolder url="file://$MODULE_DIR$/test/resources" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/bench/Deforestation1" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/bench/Deforestation2" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/List4" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/Sort" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/Applast1" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/Depth" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/NthOpt" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/RelSort" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/.stack-work" />
     </content>
     <orderEntry type="inheritedJdk" />

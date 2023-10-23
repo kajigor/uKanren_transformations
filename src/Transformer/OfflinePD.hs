@@ -93,7 +93,7 @@ transform' outDir filename program@(AnnotatedProgram defs goal) env = do
     let cpdFile = path </> "cpd"
     mapM_ createDirRemoveExisting [path, localDir]
 
-    let result = runTransformation $ traceShow program program
+    let result = runTransformation program
 --
 --    let env = Env.fromDefs defs
 --    let ((logicGoal, names), env') = runState (E.preEval goal) env

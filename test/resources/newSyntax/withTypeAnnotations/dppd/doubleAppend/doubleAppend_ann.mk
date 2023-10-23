@@ -1,5 +1,5 @@
 filter (dynamic dynamic dynamic dynamic)
- double_apppendo x y z res =
+ double_appendo x y z res =
   (fresh t in
     ((Unfold appendo x y t &
     Unfold appendo t z res)));
@@ -15,4 +15,4 @@ filter (dynamic dynamic dynamic)
 filter ()
  fail  = Memo fail [];
 
-(fresh x, y, z, res in (Unfold double_apppendo x y z res))
+(fresh x, y, z, res in (Unfold double_appendo x y z ([S O, S (S O), S (S (S O)), O, O, S O, S (S O)])))
