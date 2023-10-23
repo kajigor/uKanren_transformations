@@ -1,4 +1,4 @@
-module SortRel_cpd_ans_tiny where
+module SortRel_unfold_tiny where
 
 import Stream
 import Control.Monad
@@ -10,211 +10,170 @@ data Term
     | Zero
     deriving (Show, Eq)
 sortoI x0 = msum [do {sorto0I x0;
-                      (x1, x2, x3, x4) <- minmaxoMinmaxoMinmaxoMinmaxoMinmaxoOOOO;
+                      (x1, x2, x3, x4) <- fn1OOOO;
                       return ()},
                   do {(x1, x2, x3, x4) <- sorto1IOOOO x0;
-                      fn5IIII x1 x2 x3 x4;
+                      fn2IIII x1 x2 x3 x4;
                       return ()}]
-fn5IIII x0 x1 x2 x3 = msum [do {x4 <- fn4OIII x1 x2 x3;
-                                fn19II x0 x4;
-                                return ()}]
-fn19II x0 x1 = msum [do {fn191I x1; guard (x0 == Zero); return ()},
-                     do {guard (x1 == Zero);
-                         x24 <- case x0 of
-                                {Succ y24 -> return y24; _ -> mzero};
-                         x25 <- case x24 of
-                                {Succ y25 -> return y25; _ -> mzero};
-                         guard (x25 == Zero);
-                         return ()}]
-fn191I x1 = msum [do {x22 <- case x1 of
-                             {Succ y22 -> return y22; _ -> mzero};
-                      x23 <- case x22 of
-                             {Succ y23 -> return y23; _ -> mzero};
-                      guard (x23 == Zero);
-                      return ()}]
-fn4OIII x1 x2 x3 = msum [do {x0 <- fn3OIII x1 x2 x3; return x0},
-                         do {x0 <- fn2OIII x1 x2 x3; return x0}]
-fn2OIII x1 x2 x3 = msum [do {fn22I x1;
-                             x0 <- fn1OII x2 x3;
-                             return x0}]
-fn1OII x1 x2 = msum [do {let {x0 = Zero}; fn12II x1 x2; return x0}]
-fn12II x0 x1 = msum [do {guard (x1 == Zero);
-                         guard (x0 == Zero);
-                         return ()}]
-fn22I x1 = msum [do {x43 <- case x1 of
-                            {Succ y43 -> return y43; _ -> mzero};
-                     guard (x43 == Zero);
-                     return ()}]
-fn3OIII x1 x2 x3 = msum [do {guard (x1 == Zero);
-                             let {x0 = x1};
-                             fn6II x2 x3;
-                             return x0}]
-fn6II x0 x1 = msum [do {fn61I x1;
-                        guard (x0 == Zero);
-                        fn62;
-                        return ()},
-                    do {guard (x1 == Zero);
-                        x42 <- case x0 of
-                               {Succ y42 -> return y42; _ -> mzero};
-                        guard (x42 == Zero);
-                        return ()}]
-fn61I x1 = msum [do {x40 <- case x1 of
-                            {Succ y40 -> return y40; _ -> mzero};
-                     guard (x40 == Zero);
-                     return ()}]
-fn62 = msum [do {x41 <- leoO; guard (x41 == Zero); return ()}]
-leoO = msum [do {let {x0 = Zero}; return x0},
-             do {let {x14 = Zero}; let {x0 = Succ x14}; return x0}]
-minmaxoMinmaxoMinmaxoMinmaxoMinmaxoOOOO = msum [do {(x4,
-                                                     x1,
-                                                     x2,
-                                                     x3) <- minmaxoMinmaxoMinmaxoOOOO;
-                                                    x0 <- fn12OI x4;
-                                                    return (x0, x1, x2, x3)},
-                                                do {(x4, x1, x2, x3) <- fn11OOOO;
-                                                    x0 <- fn6OI x4;
-                                                    return (x0, x1, x2, x3)}]
-fn11OOOO = msum [do {(x0, x1, x2, x3) <- fn10OOOO;
-                     return (x0, x1, x2, x3)},
-                 do {(x0, x1, x2, x3) <- fn9OOOO; return (x0, x1, x2, x3)}]
-fn10OOOO = msum [do {let {x1 = Zero};
-                     let {x0 = x1};
-                     (x2, x3) <- fn19OO;
-                     return (x0, x1, x2, x3)}]
-fn12OI x1 = msum [do {guard (x1 == Zero);
-                      let {x0 = Zero};
-                      return x0}]
-fn19OO = msum [do {x1 <- fn191O; let {x0 = Zero}; return (x0, x1)},
-               do {let {x1 = Zero};
-                   let {x25 = Zero};
-                   let {x24 = Succ x25};
-                   let {x0 = Succ x24};
-                   return (x0, x1)}]
-fn191O = msum [do {let {x23 = Zero};
-                   let {x22 = Succ x23};
-                   let {x1 = Succ x22};
-                   return x1}]
-fn6OI x1 = msum [do {fn61I x1; let {x0 = Zero}; fn62; return x0},
-                 do {guard (x1 == Zero);
-                     let {x42 = Zero};
-                     let {x0 = Succ x42};
-                     return x0}]
-fn9OOOO = msum [do {x1 <- fn91O;
-                    (x0, x2, x3) <- fn8OOO;
+fn1OOOO = msum [do {(x4, x1, x2, x3) <- fn3OOOO;
+                    x0 <- fn9OI x4;
+                    return (x0, x1, x2, x3)},
+                do {(x4, x1, x2, x3) <- fn10OOOO;
+                    x0 <- fn13OI x4;
                     return (x0, x1, x2, x3)}]
-fn8OOO = msum [do {let {x0 = Zero};
-                   (x1, x2) <- fn12OO;
-                   return (x0, x1, x2)}]
-fn12OO = msum [do {let {x1 = Zero};
-                   let {x0 = Zero};
-                   return (x0, x1)}]
-fn91O = msum [do {let {x39 = Zero};
-                  let {x38 = Succ x39};
-                  let {x1 = Succ x38};
-                  return x1}]
-minmaxoMinmaxoMinmaxoOOOO = msum [do {(x0,
-                                       x1,
-                                       x2,
-                                       x3) <- minmaxoMinmaxoOOOO;
-                                      return (x0, x1, x2, x3)},
-                                  do {(x0, x1, x2, x3) <- fn18OOOO; return (x0, x1, x2, x3)}]
-fn18OOOO = msum [do {x1 <- fn17O;
-                     let {x0 = x1};
-                     (x2, x3) <- fn16OO;
+fn10OOOO = msum [do {(x0, x1, x2, x3) <- fn11OOOO;
                      return (x0, x1, x2, x3)},
-                 do {x1 <- fn181O;
-                     (x0, x2, x3) <- fn15OOO;
+                 do {(x0, x1, x2, x3) <- fn12OOOO; return (x0, x1, x2, x3)}]
+fn11OOOO = msum [do {let {x1 = Zero};
+                     let {x0 = x1};
+                     (x2, x3) <- fn6OO;
                      return (x0, x1, x2, x3)}]
-fn15OOO = msum [do {let {x0 = Zero};
-                    (x1, x2) <- fn6OO;
-                    return (x0, x1, x2)},
-                do {(x1, x2, x3) <- fn14OOO;
-                    let {x0 = Succ x3};
-                    return (x0, x1, x2)}]
-fn14OOO = msum [do {let {x2 = Zero};
-                    (x0, x1) <- fn13OO;
-                    return (x0, x1, x2)}]
-fn13OO = msum [do {let {x34 = Zero};
-                   let {x1 = Succ x34};
+fn12OOOO = msum [do {x1 <- fn122O;
+                     let {x0 = Zero};
+                     (x2, x3) <- fn9OO;
+                     return (x0, x1, x2, x3)}]
+fn122O = msum [do {let {x33 = Zero};
+                   let {x32 = Succ x33};
+                   let {x1 = Succ x32};
+                   return x1}]
+fn13OI x1 = msum [do {fn132I x1; let {x0 = Zero}; return x0},
+                  do {guard (x1 == Zero);
+                      let {x35 = Zero};
+                      let {x0 = Succ x35};
+                      return x0}]
+fn132I x1 = msum [do {x34 <- case x1 of
+                             {Succ y34 -> return y34; _ -> mzero};
+                      guard (x34 == Zero);
+                      return ()}]
+fn2IIII x0 x1 x2 x3 = msum [do {x4 <- fn14OIII x1 x2 x3;
+                                fn6II x0 x4;
+                                return ()}]
+fn14OIII x1 x2 x3 = msum [do {x0 <- fn15OIII x1 x2 x3; return x0},
+                          do {x0 <- fn16OIII x1 x2 x3; return x0}]
+fn15OIII x1 x2 x3 = msum [do {guard (x1 == Zero);
+                              let {x0 = x1};
+                              fn13II x2 x3;
+                              return x0}]
+fn13II x0 x1 = msum [do {fn132I x1; guard (x0 == Zero); return ()},
+                     do {guard (x1 == Zero);
+                         x35 <- case x0 of
+                                {Succ y35 -> return y35; _ -> mzero};
+                         guard (x35 == Zero);
+                         return ()}]
+fn16OIII x1 x2 x3 = msum [do {fn162I x1;
+                              let {x0 = Zero};
+                              fn9II x2 x3;
+                              return x0}]
+fn162I x1 = msum [do {x36 <- case x1 of
+                             {Succ y36 -> return y36; _ -> mzero};
+                      guard (x36 == Zero);
+                      return ()}]
+fn3OOOO = msum [do {(x0, x1, x2, x3) <- fn4OOOO;
+                    return (x0, x1, x2, x3)},
+                do {(x0, x1, x2, x3) <- fn7OOOO; return (x0, x1, x2, x3)}]
+fn4OOOO = msum [do {let {x1 = Zero};
+                    let {x0 = x1};
+                    (x2, x3) <- fn5OO;
+                    return (x0, x1, x2, x3)},
+                do {x1 <- fn41O;
+                    let {x0 = x1};
+                    (x2, x3) <- fn5OO;
+                    return (x0, x1, x2, x3)},
+                do {x1 <- fn42O;
+                    let {x0 = Zero};
+                    (x2, x3) <- fn6OO;
+                    return (x0, x1, x2, x3)}]
+fn41O = msum [do {let {x13 = Zero};
+                  let {x1 = Succ x13};
+                  return x1}]
+fn42O = msum [do {let {x14 = Zero};
+                  let {x1 = Succ x14};
+                  return x1}]
+fn5OO = msum [do {let {x16 = Zero};
+                  let {x15 = Succ x16};
+                  let {x1 = Succ x15};
+                  let {x17 = Zero};
+                  let {x0 = Succ x17};
+                  return (x0, x1)},
+              do {let {x18 = Zero};
+                  let {x1 = Succ x18};
+                  let {x20 = Zero};
+                  let {x19 = Succ x20};
+                  let {x0 = Succ x19};
+                  return (x0, x1)}]
+fn6II x0 x1 = msum [do {fn62I x1; guard (x0 == Zero); return ()},
+                    do {guard (x1 == Zero);
+                        x23 <- case x0 of
+                               {Succ y23 -> return y23; _ -> mzero};
+                        x24 <- case x23 of
+                               {Succ y24 -> return y24; _ -> mzero};
+                        guard (x24 == Zero);
+                        return ()}]
+fn6OO = msum [do {x1 <- fn62O; let {x0 = Zero}; return (x0, x1)},
+              do {let {x1 = Zero};
+                  let {x24 = Zero};
+                  let {x23 = Succ x24};
+                  let {x0 = Succ x23};
+                  return (x0, x1)}]
+fn62I x1 = msum [do {x21 <- case x1 of
+                            {Succ y21 -> return y21; _ -> mzero};
+                     x22 <- case x21 of
+                            {Succ y22 -> return y22; _ -> mzero};
+                     guard (x22 == Zero);
+                     return ()}]
+fn62O = msum [do {let {x22 = Zero};
+                  let {x21 = Succ x22};
+                  let {x1 = Succ x21};
+                  return x1}]
+fn7OOOO = msum [do {x1 <- fn72O;
+                    let {x0 = Zero};
+                    (x2, x3) <- fn13OO;
+                    return (x0, x1, x2, x3)},
+                do {let {x28 = Zero};
+                    let {x27 = Succ x28};
+                    let {x1 = Succ x27};
+                    let {x29 = Zero};
+                    let {x0 = Succ x29};
+                    (x2, x3) <- fn8OO;
+                    return (x0, x1, x2, x3)}]
+fn13OO = msum [do {x1 <- fn132O; let {x0 = Zero}; return (x0, x1)},
+               do {let {x1 = Zero};
                    let {x35 = Zero};
                    let {x0 = Succ x35};
-                   fn131;
                    return (x0, x1)}]
-fn131 = msum [do {x36 <- leoO;
-                  x37 <- case x36 of
-                         {Succ y37 -> return y37; _ -> mzero};
-                  guard (x37 == Zero);
-                  return ()}]
-fn16OO = msum [do {let {x28 = Zero};
-                   let {x1 = Succ x28};
-                   let {x30 = Zero};
-                   let {x29 = Succ x30};
-                   let {x0 = Succ x29};
-                   fn161;
-                   return (x0, x1)}]
-fn161 = msum [do {x31 <- leoO;
-                  x32 <- case x31 of
-                         {Succ y32 -> return y32; _ -> mzero};
-                  x33 <- case x32 of
-                         {Succ y33 -> return y33; _ -> mzero};
-                  guard (x33 == Zero);
-                  return ()}]
-fn17O = msum [do {let {x0 = Zero}; return x0},
-              do {x1 <- leoO; let {x0 = Succ x1}; return x0}]
-fn181O = msum [do {let {x27 = Zero};
-                   let {x26 = Succ x27};
-                   let {x1 = Succ x26};
+fn132O = msum [do {let {x34 = Zero};
+                   let {x1 = Succ x34};
                    return x1}]
-fn6OO = msum [do {x1 <- fn61O;
-                  let {x0 = Zero};
-                  fn62;
-                  return (x0, x1)},
-              do {let {x1 = Zero};
-                  let {x42 = Zero};
-                  let {x0 = Succ x42};
-                  return (x0, x1)}]
-fn61O = msum [do {let {x40 = Zero};
-                  let {x1 = Succ x40};
+fn72O = msum [do {let {x26 = Zero};
+                  let {x25 = Succ x26};
+                  let {x1 = Succ x25};
                   return x1}]
-minmaxoMinmaxoOOOO = msum [do {x1 <- leoO;
-                               let {x0 = x1};
-                               (x2, x3) <- minmaxoOO;
-                               return (x0, x1, x2, x3)},
-                           do {x1 <- minmaxoMinmaxo1O;
-                               (x0, x2, x3) <- fn20OOO;
-                               return (x0, x1, x2, x3)}]
-fn20OOO = msum [do {let {x0 = Zero};
-                    (x1, x2) <- fn19OO;
-                    return (x0, x1, x2)}]
-minmaxoOO = msum [do {let {x16 = Zero};
-                      let {x15 = Succ x16};
-                      let {x1 = Succ x15};
-                      let {x17 = Zero};
-                      let {x0 = Succ x17};
-                      minmaxo1;
-                      return (x0, x1)},
-                  do {let {x19 = Zero};
-                      let {x1 = Succ x19};
-                      let {x21 = Zero};
-                      let {x20 = Succ x21};
-                      let {x0 = Succ x20};
-                      return (x0, x1)}]
-minmaxo1 = msum [do {x18 <- leoO; guard (x18 == Zero); return ()}]
-minmaxoMinmaxo1O = msum [do {let {x13 = Zero};
-                             let {x1 = Succ x13};
-                             return x1}]
+fn8OO = msum [do {let {x30 = Zero};
+                  let {x1 = Succ x30};
+                  let {x31 = Zero};
+                  let {x0 = Succ x31};
+                  return (x0, x1)}]
+fn9II x0 x1 = msum [do {guard (x1 == Zero);
+                        guard (x0 == Zero);
+                        return ()}]
+fn9OI x1 = msum [do {guard (x1 == Zero);
+                     let {x0 = Zero};
+                     return x0}]
+fn9OO = msum [do {let {x1 = Zero};
+                  let {x0 = Zero};
+                  return (x0, x1)}]
 sortoO gen_sorto0O_x1 gen_sorto0O_x2 gen_sorto0O_x3 gen_sorto0O_x4 gen_sorto1OOOOO_x1 gen_sorto1OOOOO_x2 gen_sorto1OOOOO_x3 gen_sorto1OOOOO_x4 = msum [do {x0 <- sorto0O gen_sorto0O_x1 gen_sorto0O_x2 gen_sorto0O_x3 gen_sorto0O_x4;
                                                                                                                                                            (x1,
                                                                                                                                                             x2,
                                                                                                                                                             x3,
-                                                                                                                                                            x4) <- minmaxoMinmaxoMinmaxoMinmaxoMinmaxoOOOO;
+                                                                                                                                                            x4) <- fn1OOOO;
                                                                                                                                                            return x0},
                                                                                                                                                        do {(x0,
                                                                                                                                                             x1,
                                                                                                                                                             x2,
                                                                                                                                                             x3,
                                                                                                                                                             x4) <- sorto1OOOOO gen_sorto1OOOOO_x1 gen_sorto1OOOOO_x2 gen_sorto1OOOOO_x3 gen_sorto1OOOOO_x4;
-                                                                                                                                                           fn5IIII x1 x2 x3 x4;
+                                                                                                                                                           fn2IIII x1 x2 x3 x4;
                                                                                                                                                            return x0}]
 sorto0I x0 = msum [do {(x1, x5) <- case x0 of
                                    {Cons y1 y5 -> return (y1, y5); _ -> mzero};
