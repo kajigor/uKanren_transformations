@@ -54,6 +54,9 @@ unify =
 
     -- occursCheck u' t s = if elem u' $ fv t then Nothing else s
 
+unifyAll :: (Ord v) => Maybe (Subst.Subst v) -> [(Term v, Term v)] -> Maybe (Subst.Subst v)
+unifyAll = foldl (\s (x, y) -> unify s x y)
+
 unifySubsts :: Subst.Subst S -> Subst.Subst S -> Maybe (Subst.Subst S)
 unifySubsts (Subst.Subst one) (Subst.Subst two) =
     let maximumVar = max (findUpper one) (findUpper two) in

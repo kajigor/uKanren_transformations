@@ -5,6 +5,7 @@ module Mode.Term where
 import           Data.List   (intercalate)
 import qualified Data.Set    as Set
 import           Text.Printf
+import qualified Syntax as S
 
 
 newtype Var a = Var { getVar :: a }
@@ -28,3 +29,10 @@ instance Show a => Show (FlatTerm a) where
 varsFromTerm :: Ord a => FlatTerm a -> Set.Set a
 varsFromTerm (FTVar v) = Set.singleton $ getVar v
 varsFromTerm (FTCon _ args) = Set.fromList $ map getVar args
+
+varToPlainTerm :: Var a -> S.Term a
+varToPlainTerm (Var v) = S.V v
+
+toPlainTerm :: FlatTerm a -> S.Term a
+toPlainTerm (FTVar v) = varToPlainTerm v
+toPlainTerm (FTCon n args) = S.C n (varToPlainTerm <$> args)
