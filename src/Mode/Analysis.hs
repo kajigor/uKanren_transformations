@@ -140,7 +140,7 @@ returnsOne _ = False
 
 isAssignment :: (Ord a) => Base (a, Mode) -> Bool
 isAssignment (Unif (Var v) (FTVar (Var t))) =
-  not (isBeforeGround v) && isBeforeGround t
+  (isBeforeGround v) /= (isBeforeGround t)
 isAssignment _ = False
 
 isConstruction :: (Ord a) => Base (a, Mode) -> Bool

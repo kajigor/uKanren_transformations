@@ -6,12 +6,13 @@ import           Def
 import           FreshNames
 import           Program
 import           Syntax
+import Debug.Trace
 
 data RenameState a = RenameState
   { getVarMap       :: M.Map X a
   , getNameSource   :: PolyFreshNames a
   , getFirstNotUsed :: PolyFreshNames a
-  }
+  } deriving (Show)
 
 emptyState :: FreshName a => RenameState a
 emptyState = RenameState { getVarMap = M.empty, getNameSource = defaultNames, getFirstNotUsed = defaultNames }
@@ -63,7 +64,7 @@ enumerate (Fresh x g) = do
 enumerate (Delay g) = do
   Delay <$> enumerate g
 
-withNewName :: (Ord a, FreshName a, Monad m) =>
+withNewName :: (Ord a, FreshName a, Show a, Monad m) =>
                X ->
                StateT (RenameState a) m b ->
                StateT (RenameState a) m (b, a)
@@ -73,7 +74,8 @@ withNewName x f = do
   let newVarMap = M.insert x newName varMap
   put (RenameState newVarMap newSource (max newSource firstNotUsed))
   r <- f
-  put $ oldState { getFirstNotUsed = max newSource firstNotUsed}
+  subUsed <- gets getFirstNotUsed
+  put $ oldState { getFirstNotUsed = max newSource subUsed}
   return (r, newName)
 
 newVar :: (Ord a, FreshName a, Monad m) => X -> StateT (RenameState a) m a
