@@ -27,6 +27,7 @@ import           Syntax
 import           Def
 import           Descend
 import           Printer.GlobalTree
+import           Printer.PrettyMkPrinter
 import qualified Data.Map as Map
 import qualified CPD.GlobalControl as GCcpd
 import qualified CPD.LocalControl as LCcpd
@@ -93,7 +94,7 @@ transform' outDir filename program@(AnnotatedProgram defs goal) env = do
     let cpdFile = path </> "cpd"
     mapM_ createDirRemoveExisting [path, localDir]
 
-    let result = runTransformation program
+    let result = runTransformation $ traceShow program program
 --
 --    let env = Env.fromDefs defs
 --    let ((logicGoal, names), env') = runState (E.preEval goal) env
@@ -117,11 +118,11 @@ transform' outDir filename program@(AnnotatedProgram defs goal) env = do
 
     printTree (path </> "global.dot") (transformGlobal $ globalTree result)
     mapM_ (uncurry (renderLocalTree localDir)) (localTrees result)
-    writeFile (cpdFile <.> "before.pur") (show $ beforePur result)
+    writeFile (cpdFile <.> "before.pur") (prettyMk $ beforePur result)
     let pur@(goal,xs,defs) = purified result
     Transformer.MkToProlog.transform (cpdFile <.> "pl") defs
     let purified = Program defs goal
-    writeFile (cpdFile <.> "pur") (show purified)
+    writeFile (cpdFile <.> "pur") (prettyMk purified)
     let ocamlCodeFileName = cpdFile <.> "ml"
     OC.topLevel ocamlCodeFileName "topLevel" env pur
 

@@ -9,12 +9,7 @@ import qualified Control.DeepSeq as DS
 import Control.Applicative (Alternative)
 import Debug.Trace (traceShow)
 
-data Term =
-    Cons Term Term |
-    O |
-    S Term |
-    Nil
-   deriving (Show, Eq, Generic, DS.NFData)
+import Simple (Term (..), depthII, depthIO)
 
 depthIOff x0 = msum [do {x1 <- case x0 of
                             {S y1 -> return y1; _ -> mzero};
@@ -267,6 +262,9 @@ eval2 listify f = eval listify $ \(x,y) -> f x y
 eval3 :: (m r -> [r]) -> (a -> b -> c -> m r) -> (a, b, c) -> [r]
 eval3 listify f = eval listify $ \(x,y,z) -> f x y z
 
+eval4 :: (m r -> [r]) -> (a -> b -> c -> d -> m r) -> (a, b, c, d) -> [r]
+eval4 listify f = eval listify $ \(x,y,z,d) -> f x y z d
+
 eval6N :: Show r => (m r -> [r]) -> (a -> x1 -> x2 -> x3 -> x4 -> x5 -> x6 -> m r) -> (a, x1, x2, x3, x4, x5, x6) -> [r]
 eval6N listify f = eval listify  $ \(b, y1, y2, y3, y4, y5, y6) -> f b y1 y2 y3 y4 y5 y6
 
@@ -284,18 +282,40 @@ depthOOff1 :: MonadPlus m => p -> m Term
 depthOOff1 x = do
   depthOOff
 
+-- depthII 4 
+-- depthIO 3
+
+-- C Member O [S O, S (S O), S (S O), S (S (S O)), S O, O, S (S O), O, S O, S (S O), O, O]) d
+
+
+getNat :: Int -> Term 
+getNat x | x == 0 = O
+getNat x | x > 0 = 
+  S $ getNat (x - 1)
+  
+n0 = getNat 0 
+n1 = getNat 1
+n2 = getNat 2 
+n3 = getNat 3
+
+input = Member n0 (Cons n1 (Cons n2 (Cons n2 (Cons n3 (Cons n1 (Cons n0 (Cons n2 (Cons n0 (Cons n1 (Cons n2 (Cons n0 (Cons n0 Nil)))))))))))) 
+
+
 main = defaultMain
   [
     bgroup "DepthRun"
      [
         bench "offline1"    $ nf (eval (takeS 1) depthIOff) natRight
       , bench "online1"     $ nf (eval2 (takeS 1) depthIOnl) (natRight, natGen)
+--      , bench "simple1"     $ nf (eval4 (takeS 1) depthII) (input, natRight, natGen, natGen) -- failing
       , bench "offline2"    $ nf (eval (takeS 1) depthIOff) natWrong
       , bench "online2"     $ nf (eval2 (takeS 1) depthIOnl) (natWrong, natGen)
+--      , bench "simple2"     $ nf (eval4 (takeS 1) depthII) (input, natWrong, natGen, natGen) -- failing
      ],
     bgroup "DepthGen"
     [
         bench "offlineGen"  $ nf (eval (takeS 1) depthOOff1) () 
       , bench "onlineGen"   $ nf (eval3 (takeS 1) depthOOnl) (natGen, natGen, natGen) 
+--      , bench "simpleGen"   $ nf (eval3 (takeS 1) depthIO) (input, natGen, natGen) -- failing
     ]
   ]

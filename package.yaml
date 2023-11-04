@@ -233,17 +233,61 @@ benchmarks:
       - tasty-bench
       - deepseq
     ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-#  uKanren-transformation-bench-double-appendo-det:
-#    main: Main.hs
-#    source-dirs:
-#      - bench/DoubleAppendo
-#      - test/resources
-#    dependencies:
-#      - uKanren-transformation
-#      - tasty
-#      - tasty-bench
-#      - deepseq
-#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  uKanren-transformation-bench-double-appendo-det:
+    main: Main.hs
+    source-dirs:
+      - bench/DoubleAppendo
+      - test/resources
+    dependencies:
+      - uKanren-transformation
+      - tasty
+      - tasty-bench
+      - deepseq
+    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  uKanren-transformation-bench-ex_depth-det:
+    main: Main.hs
+    source-dirs:
+      - bench/Ex_Depth
+      - test/resources
+    dependencies:
+      - uKanren-transformation
+      - tasty
+      - tasty-bench
+      - deepseq
+    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  uKanren-transformation-bench-remove2-det:
+    main: Main.hs
+    source-dirs:
+      - bench/Remove2
+      - test/resources
+    dependencies:
+      - uKanren-transformation
+      - tasty
+      - tasty-bench
+      - deepseq
+    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  uKanren-transformation-bench-regexp1-det:
+    main: Main.hs
+    source-dirs:
+      - bench/Regexp1
+      - test/resources
+    dependencies:
+      - uKanren-transformation
+      - tasty
+      - tasty-bench
+      - deepseq
+    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  uKanren-transformation-bench-rotatePrune-det:
+    main: Main.hs
+    source-dirs:
+      - bench/RotatePrune
+      - test/resources
+    dependencies:
+      - uKanren-transformation
+      - tasty
+      - tasty-bench
+      - deepseq
+    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
   # uKanren-transformation-bench-prop:
   #   main: Main.hs
   #   source-dirs:

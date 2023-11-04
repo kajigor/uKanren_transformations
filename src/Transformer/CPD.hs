@@ -15,6 +15,7 @@ import           Prelude                hiding (succ)
 import           Printer.Dot
 import           Printer.GlobalTree     ()
 import           Printer.SldTree        ()
+import           Printer.PrettyMkPrinter (prettyMk)
 import           Program
 import           Purification
 import           Residualization
@@ -59,11 +60,11 @@ transform' outDir filename goal@(Program definitions _) env heuristic = do
     Transformer.MkToProlog.transform (path </> "original.pl") definitions
     printTree (path </> "global.dot") (globalTree result)
     mapM_ (uncurry (renderLocalTree localDir)) (localTrees result)
-    writeFile (cpdFile <.> "before.pur") (show $ beforePur result)
+    writeFile (cpdFile <.> "before.pur") (prettyMk $ beforePur result)
     let pur@(goal,xs,defs) = purified result
     Transformer.MkToProlog.transform (cpdFile <.> "pl") defs
     let purified = Program defs goal
-    writeFile (cpdFile <.> "pur") (show purified)
+    writeFile (cpdFile <.> "pur") (prettyMk purified)
     let ocamlCodeFileName = cpdFile <.> "ml"
     OC.topLevel ocamlCodeFileName "topLevel" env pur
 

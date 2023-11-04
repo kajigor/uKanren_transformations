@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
-
 import Test.Tasty.Bench
 import Stream
 import GHC.Generics (Generic)
@@ -8,13 +6,7 @@ import Control.Monad (msum, guard, MonadPlus)
 import qualified Control.DeepSeq as DS
 import Control.Applicative (Alternative)
 import Debug.Trace (traceShow)
-
-data Term
-    = Cons Term Term
-    | Nil
-    | Succ Term
-    | Zero
-    deriving (Show, Eq, Generic, DS.NFData)
+import Simple (Term (..), sortoII, sortoIO)
 
 sortoIOffline x0 = msum [do {(x1, x2) <- case x0 of
                                   {Cons y1 y2 -> return (y1, y2); _ -> mzero};
@@ -377,8 +369,11 @@ eval listify f = listify . f
 eval2 :: (m r -> [r]) -> (a -> b -> m r) -> (a, b) -> [r]
 eval2 listify f = eval listify $ \(x,y) -> f x y
 
-eval6N :: Show r => (m r -> [r]) -> (a -> x1 -> x2 -> x3 -> x4 -> x5 -> x6 -> m r) -> (a, x1, x2, x3, x4, x5, x6) -> [r]
-eval6N listify f = eval listify  $ \(b, y1, y2, y3, y4, y5, y6) -> f b y1 y2 y3 y4 y5 y6
+eval5 :: Show r => (m r -> [r]) -> (a -> x1 -> x2 -> x3 -> x4-> m r) -> (a, x1, x2, x3, x4) -> [r]
+eval5 listify f = eval listify  $ \(b, y1, y2, y3, y4) -> f b y1 y2 y3 y4
+
+eval6 :: Show r => (m r -> [r]) -> (a -> x1 -> x2 -> x3 -> x4 -> x5 -> m r) -> (a, x1, x2, x3, x4, x5) -> [r]
+eval6 listify f = eval listify  $ \(b, y1, y2, y3, y4, y5) -> f b y1 y2 y3 y4 y5
 
 eval7 :: Show r => (m r -> [r]) -> (x1 -> x2 -> x3 -> x4 -> x5 -> x6 -> x7 -> m r) -> (x1, x2, x3, x4, x5, x6, x7) -> [r]
 eval7 listify f = eval listify  $ \(y1, y2, y3, y4, y5, y6, y7) -> f y1 y2 y3 y4 y5 y6 y7
@@ -399,18 +394,23 @@ genSort = (natGen, natGen, natGen, natGen, natGen, natGen, natGen)
 sortoOOffline1 :: MonadPlus m => p -> m Term
 sortoOOffline1 x = do
   sortoOOffline
+  
+-- [Succ Zero, Zero, Succ (Succ Zero), Succ Zero, Zero] 
+input = Cons (Succ Zero) (Cons Zero (Cons (Succ (Succ Zero)) (Cons (Succ Zero) (Cons Zero Nil))))
 
 main = defaultMain
   [
     bgroup "SortRun"
      [
         bench "offline1"    $ nf (eval (takeS 1) sortoIOffline) rightSort
---      , bench "online1"     $ nf (eval6N (takeS 1) sortoIOnline) $ traceShow (eval6N (takeS 1) sortoIOnline rightGen) rightGen -- failing
+--      , bench "online1"     $ nf (eval7 (takeS 1) sortoIOnline) $ traceShow (eval6N (takeS 1) sortoIOnline rightGen) rightGen -- failing
+--        , bench "simple1"   $ nf (eval6 (takeS 1) sortoII) (input, rightSort, natGen, natGen, natGen, natGen) -- failing
      ],
     bgroup "SortGen"
     [
         bench "offlineGen"  $ nf (eval (takeS 1) sortoOOffline1) ()
    --   , bench "onlineGen"   $ nf (eval7 (takeS 1) sortoOOnline) genSort -- failing
+--       , bench "simpleGen"  $ nf (eval5 (takeS 1) sortoIO) (input, natGen, natGen, natGen, natGen)
     ]
   ]
   

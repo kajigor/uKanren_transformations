@@ -1,5 +1,5 @@
 
-module BTA.TerminationCheck where 
+module BTA.TerminationCheck where
 
 import           Control.Monad.State
 import           Data.Group
@@ -19,12 +19,12 @@ import qualified Data.List.Split      as Split
 import qualified Data.Set             as Set
 import           Control.Exception
 
-terminationCheck :: Ord a => AnnotatedProgram (AnnG AbstractTerm) a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef (AnnG AbstractTerm) a) -> Bool 
-terminationCheck (AnnotatedProgram defs _) mapConditions mapDefs = 
+terminationCheck :: Ord a => AnnotatedProgram (AnnG AbstractTerm) a -> Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef (AnnG AbstractTerm) a) -> [String] -> Bool 
+terminationCheck (AnnotatedProgram defs _) mapConditions mapDefs initNames = 
     let (defsGraphs, defsVars) = unzip $ map (getPairsDef mapConditions mapDefs) defs in 
     let defsVarsRes = Map.unions defsVars in 
     let defsGraphsRes = goGraphMap (Map.unions defsGraphs) defsVarsRes $ map getName defs in 
-    all (\name -> checkDecreasing (Map.findWithDefault Set.empty (name, name) defsGraphsRes) (filterArgs (getAnnotations $ mapDefs Map.! name) $ defsVarsRes Map.! (name, name))) $ map getName defs
+    all (\name -> checkDecreasing (Map.findWithDefault Set.empty (name, name) defsGraphsRes) (filterArgs (getAnnotations $ mapDefs Map.! name) $ defsVarsRes Map.! (name, name))) initNames
   where 
     filterArgs :: [AnnotationType] -> ([String], [String]) -> ([String], [String])
     filterArgs annotations (inArgs, outArgs) = 
@@ -96,7 +96,7 @@ renamingPair name mapDefsArgs (nameTo, graph, inArgs, outArgs) =
 
 getPairsDef :: Ord a => Map.Map String (Conditions a) -> Map.Map String (AnnotatedDef (AnnG AbstractTerm) a) -> AnnotatedDef (AnnG AbstractTerm) a -> (Map.Map (String, String) (Set.Set (Graph String)), Map.Map (String, String) ([String], [String]))
 getPairsDef mapConditions mapDefs def@(AnnotatedDef name args body annotations) = 
-    let (namesStr, fn) = getNamesStr (length args) $ defaultNames in 
+    let (namesStr, fn) = getNamesStr (length args) defaultNames in 
     let mapVars = Map.fromList $ zip args namesStr in 
     let (namesDefsInt, fnNew) = getNames ((sum $ map (length . getArgs) $ Map.elems mapDefs) + 1) fn in 
     let namesDefsStr = Split.splitPlaces (map (length . getArgs) $ Map.elems mapDefs) $ map show namesDefsInt in 

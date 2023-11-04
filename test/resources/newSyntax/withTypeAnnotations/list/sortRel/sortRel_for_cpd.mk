@@ -37,4 +37,4 @@ sorto x y =
     sorto xs xs' &
     smallesto x s xs);
 
-? sorto x0 ([Zero, Zero, Succ Zero, Succ Zero, Succ (Succ Zero), Succ (Succ (Succ Zero)), Succ (Succ (Succ Zero))])
+? sorto x0 ([Zero, Succ Zero, Succ (Succ Zero), Succ (Succ (Succ Zero))])

@@ -14,6 +14,11 @@
       <sourceFolder url="file://$MODULE_DIR$/bench/Applast1" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/bench/Depth" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/bench/NthOpt" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/DoubleAppendo" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/Ex_Depth" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/Remove2" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/Regexp1" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/RotatePrune" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/bench/RelSort" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/.stack-work" />
     </content>

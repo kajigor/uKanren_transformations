@@ -3,6 +3,7 @@ module Purification where
 import           Control.Monad.State
 import           Data.List
 import           Debug.Trace         (trace)
+import           Data.Maybe
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
 import           Def
@@ -29,7 +30,46 @@ purification (program@(Program defs x), names) =
   -- identity x
   --justTakeOutLets x
   --purificationWithErasure x
-  conservativePurificationWithErasure program names
+  let (goal', xs, defs') = conservativePurificationWithErasure program names in
+
+  let (goal'', defs'') = until (\(g', df') -> clearPrg (g', df') == (g', df')) clearPrg (goal', defs') in
+
+  (goal'', xs, defs'')
+
+clearPrg :: (G X, [Def G X]) -> (G X, [Def G X])
+clearPrg (g, defs) = 
+  let g' = clearGoal defs g in 
+  let defs' = mapMaybe (clearDef defs) defs in 
+  case g' of 
+    Nothing -> error "Residualiation failed: no defs generated" 
+    Just g'' -> (g'', defs')
+  
+clearDef :: [Def G X] -> Def G X -> Maybe (Def G X) 
+clearDef defs (Def n a g) = do 
+   g' <- clearGoal defs g 
+   return $ Def n a g'
+
+clearGoal :: [Def G X] -> G X -> Maybe (G X)
+clearGoal defs g@(Conjunction g1 g2 lstG) = do 
+  gs <- mapM (clearGoal defs) (g1 : g2 : lstG)
+  return $ unsafeConj gs
+clearGoal defs g@(Disjunction g1 g2 lstG) = 
+  let gs = mapMaybe (clearGoal defs) (g1 : g2 : lstG) in
+  case gs of 
+    [] -> Nothing
+    [x] -> Just x 
+    (x1 : x2 : xs) -> Just $ Disjunction x1 x2 xs
+clearGoal defs (Delay g) = do 
+  g' <- clearGoal defs g 
+  return $ Delay g'
+clearGoal defs (Fresh x g) = do 
+  g' <- clearGoal defs g
+  return $ Fresh x g' 
+clearGoal defs g@(Invoke name _) | any (\(Def n a g) -> n == name) defs = 
+  Just g 
+clearGoal defs g@(Invoke name _) = Nothing 
+clearGoal defs g@(t1 :=: t2) = Just g  
+  
 
 {-------------------------------------------}
 {-------------------------------------------}

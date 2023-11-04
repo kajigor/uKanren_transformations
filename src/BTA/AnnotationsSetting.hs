@@ -28,11 +28,12 @@ goDefAnnotations def@(AnnotatedDef name args body annotations) otherDefs goal =
 
 
 check :: AnnotatedProgram (AnnG Term) String -> Bool 
-check program = 
+check program@(AnnotatedProgram df1 gl1) = 
+    let initNames = map getName df1 in 
     let abstractProgram@(AnnotatedProgram defs goal) = makeNormal $ convert program in 
     let mapDefs = Map.fromList $ zip (map getName defs) defs in
     let mapConditions = go defs mapDefs Map.empty in 
-    terminationCheck (traceShow abstractProgram abstractProgram) mapConditions mapDefs
+    terminationCheck (traceShow abstractProgram abstractProgram) mapConditions mapDefs initNames
     
 severalGoalsAnnotations :: AnnG Term String -> AnnG Term String -> [AnnG Term String] -> (AnnG Term String -> AnnG Term String -> [AnnG Term String] -> AnnG Term String) -> (AnnG Term String -> AnnotatedProgram (AnnG Term) String) -> AnnG Term String
 severalGoalsAnnotations g1 g2 lstG constructor recovery = 
