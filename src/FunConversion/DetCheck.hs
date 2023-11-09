@@ -38,7 +38,7 @@ semify d = d
 
 getDet :: DetState -> Lang -> DetType
 getDet _ Empty = DetFail
-getDet state (Call _ n _ _) = Det `fromMaybe` Map.lookup n state
+getDet state (Call _ _ n _ _) = Det `fromMaybe` Map.lookup n state
 getDet _ (Return _) = Det
 getDet state (Sum xs) = foldl (if disjointCheck xs then detDisjointDisj else detDisj) DetFail (map (getDet state) xs)
 getDet state (Match _ (_, x)) = semify (getDet state x)

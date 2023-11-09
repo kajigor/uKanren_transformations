@@ -117,9 +117,11 @@ simpleFixpoint f x = let x' = f x in if x' == x then x' else simpleFixpoint f x'
 runDetCheck :: (Ord a) => [MDef a] -> [MDef a]
 runDetCheck = simpleFixpoint updateDetMode
 
+detcheck' :: (Ord a) => [Def M.Goal (a, M.Mode)] -> [MDef a]
+detcheck' = runDetCheck . introduceDetMode
 
 detcheck :: (Ord a) => Program M.Goal (a, M.Mode) -> Program M.Goal (a, MixedMode)
-detcheck (Program defs goal) = Program (runDetCheck $ introduceDetMode defs) ((\(v, g) -> DV' v NotDet g) <$> goal)
+detcheck (Program defs goal) = Program (detcheck' defs) ((\(v, g) -> DV' v NotDet g) <$> goal)
 
 pairs :: [a] -> [(a, a)]
 pairs [] = []
@@ -174,6 +176,12 @@ identify name args = DId (name, (grd . snd) <$> args)
 identifyDef:: MDef a -> DefIdentifier
 identifyDef (Def name args _) = identify name args
 
+identify' :: String -> [(a, M.Mode)] -> DefIdentifier
+identify' name args = DId (name, snd <$> args)
+
+identifyDef' :: Def M.Goal (a, M.Mode) -> DefIdentifier
+identifyDef' (Def name args _) = identify' name args
+
 findDef :: [MDef a] -> DefIdentifier -> MDef a
 findDef [] did = error $ "Def matching " ++ show did ++ " not found"
 findDef (d:ds) did | identifyDef d == did = d
@@ -211,7 +219,14 @@ checkDet defs d = do
             
             return $ gens && args && exclusivity && subcallsDet
 
-checkDefs :: (Show a, Ord a) => [MDef a] -> Map.Map DefIdentifier Bool
+type DetMap = Map.Map DefIdentifier Bool
+
+checkDefs :: (Show a, Ord a) => [MDef a] -> DetMap
 checkDefs defs = fromJust <$> go
     where
         go = execState (mapM_ (checkDet defs) defs) Map.empty
+
+isDet :: DefIdentifier -> DetMap -> Bool
+isDet d dets = case Map.lookup d dets of
+    Just b -> b
+    Nothing -> False

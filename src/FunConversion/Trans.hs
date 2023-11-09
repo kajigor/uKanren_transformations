@@ -18,6 +18,8 @@ import qualified Mode.Toplevel as M
 import qualified Mode.Analysis as M
 import Data.Bifunctor (second)
 import Data.Maybe (maybeToList)
+import qualified FunConversion.DetMode as D
+import Debug.Trace
 
 pattern In :: Mode
 pattern In = Mode Ground (Just Ground)
@@ -82,9 +84,11 @@ topLevel inns p = do
 transMultiMode :: [Def S.G S.X] -> [(String, [S.S])] -> Either M.ModeAnalysisError F.Program
 transMultiMode defs modes = do
   p' <- M.topLevelManyModes defs modes
-  let defs' = transDefs p'
+  let dets = traceShowId $ D.checkDefs $ D.detcheck' p'
+  let defs' = transDefs dets p'
   let types = F.TypeData $ Set.toList $ collecCons p'
   return $ F.Program types defs' Nothing
+
 
 transSingleMode :: [Def S.G S.X] -> (String, [S.S]) -> Either M.ModeAnalysisError F.Program
 transSingleMode defs (name, ground) = do
@@ -100,13 +104,17 @@ delay M.Delayed = F.Delayed
 trans :: Program M.Goal (S.S, Mode) -> ([F.Def], F.Lang)
 trans p@(Program defs (M.Disj ((M.Conj ((M.Call d n args) NE.:| [])) NE.:| []))) = 
   let 
-    defs' = transDefs defs 
+    defs' = transDefs dets defs 
     rel = nameFromArgs n args
-  in (defs', F.Call (delay d) rel (callVars args) (getDefGens rel defs'))
+  in (defs', F.Call (delay d) conversion rel (callVars args) (getDefGens rel defs'))
+  where
+    dets = traceShowId $ D.checkDefs $ D.detcheck' defs
+    topLevelDet = D.isDet (D.identify' n (D.devar <$> args)) dets
+    conversion = if topLevelDet then F.FromMaybe else F.NoConversion
 trans _ = error "Expected single call"
 
-transDefs :: [Def M.Goal (S.S, Mode)] -> [F.Def]
-transDefs = fixGens . map (\d -> transDef (outIdPair $ M.Var <$> getArgs d) d)
+transDefs :: D.DetMap -> [Def M.Goal (S.S, Mode)] -> [F.Def]
+transDefs dets defs = fixGens $ map (\d -> transDef dets (outIdPair $ M.Var <$> getArgs d) d) defs
 
 fixGens :: [F.Def] -> [F.Def]
 fixGens defs = let defs' = collectGens defs in if defs == defs' then defs' else fixGens defs'
@@ -119,7 +127,7 @@ ownGens d = d { F.generators = sort $ ownGens' (F.body d) }
   where
     ownGens' :: F.Lang -> [F.Generator]
     ownGens' (F.Gen g) = [g]
-    ownGens' (F.Call _ _ _ gens) = gens
+    ownGens' (F.Call _ _ _ _ gens) = gens
     ownGens' (F.Sum s) = nub $ s >>= ownGens'
     ownGens' (F.Bind b) = nub $ b >>= (\(_, l) -> ownGens' l)
     ownGens' (F.Match _ (_, l)) = nub $ ownGens' l
@@ -129,7 +137,7 @@ updateCalls :: [F.Def] -> F.Def -> F.Def
 updateCalls defs d = d { F.body = updateCalls' defs (F.body d) }
   where
     updateCalls' :: [F.Def] -> F.Lang -> F.Lang
-    updateCalls' defs (F.Call d n args _) = F.Call d n args (getDefGens n defs)
+    updateCalls' defs (F.Call d c n args _) = F.Call d c n args (getDefGens n defs)
     updateCalls' defs (F.Sum s) = F.Sum (map (updateCalls' defs) s)
     updateCalls' defs (F.Bind b) = F.Bind (map (second (updateCalls' defs)) b)
     updateCalls' defs (F.Match x m) = F.Match x ((second (updateCalls' defs)) m)
@@ -176,8 +184,8 @@ outVarsG :: M.Base (a, Mode) -> [a]
 outVarsG (M.Unif a b) = outVarsV a ++ outVarsT b
 outVarsG (M.Call _ _ xs) = xs >>= outVarsV
 
-transBind :: String -> M.Base (S.S, Mode) -> ([F.Var], F.Lang)
-transBind rel g = (map makeName (outVarsG g), transBase rel g)
+transBind :: D.DetMap -> D.DefIdentifier -> M.Base (S.S, Mode) -> ([F.Var], F.Lang)
+transBind dets rel g = (map makeName (outVarsG g), transBase dets rel g)
 
 mapVars :: (a -> Maybe b) -> (a -> Maybe b) -> [M.Var (a, Mode)] -> [b]
 mapVars _ _ [] = []
@@ -207,31 +215,43 @@ isIn _ = False
 makeGuard :: S.S -> F.Term -> F.Lang
 makeGuard a b = F.Guard (makeName a) b
 
-makeGen :: String -> F.Var -> ([F.Var], F.Lang)
-makeGen rel x = ([x], F.Gen ("gen_" ++ rel ++ "_" ++ x))
+makeGen :: D.DefIdentifier -> F.Var -> ([F.Var], F.Lang)
+makeGen rel x = ([x], F.Gen ("gen_" ++ (idToName rel) ++ "_" ++ x))
 
-transBase :: String -> M.Base (S.S, Mode) -> F.Lang
-transBase _ (M.Call _ "fail" []) = F.Empty
-transBase _ (M.Call d n args) = F.Call (delay d) (nameFromArgs n args) (callVars args) [] -- Generators are filled in later, by fixGens
-transBase _ (M.Unif (OutV v) t) | isIn t = F.Return [makeTerm t]
-transBase _ (M.Unif (InV v) (M.FTVar (OutV t))) = F.Return [makeVar v]
-transBase _ (M.Unif (InV v) t) | isIn t = makeGuard v (makeTerm t)
-transBase _ (M.Unif (InV v) t@(M.FTCon n xs)) = F.Match (makeName v) (F.Con n (map makeMatch xs), body)
+modeToSymbol :: Mode -> String
+modeToSymbol In = "I"
+modeToSymbol Out = "O"
+
+idToName :: D.DefIdentifier -> String
+idToName (D.DId (name, modes)) = name ++ concat (modeToSymbol <$> modes)
+
+transBase :: D.DetMap -> D.DefIdentifier -> M.Base (S.S, Mode) -> F.Lang
+transBase _ _ (M.Call _ "fail" []) = F.Empty
+transBase dets rel (M.Call d n args) = F.Call (delay d) conversion (nameFromArgs n args) (callVars args) [] -- Generators are filled in later, by fixGens
+  where
+    selfDet = D.isDet rel dets
+    callDet = D.isDet (D.identify' n (D.devar <$> args)) dets
+    conversion | callDet && (not selfDet) = F.FromMaybe
+               | otherwise = F.NoConversion
+transBase _ _ (M.Unif (OutV v) t) | isIn t = F.Return [makeTerm t]
+transBase _ _ (M.Unif (InV v) (M.FTVar (OutV t))) = F.Return [makeVar v]
+transBase _ _ (M.Unif (InV v) t) | isIn t = makeGuard v (makeTerm t)
+transBase _ _ (M.Unif (InV v) t@(M.FTCon n xs)) = F.Match (makeName v) (F.Con n (map makeMatch xs), body)
   where
     body = F.Bind (guards ++ [([], F.Return (returnVars xs))])
     guards = map ([],) (bindGuards xs)
-transBase rel (M.Unif (OutV v) (M.FTVar (OutV t))) = F.Bind [
+transBase _ rel (M.Unif (OutV v) (M.FTVar (OutV t))) = F.Bind [
       makeGen rel x
     , ([], F.Return [F.Var x, F.Var x])
     ]
     where 
       x = makeName t
-transBase rel (M.Unif (OutV v) t@(M.FTCon n xs)) = F.Bind 
+transBase _ rel (M.Unif (OutV v) t@(M.FTCon n xs)) = F.Bind 
   (gen ++ [([makeName v], F.Return [makeTerm t]), ([], F.Return $ makeVar v : map F.Var genv)])
   where
       genv = genVars xs
       gen = map (makeGen rel) genv
-transBase _ g = error $ "Unknown Base: " ++ show g
+transBase _ _ g = error $ "Unknown Base: " ++ show g
 
 boundVars :: M.Conj (S.S, Mode) -> Set.Set S.S
 boundVars (M.Conj xs) = fold (NE.map (Set.fromList . outVarsG) xs)
@@ -239,24 +259,24 @@ boundVars (M.Conj xs) = fold (NE.map (Set.fromList . outVarsG) xs)
 unboundVars :: [S.S] -> M.Conj (S.S, Mode) -> [S.S]
 unboundVars outs r = let s = boundVars r in filter (`Set.notMember` s) outs
 
-transConj :: String -> [S.S] -> M.Conj (S.S, Mode) -> F.Lang
-transConj rel outs r@(M.Conj xs) = F.Bind $ body ++ gen ++ [([], F.Return (map makeVar outs))]
+transConj :: D.DetMap -> D.DefIdentifier -> [S.S] -> M.Conj (S.S, Mode) -> F.Lang
+transConj dets rel outs r@(M.Conj xs) = F.Bind $ body ++ gen ++ [([], F.Return (map makeVar outs))]
   where
-    body = map (transBind rel) (NE.toList xs)
+    body = map (transBind dets rel) (NE.toList xs)
     gen = map (makeGen rel . makeName) (unboundVars outs r) -- Generators for out-vars that are not bound in any way
 
-transDisj :: String -> [S.S] -> M.Disj (S.S, Mode) -> F.Lang
-transDisj rel outs (M.Disj xs) = F.Sum $ map (transConj rel outs) (NE.toList xs)
+transDisj :: D.DetMap -> D.DefIdentifier -> [S.S] -> M.Disj (S.S, Mode) -> F.Lang
+transDisj dets rel outs (M.Disj xs) = F.Sum $ map (transConj dets rel outs) (NE.toList xs)
 
-transGoal :: String -> [S.S] -> M.Goal (S.S, Mode) -> F.Lang
+transGoal :: D.DetMap -> D.DefIdentifier -> [S.S] -> M.Goal (S.S, Mode) -> F.Lang
 transGoal = transDisj
 
-transDef :: [(S.S, S.S)] -> Def M.Goal (S.S, Mode) -> F.Def
-transDef outs (Def n args body) = let n' = makeDefName n (length args) (map fst outs) in F.Def {
+transDef :: D.DetMap -> [(S.S, S.S)] -> Def M.Goal (S.S, Mode) -> F.Def
+transDef dets outs (Def n args body) = let n' = makeDefName n (length args) (map fst outs) in F.Def {
   F.name = n',
   F.args = callVars $ M.Var <$> args,
   F.generators = [], -- Generators are filled in later, by fixGens
-  F.body = transGoal n' (map snd outs) body
+  F.body = transGoal dets (D.identify' n args) (map snd outs) body
   }
 
 mapOuts :: (Int -> Maybe a) -> (Int -> Maybe a) -> Int -> [S.S] -> [a]

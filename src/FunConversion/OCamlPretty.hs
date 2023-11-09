@@ -89,10 +89,10 @@ parenthesizeIfSpace doc =
 letStar var value = letStarKW <+> var <+> pretty' "=" <+> value <+> pretty' "in"
 
 instance ShowPretty Lang where
-  showPretty (Call Delayed name args generators) = do
-    call <- showPretty (Call NotDelayed name args generators)
+  showPretty (Call Delayed c name args generators) = do
+    call <- showPretty (Call NotDelayed c name args generators)
     return $ pretty' "make_lazy" <+> pretty' "@@" <+> pretty' "fun" <+> pretty' "()" <+> pretty' "->" <+> call
-  showPretty (Call _ name args generators)
+  showPretty (Call _ _ name args generators)
     | null name = Left "Relation name cannot be empty"
     | otherwise = do
         args <- mapM showPretty args
