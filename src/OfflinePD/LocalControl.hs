@@ -20,11 +20,10 @@ import qualified Subst
 import           Embed           
 import           Generalization (Generalizer)
 import           OfflinePD.Generalization    
-import qualified CPD.LocalControl as CpdLC
+import qualified CPD.LocalControl as LCcpd
 
-import           Debug.Trace 
-
-data Heuristic = Deterministic | Branching
+import           Debug.Trace
+import           CPD.LocalControl (Heuristic)
 
 type DescendGoal = Descend (AnnG Term S)
 
@@ -49,11 +48,11 @@ isSelectable emb goal@Invoke {} ancs = not (any (`emb` goal) ancs) || null ancs 
 isSelectable _ _ _ = False
 
 
-sldResolution :: [AnnG Term S] -> Env.Env -> Subst.Subst S -> [[AnnG Term S]] -> SldTree
+sldResolution :: [AnnG Term S] -> Env.Env -> Subst.Subst S -> [[AnnG Term S]] -> LCcpd.Heuristic -> SldTree
 sldResolution goal = sldResolutionStep (map (`Descend` []) goal) True
 
-sldResolutionStep :: [DescendGoal] -> Bool -> Env.Env -> Subst.Subst S -> [[AnnG Term S]] -> SldTree
-sldResolutionStep gs isFirstTime env s seen =
+sldResolutionStep :: [DescendGoal] -> Bool -> Env.Env -> Subst.Subst S -> [[AnnG Term S]] -> LCcpd.Heuristic -> SldTree
+sldResolutionStep gs isFirstTime env s seen heu =
   let (temp, _) = FN.getFreshName (Env.getFreshNames env) in
   let curs = map getCurr $ traceShow gs gs in
   if instanceCheck curs seen
@@ -68,7 +67,7 @@ sldResolutionStep gs isFirstTime env s seen =
       let normalized = normalize g' in
       let unified = mapMaybe (unifyStuff s) normalized in
       let addDescends xs s =
-            CpdLC.substituteDescend s
+            LCcpd.substituteDescend s
                             ( left zipper ++
                               map (\x -> Descend x (g : ancs)) xs ++
                               right zipper
@@ -76,14 +75,14 @@ sldResolutionStep gs isFirstTime env s seen =
       in
       case unified of
         [] -> Fail
-        ns | needsUnfolding env' g ns isFirstTime ->
+        ns | needsUnfolding heu env' g ns isFirstTime ->
             Or (map step ns) (Just g) s
           where
             step (xs, s') =
               if null xs && isLeftmost zipper && isRightmost zipper
               then Success s'
               else let newDescends = addDescends xs s' in
-                   Conj (sldResolutionStep newDescends (isFirstTime && length ns == 1) env' s' (map getCurr gs : seen)) newDescends s'
+                   Conj (sldResolutionStep newDescends (isFirstTime && length ns == 1) env' s' (map getCurr gs : seen) heu) newDescends s'
         ns | not $ isRightmost zipper ->
           unfoldNext (goRight zipper) False gs s env
         ns ->
@@ -99,8 +98,8 @@ sldResolutionStep gs isFirstTime env s seen =
             )
             (zipper >>= selecter)
 
---    needsUnfolding env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
-    needsUnfolding _ _ ns isFirstTime = length ns == 1 || isFirstTime
+    needsUnfolding LCcpd.Branching env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
+    needsUnfolding LCcpd.Deterministic _ _ ns isFirstTime = length ns == 1 || isFirstTime
 
 bodies :: SldTree -> [[AnnG Term S]]
 bodies = leaves

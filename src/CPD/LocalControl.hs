@@ -24,7 +24,7 @@ import           Util.ListZipper
 import qualified Util.Miscellaneous  as Util
 import           Debug.Trace
 
-data Heuristic = Deterministic | Branching
+data Heuristic = Deterministic | Branching deriving (Show, Read)
 
 type DescendGoal = Descend (G S)
 

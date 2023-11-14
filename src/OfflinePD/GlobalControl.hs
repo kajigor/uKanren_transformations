@@ -15,6 +15,7 @@ import qualified OfflinePD.AnnotatedEval as E
 import qualified OfflinePD.LocalControl as LC
 import qualified FreshNames          as FN
 import qualified Subst
+import qualified CPD.LocalControl as LCcpd
 
 import           Data.List           (find, partition)
 import           Data.Tuple
@@ -86,8 +87,8 @@ abstractChild ancs (subst, g, Just env) =
   let (abstracted, d') = abstract (Descend.Descend g ancs) g (Env.getFreshNames env) in
   map (\(g, gen) -> (subst, g, gen, Env.updateNames env d')) abstracted
 
-topLevel :: AnnotatedProgram (AnnG Term) X -> (GlobalTree, AnnG Term S, [S])
-topLevel (AnnotatedProgram defs goal) =
+topLevel :: AnnotatedProgram (AnnG Term) X -> LCcpd.Heuristic -> (GlobalTree, AnnG Term S, [S])
+topLevel (AnnotatedProgram defs goal) heu =
   let env = Env.fromDefs defs in
   let ((logicGoal, names), env') = runState (E.preEval goal) env in
   let nodes = [LC.conjToList logicGoal] in
@@ -100,7 +101,7 @@ topLevel (AnnotatedProgram defs goal) =
         -- let newNodes = (delete goal nodes) in
         let newNodes = filter (not . Embed.isVariant goal) $ traceShow goal nodes in
 
-        let sldTree = LC.sldResolution goal env subst newNodes in
+        let sldTree = LC.sldResolution goal env subst newNodes heu in
         let (substs, bodies) = partition (null . snd3) $ LC.resultants $ trace "sldTree" sldTree in
           
 --        run printTree (path </> "local1.dot") sldTree

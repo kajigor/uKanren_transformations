@@ -11,4 +11,4 @@ nthOpt xs n r =
   );
 
 
-? nthOpt xs n r 
+? nthOpt xs (Succ (Succ (Succ Zero))) r

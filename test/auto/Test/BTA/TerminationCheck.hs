@@ -196,7 +196,7 @@ defAppendTerm2 =  AnnotatedDef "append" ["x", "y", "z"] (
 
 mapDefTerm5 = Map.fromList [("append", defAppendTerm2), ("revers", defReversTerm3)]
 
-unit_terminationCheck = do 
+unit_terminationCheck = do
     test3True terminationCheck (AnnotatedProgram [defAppend, defReversTerm1] invokeRevers) mapConds1 mapDefTerm1
     test3False terminationCheck (AnnotatedProgram [defAppendTerm1] invokeAppend) mapConds1 mapDefTerm2
     test3False terminationCheck (AnnotatedProgram [defAppend, defReversTerm2] invokeRevers) mapConds1 mapDefTerm3

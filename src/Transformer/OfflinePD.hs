@@ -71,9 +71,9 @@ transformGlobal (GC.Node desc generalizer sld trees) = GCcpd.Node (transformDesc
 transformGlobal (GC.Prune desc subst) = GCcpd.Prune (transformDesc desc) subst
 
 
-runTransformation :: AnnotatedProgram (AnnG Term) X -> TransformResult
-runTransformation goal@(AnnotatedProgram original _) =
-  let (globalTree, logicGoal, names) = GC.topLevel goal in
+runTransformation :: AnnotatedProgram (AnnG Term) X -> LCcpd.Heuristic -> TransformResult
+runTransformation goal@(AnnotatedProgram original _) heu =
+  let (globalTree, logicGoal, names) = GC.topLevel goal heu in
   let localTrees = GC.getNodes globalTree in
   let beforePur = residualizationTopLevel $ transformGlobal globalTree in
   let purified = purification (beforePur, vident <$> reverse names) in
@@ -87,14 +87,14 @@ renderLocalTree :: FilePath -> [AnnG Term S] -> LC.SldTree -> IO ()
 renderLocalTree localDir goal =
     printTree (localDir </> shortenFileName (show goal) <.> "dot")
 
-transform' :: FilePath -> FilePath -> AnnotatedProgram (AnnG Term) X -> Maybe String -> IO ()
-transform' outDir filename program@(AnnotatedProgram defs goal) env = do
+transform' :: FilePath -> FilePath -> AnnotatedProgram (AnnG Term) X -> Maybe String -> LCcpd.Heuristic -> IO (Program G X)
+transform' outDir filename program@(AnnotatedProgram defs goal) env heu = do
     let path = outDir </> filename
     let localDir = path </> "local"
     let cpdFile = path </> "cpd"
     mapM_ createDirRemoveExisting [path, localDir]
 
-    let result = runTransformation $ traceShow program program
+    let result = runTransformation program heu
 --
 --    let env = Env.fromDefs defs
 --    let ((logicGoal, names), env') = runState (E.preEval goal) env
@@ -127,6 +127,9 @@ transform' outDir filename program@(AnnotatedProgram defs goal) env = do
     OC.topLevel ocamlCodeFileName "topLevel" env pur
 
     mapM_ generatePdf [path, localDir]
+    return purified
 
-transform :: FilePath -> AnnotatedProgram (AnnG Term) X -> Maybe String -> IO ()
-transform = transform' "test/out/cpd"
+transform :: FilePath -> AnnotatedProgram (AnnG Term) X -> Maybe String -> LCcpd.Heuristic -> IO ()
+transform filePath pr str heu = do  
+  res <- transform' "test/out/cpd" filePath pr str heu
+  return ()

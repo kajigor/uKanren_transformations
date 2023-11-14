@@ -50,7 +50,7 @@ renderLocalTree :: FilePath -> [G S] -> LC.SldTree -> IO ()
 renderLocalTree localDir goal =
     printTree (localDir </> shortenFileName (show goal) <.> "dot")
 
-transform' :: FilePath -> FilePath -> Program G X -> Maybe String -> LC.Heuristic -> IO ()
+transform' :: FilePath -> FilePath -> Program G X -> Maybe String -> LC.Heuristic -> IO (Program G X)
 transform' outDir filename goal@(Program definitions _) env heuristic = do
     let path = outDir </> filename
     let localDir = path </> "local"
@@ -70,9 +70,12 @@ transform' outDir filename goal@(Program definitions _) env heuristic = do
     OC.topLevel ocamlCodeFileName "topLevel" env pur
 
     mapM_ generatePdf [path, localDir]
+    return purified
 
 transform :: FilePath -> Program G X -> Maybe String -> LC.Heuristic -> IO ()
-transform = transform' "test/out/cpd"
+transform filePath pr str heu = do  
+  res <- transform' "test/out/cpd" filePath pr str heu
+  return ()
 
 -- doOcanrenize = do
 --   ocanren "unify" Program.Unify.query $ Just Program.Unify.env
