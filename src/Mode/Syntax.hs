@@ -10,6 +10,7 @@ import           Mode.Term
 import           Program
 import qualified Syntax              as S
 import           Text.Printf
+import Debug.Trace
 
 data Goal a = Call String [Var a]
             | Unif (Var a) (FlatTerm a)
@@ -28,15 +29,17 @@ allVars =
     go (Disj x y xs) = Set.unions $ map go (x:y:xs)
     go (EtaD g) = go g
 
-freshVar :: FreshName a => State (FlattenState a) a
+freshVar :: (Ord a) => FreshName a => State (FlattenState a) a
 freshVar = do
   state <- get
   let (v', rest) = getFreshName (FreshNames (getVarSource state))
-  put $ state { getVarSource = unFreshNames rest }
+  put $ state { getVarSource = unFreshNames rest, getFreeVars = Set.insert v' (getFreeVars state) }
   return v'
 
 addTerm :: Ord a => a -> FlatTerm a -> State (FlattenState a) ()
 addTerm key value = do
+  bindVar key
+  bindTerm value
   state <- get
   put $ state { getVarMap = Map.insert key value (getVarMap state)
               , getNewVarMap = Map.insert key value (getNewVarMap state)
@@ -47,6 +50,13 @@ useVar v = modify $ \s -> s { usedVars = Set.insert v (usedVars s) }
 
 clearUsed :: State (UniqueVarFlattenState a) ()
 clearUsed = modify $ \s -> s { usedVars = Set.empty }
+
+bindVar :: Ord a => a -> State (FlattenState a) ()
+bindVar x = modify $ \s -> s { getFreeVars = Set.delete x (getFreeVars s) }
+
+bindTerm :: Ord a => FlatTerm a -> State (FlattenState a) ()
+bindTerm (FTVar (Var v)) = bindVar v
+bindTerm (FTCon _ args) = mapM_ (\(Var v) -> bindVar v) args
 
 withUniqueVars :: Ord a => [a] -> State (UniqueVarFlattenState a) x -> State (FlattenState a) x
 withUniqueVars vs act = do
@@ -84,19 +94,34 @@ flattenInternalTerms (S.C name args) = do
   args' <- mapM flattenTerm args
   return $ FTCon name $ map Var args'
 
-conj :: Goal a -> Goal a -> [Goal a] -> Goal a
-conj (Conj x y xs) (Conj x' y' xs') rest = Conj x y (xs ++ x' : y' : xs' ++ rest)
-conj g (Conj x y xs) rest = Conj g x (y : xs ++ rest)
-conj x y rest = Conj x y rest
+conj :: Show a => Goal a -> Goal a
+conj goal = trace (printf "\nin conj: %s" (show goal)) $
+  safeListToConj $ floatConjs goal
 
-disj :: Goal a -> Goal a -> [Goal a] -> Goal a
-disj (Disj x y xs) (Disj x' y' xs') rest = Disj x y (xs ++ x' : y' : xs' ++ rest)
-disj g (Disj x y xs) rest = Disj g x (y : xs ++ rest)
-disj x y rest = Disj x y rest
+disj :: Show a => Goal a -> Goal a
+disj goal = trace (printf "\nin disj: %s" (show goal)) $
+  safeListToDisj $ floatDisjs goal
 
-toConj :: Goal a -> [Goal a] -> Goal a
-toConj x [] = x
-toConj x (h:t) = conj x h t
+success :: Goal a
+success = Call "success" []
+
+safeListToConj :: [Goal a] -> Goal a
+safeListToConj (x:y:xs) = Conj x y xs
+safeListToConj [x] = x
+safeListToConj [] = success
+
+safeListToDisj :: [Goal a] -> Goal a
+safeListToDisj (x:y:xs) = Disj x y xs
+safeListToDisj [x] = x
+safeListToDisj [] = success
+
+floatConjs :: Goal a -> [Goal a]
+floatConjs (Conj x y xs) = concatMap floatConjs (x:y:xs)
+floatConjs g = [g]
+
+floatDisjs :: Goal a -> [Goal a]
+floatDisjs (Disj x y xs) = concatMap floatDisjs (x:y:xs)
+floatDisjs g = [g]
 
 makeConjFromList :: (Ord a, FreshName a, Show a) => [Goal a] -> State (FlattenState a) (Goal a)
 makeConjFromList goals = do
@@ -104,15 +129,26 @@ makeConjFromList goals = do
   put $ state { getNewVarMap = Map.empty }
   let newUnifs = map (\(x, t) -> Unif (Var x) t) $ Map.toList (getNewVarMap state)
   let allGoals = goals ++ newUnifs
-  if null allGoals
-  then do
-    v <- freshVar
-    return (Unif (Var v) (FTVar (Var v)))
-  else return $ toConj (head allGoals) (tail allGoals)
+  return $ conj $ safeListToConj allGoals
 
 makeConj :: (Ord a, FreshName a, Show a) => Goal a -> State (FlattenState a) (Goal a)
 makeConj goal =
   makeConjFromList [goal]
+
+useFreeVar :: (Ord a, FreshName a) => (Var a) -> State (FlattenState a) (Var a)
+useFreeVar (Var v) = do
+  free <- gets getFreeVars
+  if v `elem` free then do
+    bindVar v
+    return $ Var v
+  else do
+    newVar <- freshVar
+    addTerm newVar (FTVar $ Var v)
+    return $ Var newVar
+
+homogenize :: (Ord a, FreshName a) => FlatTerm a -> State (FlattenState a) (FlatTerm a)
+homogenize v@(FTVar _) = return v
+homogenize (FTCon n vs) = FTCon n <$> mapM useFreeVar vs
 
 transformUnification :: (Ord a, FreshName a, Show a) => S.Term a -> S.Term a -> State (FlattenState a) [Goal a]
 transformUnification (S.C n1 args1) (S.C n2 args2)
@@ -131,12 +167,12 @@ transformUnification (S.C n1 args1) (S.C n2 args2)
       error $ printf "Cannot unify constructors with different arity: %s has arity %s and %s" n1 (show $ length args1) (show $ length args2)
   | otherwise =
     error $ printf "Cannot unify constructors with different names: %s and %s" n1 n2
-transformUnification c@(S.C _ _) (S.V v) = do
-  c <- withUniqueVars [v] $ flattenInternalTerms c
-  return [Unif (Var v) c]
+transformUnification c@(S.C _ _) v@(S.V _) = transformUnification v c
 transformUnification (S.V v) t = do
-  t <- withUniqueVars [v] $ flattenInternalTerms t
-  return [Unif (Var v) t]
+  bindVar v
+  t' <- withUniqueVars [v] $ flattenInternalTerms t
+  t'' <- homogenize t'
+  return [Unif (Var v) t'']
 
 
 flattenGoal :: (Ord a, FreshName a, Show a) => S.G a -> State (FlattenState a) (Goal a)
@@ -151,20 +187,25 @@ flattenGoal (x S.:=: y) = do
 --   makeConj (Unif (Var x') y')
 flattenGoal (S.Invoke name args) = do
   args' <- withUniqueVars [] $ mapM flattenTerm args
+  mapM bindVar args'
   m <- gets getVarMap
   makeConj (Call name (map Var args'))
 flattenGoal (S.Conjunction x y xs) = do
-  x' <- flattenGoal x
+  x' <- trace (printf "Flattening conjunction:\n%s \\/ %s \\/ %s" (show x) (show y) (show xs)) $
+        flattenGoal x
   y' <- flattenGoal y
   xs' <- mapM flattenGoal xs
-  return $ conj x' y' xs'
+  return $ conj (Conj x' y' xs')
 flattenGoal (S.Disjunction x y xs) = do
-  x' <- local flattenGoal x
+  x' <- trace (printf "Flattening disjunction:\n%s \\/ %s \\/ %s" (show x) (show y) (show xs)) $
+        local flattenGoal x
   y' <- local flattenGoal y
   xs' <- mapM (local flattenGoal) xs
-  return $ disj x' y' xs'
-flattenGoal (S.Fresh _ g) =
-  flattenGoal g
+  return $ Disj x' y' xs'
+flattenGoal (S.Fresh x g) =
+  do
+    modify $ \s -> s { getFreeVars = Set.insert x (getFreeVars s) }
+    flattenGoal g
 flattenGoal (S.Delay g) =
   EtaD <$> flattenGoal g
 
@@ -174,8 +215,9 @@ local :: (Ord a, FreshName a, Show a) =>
          State (FlattenState a) c
 local f x = do
   oldVarMap <- gets getVarMap
+  oldFreeVars <- gets getFreeVars
   r <- f x
-  modify $ \s -> s { getVarMap = oldVarMap }
+  modify $ \s -> s { getVarMap = oldVarMap, getFreeVars = oldFreeVars }
   return r
 
 flattenDef :: (Ord a, FreshName a, Show a) => Def S.G a -> State (FlattenState a) (Def Goal a)
@@ -206,6 +248,7 @@ data FlattenState a = FlattenState
   { getVarSource :: a
   , getVarMap    :: Map.Map a (FlatTerm a)
   , getNewVarMap :: Map.Map a (FlatTerm a)
+  , getFreeVars :: Set.Set a
   }
 
 data UniqueVarFlattenState a = UniqueVar { usedVars :: Set.Set a, baseState :: FlattenState a }
@@ -214,4 +257,5 @@ initFlattenState :: a -> FlattenState a
 initFlattenState varSource =
   FlattenState { getVarSource = varSource
                , getVarMap =  Map.empty
-               , getNewVarMap = Map.empty}
+               , getNewVarMap = Map.empty
+               , getFreeVars = Set.empty}

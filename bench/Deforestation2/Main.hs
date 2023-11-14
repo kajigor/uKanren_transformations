@@ -10,6 +10,7 @@ import Control.Applicative (Alternative)
 import Debug.Trace (traceShow)
 
 import Simple (Term (Cons, O, S, Nil) , rrIISimple)
+import qualified Det_off
 
 rrOffline x0 = msum [do {(x1, x3) <- case x0 of
                            {Cons y1 y3 -> return (y1, y3); _ -> mzero};
@@ -662,8 +663,10 @@ main = defaultMain
     bgroup "Deforestation2"
      [ bench "offline1"    $ nf (eval (takeS 1) rrOffline) (Cons (S O) Nil)
      , bench "online1"     $ nf (eval9 (takeS 1) rrOnline) wrongGen
+     , bench "det_off1"     $ nf (eval (takeS 1) Det_off.rrI) (Cons (S O) Nil)
 --     , bench "simple1"     $ nf (eval14 (takeS 1) rrIISimple) $ put14 rightTerm secondTerm  -- failing
      , bench "offline2"    $ nf (eval (takeS 1) rrOffline) rightTerm
+     , bench "det_off2"     $ nf (eval (takeS 1) Det_off.rrI) rightTerm
      --, bench "online2"     $ nf (eval9 (takeS 1) rrOnline) rightGen --failing
      ]
   ]

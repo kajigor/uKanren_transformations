@@ -12,6 +12,7 @@ import Debug.Trace (traceShow)
 
 import qualified RelSort_unfold
 import qualified RelSort_cpd_ans
+import qualified RelSort_Det_unf
 
 
 natGen :: (MonadPlus m) => m Term
@@ -39,6 +40,7 @@ main = defaultMain
         bench "offline1"    $ nf (eval (takeS 1) RelSort_unfold.sortoI) $ traceShow resSort rightSort
 --      , bench "offline2"    $ nf (eval2 (takeS 1) RelSort_unfold.sortoO) (natGen, natGen) -- failing
       , bench "online1"     $ nf (eval (takeS 1) RelSort_cpd_ans.sortoI) $ traceShow resSort1 rightSort
+      , bench "det_unf1"     $ nf (eval (takeS 1) RelSort_Det_unf.sortoI) $ traceShow resSort1 rightSort
 --      , bench "online2"     $ nf (eval2 (takeS 1) RelSort_cpd_ans.sortoO) (natGen, natGen) -- failing
      ]
   ]

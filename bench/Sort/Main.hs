@@ -7,6 +7,8 @@ import qualified Control.DeepSeq as DS
 import Control.Applicative (Alternative)
 import Debug.Trace (traceShow)
 import Simple (Term (..), sortoII, sortoIO)
+import qualified Branching 
+import qualified Det_unfold
 
 sortoIOffline x0 = msum [do {(x1, x2) <- case x0 of
                                   {Cons y1 y2 -> return (y1, y2); _ -> mzero};
@@ -395,6 +397,11 @@ sortoOOffline1 :: MonadPlus m => p -> m Term
 sortoOOffline1 x = do
   sortoOOffline
   
+  
+sortoODetUnf :: MonadPlus m => p -> m Term
+sortoODetUnf x = do
+  Det_unfold.sortoO
+  
 -- [Succ Zero, Zero, Succ (Succ Zero), Succ Zero, Zero] 
 input = Cons (Succ Zero) (Cons Zero (Cons (Succ (Succ Zero)) (Cons (Succ Zero) (Cons Zero Nil))))
 
@@ -403,12 +410,16 @@ main = defaultMain
     bgroup "SortRun"
      [
         bench "offline1"    $ nf (eval (takeS 1) sortoIOffline) rightSort
+      , bench "branching1"  $ nf (eval2 (takeS 1) Branching.sortoI) (rightSort, natGen)
+      , bench "detUnfold1" $ nf (eval (takeS 1) Det_unfold.sortoI) rightSort
 --      , bench "online1"     $ nf (eval7 (takeS 1) sortoIOnline) $ traceShow (eval6N (takeS 1) sortoIOnline rightGen) rightGen -- failing
 --        , bench "simple1"   $ nf (eval6 (takeS 1) sortoII) (input, rightSort, natGen, natGen, natGen, natGen) -- failing
      ],
     bgroup "SortGen"
     [
         bench "offlineGen"  $ nf (eval (takeS 1) sortoOOffline1) ()
+      , bench "detUnfoldGen" $ nf (eval (takeS 1) sortoODetUnf) ()
+--      , bench "branchingGen"  $ nf (eval2 (takeS 1) Branching.sortoO) (natGen, natGen)
    --   , bench "onlineGen"   $ nf (eval7 (takeS 1) sortoOOnline) genSort -- failing
 --       , bench "simpleGen"  $ nf (eval5 (takeS 1) sortoIO) (input, natGen, natGen, natGen, natGen)
     ]

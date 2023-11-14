@@ -21,12 +21,12 @@ import           Data.Tuple
 import           Prelude             hiding (sequence)
 import           Util.Miscellaneous
 import           Printer.Dot
-import Debug.Trace (traceShow)
+import Debug.Trace (traceShow, trace)
 
 
-data GlobalTree = Leaf  (Descend [AnnG Term S]) Generalizer Subst.Subst
+data GlobalTree = Leaf  (Descend [AnnG Term S]) Generalizer (Subst.Subst S)
                 | Node  (Descend [AnnG Term S]) Generalizer LC.SldTree [GlobalTree]
-                | Prune (Descend [AnnG Term S]) Subst.Subst
+                | Prune (Descend [AnnG Term S]) (Subst.Subst S)
 
 sequence :: Descend a -> [a]
 sequence = getAncs
@@ -80,7 +80,7 @@ generalize m b d =
     where
       project gen goals = (goals, {- filter (\(x, _) -> (V x) `elem` concatMap LC.vars goals) -} gen)
 
-abstractChild :: [[AnnG Term S]] -> (Subst.Subst, [AnnG Term S], Maybe Env.Env) -> [(Subst.Subst, [AnnG Term S], Generalizer, Env.Env)]
+abstractChild :: [[AnnG Term S]] -> (Subst.Subst S, [AnnG Term S], Maybe Env.Env) -> [(Subst.Subst S, [AnnG Term S], Generalizer, Env.Env)]
 abstractChild _ (_, _, Nothing) = []
 abstractChild ancs (subst, g, Just env) =
   let (abstracted, d') = abstract (Descend.Descend g ancs) g (Env.getFreshNames env) in
@@ -93,15 +93,15 @@ topLevel (AnnotatedProgram defs goal) =
   let nodes = [LC.conjToList logicGoal] in
   (fst $ go nodes (Descend.Descend [logicGoal] []) env' Subst.empty Subst.empty, logicGoal, names) where
     go nodes d@(Descend.Descend goal ancs) env subst generalizer =
-      -- if head (Env.getFreshNames env) > 10
-      -- then (Prune d subst, nodes)
-      -- else
+--       if head (Env.getFreshNames env) > 10
+--        then (Prune d subst, nodes)
+--       else
         let subst = Subst.empty in
         -- let newNodes = (delete goal nodes) in
-        let newNodes = filter (not . Embed.isVariant goal) nodes in
+        let newNodes = filter (not . Embed.isVariant goal) $ traceShow goal nodes in
 
         let sldTree = LC.sldResolution goal env subst newNodes in
-        let (substs, bodies) = partition (null . snd3) $ LC.resultants sldTree in
+        let (substs, bodies) = partition (null . snd3) $ LC.resultants $ trace "sldTree" sldTree in
           
 --        run printTree (path </> "local1.dot") sldTree
 

@@ -13,4 +13,4 @@ runWithParser parser outDir ground inputFile = do
     Left err ->
       putStrLn err
     Right program ->
-      Transformer.CPD.transform' outDir (takeBaseName inputFile) program Nothing Deterministic
+      Transformer.CPD.transform' outDir (takeBaseName inputFile) program Nothing Branching

@@ -9,10 +9,10 @@ import           Tree
 toX :: Term S -> Term X
 toX = (vident <$>)
 
-residualizeSubst :: Subst.Subst -> Subst.Subst -> G X
+residualizeSubst :: Subst.Subst S -> Subst.Subst S -> G X
 residualizeSubst g s = unsafeConj $ map (\ (s', ts) -> toX (V s') :=: toX (Subst.substitute g ts)) $ reverse (Subst.toList s)
 
-substCon :: Subst.Subst -> Subst.Subst -> Subst.Subst -> G X -> G X
+substCon :: Subst.Subst S -> Subst.Subst S -> Subst.Subst S -> G X -> G X
 substCon gen s ubst g =
   let delta = Subst.difference s ubst in
   if Subst.null delta

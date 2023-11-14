@@ -9,16 +9,7 @@ import Control.Monad (msum, guard, MonadPlus)
 import qualified Control.DeepSeq as DS
 import Control.Applicative (Alternative)
 import Debug.Trace (traceShow)
-
-
-data Term
-    = Cons Term Term
-    | Nil
-    | None
-    | Some Term
-    | Zero
-    | Succ Term
-    deriving (Show, Eq, Generic, DS.NFData)
+import Term
     
 nthOptIII x0 x1 x2 = msum [do {guard (x0 == Nil);
                                guard (x2 == None);

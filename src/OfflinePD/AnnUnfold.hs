@@ -36,7 +36,7 @@ normalize (Delay g) = normalize g
 normalize g = error ("Unexpected goal type in normalization\n" ++ show g)
 
 
-unifyStuff :: Subst.Subst -> [AnnG Term S] -> Maybe ([AnnG Term S], Subst.Subst)
+unifyStuff :: Subst.Subst S -> [AnnG Term S] -> Maybe ([AnnG Term S], Subst.Subst S)
 unifyStuff state gs =
     go gs state []
   where
@@ -47,7 +47,7 @@ unifyStuff state gs =
       go gs s conjs
 
 
-oneStep :: AnnG Term S -> Subst.Subst -> State Env.Env [([AnnG Term S], Subst.Subst)]
+oneStep :: AnnG Term S -> Subst.Subst S -> State Env.Env [([AnnG Term S], Subst.Subst S)]
 oneStep goal state = do
     unfolded <- oneStepUnfold goal
     let normalized = normalize unfolded

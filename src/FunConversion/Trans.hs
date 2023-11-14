@@ -18,6 +18,7 @@ import qualified Mode.Toplevel as M
 import qualified Mode.Analysis as M
 import Data.Bifunctor (second)
 import Data.Maybe (maybeToList)
+
 pattern In :: Mode
 pattern In = Mode Ground (Just Ground)
 
@@ -57,7 +58,7 @@ findDef n outs [] = error $ "Def " ++ n ++ " mode " ++ show outs ++ " not found"
 findDef n outs (d@(Def n' args _):ds) | n == n' && outId (map M.Var args) == outs = d
                               | otherwise = findDef n outs ds
 
-getDefGens n [] = error $ "Def " ++ n ++ " not found"
+getDefGens n [] = error "Def not found"
 getDefGens n (d : defs)
   | n == F.name d = F.generators d
   | otherwise = getDefGens n defs
@@ -76,6 +77,7 @@ topLevel inns p = do
   let (defs, body) = trans p'
   let types = collectConsPrg p'
   return $ F.Program types defs (Just body)
+
 
 transMultiMode :: [Def S.G S.X] -> [(String, [S.S])] -> Either M.ModeAnalysisError F.Program
 transMultiMode defs modes = do
@@ -104,7 +106,7 @@ trans p@(Program defs (M.Disj ((M.Conj ((M.Call d n args) NE.:| [])) NE.:| [])))
 trans _ = error "Expected single call"
 
 transDefs :: [Def M.Goal (S.S, Mode)] -> [F.Def]
-transDefs = fixGens . map (\d -> transDef (outId $ M.Var <$> getArgs d) d)
+transDefs = fixGens . map (\d -> transDef (outIdPair $ M.Var <$> getArgs d) d)
 
 fixGens :: [F.Def] -> [F.Def]
 fixGens defs = let defs' = collectGens defs in if defs == defs' then defs' else fixGens defs'
@@ -138,6 +140,12 @@ outId [] = []
 outId (OutV v : vs) = 0 : map (+1) (outId vs)
 outId (InV v : vs) = map (+1) (outId vs)
 outId _ = []
+
+outIdPair :: [M.Var (S.S, Mode)] -> [(S.S, S.S)]
+outIdPair [] = []
+outIdPair (OutV v : vs) = (0, v) : map (\(i, x) -> (i+1, x)) (outIdPair vs)
+outIdPair (InV v : vs) = map (\(i, x) -> (i+1, x)) (outIdPair vs)
+outIdPair _ = []
 
 -- TODO: Check for same constructor with different arity
 collectConsPrg :: Program M.Goal (S.S, Mode) -> F.TypeData
@@ -243,12 +251,12 @@ transDisj rel outs (M.Disj xs) = F.Sum $ map (transConj rel outs) (NE.toList xs)
 transGoal :: String -> [S.S] -> M.Goal (S.S, Mode) -> F.Lang
 transGoal = transDisj
 
-transDef :: [S.S] -> Def M.Goal (S.S, Mode) -> F.Def
-transDef outs (Def n args body) = let n' = makeDefName n (length args) outs in F.Def {
+transDef :: [(S.S, S.S)] -> Def M.Goal (S.S, Mode) -> F.Def
+transDef outs (Def n args body) = let n' = makeDefName n (length args) (map fst outs) in F.Def {
   F.name = n',
-  F.args = map makeName (ins (length args) outs),
+  F.args = callVars $ M.Var <$> args,
   F.generators = [], -- Generators are filled in later, by fixGens
-  F.body = transGoal n' outs body
+  F.body = transGoal n' (map snd outs) body
   }
 
 mapOuts :: (Int -> Maybe a) -> (Int -> Maybe a) -> Int -> [S.S] -> [a]

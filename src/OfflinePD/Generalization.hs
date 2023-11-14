@@ -18,16 +18,16 @@ import           Util.Miscellaneous     (map1in3)
 import           Descend
 import           Debug.Trace
 
-instance Subst.ApplySubst (AnnG Term S) where
+instance Subst.ApplySubst (AnnG Term) where
   substitute s (Invoke name as ann) = Invoke name (map (Subst.substitute s) as) ann
-  substitute _ g = error $ printf "We have only planned to substitute into calls, and you are trying to substitute into:\n%s" (show g)
+  substitute _ g = error $ printf "We have only planned to substitute into calls\n"
 
-instance Subst.ApplySubst [AnnG Term S] where
-  substitute = map . Subst.substitute
-  
-instance Subst.ApplySubst [Descend (AnnG Term S)] where
-  substitute s =
-    map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
+--instance Subst.ApplySubst [AnnG Term S] where
+--  substitute = map . Subst.substitute
+--  
+--instance Subst.ApplySubst [Descend (AnnG Term S)] where
+--  substitute s =
+--    map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
   
 instance Show a => Homeo (AnnG Term a) where
   couple goal@(Invoke f as _) (Invoke g bs _) | isAlwaysEmbeddable goal || f == g && length as == length bs =
@@ -83,6 +83,8 @@ generalizeGoals s as bs | length as == length bs =
   refine (g, gen1, gen2, d)
 generalizeGoals _ as bs = error $ printf "Cannot generalize: different lengths of\nas: %s\nbs: %s\n" (show as) (show bs)
 
+substituteList :: (Ord v) => Subst.Subst v -> [AnnG Term v] -> [AnnG Term v]
+substituteList = map . Subst.substitute
 
 refine :: ([AnnG Term S], Generalizer, Generalizer, FN.FreshNames) ->  ([AnnG Term S], Generalizer, Generalizer, FN.FreshNames)
 refine msg@(g, Subst.Subst s1, Subst.Subst s2, d) =
@@ -91,7 +93,7 @@ refine msg@(g, Subst.Subst s1, Subst.Subst s2, d) =
     let sim1 = map (map fst) similar1 in
     let sim2 = map (map fst) similar2 in
     let toSwap = concatMap (\(x:xs) -> map (, V x) xs) (sim1 `intersect` sim2) in
-    let newGoal = Subst.substitute (Subst.Subst $ Map.fromList toSwap) g in
+    let newGoal = substituteList (Subst.Subst $ Map.fromList toSwap) g in
     let s2' = filter (\(x,_) -> x `notElem` map fst toSwap) (Map.toList s2) in
     let s1' = filter (\(x,_) -> x `notElem` map fst toSwap) (Map.toList s1) in
     (newGoal, Subst.Subst $ Map.fromList s1', Subst.Subst $ Map.fromList s2', d)

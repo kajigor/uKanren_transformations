@@ -1,0 +1,18 @@
+containso y0 = (fresh q1, q2, q3, q4 in (((y0 == (S (O) :: (q1 :: q2)) & newoCono q1 q2) | (y0 == (q3 :: q4) & _cono q4))));
+
+newoCono y3 y4 = (fresh q1, q2 in (((y4 == (q1 :: q2) & y3 == O & _newoCono q1 q2) | __appendo2Appendo2Appendo1Cono y3 y4)));
+
+_newoCono y7 y8 = appendo2Appendo2Appendo1Cono y7 y8;
+
+appendo2Appendo2Appendo1Cono y12 y13 = (_cono y13 | _appendo2Appendo2Appendo1Cono y12 y13);
+
+_appendo2Appendo2Appendo1Cono y17 y18 = (fresh q1, q2 in ((y18 == (q1 :: q2) & newoCono q1 q2 & appendo2 y17)));
+
+appendo2 y22 = y22 == S (O);
+
+__appendo2Appendo2Appendo1Cono y26 y27 = (fresh q1, q2 in ((_cono y27 | (y27 == (q1 :: q2) & newoCono q1 q2 & appendo2 y26))));
+
+_cono y30 = (fresh q1, q2, q3, q4 in (((y30 == (S (O) :: (q1 :: q2)) & newoCono q1 q2) | (y30 == (q3 :: q4) & _cono q4))));
+
+
+? containso x0

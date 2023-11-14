@@ -425,6 +425,7 @@ solveII x0 x1 = msum [do {let {x16 = O};
                           guard (x380 == x353);
                           guard (x381 == x356);
                           return ()}]
+                          
 solveIO :: MonadPlus m => Term -> m Term
 solveIO x0 = msum [do {let {x16 = O};
                        let {x15 = S x16};
@@ -838,7 +839,7 @@ solveIO x0 = msum [do {let {x16 = O};
                        let {x352 = x332};
                        let {x1 = S x352};
                        return x1}]
-
+                       
 solveOI :: MonadPlus m => Term -> m Term
 solveOI x1 = msum [do {let {x16 = O};
                        let {x15 = S x16};
@@ -1252,7 +1253,7 @@ solveOI x1 = msum [do {let {x16 = O};
                        let {x381 = x356};
                        let {x0 = Cons x380 x381};
                        return x0}]
-
+                       
 solveOO :: MonadPlus m => m (Term, Term)
 solveOO = msum [do {let {x16 = O};
                     let {x15 = S x16};

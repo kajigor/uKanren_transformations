@@ -20,18 +20,19 @@ import qualified Subst
 import           Embed           
 import           Generalization (Generalizer)
 import           OfflinePD.Generalization    
+import qualified CPD.LocalControl as CpdLC
 
-import           Debug.Trace
+import           Debug.Trace 
 
 data Heuristic = Deterministic | Branching
 
 type DescendGoal = Descend (AnnG Term S)
 
 data SldTree = Fail
-             | Success Subst.Subst
-             | Or [SldTree] (Maybe (AnnG Term S)) Subst.Subst
-             | Conj SldTree [DescendGoal] Subst.Subst
-             | Leaf [DescendGoal] Subst.Subst Env.Env
+             | Success (Subst.Subst S)
+             | Or [SldTree] (Maybe (AnnG Term S)) (Subst.Subst S)
+             | Conj SldTree [DescendGoal] (Subst.Subst S)
+             | Leaf [DescendGoal] (Subst.Subst S) Env.Env
 
 conjToList :: AnnG Term a -> [AnnG Term a]
 conjToList (Conjunction x y gs) = x : y : gs
@@ -48,14 +49,13 @@ isSelectable emb goal@Invoke {} ancs = not (any (`emb` goal) ancs) || null ancs 
 isSelectable _ _ _ = False
 
 
-sldResolution :: [AnnG Term S] -> Env.Env -> Subst.Subst -> [[AnnG Term S]] -> SldTree
+sldResolution :: [AnnG Term S] -> Env.Env -> Subst.Subst S -> [[AnnG Term S]] -> SldTree
 sldResolution goal = sldResolutionStep (map (`Descend` []) goal) True
 
-
-sldResolutionStep :: [DescendGoal] -> Bool -> Env.Env -> Subst.Subst -> [[AnnG Term S]] -> SldTree
+sldResolutionStep :: [DescendGoal] -> Bool -> Env.Env -> Subst.Subst S -> [[AnnG Term S]] -> SldTree
 sldResolutionStep gs isFirstTime env s seen =
   let (temp, _) = FN.getFreshName (Env.getFreshNames env) in
-  let curs = map getCurr gs in
+  let curs = map getCurr $ traceShow gs gs in
   if instanceCheck curs seen
   then
     Leaf gs s env
@@ -68,7 +68,7 @@ sldResolutionStep gs isFirstTime env s seen =
       let normalized = normalize g' in
       let unified = mapMaybe (unifyStuff s) normalized in
       let addDescends xs s =
-            Subst.substitute s
+            CpdLC.substituteDescend s
                             ( left zipper ++
                               map (\x -> Descend x (g : ancs)) xs ++
                               right zipper
@@ -90,7 +90,7 @@ sldResolutionStep gs isFirstTime env s seen =
           Leaf gs s env
                      
 
-    unfoldNext :: Maybe (Zipper (Descend (AnnG Term S))) -> Bool -> [DescendGoal] -> Subst.Subst -> Env.Env -> SldTree 
+    unfoldNext :: Maybe (Zipper (Descend (AnnG Term S))) -> Bool -> [DescendGoal] -> Subst.Subst S -> Env.Env -> SldTree 
     unfoldNext zipper isFirstTime gs s env =
       maybe (Leaf gs s env)
             (\z ->
@@ -99,7 +99,8 @@ sldResolutionStep gs isFirstTime env s seen =
             )
             (zipper >>= selecter)
 
-    needsUnfolding env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
+--    needsUnfolding env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
+    needsUnfolding _ _ ns isFirstTime = length ns == 1 || isFirstTime
 
 bodies :: SldTree -> [[AnnG Term S]]
 bodies = leaves
@@ -110,7 +111,7 @@ leaves (Conj ch  _ _) = leaves ch
 leaves (Leaf ds _ _)  = [map getCurr ds]
 leaves _              = []
 
-resultants :: SldTree -> [(Subst.Subst, [AnnG Term S], Maybe Env.Env)]
+resultants :: SldTree -> [(Subst.Subst S, [AnnG Term S], Maybe Env.Env)]
 resultants (Success s)     = [(s, [], Nothing)]
 resultants (Or disjs _ _)  = concatMap resultants disjs
 resultants (Conj ch _ _)   = resultants ch

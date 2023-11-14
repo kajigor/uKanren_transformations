@@ -25,6 +25,7 @@ import           System.Process         (system)
 import           Text.Printf
 import qualified Transformer.MkToProlog
 import           Util.File              (createDirRemoveExisting, shortenFileName)
+import           Debug.Trace (traceShow)
 
 data TransformResult = Result { original   :: [Def G X]
                               , globalTree :: GC.GlobalTree
@@ -56,7 +57,7 @@ transform' outDir filename goal@(Program definitions _) env heuristic = do
     let cpdFile = path </> "cpd"
     mapM_ createDirRemoveExisting [path, localDir]
 
-    let result = runTransformation goal heuristic
+    let result = runTransformation (traceShow goal goal) heuristic
     Transformer.MkToProlog.transform (path </> "original.pl") definitions
     printTree (path </> "global.dot") (globalTree result)
     mapM_ (uncurry (renderLocalTree localDir)) (localTrees result)

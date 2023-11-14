@@ -21,16 +21,15 @@ import qualified Subst
 import           Syntax
 import           Unfold              (findBestByComplexity, findTupling, isGoalStatic, oneStep)
 import           Util.ListZipper
-import Debug.Trace
 
 data ConsPDTree = Fail
-                | Success Subst.Subst Env.Env
-                | Or [ConsPDTree] (Descend [G S]) Subst.Subst
-                | Conj [ConsPDTree] [G S] Subst.Subst
-                | Gen ConsPDTree [G S] [G S] Generalizer Subst.Subst
-                | Leaf [G S] Subst.Subst Env.Env [G S] -- last argument is a goal renaming of which current node is
-                | Split [ConsPDTree] [G S] Subst.Subst
-                | Prune [G S] Subst.Subst
+                | Success (Subst.Subst Int) Env.Env
+                | Or [ConsPDTree] (Descend [G S]) (Subst.Subst Int)
+                | Conj [ConsPDTree] [G S] (Subst.Subst Int)
+                | Gen ConsPDTree [G S] [G S] Generalizer (Subst.Subst Int)
+                | Leaf [G S] (Subst.Subst Int) Env.Env [G S] -- last argument is a goal renaming of which current node is
+                | Split [ConsPDTree] [G S] (Subst.Subst Int)
+                | Prune [G S] (Subst.Subst Int)
                 deriving (Show, Eq)
 
 
@@ -55,10 +54,10 @@ data ConsPDTree = Fail
 --       then Nothing
 --       else Just $ foldl (\interp x -> VI.extend interp x (f x)) i dd'
 
-statesConcat :: [Subst.Subst] -> Maybe Subst.Subst
+statesConcat :: [(Subst.Subst Int)] -> Maybe (Subst.Subst Int)
 statesConcat = unifySubsts
 
-goalsConcat :: [([a], Subst.Subst)] -> Maybe ([a], Subst.Subst)
+goalsConcat :: [([a], (Subst.Subst Int))] -> Maybe ([a], (Subst.Subst Int))
 goalsConcat x = do
   let (goals, states) = unzip x
   cStates <- statesConcat states
@@ -82,7 +81,7 @@ restrictSubsts =
     go _ Fail                = Fail
 
 
-incrDeepOneStep :: Int -> Int -> G S -> Env.Env -> Subst.Subst -> Maybe ([([G S], Subst.Subst)], Env.Env)
+incrDeepOneStep :: Int -> Int -> G S -> Env.Env -> (Subst.Subst Int) -> Maybe ([([G S], (Subst.Subst Int))], Env.Env)
 incrDeepOneStep limit depth _ _ _ | limit < depth = Nothing
 incrDeepOneStep limit depth goal env state =
     let (unified, env') = runState (oneStep goal state) env in
@@ -118,11 +117,11 @@ realIncrDeep globalLimit f x =
     go localLimit curr f x =
       go localLimit (curr + 1) f (f x)
 
-leaf :: Subst.Subst -> Env.Env -> ConsPDTree
+leaf :: (Subst.Subst Int) -> Env.Env -> ConsPDTree
 leaf s _ | Subst.null s = Fail
 leaf s e = Success s e
 
-unifySubsts :: [Subst.Subst] -> Maybe Subst.Subst
+unifySubsts :: [(Subst.Subst Int)] -> Maybe (Subst.Subst Int)
 unifySubsts [] = return Subst.empty
 unifySubsts [s] = return s
 unifySubsts (x : y : xs) = do
@@ -152,7 +151,7 @@ justUnfold limit (Program defs goal) =
         Nothing -> Prune gs subst
         Just v -> Leaf gs subst env v
     go n d@(Descend gs ancs) env subst =
-      let [goal] = Subst.substitute subst gs in
+      let [goal] = Subst.substituteList subst gs in
       let addDescend g = Descend g ([goal] : ancs) in
       let (unified, env') = runState (oneStep goal subst) env in
       let children = map (\(gs, s) -> if null gs
@@ -171,11 +170,11 @@ topLevel limit (Program defs goal) =
     let tree = evalState (go descend Subst.empty) (seen, failed, env') in
     (tree, logicGoal, names)
   where
-    go :: Descend [G S] -> Subst.Subst -> State ([[G S]], [[G S]], Env.Env) ConsPDTree
+    go :: Descend [G S] -> (Subst.Subst Int) -> State ([[G S]], [[G S]], Env.Env) ConsPDTree
     go (Descend goal' ancs') state = do
       (seen, failed, env :: Env.Env) <- get
       let (hd, _) = FN.getFreshName (Env.getFreshNames env)
-      let goal = Subst.substitute state goal'
+      let goal = Subst.substituteList state goal'
       let seen' = goal : seen
       let ancs = goal : ancs'
       let addAnc x = Descend x ancs
@@ -291,14 +290,14 @@ topLevel limit (Program defs goal) =
     nullGoals goals subst env _ | null goals = leaf subst env
     nullGoals _ _ _ v = v
 
-    unfoldNotNull :: [G S] -> Subst.Subst -> ([G S] -> Descend [G S]) -> State ([[G S]], [[G S]], Env.Env) (Maybe ConsPDTree)
+    unfoldNotNull :: [G S] -> (Subst.Subst Int) -> ([G S] -> Descend [G S]) -> State ([[G S]], [[G S]], Env.Env) (Maybe ConsPDTree)
     unfoldNotNull xs _ _ | null xs = return Nothing
     unfoldNotNull xs state addAnc = do
       children <- unfoldSequentially (zip (map (:[]) xs) (repeat state)) addAnc
       n <- split children xs state
       return $ Just n
 
-    unfoldSequentially :: [([G S], Subst.Subst)] -> ([G S] -> Descend [G S]) -> State ([[G S]], [[G S]], Env.Env) [ConsPDTree]
+    unfoldSequentially :: [([G S], (Subst.Subst Int))] -> ([G S] -> Descend [G S]) -> State ([[G S]], [[G S]], Env.Env) [ConsPDTree]
     unfoldSequentially unified addAnc = do
       (_, _, env) <- get
       mapM  (\(goals, subst) ->
@@ -307,7 +306,7 @@ topLevel limit (Program defs goal) =
                 else go (addAnc goals) subst
             ) unified
 
-createLeafNode :: [[G S]] -> ([G S], Subst.Subst, Env.Env) -> ConsPDTree
+createLeafNode :: [[G S]] -> ([G S], (Subst.Subst Int), Env.Env) -> ConsPDTree
 createLeafNode seen = go
   where
     go ([], state, env) = leaf state env
@@ -316,7 +315,7 @@ createLeafNode seen = go
         Just v -> Leaf  gs state env v
         Nothing -> Prune gs state
 
-computedAnswers :: ConsPDTree -> Maybe [([G S], Subst.Subst, Env.Env)]
+computedAnswers :: ConsPDTree -> Maybe [([G S], (Subst.Subst Int), Env.Env)]
 computedAnswers (Success s e) = Just [([], s, e)]
 computedAnswers Fail = Just []
 computedAnswers (Leaf g s e _) = Just [(g, s, e)]
@@ -330,7 +329,7 @@ computedAnswers _ = Nothing
 -- Finds a conjunct, for which at least one substitution exists in the unfolding.
 -- The result is the pair in which first element is list of conjuncts excluding the one which generates substitutions.
 -- The second element is the unfolding result for the selected conjunct.
-tryFindSubsts :: [G S] -> Env.Env -> Subst.Subst -> Maybe ([G S], (([Subst.Subst], [([G S], Subst.Subst)]), Env.Env), [G S])
+tryFindSubsts :: [G S] -> Env.Env -> (Subst.Subst Int) -> Maybe ([G S], (([(Subst.Subst Int)], [([G S], (Subst.Subst Int))]), Env.Env), [G S])
 tryFindSubsts =
     -- TODO USE PINPOINT
     go []
@@ -343,7 +342,7 @@ tryFindSubsts =
       then go (g:left) gs env state
       else Just (reverse left, ((map snd substs, notSubsts), env'), gs)
 
-doStep :: G S -> Env.Env -> Subst.Subst -> ([([G S], Subst.Subst)], Env.Env)
+doStep :: G S -> Env.Env -> (Subst.Subst Int) -> ([([G S], (Subst.Subst Int))], Env.Env)
 doStep goal env state =
     fromMaybe
       (runState (oneStep goal state) env)
@@ -353,7 +352,7 @@ isFail :: ConsPDTree -> Bool
 isFail Fail = True
 isFail _ = False
 
-or :: [ConsPDTree] -> Descend [G S] -> Subst.Subst -> State ([[G S]], [[G S]], Env.Env) ConsPDTree
+or :: [ConsPDTree] -> Descend [G S] -> (Subst.Subst Int) -> State ([[G S]], [[G S]], Env.Env) ConsPDTree
 or ch d@(Descend gs _) state =
   if null ch || all isFail ch
   then do
@@ -363,16 +362,16 @@ or ch d@(Descend gs _) state =
   else return $ Or ch d state
 
 
-split :: [ConsPDTree] -> [G S] -> Subst.Subst -> State ([[G S]], [[G S]], Env.Env) ConsPDTree
+split :: [ConsPDTree] -> [G S] -> (Subst.Subst Int) -> State ([[G S]], [[G S]], Env.Env) ConsPDTree
 split [x] goal state = return x
 split ch goal state = return (Split ch goal state)
 
-checkConflicts :: [Subst.Subst] -> Bool
+checkConflicts :: [(Subst.Subst Int)] -> Bool
 checkConflicts sigmas =
     let conflicting = findConflicting sigmas in
     any (\x -> length x /= 1) conflicting
 
-collectSubsts :: ConsPDTree -> [Subst.Subst]
+collectSubsts :: ConsPDTree -> [(Subst.Subst Int)]
 collectSubsts (Or ch _ _) =
     mapMaybe go ch
   where
@@ -385,7 +384,7 @@ collectSubsts (Or ch _ _) =
 collectSubsts (Leaf _ s _ _) = [s]
 collectSubsts x = []
 
-isConflicting :: Subst.Subst -> Subst.Subst -> Bool
+isConflicting :: (Subst.Subst Int) -> (Subst.Subst Int) -> Bool
 isConflicting s1 s2 =
     let m1 = s1 in
     let m2 = s2 in
@@ -396,7 +395,7 @@ isConflicting s1 s2 =
     conflicting (C x xs) (C y ys) = x /= y || length xs /= length ys || any (uncurry conflicting) (zip xs ys)
     conflicting _ _ = False
 
-findConflicting :: [Subst.Subst] -> [[Subst.Subst]]
+findConflicting :: [(Subst.Subst Int)] -> [[(Subst.Subst Int)]]
 findConflicting [] = []
 findConflicting [x] = [[x]]
 findConflicting (x:xs) =
@@ -433,18 +432,17 @@ simplify tree =
     replaceChildren new (Split ch g s) = Split new g s
     replaceChildren new x = x
 
-    --(trace ((show my_tree) ++ "\n\n\n") $ ch)
-    go my_tree@(Or    ch g s)   = failOr ch (\x -> Or x g s)
-    go my_tree@(Conj  ch g s)   = failConj ch (\x -> Conj x g s)
-    go my_tree@(Split ch g s)   = failConj ch (\x -> Split x g s)
-    go my_tree@(Gen   ch g g' gen s) = failOr [ch] (\[x] -> Gen x g g' gen s)
+    go (Or    ch g s)   = failOr ch (\x -> Or x g s)
+    go (Conj  ch g s)   = failConj ch (\x -> Conj x g s)
+    go (Split ch g s)   = failConj ch (\x -> Split x g s)
+    go (Gen   ch g g' gen s) = failOr [ch] (\[x] -> Gen x g g' gen s)
     go x                = x
-    failOr ch f = --trace "failOr" $
+    failOr ch f =
       let simplified = filter (not . isFail) $ map go ch in
       if null simplified
       then Fail
       else f simplified
-    failConj ch f = --trace "failConj" $
+    failConj ch f =
       let simplified = map go ch in
       if Fail `elem` simplified
       then Fail

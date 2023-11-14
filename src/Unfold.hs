@@ -28,14 +28,14 @@ oneStepUnfold g@(Invoke f as) = do
   else error $ printf "Unfolding error: different number of factual and actual arguments\nFactual: %s --- %s\nActual: %s --- %s)" f (show as) n (show fs)
 oneStepUnfold g = return g
 
-oneStep :: G S -> Subst.Subst -> State Env.Env [([G S], Subst.Subst)]
+oneStep :: G S -> Subst.Subst Int -> State Env.Env [([G S], Subst.Subst Int)]
 oneStep goal state = do
     unfolded <- oneStepUnfold goal
     let normalized = normalize unfolded
     let unified = mapMaybe (unifyStuff state) normalized
     return unified
 
-unfoldConjunction :: [G S] -> Subst.Subst -> State Env.Env [([G S], Subst.Subst)]
+unfoldConjunction :: [G S] -> Subst.Subst Int -> State Env.Env [([G S], Subst.Subst Int)]
 unfoldConjunction (x:xs) state = do
   unified <- oneStep x state
   results <- mapM (\(g, s) -> do
@@ -53,7 +53,7 @@ normalize g@(_ :=: _) = [[g]]
 normalize (Delay g) = normalize g
 normalize g = error ("Unexpected goal type in normalization\n" ++ show g)
 
-unifyStuff :: Subst.Subst -> [G S] -> Maybe ([G S], Subst.Subst)
+unifyStuff :: Subst.Subst Int -> [G S] -> Maybe ([G S], Subst.Subst Int)
 unifyStuff state gs =
     go gs state []
   where
@@ -82,7 +82,7 @@ getMaximumBranches env (Invoke name _) =
     maximumBranches def
 
 
-notMaximumBranches :: Env.Env -> Subst.Subst -> G S -> Bool
+notMaximumBranches :: Env.Env -> Subst.Subst Int -> G S -> Bool
 notMaximumBranches env state goal@(Invoke name args) =
     let maxBranches = maximumBranches (Env.getDef env name) in
     let unfolded = evalState (oneStep goal state) env in
@@ -108,22 +108,22 @@ instance Ord Complexity where
   (Complexity max cur subst) <= (Complexity max' cur' subst') =
     cur < max || cur - subst >= cur' - subst' || cur <= cur'
 
-findTupling :: Env.Env -> Subst.Subst -> [G S] -> [[G S]] -> Maybe (([([G S], Subst.Subst)], Env.Env))
+findTupling :: Env.Env -> Subst.Subst Int -> [G S] -> [[G S]] -> Maybe (([([G S], Subst.Subst Int)], Env.Env))
 findTupling env subst goal ancs =
     let (conjunctions, env') = runState (unfoldConjunction goal subst) env in
     -- let res@(unfolded, env') = runState (mapM (\g -> oneStep g subst) goal) env in
     -- let conjunctions = cross unfolded in
-    if any (\(g, s) -> variantCheck (Subst.substitute s g) ancs) conjunctions
+    if any (\(g, s) -> variantCheck (Subst.substituteList s g) ancs) conjunctions
     then Just (conjunctions, env')
     else Nothing
   where
-    cross :: [[([G S], Subst.Subst)]] -> [([G S], Subst.Subst)]
+    cross :: [[([G S], Subst.Subst Int)]] -> [([G S], Subst.Subst Int)]
     cross [] = [([],Subst.empty)]
     cross (x:xs) = [ (y ++ z, Subst.union s' s'') | (y, s') <- x, (z, s'') <- cross xs ]
 
 
 
-findBestByComplexity :: Env.Env -> Subst.Subst -> [G S] -> Maybe (Zipper (G S))
+findBestByComplexity :: Env.Env -> Subst.Subst Int -> [G S] -> Maybe (Zipper (G S))
 findBestByComplexity env sigma goals =
     let estimated = map (\g -> (g, unfoldComplexity env sigma g)) goals in
     pinpoint (\(Invoke name _) -> static env name) goals
@@ -138,7 +138,7 @@ findBestByComplexity env sigma goals =
     partialSubst xs = pinpoint (\(g, compl) -> substs compl > 0) xs
     throwAwayComplexity z = (fst <$>) <$> z
 
-unfoldComplexity :: Env.Env -> Subst.Subst -> G S -> Complexity
+unfoldComplexity :: Env.Env -> Subst.Subst Int -> G S -> Complexity
 unfoldComplexity env sigma goal@(Invoke name _) =
   let unfolded = evalState (oneStep goal sigma) env in
   let max = maximumBranches (Env.getDef env name) in

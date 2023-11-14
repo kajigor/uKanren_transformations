@@ -36,5 +36,5 @@ filter (static dynamic)
 filter ()
  fail  = Memo fail [];
 
-(fresh exp, d in (
-  Unfold depth (C Member O [S O, S S O, S S O, S S S O, S O, O, S S O, O, S O, S S O, O, O]) d))
+(fresh exp, x, d in (
+  Unfold depth (C Member O [S O, S (S O), S (S O), S (S (S O)), S O, O, S (S O), O, S O, S (S O), O, O]) d))

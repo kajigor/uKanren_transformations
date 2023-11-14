@@ -20,6 +20,9 @@
       <sourceFolder url="file://$MODULE_DIR$/bench/Regexp1" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/bench/RotatePrune" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/bench/RelSort" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/Upto.sum1" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/Upto.sum2" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/Model_elim" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/.stack-work" />
     </content>
     <orderEntry type="inheritedJdk" />

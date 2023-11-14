@@ -288,6 +288,39 @@ benchmarks:
       - tasty-bench
       - deepseq
     ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  uKanren-transformation-bench-uptoSum1-det:
+    main: Main.hs
+    source-dirs:
+      - bench/Upto.sum1
+      - test/resources
+    dependencies:
+      - uKanren-transformation
+      - tasty
+      - tasty-bench
+      - deepseq
+    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  uKanren-transformation-bench-uptoSum2-det:
+    main: Main.hs
+    source-dirs:
+      - bench/Upto.sum2
+      - test/resources
+    dependencies:
+      - uKanren-transformation
+      - tasty
+      - tasty-bench
+      - deepseq
+    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  uKanren-transformation-bench-model_elim-det:
+    main: Main.hs
+    source-dirs:
+      - bench/Model_elim
+      - test/resources
+    dependencies:
+      - uKanren-transformation
+      - tasty
+      - tasty-bench
+      - deepseq
+    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
   # uKanren-transformation-bench-prop:
   #   main: Main.hs
   #   source-dirs:
