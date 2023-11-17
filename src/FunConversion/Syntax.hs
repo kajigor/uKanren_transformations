@@ -29,7 +29,7 @@ data Lang = Empty
           | Guard Var Term
           | Gen Generator deriving (Show, Eq)
 
-data Def = Def { name :: Name, args :: [Var], generators :: [Generator], body :: Lang } deriving (Show, Eq)
+data Def = Def { name :: Name, args :: [Var], generators :: [Generator], body :: Lang, isSemidet :: Bool } deriving (Show, Eq)
 
 newtype TypeData = TypeData [(String, Int)] deriving (Show, Eq)
 
@@ -67,7 +67,7 @@ qvar v
     | otherwise = Right $ TH.VarE $ TH.mkName v
 
 pvar :: Var -> Either Error TH.Pat
-pvar v 
+pvar v
     | null v = Left "Var name cannot be empty"
     | otherwise = Right $ TH.VarP $ TH.mkName v
 
@@ -101,7 +101,7 @@ instance Quotable Def TH.Dec where
     return $ TH.FunD (TH.mkName (name d)) [ds]
     where
       go :: Def -> Either Error TH.Clause
-      go (Def _ args gens body) = do
+      go (Def _ args gens body _) = do
         args <- mapM pvar args
         gens <- mapM pgen gens
         b <- toQuote body

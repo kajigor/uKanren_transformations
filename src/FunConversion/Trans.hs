@@ -8,6 +8,7 @@ import qualified FunConversion.Syntax as F
 import qualified Mode.NormSyntax as M
 import qualified Mode.Term as M
 import qualified Data.List.NonEmpty as NE
+import qualified Data.Map as Map
 import qualified Syntax as S
 import Data.Foldable (fold)
 import Data.List (nub, sort)
@@ -17,7 +18,7 @@ import           Program
 import qualified Mode.Toplevel as M
 import qualified Mode.Analysis as M
 import Data.Bifunctor (second)
-import Data.Maybe (maybeToList)
+import Data.Maybe (maybeToList, fromMaybe)
 import qualified FunConversion.DetMode as D
 import Debug.Trace
 
@@ -102,9 +103,9 @@ delay M.NotDelayed = F.NotDelayed
 delay M.Delayed = F.Delayed
 
 trans :: Program M.Goal (S.S, Mode) -> ([F.Def], F.Lang)
-trans p@(Program defs (M.Disj ((M.Conj ((M.Call d n args) NE.:| [])) NE.:| []))) = 
-  let 
-    defs' = transDefs dets defs 
+trans p@(Program defs (M.Disj ((M.Conj ((M.Call d n args) NE.:| [])) NE.:| []))) =
+  let
+    defs' = transDefs dets defs
     rel = nameFromArgs n args
   in (defs', F.Call (delay d) conversion rel (callVars args) (getDefGens rel defs'))
   where
@@ -244,9 +245,9 @@ transBase _ rel (M.Unif (OutV v) (M.FTVar (OutV t))) = F.Bind [
       makeGen rel x
     , ([], F.Return [F.Var x, F.Var x])
     ]
-    where 
+    where
       x = makeName t
-transBase _ rel (M.Unif (OutV v) t@(M.FTCon n xs)) = F.Bind 
+transBase _ rel (M.Unif (OutV v) t@(M.FTCon n xs)) = F.Bind
   (gen ++ [([makeName v], F.Return [makeTerm t]), ([], F.Return $ makeVar v : map F.Var genv)])
   where
       genv = genVars xs
@@ -272,12 +273,18 @@ transGoal :: D.DetMap -> D.DefIdentifier -> [S.S] -> M.Goal (S.S, Mode) -> F.Lan
 transGoal = transDisj
 
 transDef :: D.DetMap -> [(S.S, S.S)] -> Def M.Goal (S.S, Mode) -> F.Def
-transDef dets outs (Def n args body) = let n' = makeDefName n (length args) (map fst outs) in F.Def {
-  F.name = n',
-  F.args = callVars $ M.Var <$> args,
-  F.generators = [], -- Generators are filled in later, by fixGens
-  F.body = transGoal dets (D.identify' n args) (map snd outs) body
-  }
+transDef dets outs (Def n args body) =
+    let n' = makeDefName n (length args) (map fst outs) in
+    let did = D.identify' n args in
+    F.Def {
+      F.name = n',
+      F.args = callVars $ M.Var <$> args,
+      F.generators = [], -- Generators are filled in later, by fixGens
+      F.body = transGoal dets did (map snd outs) body,
+      F.isSemidet = isSemidet did
+    }
+  where
+    isSemidet did = fromMaybe False $ Map.lookup did dets
 
 mapOuts :: (Int -> Maybe a) -> (Int -> Maybe a) -> Int -> [S.S] -> [a]
 mapOuts i o n outs = mapOuts' i o n outs 0
@@ -286,7 +293,7 @@ mapOuts i o n outs = mapOuts' i o n outs 0
     mapOuts' _ _ 0 _ _ = []
     mapOuts' i o n (0:outs) k = o k `mcons` mapOuts' i o (pred n) (map pred outs) (k + 1)
     mapOuts' i o n outs k = i k `mcons` mapOuts' i o (pred n) (map pred outs) (k + 1)
-    
+
 
 ins :: Int -> [S.S] -> [S.S]
 ins = mapOuts Just (const Nothing)

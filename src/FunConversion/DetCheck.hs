@@ -89,7 +89,7 @@ instance DetQuotable Def TH.Dec where
     return $ TH.FunD (TH.mkName (name d)) [ds]
     where
       go :: Def -> Either Error TH.Clause
-      go (Def _ args gens body) = do
+      go (Def _ args gens body _) = do
         args <- mapM pvar args
         gens <- mapM pgen gens
         b <- toDetQuote det body

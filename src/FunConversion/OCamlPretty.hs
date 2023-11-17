@@ -14,22 +14,70 @@ import           Util.String
 type Error = T.Text
 type Prog = Doc T.Text
 
+-- module type Monad_type = sig
+--   type 'a t
+--   val return : 'a -> 'a t
+--   val bind : 'a t -> ('a -> 'b t) -> 'b t
+--   val mplus : 'a t -> 'a t -> 'a t
+--   val msum : 'a t list -> 'a t
+--   val guard : bool -> unit t
+--   val make_lazy : (unit -> 'a) -> 'a
+-- end
+
+-- module OptionM : Monad_type = struct
+--   type 'a t = 'a option
+--   let bind x f =
+--     match x with
+--     | Some x -> f x
+--     | None -> None
+
+--   let mplus x y =
+--     match x with
+--     | Some x -> Some x
+--     | None -> y
+
+--   let (let*) = bind
+--   let return x = Some x
+--   let mzero = None
+--   let msum xs = List.fold_right mplus xs mzero
+--   let guard p = if p then return () else mzero
+--   let make_lazy f = f ()
+-- end
+
+-- module StreamM : Monad_type = struct
+--   type 'a t = 'a OCanren.Stream.t
+--   let (let*) = OCanren.Stream.bind
+--   let return = OCanren.Stream.single
+--   let mzero = OCanren.Stream.nil
+--   let mplus = OCanren.Stream.mplus
+--   let msum xs = List.fold_right mplus xs mzero
+--   let guard p = if p then return () else mzero
+--   let make_lazy f = OCanren.Stream.from_fun f
+-- end
+
 preamble :: Prog
 preamble =
-  let gtImport = open <+> pretty' "GT" in
-  let ocanrenImport = open <+> pretty' "OCanren" in
-  let streamImport = open <+> pretty' "OCanren.Stream" in
-  let define name body = letKW <+> name <+> pretty' "=" <+> body in
-  let letStar = define (parens (letStarKW)) (pretty' "OCanren.Stream.bind") in
-  let retrn = define returnKW (pretty' "OCanren.Stream.single") in
-  let mzero = define mzeroKW (pretty' "OCanren.Stream.nil") in
-  let mplus = define mplusKW (pretty' "OCanren.Stream.mplus") in
-  let msum = define (msumKW <+> pretty' "xs") (pretty' "List.fold_right" <+> mplusKW <+> pretty' "xs" <+> mzeroKW) in
-  let guardDef = define (pretty' "guard" <+> pretty' "p") (pretty' "if" <+> pretty' "p" <+> pretty' "then" <+> returnKW <+> pretty' "()" <+> pretty' "else" <+> mzeroKW) in
-  let delayDef = define (pretty' "make_lazy" <+> pretty' "f") (pretty' "OCanren.Stream.from_fun" <+> pretty' "f") in
-  let imports = vsep [gtImport, ocanrenImport, streamImport] in
-  let definitions = vsep [letStar, retrn, mzero, mplus, msum, guardDef, delayDef] in
-  imports <> line <> line <> definitions
+    let gtImport = open <+> pretty' "GT" in
+    let ocanrenImport = open <+> pretty' "OCanren" in
+    let streamImport = open <+> pretty' "OCanren.Stream" in
+
+    let letStar = define (parens (letStarKW)) (pretty' "OCanren.Stream.bind") in
+    let retrn = define returnKW (pretty' "OCanren.Stream.single") in
+    let mzero = define mzeroKW (pretty' "OCanren.Stream.nil") in
+    let mplus = define mplusKW (pretty' "OCanren.Stream.mplus") in
+    let msum = define (msumKW <+> pretty' "xs") (pretty' "List.fold_right" <+> mplusKW <+> pretty' "xs" <+> mzeroKW) in
+    let guardDef = define (pretty' "guard" <+> pretty' "p") (pretty' "if" <+> pretty' "p" <+> pretty' "then" <+> returnKW <+> pretty' "()" <+> pretty' "else" <+> mzeroKW) in
+    let delayDef = define (pretty' "make_lazy" <+> pretty' "f") (pretty' "OCanren.Stream.from_fun" <+> pretty' "f") in
+
+    let imports = vsep [gtImport, ocanrenImport, streamImport] in
+
+    let definitions = vsep [letStar, retrn, mzero, mplus, msum, guardDef, delayDef] in
+
+    imports <> line <> line <> definitions
+
+  where
+    define name body = letKW <+> name <+> pretty' "=" <+> body
+
 
 prettyString :: ShowPretty a => a -> String
 prettyString x =
@@ -92,12 +140,15 @@ instance ShowPretty Lang where
   showPretty (Call Delayed c name args generators) = do
     call <- showPretty (Call NotDelayed c name args generators)
     return $ pretty' "make_lazy" <+> pretty' "@@" <+> pretty' "fun" <+> pretty' "()" <+> pretty' "->" <+> call
-  showPretty (Call _ _ name args generators)
+  showPretty (Call _ c name args generators)
     | null name = Left "Relation name cannot be empty"
     | otherwise = do
-        args <- mapM showPretty args
-        generators <- mapM showPretty generators
-        return (pretty name <+> hsep args <+> hsep generators)
+          args <- mapM showPretty args
+          generators <- mapM showPretty generators
+          return $ convert c $ (pretty name <+> hsep args <+> hsep generators)
+        where
+          convert NoConversion = id
+          convert FromMaybe = (pretty' "optionToStream" <+>)
   showPretty (Return []) = do
     return (returnKW <+> pretty' "()")
   showPretty (Return [x]) = do
@@ -148,12 +199,15 @@ instance ShowPretty Lang where
       parensIfNeeded xs = parens $ hsep $ punctuate comma xs
 
 instance ShowPretty Def where
-  showPretty (Def name args gens body) = do
+  showPretty (Def name args gens body isSemidet) = do
+    let openStmt = pretty' "let open" <+> pretty' (if isSemidet then "OptionM in" else "StreamM in")
     name <- showPretty name
     args <- mapM showPretty args
     gens <- mapM showPretty gens
     body <- showPretty body
-    return $ name <+> hsep args <+> hsep gens <+> pretty' "=" <> line <> indent tabSize body
+    return $ name <+> hsep args <+> hsep gens <+> pretty' "=" <> line
+      <> indent tabSize openStmt <> line
+      <> indent tabSize body
 
 tabSize = 2
 
