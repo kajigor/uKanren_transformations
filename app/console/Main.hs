@@ -15,6 +15,7 @@ import           System.Directory       (getCurrentDirectory)
 import           Text.Printf            (printf)
 import qualified Transformer.PrologToMk
 import qualified TranslateApp
+import qualified UpdatedTranslate
 import qualified DepApp
 import           Util.File              (failIfNotExist, getFiles, isDir)
 import           Util.Miscellaneous     (mapLeft)
@@ -28,6 +29,7 @@ data Transformation
   | PrologToMk
   | Mode
   | Translate
+  | UpdatedTranslate
   | Dependence
 
 data Action = Action { transformation :: Transformation
@@ -131,6 +133,7 @@ parseTransformation =
   <|> prologToMkParser
   <|> modeParser
   <|> translateParser
+  <|> utranslateParser
   <|> dependenceParser
 
 normalizeParser :: Parser Transformation
@@ -161,6 +164,12 @@ translateParser :: Parser Transformation
 translateParser = flag' Translate
   ( long "translate"
   <> help "Translate miniKanren to Haskell"
+  )
+
+utranslateParser :: Parser Transformation
+utranslateParser = flag' UpdatedTranslate
+  ( long "utranslate"
+  <> help "Translate miniKanren to Haskell using updated translator"
   )
 
 dependenceParser :: Parser Transformation
@@ -236,6 +245,8 @@ runAction args = do
       Transformer.PrologToMk.transform (input action)
     Translate ->
       TranslateApp.runWithParser parser (input action) (output action) (relName action) (groundVars action)
+    UpdatedTranslate ->
+      UpdatedTranslate.runWithParser parser (input action) (output action) (relName action) (groundVars action)
     Dependence -> 
       DepApp.runWithParser parser (input action)
     x -> do

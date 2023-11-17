@@ -24,6 +24,24 @@ newtype Conj a = Conj (NonEmpty (Base a))
 newtype Disj a = Disj (NonEmpty (Conj a))
                deriving (Show, Eq, Functor)
 
+walkConj :: (Base a -> b) -> Conj a -> [b]
+walkConj f (Conj (x :| xs)) = f <$> (x:xs)
+
+walkConjM :: (Monad m) => (Base a -> m b) -> Conj a -> m [b]
+walkConjM f (Conj (x :| xs)) = f `mapM` (x:xs)
+
+walkConjM_ :: (Monad m) => (Base a -> m b) -> Conj a -> m ()
+walkConjM_ f (Conj (x :| xs)) = f `mapM_` (x:xs)
+
+walkDisj :: (Base a -> b) -> Disj a -> [b]
+walkDisj f (Disj (x :| xs)) = (walkConj f) `concatMap` (x:xs)
+
+walkDisjM :: (Monad m) => (Base a -> m b) -> Disj a -> m [b]
+walkDisjM f (Disj (x :| xs)) = concat <$> (walkConjM f) `mapM` (x:xs)
+
+walkDisjM_ :: (Monad m) => (Base a -> m b) -> Disj a -> m ()
+walkDisjM_ f (Disj (x :| xs)) = (walkConjM_ f) `mapM_` (x:xs)
+
 type Goal = Disj
 
 data NameSource = NameSource

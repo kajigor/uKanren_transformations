@@ -182,6 +182,7 @@ identify' name args = DId (name, snd <$> args)
 identifyDef' :: Def M.Goal (a, M.Mode) -> DefIdentifier
 identifyDef' (Def name args _) = identify' name args
 
+
 findDef :: [MDef a] -> DefIdentifier -> MDef a
 findDef [] did = error $ "Def matching " ++ show did ++ " not found"
 findDef (d:ds) did | identifyDef d == did = d
