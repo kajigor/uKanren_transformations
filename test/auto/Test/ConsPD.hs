@@ -29,7 +29,7 @@ lambda = Program evalo $ fresh ["m", "n"] (call "evalo" [V "m", V "n"])
 
 runJu = JU.transform
 
-runConsPD = ConsPD.runConsPD
+runConsPD = ConsPD.runConsPDNoGround
 
 runRep = do
     runJu 100 "rep" rep

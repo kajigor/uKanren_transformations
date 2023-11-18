@@ -57,6 +57,8 @@ toOcanren fileName (Program defs goal) names =
 
 runConsPD l = Transformer.ConsPD.transform "test/out/consPD" Nothing (ConsPD.topLevel l)
 
+runConsPDNoGround l = (runConsPD l) Nothing
+
 runConsPD' :: [Char] -> Maybe [Int] -> FilePath -> Program G X -> IO ()
 runConsPD' outDir = Transformer.ConsPD.transform outDir Nothing (ConsPD.topLevel (-1))
 
