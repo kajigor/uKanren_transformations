@@ -51,7 +51,7 @@ muloDef =
         (x === zero &&& z === zero) |||
           fresh ["x'", "z'"]
             (x === succ x' &&&
-             call "mulo" [x', y, z'] &&&
+             (Delay $ call "mulo" [x', y, z']) &&&
              call "addo" [y, z', z])
       )
     )
