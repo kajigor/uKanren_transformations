@@ -95,11 +95,13 @@ flattenInternalTerms (S.C name args) = do
   return $ FTCon name $ map Var args'
 
 conj :: Show a => Goal a -> Goal a
-conj goal = trace (printf "\nin conj: %s" (show goal)) $
+conj goal = 
+  -- trace (printf "\nin conj: %s" (show goal)) $
   safeListToConj $ floatConjs goal
 
 disj :: Show a => Goal a -> Goal a
-disj goal = trace (printf "\nin disj: %s" (show goal)) $
+disj goal = 
+  -- trace (printf "\nin disj: %s" (show goal)) $
   safeListToDisj $ floatDisjs goal
 
 success :: Goal a
@@ -191,13 +193,15 @@ flattenGoal (S.Invoke name args) = do
   m <- gets getVarMap
   makeConj (Call name (map Var args'))
 flattenGoal (S.Conjunction x y xs) = do
-  x' <- trace (printf "Flattening conjunction:\n%s \\/ %s \\/ %s" (show x) (show y) (show xs)) $
+  x' <- 
+        -- trace (printf "Flattening conjunction:\n%s \\/ %s \\/ %s" (show x) (show y) (show xs)) $
         flattenGoal x
   y' <- flattenGoal y
   xs' <- mapM flattenGoal xs
   return $ conj (Conj x' y' xs')
 flattenGoal (S.Disjunction x y xs) = do
-  x' <- trace (printf "Flattening disjunction:\n%s \\/ %s \\/ %s" (show x) (show y) (show xs)) $
+  x' <- 
+        -- trace (printf "Flattening disjunction:\n%s \\/ %s \\/ %s" (show x) (show y) (show xs)) $
         local flattenGoal x
   y' <- local flattenGoal y
   xs' <- mapM (local flattenGoal) xs
