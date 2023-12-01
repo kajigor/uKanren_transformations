@@ -6,18 +6,15 @@ module Mode.Analysis where
 
 import           Control.Applicative   ((<|>))
 import           Control.Monad.State
-import           Data.List             (permutations, sortOn, find)
-import           Data.List.NonEmpty    (NonEmpty (..), fromList)
+import           Data.List             (sortOn)
+import           Data.List.NonEmpty    (NonEmpty (..))
 import qualified Data.Map              as Map
-import qualified Data.Map.Merge.Strict as Merge
 import           Data.Maybe
 import qualified Data.Set              as Set
 import           Def
 import           Mode.Inst
 import           Mode.NormSyntax
 import           Mode.Term
-import Text.Printf
-import Debug.Trace
 
 type ModeAnalysisError = String
 
@@ -46,21 +43,8 @@ newMode goal instMap =
     go v = initMode (getInitInstVar v instMap) v
     initMode inst x = (x, Mode { before = inst, after = Just Ground })
 
-forgetModes :: Goal (a, Mode) -> Goal a
-forgetModes = (fst <$>)
-
-updateAfterInst :: Functor f => Inst -> f (a, Mode) -> f (a, Mode)
-updateAfterInst inst t =
-    go inst <$> t
-  where
-    go :: Inst -> (a, Mode) -> (a, Mode)
-    go inst (x, mode) = (x, mode { after = Just inst })
-
 afterMode :: Var (a, Mode) -> Maybe Inst
 afterMode (Var (_, mode)) = after mode
-
-suitableMode :: Show a => [Var (a, Mode)] -> [(a, Mode)] -> Bool
-suitableMode args = compatibleBeforeModes (map getVar args)
 
 suitableMode' :: Show a => [Var (a, Mode)] -> [(a, Mode)] -> Bool
 suitableMode' args xs =
@@ -72,7 +56,7 @@ runAnalyze :: (Show a, Ord a)
            -> [a]
            -> Either ModeAnalysisError (Goal (a, Mode))
 runAnalyze allowFree goal ins =
-  let goal' = initMode goal (Map.fromList $ zip ins $ repeat Ground) in
+  let goal' = initMode goal (Map.fromList $ map (, Ground) ins) in
   evalStateT (analyze allowFree goal') (emptyAnalyzeState Nothing)
 
 emptyAnalyzeState :: Maybe (Base (a, Mode)) -> AnalyzeState a
@@ -81,7 +65,8 @@ emptyAnalyzeState currentRelation =
                , getAllModdedDefs = Map.empty
                , getInstMap = Map.empty
                , getQueue = Set.empty
-               , getCurrentRelation = currentRelation }
+               , getCurrentRelation = currentRelation
+               }
 
 data AnalyzeState a = AnalyzeState
   { getDefinitions     :: Map.Map String (Def Goal a)
@@ -124,11 +109,6 @@ isGuard (Call _ _ args) =
   all (isBeforeGround . getVar) args
 isGuard _ = False
 
--- isDeconstruction :: (Ord a) => Base (a, Mode) -> Bool
--- isDeconstruction (Unif (Var v) t) =
---   isBeforeGround v && not (all isBeforeGround (varsFromTerm t))
--- isDeconstruction _ = False
-
 isDeconstruction :: (Ord a) => Base (a, Mode) -> Bool
 isDeconstruction (Unif (Var v) (FTCon _ _)) = isBeforeGround v
 isDeconstruction _ = False
@@ -140,7 +120,7 @@ returnsOne _ = False
 
 isAssignment :: (Ord a) => Base (a, Mode) -> Bool
 isAssignment (Unif (Var v) (FTVar (Var t))) =
-  (isBeforeGround v) /= (isBeforeGround t)
+  isBeforeGround v /= isBeforeGround t
 isAssignment _ = False
 
 isConstruction :: (Ord a) => Base (a, Mode) -> Bool
@@ -148,26 +128,12 @@ isConstruction (Unif (Var v) t@(FTCon _ _)) =
   not (isBeforeGround v) && all isBeforeGround (varsFromTerm t)
 isConstruction _ = False
 
-popElem :: (a -> Bool) -> [a] -> Maybe (a, [a])
-popElem p =
-    go []
-  where
-    go _ [] = Nothing
-    go acc (x : xs) | p x = Just (x, reverse acc ++ xs)
-                    | otherwise = go (x : acc) xs
-
-simplest :: (Ord a) => Base (a, Mode) -> Bool
-simplest x =
-  isGuard x ||
-  isConstruction x ||
-  isDeconstruction x ||
-  returnsOne x
-
 completelyFreeUnif :: Ord a => Base (a, Mode) -> Bool
 completelyFreeUnif (Unif (Var v) t) =
   (not . isBeforeGround) v && not (any isBeforeGround (varsFromTerm t))
 completelyFreeUnif _ = True
 
+completelyFreeCall :: Base (a, Mode) -> Bool
 completelyFreeCall call@(Call _ _ args) =
   not (any (isBeforeGround . getVar) args)
 completelyFreeCall _ = True
@@ -180,6 +146,7 @@ groundifies unif@(Unif (Var v) t) =
 varGenerator :: (Ord a) => Base (a, Mode) -> Bool
 varGenerator (Unif (Var v) (FTVar (Var t))) = isBeforeFree v && isBeforeFree t
 varGenerator _ = False
+
 -- Selects the first goal which
 select :: (Show a) => [a -> Bool] -> a -> [a] -> (a, [a])
 select predicates x xs =
@@ -191,16 +158,27 @@ select predicates x xs =
         go prefix (x : xs) | p x = Just (x, prefix xs)
                            | otherwise = go (prefix . (x:)) xs
 
+generator :: Ord a => Base (a, Mode) -> Bool
 generator (Unif (Var v) t) =
   isBeforeGround v && any isBeforeGround (varsFromTerm t)
 generator _ = False
 
+directRecursion :: Maybe (Base (a, Mode)) -> Base (a, Mode) -> Bool
 directRecursion (Just (Call _ name args)) (Call _ name' args') | name == name' = identicalBeforeModes (map getVar args) (map getVar args')
 directRecursion _ _ = False
 
 prioritySelection :: (Show a, Ord a) => Maybe (Base (a, Mode)) -> Base (a, Mode) -> [Base (a, Mode)] -> (Base (a, Mode), [Base (a, Mode)])
-prioritySelection currentRelation x =
-  select [isGuard, isConstruction, isDeconstruction, isAssignment, returnsOne, directRecursion currentRelation, not.completelyFreeCall, varGenerator, not.completelyFreeUnif, groundifies] x
+prioritySelection currentRelation =
+  select [ isGuard
+         , isConstruction
+         , isDeconstruction
+         , isAssignment
+         , returnsOne
+         , directRecursion currentRelation
+         , not.completelyFreeCall
+         , varGenerator
+         , not.completelyFreeUnif
+         , groundifies]
 
 analyze :: (Show a, Ord a)
         => AllowFree
@@ -215,22 +193,6 @@ analyze allowFree goal = do
       x <- goConj x
       xs <- mapM (\g -> do modify (\s -> s { getInstMap = instMap }); goConj g) xs
       return (Disj (x :| xs))
-
-    -- doStuff p next x xs =
-    --   trace "in doStuff\n" $
-    --   trace (printf "x: %s\n" (show x)) $
-    --   trace (printf "xs: %s\n" (show xs)) $
-    --   case popElem p (x : xs) of
-    --     Just (x, xs) -> do
-    --       x <- trace (printf "Element popped: %s\n\n" (show x)) goBase x
-    --       xs <- mapM updateVars xs
-    --       case xs of
-    --         [] -> return $ Conj (x :| [])
-    --         (y : ys) -> do
-    --           Conj (y :| ys) <- goConj $ Conj (y :| ys)
-    --           return $ Conj (x :| (y : ys))
-    --     Nothing ->
-    --       next x xs
 
     doStuff x xs = do
       currentRelation <- gets getCurrentRelation
@@ -252,38 +214,6 @@ analyze allowFree goal = do
     goConj goal@(Conj (x :| xs)) =
       doStuff x xs
 
-      -- doStuff simplest (doStuff groundifies (doStuff (not . completelyFree) basicConj)) x xs
-
-      -- case popElem simplest (x : xs) of
-      --   Just (x, xs) -> do
-      --     x <- goBase x
-      --     xs <- mapM updateVars xs
-      --     case xs of
-      --       [] -> return $ Conj (x :| [])
-      --       (y:ys) -> do
-      --         Conj (y :| ys) <- goConj (Conj (y :| ys))
-      --         return $ Conj (x :| (y : ys))
-      --   Nothing ->
-      --     case popElem (not . completelyFree) (x : xs) of
-      --       Just (x, xs) -> do
-      --         x <- goBase x
-      --         xs <- mapM updateVars xs
-      --         case xs of
-      --           [] -> return $ Conj (x :| [])
-      --           (y:ys) -> do
-      --             Conj (y :| ys) <- goConj (Conj (y :| ys))
-      --             return $ Conj (x :| (y : ys))
-      --       Nothing -> do
-      --         x <- goBase x
-      --         xs <- mapM (updateVars >=> goBase) xs
-      --         return (Conj (x :| xs))
-    -- goConj goal@(Conj (x :| xs)) = do
-    --     choice $ map processConj $ permuteConjs (x : xs)
-    --   where
-    --     processConj (Conj (x :| xs)) = do
-    --       x <- goBase x
-    --       xs <- mapM (updateVars >=> goBase) xs
-    --       return (Conj (x :| xs))
     goBase goal@(Call delayed name args) = do
       state <- get
       case Map.lookup name (getAllModdedDefs state) of
@@ -318,17 +248,6 @@ analyze allowFree goal = do
 makeAfterModeGround :: Monad m => Mode -> m Mode
 makeAfterModeGround m = return $ m { after = Just Ground }
 
-choice :: [StateT s (Either ModeAnalysisError) b] -> StateT s (Either ModeAnalysisError) b
-choice = foldr (<|>) (lift $ Left "Failed to process a conjunction")
-
-permuteConjs :: [Base a] -> [Conj a]
-permuteConjs goals =
-    let xss = permutations goals in
-    map toConj xss
-  where
-    toConj = Conj . fromList
-
-
 prioritizeGround :: (Show a, Ord a)
                  => Goal (a, Mode)
                  -> StateT (AnalyzeState a) (Either ModeAnalysisError) (Goal (a, Mode))
@@ -361,9 +280,6 @@ analyzeNewDefs = do
   where
     updateAfterMode instMap var (_, before) =
       return (var, before { after = Just Ground })
-      -- case Map.lookup var instMap of
-      --   Just x -> return (var, before { after = after x })
-      --   Nothing -> return (var, before)
 
     updateMode instMap var =
       case Map.lookup var instMap of
@@ -410,27 +326,6 @@ retrieveInsts goal =
     repeats ((k1, v1) : (k2, v2) : xs) | k1 == k2 && v1 /= v2 = True
                                        | otherwise = repeats ((k2, v2) : xs)
     repeats _ = False
-
-checkInsts :: (Show k, Ord k) => Goal (k, Mode) -> Goal (k, Mode) -> [Goal (k, Mode)] -> Either ModeAnalysisError (Map.Map k Mode)
-checkInsts x y xs = do
-    instMap <- retrieveInsts x
-    go instMap y xs
-  where
-    go instMap y xs = do
-      yMap <- retrieveInsts y
-      let merged = merge instMap yMap
-      if Nothing `elem` Map.elems merged
-      then Left "Instantiations are incompatible"
-      else
-        let newInstMap = Map.map fromJust merged in
-        if null xs
-        then return newInstMap
-        else go newInstMap (head xs) (tail xs)
-
-    merge = Merge.merge preserve preserve (Merge.zipWithMatched nothingIfNotEq)
-    preserve = Merge.mapMissing (\k v -> Just v)
-    nothingIfNotEq _ x y | x /= y = Nothing
-                         | otherwise  = Just x
 
 enqueueModded :: (Ord a, Show a) => String -> [(a, Mode)] -> StateT (AnalyzeState a) (Either ModeAnalysisError) ()
 enqueueModded name args = do
