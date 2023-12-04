@@ -19,10 +19,10 @@ import Debug.Trace
 import Text.Printf
 -- analyze :: (Show a, Ord a) => Goal (a, Mode) -> StateT (AnalyzeState a) Maybe (Goal (a, Mode))
 
-runAnalyze :: (Show a, Ord a) => AllowFree -> N.Goal a -> [a] -> Either ModeAnalysisError (N.Goal (a, Mode))
-runAnalyze allowFree goal ins =
+runAnalyze :: (Show a, Ord a) => N.Goal a -> [a] -> Either ModeAnalysisError (N.Goal (a, Mode))
+runAnalyze goal ins =
   let goal' = initMode goal (Map.fromList $ zip ins $ repeat Ground) in
-  evalStateT (analyze allowFree goal') (emptyAnalyzeState Nothing)
+  evalStateT (analyze goal') (emptyAnalyzeState Nothing)
 
 makeDefMap :: [Def g a] -> Map.Map String (Def g a)
 makeDefMap defs = Map.fromList $ map (\d -> (getName d, d)) defs
@@ -80,7 +80,7 @@ topLevel program ins = do
                           , getQueue = Set.fromList [topMode]
                           , getDefinitions = makeDefMap defs
                           }
-        (modded, state) <- runStateT (prioritizeGround goal') initState
+        (modded, state) <- runStateT (analyze goal') initState
         defs <- evalStateT analyzeNewDefs state
         return $ Program defs modded
       _ -> Left $ "Toplevel goal is not a call: " ++ show goal
