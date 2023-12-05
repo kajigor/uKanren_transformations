@@ -59,7 +59,7 @@ unboundVars args c = (filterVars $ Set.fromList args) `Set.difference` boundVars
     where
         boundVars = Set.unions $ M.walkConj (filterVars . go) c
             where
-                go (M.Call _ _ args) = Set.fromList $ M.getVar <$> args
+                go (M.Call _ args) = Set.fromList $ M.getVar <$> args
                 go (M.Unif (M.Var v) t) = Set.insert v $ M.varsFromTerm t
 
         filterVars = Set.mapMonotonic (\(v,_) -> v) . Set.filter (\(_,m) -> m == Out)
@@ -72,13 +72,13 @@ computeGens defs = Set.toAscList <$> simpleFixpoint updateDefs Map.empty
             where
                 did = identifyDef' d
                 findGens = Set.union properGens improperGens
-                
+
                 properGens = Set.unions $ M.walkDisj baseGen $ getBody d
                 improperGens = let (M.Disj cs) = getBody d in Set.unions $ unboundGens did (getArgs d) <$> (NE.toList cs)
 
                 baseGen (M.Unif (OutV v) t) | isOutTerm t = Set.singleton (did, makeVar v)
-                baseGen (M.Call _ name args) = fromMaybe Set.empty $ Map.lookup (identifyCall name args) gens
-                baseGen _ = Set.empty 
+                baseGen (M.Call name args) = fromMaybe Set.empty $ Map.lookup (identifyCall name args) gens
+                baseGen _ = Set.empty
 
 
 
@@ -89,10 +89,6 @@ isDet d i = D.isDet d (detInfo i)
 
 getGens :: DefIdentifier -> TranslateInfo -> [F.Generator]
 getGens d i = fromMaybe [] $ Map.lookup d (genInfo i)
-
-delay :: M.Delayed -> F.Delayed
-delay M.NotDelayed = F.NotDelayed
-delay M.Delayed = F.Delayed
 
 mcons :: Maybe a -> [a] -> [a]
 mcons (Just x) xs = x:xs
@@ -113,7 +109,7 @@ makeVar' (M.Var (v, _)) = makeVar v
 makeTerm :: M.FlatTerm (S.S, a) -> F.Term
 makeTerm (M.FTVar v) = F.Var $ makeVar' v
 makeTerm (M.FTCon name xs) = F.Con name (map makeVar' xs)
-        
+
 
 inVars :: [M.Var MV] -> [F.Var]
 inVars = mapVars (Just . makeVar) (const Nothing)
@@ -132,7 +128,7 @@ collectCons defs = F.TypeData (Set.toList $ collecConsDef defs)
         collectConsBase _ = Set.empty
 
 translate :: TranslateInfo -> Def -> F.Def
-translate info def = F.Def 
+translate info def = F.Def
     { F.name = caller
     , F.args = inVars $ M.Var <$> args
     , F.generators = getGens caller info
@@ -148,17 +144,19 @@ translate info def = F.Def
                 body = translateBase <$> xs
                 gens = (\g@(_,v) -> F.Gen g (F.Var v)) <$> (Set.toList $ unboundGens caller args c)
                 ret = outVars $ M.Var <$> args
-        
+
         translateBase (M.Unif (InV  v) t) | isInTerm t = F.Guard (makeVar v) (makeTerm t)
         translateBase (M.Unif (OutV v) t) | isInTerm t = F.Assn (makeTerm t) (F.Var $ makeVar v)
         translateBase (M.Unif (InV  v) t)              = F.Assn (F.Var $ makeVar v) (makeTerm t)
         translateBase (M.Unif (OutV v) t)              = F.Gen (caller, makeVar v) (makeTerm t)
-        translateBase (M.Call _ "fail" [])             = F.Empty
-        translateBase (M.Call d n params)              = F.Call (delay d) conversion callee params' gens rets
+        translateBase (M.Call "fail" [])               = F.Empty
+        translateBase (M.Call n params)                = F.Call delay conversion callee params' gens rets
             where
                 callee = identifyCall n params
-                conversion | (isDet callee info) && (not $ isDet caller info) = F.FromMaybe
-                        | otherwise = F.NoConversion
+                delay | not $ isDet callee info = F.Delayed
+                      | otherwise = F.NotDelayed 
+                conversion | isDet callee info && not (isDet caller info) = F.FromMaybe
+                           | otherwise = F.NoConversion
                 params' = inVars params
                 gens = getGens callee info
                 rets = outVars params
@@ -172,7 +170,7 @@ translateDefs defs = do
     return (types, defs')
 
 translateProg :: Program M.Goal MV -> Either String F.Program
-translateProg (Program defs (M.Disj ((M.Conj ((M.Call _ n args) NE.:| [])) NE.:| []))) = do
+translateProg (Program defs (M.Disj ((M.Conj ((M.Call n args) NE.:| [])) NE.:| []))) = do
     (types, defs') <- translateDefs defs
     return $ F.Program types defs' (Just $ identifyCall n args)
 translateProg (Program defs _) = do

@@ -159,7 +159,7 @@ boundVars (M.Disj xs) = foldr1 Set.intersection (go <$> xs)
         go (M.Conj body) = foldr1 Set.union (getVars <$> body)
 
         getVars (M.Unif v t) = Set.insert (devar v) (M.varsFromTerm t)
-        getVars (M.Call _ _ args) = Set.fromList (devar <$> args)
+        getVars (M.Call _ args) = Set.fromList (devar <$> args)
 
 boundVars' :: (Ord a) => M.Goal (a, MixedMode) -> Set.Set a
 boundVars' = boundVars . (fst <$>)
@@ -194,7 +194,7 @@ collectCalls (Def _ _ (M.Disj disj)) = (NE.toList disj) >>= collect
         collect (M.Conj body) = getCalls (NE.toList body)
 
         getCalls [] = []
-        getCalls ((M.Call _ name args):xs) = identify name (devar <$> args) : getCalls xs
+        getCalls ((M.Call name args):xs) = identify name (devar <$> args) : getCalls xs
         getCalls (_:xs) = getCalls xs 
 
 checkDet :: (Show a, Ord a) => [MDef a] -> MDef a -> State DetCheckState Bool

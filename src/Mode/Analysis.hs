@@ -27,7 +27,6 @@ import Mode.Inst
 import Mode.NormSyntax
     ( Base(..),
       Conj(..),
-      Delayed(..),
       Disj(..),
       Goal )
 import Mode.Term ( varsFromTerm, FlatTerm(..), Var(..) )
@@ -121,7 +120,7 @@ modifyModeTerm f (FTVar v) = do
 isGuard :: (Ord a) => Base (a, Mode) -> Bool
 isGuard (Unif (Var v) (FTVar (Var t))) =
   isBeforeGround v && isBeforeGround t
-isGuard (Call _ _ args) =
+isGuard (Call _ args) =
   all (isBeforeGround . getVar) args
 isGuard _ = False
 
@@ -130,7 +129,7 @@ isDeconstruction (Unif (Var v) (FTCon _ _)) = isBeforeGround v
 isDeconstruction _ = False
 
 returnsOne :: Base (a, Mode) -> Bool
-returnsOne call@(Call _ _ args) =
+returnsOne call@(Call _ args) =
   1 == length (filter (not . isBeforeGround . getVar) args)
 returnsOne _ = False
 
@@ -150,12 +149,12 @@ completelyFreeUnif (Unif (Var v) t) =
 completelyFreeUnif _ = True
 
 completelyFreeCall :: Base (a, Mode) -> Bool
-completelyFreeCall call@(Call _ _ args) =
+completelyFreeCall call@(Call _ args) =
   not (any (isBeforeGround . getVar) args)
 completelyFreeCall _ = True
 
 groundifies :: (Ord a) => Base (a, Mode) -> Bool
-groundifies (Call _ _ args) = True
+groundifies (Call _ args) = True
 groundifies unif@(Unif (Var v) t) =
   isAfterGround v || any isAfterGround (varsFromTerm t)
 
@@ -180,7 +179,7 @@ generator (Unif (Var v) t) =
 generator _ = False
 
 directRecursion :: Maybe (Base (a, Mode)) -> Base (a, Mode) -> Bool
-directRecursion (Just (Call _ name args)) (Call _ name' args') | name == name' = identicalBeforeModes (map getVar args) (map getVar args')
+directRecursion (Just (Call name args)) (Call name' args') | name == name' = identicalBeforeModes (map getVar args) (map getVar args')
 directRecursion _ _ = False
 
 prioritySelection :: (Show a, Ord a) => Maybe (Base (a, Mode)) -> Base (a, Mode) -> [Base (a, Mode)] -> (Base (a, Mode), [Base (a, Mode)])
@@ -220,7 +219,7 @@ analyze goal = do
               Conj (y :| ys) <- goConj $ Conj (y :| ys)
               return $ Conj (x :| (y : ys))
 
-    goBase goal@(Call delayed name args) = do
+    goBase goal@(Call name args) = do
       allModdedDefs <- gets getAllModdedDefs
       case Map.lookup name allModdedDefs of
         Just ds | (not . null) suitable -> 
@@ -274,7 +273,7 @@ analyzeNewDefs = do
       def@(Def name' args' goal) <- getRelation name 
       let varInsts = varInstsFromMode args
       let initGoal = initMode goal varInsts
-      let curRel = initMode (Call Delayed name' (map Var args')) varInsts
+      let curRel = initMode (Call name' (map Var args')) varInsts
       modify (\s -> s { getCurrentRelation = Just curRel })
       return (initGoal, args')
 
@@ -290,9 +289,9 @@ updateVars goal =
       v <- goVar instMap v
       t <- goTerm instMap t
       return (Unif v t)
-    go instMap (Call delayed name args) = do
+    go instMap (Call name args) = do
       args <- mapM (goVar instMap) args
-      return $ Call delayed name args
+      return $ Call name args
     goTerm instMap (FTVar var) = do
       var <- goVar instMap var
       return $ FTVar var
@@ -327,13 +326,13 @@ varInstsFromMode = Map.fromList . map (before <$>)
 newSuitable :: (Show a, Ord a)
             => Base (a, Mode)
             -> AnalyzeStateM a (Base (a, Mode))
-newSuitable call@(Call delayed name args) = do
+newSuitable call@(Call name args) = do
     Def _ xs body <- getRelation name 
     let varInsts = Map.fromList $ map (\(Var (v, mode)) -> (v, before mode)) args
     let newModded = zipWith pushMode args xs -- HERE IS THE PROBLEM
     enqueueModded name newModded
     grounded <- mapM (modifyMode makeAfterModeGround) args
-    return (Call delayed name grounded)
+    return (Call name grounded)
   where
     pushMode (Var (x, mode)) y =
       (y, mode { after = Just Ground }) -- TODO REMOVE
@@ -344,9 +343,9 @@ pickSuitable :: (Ord a, Show a)
              => [[(a, Mode)]]
              -> Base (a, Mode)
              -> AnalyzeStateM a (Base (a, Mode))
-pickSuitable xs (Call delayed name args) = do
+pickSuitable xs (Call name args) = do
     args <- merge (pick xs) args
-    return $ Call delayed name args
+    return $ Call name args
   where
     pick = head
     merge =

@@ -10,7 +10,6 @@ import           Mode.Term
 import           Program
 import qualified Syntax              as S
 import           Text.Printf
-import Debug.Trace
 
 data Goal a = Call String [Var a]
             | Unif (Var a) (FlatTerm a)

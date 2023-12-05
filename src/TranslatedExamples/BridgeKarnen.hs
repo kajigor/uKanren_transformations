@@ -3,10 +3,8 @@ module TranslatedExamples.BridgeKarnen where
 import Data.List (intercalate)
 import Data.Maybe (catMaybes)
 import Def ( Def(Def) )
-import Eval (run)
 import Mode.Toplevel (topLevel)
 import Program ( Program(Program) )
-import Stream (takeS)
 import Subst (Subst)
 import qualified Subst (lookup)
 import Syntax

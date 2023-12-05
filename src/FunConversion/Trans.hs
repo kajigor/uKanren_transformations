@@ -98,16 +98,14 @@ transSingleMode defs (name, ground) = do
   let types = collectConsPrg p'
   return $ F.Program types defs (Just body)
 
-delay :: M.Delayed -> F.Delayed
-delay M.NotDelayed = F.NotDelayed
-delay M.Delayed = F.Delayed
+delay = F.Delayed -- we can delay everything which is stream
 
 trans :: Program M.Goal (S.S, Mode) -> ([F.Def], F.Lang)
-trans p@(Program defs (M.Disj ((M.Conj ((M.Call d n args) NE.:| [])) NE.:| []))) =
+trans p@(Program defs (M.Disj ((M.Conj ((M.Call n args) NE.:| [])) NE.:| []))) =
   let
     defs' = transDefs dets defs
     rel = nameFromArgs n args
-  in (defs', F.Call (delay d) conversion rel (callVars args) (getDefGens rel defs'))
+  in (defs', F.Call delay conversion rel (callVars args) (getDefGens rel defs'))
   where
     dets = traceShowId $ D.checkDefs $ D.detcheck' defs
     topLevelDet = D.isDet (D.identify' n (D.devar <$> args)) dets
@@ -183,7 +181,7 @@ outVarsT (M.FTCon _ xs) = xs >>= outVarsV
 
 outVarsG :: M.Base (a, Mode) -> [a]
 outVarsG (M.Unif a b) = outVarsV a ++ outVarsT b
-outVarsG (M.Call _ _ xs) = xs >>= outVarsV
+outVarsG (M.Call _ xs) = xs >>= outVarsV
 
 transBind :: D.DetMap -> D.DefIdentifier -> M.Base (S.S, Mode) -> ([F.Var], F.Lang)
 transBind dets rel g = (map makeName (outVarsG g), transBase dets rel g)
@@ -227,11 +225,13 @@ idToName :: D.DefIdentifier -> String
 idToName (D.DId (name, modes)) = name ++ concat (modeToSymbol <$> modes)
 
 transBase :: D.DetMap -> D.DefIdentifier -> M.Base (S.S, Mode) -> F.Lang
-transBase _ _ (M.Call _ "fail" []) = F.Empty
-transBase dets rel (M.Call d n args) = F.Call (delay d) conversion (nameFromArgs n args) (callVars args) [] -- Generators are filled in later, by fixGens
+transBase _ _ (M.Call "fail" []) = F.Empty
+transBase dets rel (M.Call n args) = F.Call delay conversion (nameFromArgs n args) (callVars args) [] -- Generators are filled in later, by fixGens
   where
     selfDet = D.isDet rel dets
     callDet = D.isDet (D.identify' n (D.devar <$> args)) dets
+    delay | not callDet = F.Delayed 
+          | otherwise = F.NotDelayed
     conversion | callDet && (not selfDet) = F.FromMaybe
                | otherwise = F.NoConversion
 transBase _ _ (M.Unif (OutV v) t) | isIn t = F.Return [makeTerm t]

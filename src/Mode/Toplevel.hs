@@ -69,12 +69,12 @@ topLevel program ins = do
                                     -- trace (printf "In normalization:\n\nInitialProgram: %s\n\nFlatten\n%s\n\nNormalized\n%s\n" (show program) (show flattened) (show normalized)) $ 
                                     normalized
     case goal of
-      N.Disj (N.Conj (N.Call delayed name args :| []) :| []) -> do
+      N.Disj (N.Conj (N.Call name args :| []) :| []) -> do
         let inputArgs = map (args !!) ins
         let goal' = initMode goal (Map.fromList $ zip ins $ repeat Ground)
         let initMode = map (initModeForVar inputArgs) args
         let topMode = (name, initMode)
-        let curRel = N.Call N.Delayed name (map Var initMode)
+        let curRel = N.Call name (map Var initMode)
         let initState = (emptyAnalyzeState (Just $ curRel))
                           { getAllModdedDefs = Map.fromList [(name, [initMode])]
                           , getQueue = Set.fromList [topMode]

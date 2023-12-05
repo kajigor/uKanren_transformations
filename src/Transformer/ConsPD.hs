@@ -5,7 +5,6 @@ import           ConsPD.Residualization
 import qualified ConsPD.Unfold          as ConsPD
 import           Control.Monad          (guard, when)
 import           Data.Maybe             (fromJust, isJust)
-import           Data.Either            (isRight)
 import           Def
 import           NormalizedSyntax       (normalizeProg)
 import qualified OCanrenize             as OC
@@ -25,7 +24,6 @@ import           Util.Miscellaneous     (escapeTick)
 
 import qualified FunConversion.Trans as F
 import qualified FunConversion.Syntax as F
-import Debug.Trace
 
 data TransformResult = Result { original           :: [Def G X]
                               , tree               :: ConsPD.ConsPDTree

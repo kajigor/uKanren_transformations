@@ -6,7 +6,6 @@ import           Def
 import           FreshNames
 import           Program
 import           Syntax
-import Debug.Trace
 
 data RenameState a = RenameState
   { getVarMap       :: M.Map X a

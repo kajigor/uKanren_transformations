@@ -1,10 +1,8 @@
 module Test.FunConversion.Det where
 
 import Program.Num
-import Program (Program(Program))
-import Test.HUnit (assertBool, assertFailure, assertEqual)
+import Test.HUnit (assertFailure, assertEqual)
 import qualified FunConversion.DetMode as Det
-import qualified Mode.NormSyntax as N
 import qualified Mode.Toplevel as Mode
 import Mode.Inst
 import Def

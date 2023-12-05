@@ -10,7 +10,7 @@ import           FunConversion.Trans       (transMultiMode, transProg)
 import           Language.Haskell.TH       (pprint)
 import           Program
 import           Syntax
-import           System.Directory          (copyFile)
+import           System.Directory          (copyFile, getCurrentDirectory)
 import           System.FilePath           (takeBaseName, (<.>), (</>))
 import           Util.File                 (createDirRemoveExisting)
 import           Util.String
@@ -56,8 +56,16 @@ runWithParser parser inputFile outDir relName inputs = do
           let pr = embedProgSafe relName hs
           case pr of
             Left err -> putStrLn $ "Template Haskell error: " ++ err
-            Right hs ->
+            Right hs -> do 
+              copyStreamFile 
               writeFile haskellFile (haskellPreamble uBaseName ++ pprint hs)
+
+    copyStreamFile = do 
+      curDir <- getCurrentDirectory
+      let streamFileName = "Stream.hs"
+      let streamFile = curDir </> "src" </> streamFileName
+      copyFile streamFile (outDir </> streamFileName)
+
 
 haskellPreamble :: String -> String
 haskellPreamble uBaseName =

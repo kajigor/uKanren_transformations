@@ -8,11 +8,7 @@ import           Util.Miscellaneous     (mapLeft)
 import Program
 import Syntax
 import TranslatedExamples.BridgeKarnen
-import TranslatedExamples.BridgeTerm
-import TranslatedExamples.Einstein
 import TranslatedExamples.EinsteinKarnen
-import TranslatedExamples.EvalLoop
-import TranslatedExamples.WGC
 import TranslatedExamples.WGCKarnen
 
 chooseParser pType input = do

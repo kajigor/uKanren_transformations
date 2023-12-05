@@ -3,7 +3,6 @@
 module Test.FunConversion.Mulo where
 
 import Program.Num
-import Program (Program(Program))
 import qualified FunConversion.Trans as TR
 import qualified FunConversion.Syntax as S
 import Data.List (subsequences)
