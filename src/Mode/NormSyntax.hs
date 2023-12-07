@@ -1,13 +1,16 @@
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE PatternSynonyms #-}
 module Mode.NormSyntax where
 
 import           Control.Monad.State
-import           Data.List.NonEmpty  (NonEmpty (..))
+import qualified Data.List.NonEmpty  as NE
+import           Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.Set            as Set
 import           Def
 import qualified Mode.Syntax         as S
 import           Mode.Term
 import           Program
+import Data.Semigroup (sconcat)
 
 data Base a = Unif (Var a) (FlatTerm a)
             | Call String [Var a]
@@ -18,6 +21,29 @@ newtype Conj a = Conj (NonEmpty (Base a))
 
 newtype Disj a = Disj (NonEmpty (Conj a))
                deriving (Show, Eq, Functor)
+
+instance Foldable Disj where 
+  foldMap f (Disj conjs) = sconcat $ NE.map (foldMap f) conjs
+
+instance Foldable Conj where 
+  foldMap f (Conj goals) = sconcat $ NE.map (foldMap f) goals
+
+instance Foldable Base where 
+  foldMap f (Unif v t) = foldMap f v <> foldMap f t
+  foldMap f (Call _ vars) = foldMap (foldMap f) vars
+
+instance Traversable Disj where 
+  traverse f (Disj conjs) = Disj <$> traverse (traverse f) conjs
+
+instance Traversable Conj where 
+  traverse f (Conj goals) = Conj <$> traverse (traverse f) goals
+
+instance Traversable Base where 
+  traverse f (Unif v t) = Unif <$> traverse f v <*> traverse f t
+  traverse f (Call name vars) = Call name <$> traverse (traverse f) vars
+
+-- instance Foldable Conj where 
+--   foldMap f (Conj gs) = sconcat (foldMap f gs)
 
 walkConj :: (Base a -> b) -> Conj a -> [b]
 walkConj f (Conj (x :| xs)) = f <$> (x:xs)

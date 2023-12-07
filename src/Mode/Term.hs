@@ -11,6 +11,12 @@ import qualified Syntax as S
 newtype Var a = Var { getVar :: a }
               deriving (Eq, Ord, Functor)
 
+instance Foldable Var where 
+  foldMap f (Var v) = f v
+
+instance Traversable Var where 
+  traverse f (Var v) = Var <$> f v 
+
 instance Show a => Show (Var a) where
   show (Var x) = printf "V.%s" $ show x
   showList xs =
@@ -21,6 +27,14 @@ instance Show a => Show (Var a) where
 data FlatTerm a = FTCon String [Var a]
                 | FTVar (Var a)
                 deriving (Eq, Ord, Functor)
+
+instance Foldable FlatTerm where 
+  foldMap f (FTVar v) = foldMap f v 
+  foldMap f (FTCon _ vars) = foldMap (foldMap f) vars
+
+instance Traversable FlatTerm where 
+  traverse f (FTVar v) = FTVar <$> traverse f v 
+  traverse f (FTCon name vars) = FTCon name <$> traverse (traverse f) vars 
 
 instance Show a => Show (FlatTerm a) where
   show (FTCon name args) = printf "%s %s" name $ show args

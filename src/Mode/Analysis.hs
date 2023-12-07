@@ -100,22 +100,19 @@ updateInstMap v mode = do
 
 modifyMode :: (Ord a, Show a)
            => (Mode -> Either ModeAnalysisError Mode)
-           -> Var (a, Mode)
-           -> AnalyzeStateM a (Var (a, Mode))
-modifyMode f (Var (v, mode)) = do
+           -> (a, Mode)
+           -> AnalyzeStateM a (a, Mode)
+modifyMode f (v, mode) = do
   m <- lift $ f mode
   updateInstMap v m
-  return (Var (v, m))
+  return (v, m)
 
 modifyModeTerm :: (Show a, Ord a)
                => (Mode -> Either ModeAnalysisError Mode)
                -> FlatTerm (a, Mode)
                -> AnalyzeStateM a (FlatTerm (a, Mode))
-modifyModeTerm f (FTCon name vars) = do
-  vars <- mapM (modifyMode f) vars
-  return $ FTCon name vars
-modifyModeTerm f (FTVar v) = do
-  FTVar <$> modifyMode f v
+modifyModeTerm f term = 
+  traverse (modifyMode f) term               
 
 isGuard :: (Ord a) => Base (a, Mode) -> Bool
 isGuard (Unif (Var v) (FTVar (Var t))) =
@@ -227,11 +224,11 @@ analyze goal = do
           where 
             suitable = filter (suitableMode args) ds
         _ -> newSuitable goal
-    goBase goal@(Unif v@(Var (var, mode)) t) = do 
+    goBase goal@(Unif (Var v@(var, mode)) t) = do 
       let makeAfterModeGround m = return $ m { after = Just Ground }
       v <- modifyMode makeAfterModeGround v
       t <- modifyModeTerm makeAfterModeGround t
-      return $ Unif v t
+      return $ Unif (Var v) t
 
 makeAfterModeGround :: Monad m => Mode -> m Mode
 makeAfterModeGround m = return $ m { after = Just Ground }
@@ -283,26 +280,13 @@ updateVars :: (Ord a, Show a)
 updateVars goal =
   do
     instMap <- gets getInstMap
-    go instMap goal
+    traverse (goVar instMap) goal 
   where
-    go instMap (Unif v t) = do
-      v <- goVar instMap v
-      t <- goTerm instMap t
-      return (Unif v t)
-    go instMap (Call name args) = do
-      args <- mapM (goVar instMap) args
-      return $ Call name args
-    goTerm instMap (FTVar var) = do
-      var <- goVar instMap var
-      return $ FTVar var
-    goTerm instMap (FTCon name args) = do
-      args <- mapM (goVar instMap) args
-      return (FTCon name args)
-    goVar instMap var@(Var (v, mode)) =
+    goVar instMap (v, mode) =
       case Map.lookup v instMap of
-        Nothing -> return var
+        Nothing -> return (v, mode)
         Just m | isJust $ after m ->
-          return (Var (v, Mode { before = fromJust $ after m, after = Nothing }))
+          return (v, Mode { before = fromJust $ after m, after = Nothing })
         _ -> lift $ Left $ printf "Var %s undefined" (show v)
 
 enqueueModded :: (Ord a, Show a) => String -> [(a, Mode)] -> AnalyzeStateM a ()
@@ -331,7 +315,7 @@ newSuitable call@(Call name args) = do
     let varInsts = Map.fromList $ map (\(Var (v, mode)) -> (v, before mode)) args
     let newModded = zipWith pushMode args xs -- HERE IS THE PROBLEM
     enqueueModded name newModded
-    grounded <- mapM (modifyMode makeAfterModeGround) args
+    grounded <- traverse (traverse (modifyMode makeAfterModeGround)) args
     return (Call name grounded)
   where
     pushMode (Var (x, mode)) y =
