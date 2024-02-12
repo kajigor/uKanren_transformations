@@ -11,6 +11,7 @@ import Debug.Trace (traceShow)
 import Term
 import qualified Regexp1_unfold
 import qualified Regexp1_cpd_ans
+import qualified Regexp1_unfold1
 
 
 eval :: (m r -> [r]) -> (a -> m r) -> a -> [r]
@@ -35,8 +36,10 @@ main = defaultMain
     bgroup "Regexp1"
      [
        bench "offlineIIIIO" $ nf (eval4 (takeS 20 ) Regexp1_unfold.generateIIIIO) (a, b, c, d) -- $ traceShow ans1 Regexp1_unfold.generateIIIIO) (a, b, c, d)
+     , bench "offline1IIIIO"$ nf (eval4 (takeS 20 ) Regexp1_unfold1.generateIIIIO) (a, b, c, d) -- $ traceShow ans2 Regexp1_cpd_ans.generateIIIIO) (a, b, c, d)
      , bench "onlineIIIIO"  $ nf (eval4 (takeS 20 ) Regexp1_cpd_ans.generateIIIIO) (a, b, c, d) -- $ traceShow ans2 Regexp1_cpd_ans.generateIIIIO) (a, b, c, d)
      , bench "offlineOOIIO" $ nf (eval4 (takeS 20 ) Regexp1_unfold.generateOOIIO) (a, b, natGen, natGen)
+     , bench "offline1OOIIO"$ nf (eval4 (takeS 20 ) Regexp1_unfold1.generateOOIIO) (a, b, natGen, natGen)
      , bench "onlineOOIIO"  $ nf (eval4 (takeS 20 ) Regexp1_cpd_ans.generateOOIIO) (a, b, natGen, natGen)
 --      , bench "onlineII" $ nf (eval12 (takeS 1 ) Remove2_cpd_ans.rrI) rightGen12
 --      , bench "offlineOI" $ nf (eval (takeS 1 ) Ex_Depth_unfold.solveOI) y1

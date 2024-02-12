@@ -54,10 +54,11 @@ sldResolution goal = sldResolutionStep (map (`Descend` []) goal) True
 sldResolutionStep :: [DescendGoal] -> Bool -> Env.Env -> Subst.Subst S -> [[AnnG Term S]] -> LCcpd.Heuristic -> SldTree
 sldResolutionStep gs isFirstTime env s seen heu =
   let (temp, _) = FN.getFreshName (Env.getFreshNames env) in
-  let curs = map getCurr $ traceShow gs gs in
+  let curs = map getCurr $ traceShow gs -- $ traceShow seen 
+              gs in
   if instanceCheck curs seen
   then
-    Leaf gs s env
+    Leaf gs s $ trace "instanceCheck" env
   else
     unfoldNext (toZipper gs) isFirstTime gs s env
   where
@@ -86,7 +87,7 @@ sldResolutionStep gs isFirstTime env s seen heu =
         ns | not $ isRightmost zipper ->
           unfoldNext (goRight zipper) False gs s env
         ns ->
-          Leaf gs s env
+          Leaf gs s $ trace "unified" env
                      
 
     unfoldNext :: Maybe (Zipper (Descend (AnnG Term S))) -> Bool -> [DescendGoal] -> Subst.Subst S -> Env.Env -> SldTree 
@@ -97,7 +98,8 @@ sldResolutionStep gs isFirstTime env s seen heu =
                 go g' env' z isFirstTime
             )
             (zipper >>= selecter)
-
+            
+    needsUnfolding _ _ (Invoke _ _ Unfold) _ _ = True
     needsUnfolding LCcpd.Branching env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
     needsUnfolding LCcpd.Deterministic _ _ ns isFirstTime = length ns == 1 || isFirstTime
 

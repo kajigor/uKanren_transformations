@@ -16,4 +16,6 @@ data Term
     | Nil
     | Succ Term
     | Zero
+    | Trueo
+    | Falso
     deriving (Show, Eq, Generic, DS.NFData)

@@ -1,0 +1,8 @@
+solve x0 x1 x2 = (fresh x28, x27, x10, x8, x26, x25, x6, x7, x9, x5, x4, x3 in ((((x28 == [] & x27 == App (x10) (x8) ((S :: (S (O) :: (S (S (O)) :: [S (O)])))) & x26 == [App (x10) (x8) ((S :: (S (O) :: (S (S (O)) :: [S (O)]))))] & x25 == App (x6) (x7) (x10) & x9 == (S :: (S (O) :: (S (S (O)) :: [S (O)]))) & x5 == (App (x6) (x7) (x10) :: [App (x10) (x8) (x9)]) & x4 == [] & x3 == DoubleApp (x0) (x1) (x2) ((S :: (S (O) :: (S (S (O)) :: [S (O)])))) & x2 == x8 & x1 == x7 & x0 == x6) & solve_atomSolve_atom x6 x7 x8 x10) | ((x5 == [DoubleApp (x0) (x1) (x2) ((S :: (S (O) :: (S (S (O)) :: [S (O)]))))] & x4 == [] & x3 == DoubleApp (x0) (x1) (x2) ((S :: (S (O) :: (S (S (O)) :: [S (O)]))))) & solve x0 x1 x2))));
+
+solve_atomSolve_atom x6 x7 x8 x10 = (fresh x33, x39, x54, x53, x41, x42, x43, x40 in ((((x33 == [] & x10 == x39 & x7 == x39 & x6 == []) & solve_atom x39 x8 ((S :: (S (O) :: (S (S (O)) :: [S (O)]))))) | ((x54 == [] & x53 == App (x41) (x42) (x43) & x33 == [App (x41) (x42) (x43)] & x10 == (x40 :: x43) & x7 == x42 & x6 == (x40 :: x41)) & (solve_atom x41 x42 x43 & solve_atom ((x40 :: x43)) x8 ((S :: (S (O) :: (S (S (O)) :: [S (O)])))))) | ((x54 == [] & x53 == App (x6) (x7) (x10) & x33 == [App (x6) (x7) (x10)]) & solve_atomSolve_atom x6 x7 x8 x10))));
+
+solve_atom x57 x58 x59 = (fresh x61, x67, x82, x81, x69, x70, x71, x68 in (((x61 == [] & x59 == x67 & x58 == x67 & x57 == []) | ((x82 == [] & x81 == App (x69) (x70) (x71) & x61 == [App (x69) (x70) (x71)] & x59 == (x68 :: x71) & x58 == x70 & x57 == (x68 :: x69)) & solve_atom x69 x70 x71) | ((x82 == [] & x81 == App (x57) (x58) (x59) & x61 == [App (x57) (x58) (x59)]) & solve_atom x57 x58 x59))));
+
+
+? solve x0 x1 x2

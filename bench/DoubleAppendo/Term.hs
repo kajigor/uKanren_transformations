@@ -2,14 +2,14 @@
 
 module Term where
 
-import Test.Tasty.Bench
-import Stream
+--import Test.Tasty.Bench
+import Stream 
 import GHC.Generics (Generic)
-import Control.Monad (msum, guard, MonadPlus)
 
 import qualified Control.DeepSeq as DS
-import Control.Applicative (Alternative)
-import Debug.Trace (traceShow)
+import Control.Monad (msum, guard, MonadPlus)
+--import Control.Applicative (Alternative)
+--import Debug.Trace (traceShow)
 
 data Term
     = Cons Term Term
@@ -17,3 +17,6 @@ data Term
     | S Term
     | O
     deriving (Show, Eq, Generic, DS.NFData)
+    
+natGen :: (MonadPlus m) => m Term
+natGen = return O <|> (S <$> natGen)

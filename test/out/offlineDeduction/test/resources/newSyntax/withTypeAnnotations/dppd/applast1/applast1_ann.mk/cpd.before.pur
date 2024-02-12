@@ -1,0 +1,6 @@
+applasto x0 = (fresh x3, x4, x6, x5 in (((x3 == (x4 :: x6) & x0 == (x4 :: x5)) & appendoLasto x4 x5 x6)));
+
+appendoLasto x4 x5 x6 = (fresh x11, x7, x9, x8, x10 in (((x11 == (x7 :: x9) & x6 == (x7 :: x9) & x5 == (x7 :: x8) & x4 == x10) & appendoLasto x7 x8 x9)));
+
+
+? applasto x0

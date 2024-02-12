@@ -1,0 +1,1 @@
+Program {getDefs = [maxMino "y0" "y1" = ("y1" = Zero /\ "y0" = Succ Succ Zero)], getGoal = maxMino "x1" "x2"}

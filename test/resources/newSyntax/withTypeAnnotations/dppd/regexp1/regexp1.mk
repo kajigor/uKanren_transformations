@@ -34,4 +34,4 @@ generate exp str lst =
       )
   );
 
-? generate  (Star(Cat (Or (Char a) (Char b)) (Cat (Or (Char c) (Char d) ) (Cat (Or (Char e) (Char f) ) (Or (Char g) (Char h) ) )))) x Nil
+? generate (Star (Cat (Or (Char a) (Char b)) (Or (Char c) (Char d)))) x Nil

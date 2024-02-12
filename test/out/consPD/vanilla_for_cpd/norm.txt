@@ -1,0 +1,13 @@
+fail  = Goal (Disj [] (Conj [] (Call "fail" [] :| []) :| []))
+
+solve stmts = Goal (Disj ["a","t"] (Conj [] (Unif "stmts" [] :| []) :| [Conj [] (Unif "stmts" ("a" :: "t") :| [Call "solve_atom" ["a"],Call "solve" ["t"]])]))
+
+solve_atom a = Goal (Disj ["b"] (Conj [] (Call "my_clause" ["a","b"] :| [Call "solve" ["b"]]) :| []))
+
+my_clause clause body = Goal (Disj ["x","y","z","r","i","l","h","x","y","z","a","t","a","b","l","h","x","y","z"] (Conj [] (Unif "clause" DoubleApp "x" "y" "z" "r" :| [Unif "body" (App "x" "y" "i" :: [App "i" "z" "r"])]) :| [Conj [] (Unif "clause" App [] "l" "l" :| [Unif "body" []]),Conj [] (Unif "clause" App ("h" :: "x") "y" ("h" :: "z") :| [Unif "body" [App "x" "y" "z"]]),Conj [] (Unif "body" ["clause"] :| []),Conj [] (Unif "clause" Solve2 [] :| [Unif "body" []]),Conj [] (Unif "clause" Solve2 ("a" :: "t") :| [Unif "body" (Solve_atom2 "a" :: [Solve2 "t"])]),Conj [] (Unif "clause" Solve_atom2 "a" :| [Unif "body" (My_clause2 "a" "b" :: [Solve2 "b"])]),Conj [] (Unif "clause" My_clause2 App [] "l" "l" [] :| [Unif "body" []]),Conj [] (Unif "clause" My_clause2 App ("h" :: "x") "y" ("h" :: "z") [App "x" "y" "z"] :| [Unif "body" []])]))
+
+test2 r = Goal (Disj [] (Conj [] (Call "solve_atom" [Solve_atom2 App (0 :: (1 :: [2])) (0 :: (1 :: (2 :: [3]))) "r"] :| []) :| []))
+
+test1 r = Goal (Disj [] (Conj [] (Call "solve_atom" [App (0 :: (1 :: [2])) (0 :: (1 :: (2 :: [3]))) "r"] :| []) :| []))
+
+? Goal (Disj ["x","y","z"] (Conj [] (Call "solve" [[DoubleApp "x" "y" "z" (S :: (1 :: (2 :: [1])))]] :| []) :| []))

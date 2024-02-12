@@ -57,7 +57,7 @@ transform' outDir filename goal@(Program definitions _) env heuristic = do
     let cpdFile = path </> "cpd"
     mapM_ createDirRemoveExisting [path, localDir]
 
-    let result = runTransformation (traceShow goal goal) heuristic
+    let result = runTransformation goal heuristic
     Transformer.MkToProlog.transform (path </> "original.pl") definitions
     printTree (path </> "global.dot") (globalTree result)
     mapM_ (uncurry (renderLocalTree localDir)) (localTrees result)

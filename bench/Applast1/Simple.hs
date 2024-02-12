@@ -9,13 +9,7 @@ import Control.Monad (msum, guard, MonadPlus)
 import qualified Control.DeepSeq as DS
 import Control.Applicative (Alternative)
 import Debug.Trace (traceShow)
-
-data Term = 
-    Cons Term Term | 
-    Zero | 
-    Succ Term | 
-    Nil 
-   deriving (Show, Eq, Generic, DS.NFData)
+import Term
     
 applastoIIISimple x0 x1 x2 gen_lastoIO_x2 = msum [do {applasto0II x0 x1;
                                                 x3 <- lastoIO x2 gen_lastoIO_x2;
@@ -42,7 +36,7 @@ applastoOOI x2 gen_appendoOOO_x1 gen_appendoOOO_x3 gen_lastoIO_x2 = msum [do {x3
                                                                               (x0,
                                                                                x1) <- applasto0OO gen_appendoOOO_x1 gen_appendoOOO_x3;
                                                                               return (x0, x1)}]
-applastoOOO gen_appendoOOO_x1 gen_appendoOOO_x3 gen_lastoOO_x0 gen_lastoOO_x2 = msum [do {(x0,
+applastoOOOSimple gen_appendoOOO_x1 gen_appendoOOO_x3 gen_lastoOO_x0 gen_lastoOO_x2 = msum [do {(x0,
                                                                                            x1) <- applasto0OO gen_appendoOOO_x1 gen_appendoOOO_x3;
                                                                                           (x2,
                                                                                            x3) <- lastoOO gen_lastoOO_x0 gen_lastoOO_x2;

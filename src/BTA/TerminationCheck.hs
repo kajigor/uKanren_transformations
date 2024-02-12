@@ -24,7 +24,7 @@ terminationCheck (AnnotatedProgram defs _) mapConditions mapDefs initNames =
     let (defsGraphs, defsVars) = unzip $ map (getPairsDef mapConditions mapDefs) defs in 
     let defsVarsRes = Map.unions defsVars in 
     let defsGraphsRes = goGraphMap (Map.unions defsGraphs) defsVarsRes $ map getName defs in 
-    all (\name -> checkDecreasing (Map.findWithDefault Set.empty (name, name) defsGraphsRes) (filterArgs (getAnnotations $ mapDefs Map.! name) $ defsVarsRes Map.! (name, name))) initNames
+    all (\name -> checkDecreasing (Map.findWithDefault Set.empty (name, name) defsGraphsRes) (filterArgs (getAnnotations $ mapDefs Map.! name) $ defsVarsRes Map.! (name, name))) $ traceShow defsGraphsRes initNames
   where 
     filterArgs :: [AnnotationType] -> ([String], [String]) -> ([String], [String])
     filterArgs annotations (inArgs, outArgs) = 
@@ -46,7 +46,7 @@ checkSubSequences :: ([String], [String]) -> Graph String -> Bool
 checkSubSequences ([], []) graph = False
 checkSubSequences (inArgs, outArgs) graph =
     let setZero = foldl (checkPossibleZero graph) (Set.singleton ([], [])) $ filter (\(ins, outs) -> length ins == length outs) $ (,) <$> List.subsequences inArgs <*> List.subsequences outArgs in 
-    any (\(inArg, outArg) -> Set.member (List.delete inArg inArgs, List.delete outArg outArgs) setZero && positivePath inArg outArg graph) $ (,) <$> inArgs <*> outArgs
+    any (\(inArg, outArg) -> Set.member (List.delete inArg inArgs, List.delete outArg outArgs) (traceShow "checkSubSequences" setZero) && positivePath inArg outArg graph) $ (,) <$> inArgs <*> outArgs
 
 
 checkDecreasing :: Set.Set (Graph String) -> ([String], [String]) -> Bool

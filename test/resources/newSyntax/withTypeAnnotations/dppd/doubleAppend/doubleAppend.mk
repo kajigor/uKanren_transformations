@@ -13,4 +13,4 @@ double_appendo x y z res =
     appendo t z res &
     appendo x y t;
 
-? double_appendo x y z res
+? double_appendo x y z [S O, S (S O), S (S (S O)), O, O, S O, S (S O)]

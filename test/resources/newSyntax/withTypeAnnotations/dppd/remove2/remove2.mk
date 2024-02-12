@@ -14,7 +14,7 @@ f x y =
       h a t y
   );
 
-filter (dynamic dynamic static)
+filter (static static dynamic)
 h a t y =
   t == Nil &
   y == [a] |
@@ -24,7 +24,7 @@ h a t y =
       g a b t s y
   );
 
-filter (static dynamic)
+filter (static static)
 neq a b =
   (fresh t in
     a == Zero &
@@ -37,7 +37,7 @@ neq a b =
     neq t t1
   );
 
-filter (dynamic dynamic dynamic dynamic static)
+filter (static static static static dynamic)
 g a b t s y =
   fresh a1, y1 in
     y == (a1 :: y1) &
@@ -49,4 +49,4 @@ g a b t s y =
       f t y1
     );
 
-? rr x [Succ Zero, Zero, Succ (Succ Zero), Zero, Zero]
+? rr [Succ Zero, Zero, Succ (Succ Zero), Zero, Zero] x

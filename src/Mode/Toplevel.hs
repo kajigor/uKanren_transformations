@@ -39,7 +39,7 @@ prepareDefs defs = do
   (defs, nextVar) <- uniquelyRenameVarsInDefs defs
   let flatten = flattenDefs defs nextVar
   let normalized = N.normalizeDefs flatten
-  return $ trace (printf "In normalization:\nFlatten\n%s\nNormalized\n%s\n" (show flatten) (show normalized)) $ normalized
+  return normalized -- $ trace (printf "In normalization:\nFlatten\n%s\nNormalized\n%s\n" (show flatten) (show normalized)) $ 
 
 topLevelManyModes :: [Def S.G S.X] -> [(String, [Int])] -> Either ModeAnalysisError [Def N.Goal (S.S, Mode)]
 topLevelManyModes defs modes = do
@@ -63,7 +63,8 @@ topLevel program ins = do
     (program, nextVar) <- uniquelyRenameVars program
     let flattened = flatten program nextVar
     let normalized = N.normalize flattened
-    let flat@(Program defs goal) = trace (printf "In normalization:\n\nInitialProgram: %s\n\nFlatten\n%s\n\nNormalized\n%s\n" (show program) (show flattened) (show normalized)) $ normalized
+    let flat@(Program defs goal) = --trace (printf "In normalization:\n\nInitialProgram: %s\n\nFlatten\n%s\n\nNormalized\n%s\n" (show program) (show flattened) (show normalized)) $ 
+                                    normalized
     case goal of
       N.Disj (N.Conj (N.Call delayed name args :| []) :| []) -> do
         let inputArgs = map (args !!) ins

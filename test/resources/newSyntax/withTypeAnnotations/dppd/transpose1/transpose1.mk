@@ -8,7 +8,7 @@ transpose from to =
     makerow from y zs
   );
 
-filter (dynamic static dynamic)
+filter (dynamic dynamic dynamic)
 makerow x y z =
   x == Nil &
   y == Nil &

@@ -3,26 +3,22 @@
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/app/console" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test/auto" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/test/resources" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/bench/Deforestation1" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/bench/Deforestation2" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/RelSort" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/bench/List4" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/NthOpt" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/RelSort7" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/bench/Sort" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/bench/Applast1" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/bench/Depth" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/bench/NthOpt" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/bench/DoubleAppendo" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/List3" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/Hanoi" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/Match" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/bench/Ex_Depth" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/bench/Remove2" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/bench/Regexp1" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/bench/RotatePrune" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/bench/RelSort" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/bench/Upto.sum1" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/bench/Upto.sum2" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/bench/Model_elim" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/app/console" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bench/Goat" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/.stack-work" />
     </content>
     <orderEntry type="inheritedJdk" />

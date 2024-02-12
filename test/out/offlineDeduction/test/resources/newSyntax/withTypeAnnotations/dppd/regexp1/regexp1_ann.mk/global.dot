@@ -1,0 +1,18 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<N <BR/> generate(C Star [C Cat [C Or [C Char [v<SUB>0</SUB>] C Char [v<SUB>1</SUB>]] C Or [C Char [v<SUB>2</SUB>] C Char [v<SUB>3</SUB>]]]], v<SUB>8</SUB>, []) <BR/>  [  ] >];
+    1 [label=<L <BR/> >];
+    2 [label=<L <BR/> generate(C Star [C Cat [C Or [C Char [v<SUB>0</SUB>] C Char [v<SUB>1</SUB>]] C Or [C Char [v<SUB>2</SUB>] C Char [v<SUB>3</SUB>]]]], v<SUB>16</SUB>, [])>];
+    3 [label=<N <BR/> generate(C Or [C Char [v<SUB>0</SUB>] C Char [v<SUB>1</SUB>]], v<SUB>8</SUB>, v<SUB>22</SUB>), generate(C Or [C Char [v<SUB>2</SUB>] C Char [v<SUB>3</SUB>]], v<SUB>22</SUB>, v<SUB>16</SUB>) <BR/>  [  ] >];
+    4 [label=<L <BR/> generate(C Or [C Char [v<SUB>2</SUB>] C Char [v<SUB>3</SUB>]], v<SUB>22</SUB>, v<SUB>16</SUB>)>];
+    5 [label=<N <BR/> generate(C Or [C Char [v<SUB>2</SUB>] C Char [v<SUB>3</SUB>]], v<SUB>22</SUB>, v<SUB>16</SUB>) <BR/>  [  ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    0 -> 3 [label=""];
+    3 -> 4 [label=""];
+    3 -> 5 [label=""];
+}

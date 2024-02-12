@@ -1,0 +1,13 @@
+solve y0 y1 y2 = solve_atomSolve y0 y1 y2
+solve_atom y3 y4 y5 = fresh q1 q2 q3 ((__solve y3 y4 y5 \/ (y5 = (q1 :: q2) /\ y3 = (q1 :: q3) /\ my_clauseSolve q3 y4 q2) \/ (y4 = y5 /\ y3 = [])))
+_solve y6 y7 = _solve_atom y6 y7
+__solve y8 y9 y10 = my_clauseSolve y8 y9 y10
+my_clauseSolve y11 y12 y13 = fresh q1 q2 q3 ((__solve y11 y12 y13 \/ (y13 = (q1 :: q2) /\ y11 = (q1 :: q3) /\ my_clauseSolve q3 y12 q2) \/ (y12 = y13 /\ y11 = [])))
+_solve_atom y15 y16 = fresh q1 (((y16 = [] /\ y15 = (S :: (1 :: (2 :: [1])))) \/ (y16 = (S :: q1) /\ __solve_atom q1 y15) \/ _solve_atom y15 y16))
+__solve_atom y17 y18 = fresh q1 (((y18 = (1 :: (2 :: [1])) /\ y17 = []) \/ (y17 = (1 :: q1) /\ ___solve_atom q1 y18) \/ __solve_atom y17 y18))
+___solve_atom y19 y20 = fresh q1 (((y20 = (2 :: [1]) /\ y19 = []) \/ (y19 = (2 :: q1) /\ ____solve_atom q1 y20) \/ ___solve_atom y19 y20))
+____solve_atom y21 y22 = fresh q1 (((y22 = [1] /\ y21 = []) \/ (y21 = (1 :: q1) /\ _____solve_atom q1 y22) \/ ____solve_atom y21 y22))
+_____solve_atom y23 y24 = ((y24 = [] /\ y23 = []) \/ _____solve_atom y23 y24)
+solve_atomSolve y25 y26 y27 = fresh q1 (((solve_atom y25 y26 q1 /\ _solve y27 q1) \/ solve_atomSolve y25 y26 y27))
+
+solve x0 x1 x2

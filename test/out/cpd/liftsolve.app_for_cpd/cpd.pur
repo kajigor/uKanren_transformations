@@ -1,0 +1,6 @@
+solve y0 y1 y2 = (fresh q1 in ((y0 == Term (Null) ([]) & mkng y1 y2)));
+
+mkng y3 y4 = y3 == y4;
+
+
+? solve x0 x1 x2

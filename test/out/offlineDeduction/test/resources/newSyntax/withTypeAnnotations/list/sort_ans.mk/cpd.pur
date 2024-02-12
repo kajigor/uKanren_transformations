@@ -1,0 +1,1 @@
+Program {getDefs = [sorto "y0" = "y0" = (Zero :: (Zero :: (Succ Zero :: (Succ Zero :: [Succ Succ Zero]))))], getGoal = sorto "x1"}

@@ -38,4 +38,4 @@ appendo2 xs ys rs =
     rs == (h :: ts) &
     appendo2 t ys ts);
 
-? containso pat str
+? containso [S O, O, S (S O)] str

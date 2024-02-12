@@ -39,4 +39,4 @@ r x y =
     r (ay :: t) t1
   );
 
-? rr x y
+? rr x [S O, O, S (S O), O, O]

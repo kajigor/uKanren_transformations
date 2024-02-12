@@ -1,0 +1,6 @@
+rev y0 = (fresh q1, q2 in ((y0 == (q1 :: q2) & _rev q2 [q1])));
+
+_rev y1 y2 = (fresh q1, q2 in (((y2 == (A :: (B :: (C :: [D]))) & y1 == []) | (y1 == (q1 :: q2) & _rev q2 ((q1 :: y2))))));
+
+
+? rev x0

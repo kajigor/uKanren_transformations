@@ -10,6 +10,7 @@ import Debug.Trace (traceShow)
 import Term
 import qualified RotatePrune_unfold
 import qualified RotatePrune_cpd_ans
+import qualified RotatePrune_unfold1
 
 eval :: (m r -> [r]) -> (a -> m r) -> a -> [r]
 eval listify f = listify . f
@@ -32,5 +33,6 @@ main = defaultMain
      [
        bench "offlineO" $ nf (eval4 (takeS 1 ) RotatePrune_unfold.pruneO) (natGen, natGen, natGen, natGen)
      , bench "onlineO"  $ nf (eval3 (takeS 1 ) RotatePrune_cpd_ans.pruneO) (natGen, natGen, natGen)
+     , bench "offline1O"$ nf (eval4 (takeS 1 ) RotatePrune_unfold1.pruneO) (natGen, natGen, natGen, natGen)
      ]
   ]

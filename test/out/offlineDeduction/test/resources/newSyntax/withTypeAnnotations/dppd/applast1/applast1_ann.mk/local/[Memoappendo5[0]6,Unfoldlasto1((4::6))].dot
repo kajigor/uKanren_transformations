@@ -1,0 +1,28 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> Memo appendo v<SUB>5</SUB> [0] v<SUB>6</SUB>>];
+    1 [label=<C <BR/> Unfold lasto 1 (v<SUB>4</SUB> : [0]) <BR/>  [ v<SUB>5</SUB> &rarr; [], v<SUB>6</SUB> &rarr; [0] ] >];
+    2 [label=<C <BR/> Memo appendo v<SUB>8</SUB> [0] v<SUB>9</SUB>, Unfold lasto 1 (v<SUB>4</SUB> : v<SUB>7</SUB> : v<SUB>9</SUB>) <BR/>  [ v<SUB>5</SUB> &rarr; v<SUB>7</SUB> : v<SUB>8</SUB>, v<SUB>6</SUB> &rarr; v<SUB>7</SUB> : v<SUB>9</SUB> ] >];
+    3 [label=<O <BR/> Unfold lasto 1 (v<SUB>4</SUB> : [0])>];
+    4 [label=<C <BR/> Memo lasto 1 [0] <BR/>  [ v<SUB>4</SUB> &rarr; v<SUB>10</SUB>, v<SUB>5</SUB> &rarr; [], v<SUB>6</SUB> &rarr; [0], v<SUB>11</SUB> &rarr; [0] ] >];
+    5 [label=<O <BR/> Memo lasto 1 [0]>];
+    6 [label=<C <BR/> Memo lasto 1 [] <BR/>  [ v<SUB>4</SUB> &rarr; v<SUB>10</SUB>, v<SUB>5</SUB> &rarr; [], v<SUB>6</SUB> &rarr; [0], v<SUB>11</SUB> &rarr; [0], v<SUB>12</SUB> &rarr; 0, v<SUB>13</SUB> &rarr; [] ] >];
+    7 [label=<_|_>];
+    8 [label=<O <BR/> Unfold lasto 1 (v<SUB>4</SUB> : v<SUB>7</SUB> : v<SUB>9</SUB>)>];
+    9 [label=<C <BR/> Memo appendo v<SUB>8</SUB> [0] v<SUB>9</SUB>, Memo lasto 1 (v<SUB>7</SUB> : v<SUB>9</SUB>) <BR/>  [ v<SUB>4</SUB> &rarr; v<SUB>10</SUB>, v<SUB>5</SUB> &rarr; v<SUB>7</SUB> : v<SUB>8</SUB>, v<SUB>6</SUB> &rarr; v<SUB>7</SUB> : v<SUB>9</SUB>, v<SUB>11</SUB> &rarr; v<SUB>7</SUB> : v<SUB>9</SUB> ] >];
+    10 [label=<Leaf <BR/> Memo appendo v<SUB>8</SUB> [0] v<SUB>9</SUB>, Memo lasto 1 (v<SUB>7</SUB> : v<SUB>9</SUB>) <BR/>  [ v<SUB>4</SUB> &rarr; v<SUB>10</SUB>, v<SUB>5</SUB> &rarr; v<SUB>7</SUB> : v<SUB>8</SUB>, v<SUB>6</SUB> &rarr; v<SUB>7</SUB> : v<SUB>9</SUB>, v<SUB>11</SUB> &rarr; v<SUB>7</SUB> : v<SUB>9</SUB> ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    1 -> 3 [label=""];
+    2 -> 8 [label=""];
+    3 -> 4 [label=""];
+    4 -> 5 [label=""];
+    5 -> 6 [label=""];
+    6 -> 7 [label=""];
+    8 -> 9 [label=""];
+    9 -> 10 [label=""];
+}

@@ -1,0 +1,10 @@
+applasto x0 = (fresh x4, x2, x1, x3, x6, x5 in ((((x4 == [] & x2 == S (O) & x1 == (x2 :: x4) & x0 == (x2 :: x3)) & _appendo x3 []) | ((x4 == x6 & x2 == x5 & x1 == (x2 :: x4) & x0 == (x2 :: x3)) & appendoLasto x3 x6))));
+
+appendoLasto x3 x6 = (fresh x7, x9, x8 in (((x6 == (x7 :: x9) & x3 == (x7 :: x8)) & (_appendo x8 x9 & lasto ((x7 :: x9))))));
+
+_appendo x10 x11 = (fresh x13, x15, x14 in (((x11 == [O] & x10 == []) | ((x11 == (x13 :: x15) & x10 == (x13 :: x14)) & _appendo x14 x15))));
+
+lasto x12 = (fresh x13, x14 in ((x12 == [S (O)] | (x12 == (x13 :: x14) & lasto x14))));
+
+
+? applasto x0

@@ -9,6 +9,7 @@ import           Descend
 import           Generalization (Generalizer)
 import           Syntax
 import           OfflinePD.Generalization
+import           Printer.AnnSldTree
 import qualified Embed
 import qualified OfflinePD.AnnEnvironment as Env
 import qualified OfflinePD.AnnotatedEval as E
@@ -99,10 +100,12 @@ topLevel (AnnotatedProgram defs goal) heu =
 --       else
         let subst = Subst.empty in
         -- let newNodes = (delete goal nodes) in
-        let newNodes = filter (not . Embed.isVariant goal) $ traceShow goal nodes in
+        let newNodes = filter (not . Embed.isVariant goal) -- $ traceShow goal 
+                        nodes in
 
-        let sldTree = LC.sldResolution goal env subst newNodes heu in
-        let (substs, bodies) = partition (null . snd3) $ LC.resultants $ trace "sldTree" sldTree in
+        let sldTree = LC.sldResolution (trace "Global" goal) env subst newNodes heu in
+        let (substs, bodies) = partition (null . snd3) $ LC.resultants -- $ trace (dot sldTree) 
+                               sldTree in
           
 --        run printTree (path </> "local1.dot") sldTree
 

@@ -57,24 +57,24 @@ positivePathHelp :: Ord a => AbstractTerm a -> Int -> Graph a -> a -> a -> Set.S
 positivePathHelp curSum n graph a b visited | isPositive curSum && a == b = True
 positivePathHelp curSum 0 graph a b visited = False
 positivePathHelp curSum n graph@(Graph vars graphMap) a b visited = 
-    let next_pos = filter (\v -> member (a, v) graphMap && (not $ Set.member v visited)) vars in 
+    let next_pos = filter (\v -> member (a, v) graphMap && (not $ Set.member v visited)) vars in
     any (\nxt -> positivePathHelp (curSum <> (fst $ graphMap ! (a, nxt))) (n - 1) graph nxt b (Set.insert nxt visited)) next_pos
 
-positivePath :: Ord a => a -> a -> Graph a -> Bool 
+positivePath :: Ord a => a -> a -> Graph a -> Bool
 positivePath a b graph@(Graph vars graphMap) = 
-    positivePathHelp (Sum 0 empty) (length vars - 1) graph a b $ Set.fromList [a]
+    positivePathHelp (Sum 0 empty) (min (length vars - 1) 5) graph a b $ Set.fromList [a]
 
-atLeastZeroPath :: Ord a => a -> a -> Graph a -> Bool 
+atLeastZeroPath :: Ord a => a -> a -> Graph a -> Bool
 atLeastZeroPath a b graph@(Graph vars graphMap) = 
     positivePath a b graph || zeroPath a b graph
 
 
 zeroPath :: Ord a => a -> a -> Graph a -> Bool 
 zeroPath a b graph@(Graph vars graphMap) = 
-    zeroPathHelp (Sum 0 empty) (length vars - 1) graph a b $ Set.fromList [a]
+    zeroPathHelp (Sum 0 empty) (min (length vars - 1) 5) graph a b $ Set.fromList [a]
 
 
-addEdge :: Ord a => Graph a -> (a, a) -> Graph a 
+addEdge :: Ord a => Graph a -> (a, a) -> Graph a
 addEdge graph@(Graph vars graphMap) (a, b)  | member (a, b) graphMap = graph
                                             | positivePath a b graph = Graph vars $ insert (a, b) (Sum 1 empty, Arc) graphMap
                                             | zeroPath a b graph && a /= b = Graph vars $ insert (a, b) (Sum 0 empty, WeightedArc) graphMap
@@ -101,7 +101,7 @@ getState graph (a, b) | positivePath a b graph && zeroPath a b graph = [(Conditi
                       | otherwise = []
 
 
-getConditionsFromGraph :: Ord a => Graph a -> Conditions a 
+getConditionsFromGraph :: Ord a => Graph a -> Conditions a
 getConditionsFromGraph graph@(Graph vars graphMap) = 
     let tuples = [(a, b) | a <- vars, b <- vars, a/= b] in 
     let conjuncts = concatMap (getState graph) tuples in 
@@ -131,6 +131,6 @@ cleanGraph graph@(Graph vars mp) vertexes =
     let cleaned = foldl (\(Graph vars mp) (a, b, p1, p2) -> (Graph vars $ delete (a, b) mp)) withoutVert pairs in 
     foldl addWithFlags cleaned pairs
 
-withoutPositiveCycle :: Ord a => Graph a -> Bool 
+withoutPositiveCycle :: Ord a => Graph a -> Bool
 withoutPositiveCycle graph@(Graph vars mp) = 
     not $ any (\v -> positivePath v v graph) vars

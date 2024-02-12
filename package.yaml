@@ -63,6 +63,19 @@ executables:
     source-dirs:
     - app/console/
     dependencies: uKanren-transformation
+
+
+#  exe:
+#    main: Main.hs
+#    source-dirs:
+#     - bench/RelSort/
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+
   # cpd:
   #   main: Main.hs
   #   source-dirs:
@@ -134,21 +147,33 @@ benchmarks:
 #    - tasty-bench
 #    - deepseq
 #    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-deforestation1-det:
-    main: Main.hs
-    source-dirs:
-      - bench/Deforestation1
-      - test/resources
-    dependencies:
-      - uKanren-transformation
-      - tasty
-      - tasty-bench
-      - deepseq
-    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-#  uKanren-transformation-bench-sort_check:
+  #  uKanren-transformation-bench-sort_check:
+  #    main: Main.hs
+  #    source-dirs:
+  #      - bench/SortCheck
+  #      - test/resources
+  #    dependencies:
+  #      - uKanren-transformation
+  #      - tasty
+  #      - tasty-bench
+  #      - deepseq
+  #    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  # uKanren-transformation-bench-prop:
+  #   main: Main.hs
+  #   source-dirs:
+  #   - bench/Prop
+  #   dependencies:
+  #   - uKanren-transformation
+  #   - tasty
+  #   - tasty-bench
+  #   ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+
+
+
+#  uKanren-transformation-bench-deforestation1-det:
 #    main: Main.hs
 #    source-dirs:
-#      - bench/SortCheck
+#      - bench/Deforestation1
 #      - test/resources
 #    dependencies:
 #      - uKanren-transformation
@@ -156,72 +181,97 @@ benchmarks:
 #      - tasty-bench
 #      - deepseq
 #    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-deforestation2-det:
-    main: Main.hs
-    source-dirs:
-      - bench/Deforestation2
-      - test/resources
-    dependencies:
-      - uKanren-transformation
-      - tasty
-      - tasty-bench
-      - deepseq
-    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-nthopt-det:
-    main: Main.hs
-    source-dirs:
-      - bench/NthOpt
-      - test/resources
-    dependencies:
-      - uKanren-transformation
-      - tasty
-      - tasty-bench
-      - deepseq
-    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-list4-det:
-    main: Main.hs
-    source-dirs:
-      - bench/List4
-      - test/resources
-    dependencies:
-      - uKanren-transformation
-      - tasty
-      - tasty-bench
-      - deepseq
-    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-sort-det:
-    main: Main.hs
-    source-dirs:
-      - bench/Sort
-      - test/resources
-    dependencies:
-      - uKanren-transformation
-      - tasty
-      - tasty-bench
-      - deepseq
-    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-applast1-det:
-    main: Main.hs
-    source-dirs:
-      - bench/Applast1
-      - test/resources
-    dependencies:
-      - uKanren-transformation
-      - tasty
-      - tasty-bench
-      - deepseq
-    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-depth-det:
-    main: Main.hs
-    source-dirs:
-      - bench/Depth
-      - test/resources
-    dependencies:
-      - uKanren-transformation
-      - tasty
-      - tasty-bench
-      - deepseq
-    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-deforestation2-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Deforestation2
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+
+
+
+#  uKanren-transformation-bench-goat-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Goat
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-applast1-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Applast1
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-match-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Match
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-nthopt-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/NthOpt
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-list3-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/List3
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-list4-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/List4
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-sort-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Sort
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
   uKanren-transformation-bench-rel-sort-det:
     main: Main.hs
     source-dirs:
@@ -233,10 +283,10 @@ benchmarks:
       - tasty-bench
       - deepseq
     ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-double-appendo-det:
+  uKanren-transformation-bench-rel-sort7-det:
     main: Main.hs
     source-dirs:
-      - bench/DoubleAppendo
+      - bench/RelSort7
       - test/resources
     dependencies:
       - uKanren-transformation
@@ -244,10 +294,21 @@ benchmarks:
       - tasty-bench
       - deepseq
     ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-ex_depth-det:
+#  uKanren-transformation-bench-double-appendo-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/DoubleAppendo
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+  uKanren-transformation-bench-hanoi-det:
     main: Main.hs
     source-dirs:
-      - bench/Ex_Depth
+      - bench/Hanoi
       - test/resources
     dependencies:
       - uKanren-transformation
@@ -255,78 +316,116 @@ benchmarks:
       - tasty-bench
       - deepseq
     ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-remove2-det:
-    main: Main.hs
-    source-dirs:
-      - bench/Remove2
-      - test/resources
-    dependencies:
-      - uKanren-transformation
-      - tasty
-      - tasty-bench
-      - deepseq
-    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-regexp1-det:
-    main: Main.hs
-    source-dirs:
-      - bench/Regexp1
-      - test/resources
-    dependencies:
-      - uKanren-transformation
-      - tasty
-      - tasty-bench
-      - deepseq
-    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-rotatePrune-det:
-    main: Main.hs
-    source-dirs:
-      - bench/RotatePrune
-      - test/resources
-    dependencies:
-      - uKanren-transformation
-      - tasty
-      - tasty-bench
-      - deepseq
-    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-uptoSum1-det:
-    main: Main.hs
-    source-dirs:
-      - bench/Upto.sum1
-      - test/resources
-    dependencies:
-      - uKanren-transformation
-      - tasty
-      - tasty-bench
-      - deepseq
-    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-uptoSum2-det:
-    main: Main.hs
-    source-dirs:
-      - bench/Upto.sum2
-      - test/resources
-    dependencies:
-      - uKanren-transformation
-      - tasty
-      - tasty-bench
-      - deepseq
-    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  uKanren-transformation-bench-model_elim-det:
-    main: Main.hs
-    source-dirs:
-      - bench/Model_elim
-      - test/resources
-    dependencies:
-      - uKanren-transformation
-      - tasty
-      - tasty-bench
-      - deepseq
-    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
-  # uKanren-transformation-bench-prop:
-  #   main: Main.hs
-  #   source-dirs:
-  #   - bench/Prop
-  #   dependencies:
-  #   - uKanren-transformation
-  #   - tasty
-  #   - tasty-bench
-  #   ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-ex_depth-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Ex_Depth
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-prop-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Propo
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+
+
+
+#  uKanren-transformation-bench-depth-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Depth
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-remove2-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Remove2
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-regexp1-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Regexp1
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-rotatePrune-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/RotatePrune
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-uptoSum1-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Upto.sum1
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-uptoSum2-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Upto.sum2
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-model_elim-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Model_elim
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"
+#  uKanren-transformation-bench-contains1-det:
+#    main: Main.hs
+#    source-dirs:
+#      - bench/Contains1
+#      - test/resources
+#    dependencies:
+#      - uKanren-transformation
+#      - tasty
+#      - tasty-bench
+#      - deepseq
+#    ghc-options: "-with-rtsopts=-A32m -fproc-alignment=64"

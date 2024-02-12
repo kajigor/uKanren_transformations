@@ -1,7 +1,3 @@
-filter (dynamic)
- test1 r = Unfold solve_atom (App ([O, S O, S (S O)]) ([O, S O, S (S O), S (S (S O))]) r);
-filter (dynamic)
- test2 r = Unfold solve_atom (Solve_atom2 (App ([O, S O, S (S O)]) ([O, S O, S (S O), S (S (S O))])) r);
 filter (static dynamic)
  my_clause clause body =
   ((fresh x, y, z, r, i in

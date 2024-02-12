@@ -18,6 +18,7 @@ data Term
     | Falso
     deriving (Show, Eq, Generic, DS.NFData)
     
+maxMinoIII :: MonadPlus m => Term -> Term -> Term -> m Term -> m Term -> m ()
 maxMinoIII x0 x1 x2 gen_gtoIOI_x1 gen_leoIOI_x1 = msum [do {maxoII x0 x1 gen_gtoIOI_x1 gen_leoIOI_x1;
                                                             minoII x0 x2;
                                                             return ()}]

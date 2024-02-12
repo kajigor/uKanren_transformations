@@ -19,4 +19,4 @@ appendo xs ys rs =
     rs == (h :: ts) &
     appendo t ys ts);
 
-? applasto l x lst
+? applasto l (S O) (S O)

@@ -41,4 +41,5 @@ filter (static static dynamic)
 filter ()
  fail  = Memo fail [];
 
-(fresh x0 in (Unfold sorto x0 ([Zero, Succ Zero, Succ (Succ Zero), Succ (Succ (Succ Zero))])))
+(fresh x0 in (Unfold sorto x0 ([Zero, Succ Zero, Succ (Succ Zero), Succ (Succ (Succ Zero)),
+                                              Succ (Succ (Succ (Succ Zero)))])))

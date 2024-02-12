@@ -1,0 +1,20 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> check(C Triple [[1] [2] [0]], v<SUB>417</SUB>, Trueo)>];
+    1 [label=<C <BR/> get(One, C Triple [[1] [2] [0]], v<SUB>445</SUB>), isNil(v<SUB>445</SUB>, Trueo), get(Two, C Triple [[1] [2] [0]], v<SUB>446</SUB>), isNil(v<SUB>446</SUB>, Trueo) <BR/>  [ v<SUB>417</SUB> &rarr; [], v<SUB>443</SUB> &rarr; Trueo, v<SUB>444</SUB> &rarr; Trueo ] >];
+    2 [label=<C <BR/> one_step(v<SUB>447</SUB>, C Triple [[1] [2] [0]], v<SUB>449</SUB>), check(v<SUB>449</SUB>, v<SUB>448</SUB>, Trueo) <BR/>  [ v<SUB>417</SUB> &rarr; v<SUB>447</SUB> : v<SUB>448</SUB> ] >];
+    3 [label=<O <BR/> get(One, C Triple [[1] [2] [0]], v<SUB>445</SUB>)>];
+    4 [label=<C <BR/> isNil([1], Trueo), get(Two, C Triple [[1] [2] [0]], v<SUB>446</SUB>), isNil(v<SUB>446</SUB>, Trueo) <BR/>  [ v<SUB>417</SUB> &rarr; [], v<SUB>443</SUB> &rarr; Trueo, v<SUB>444</SUB> &rarr; Trueo, v<SUB>445</SUB> &rarr; v<SUB>450</SUB>, v<SUB>450</SUB> &rarr; [1], v<SUB>451</SUB> &rarr; [2], v<SUB>452</SUB> &rarr; [0] ] >];
+    5 [label=<_|_>];
+    6 [label=<Leaf <BR/> one_step(v<SUB>447</SUB>, C Triple [[1] [2] [0]], v<SUB>449</SUB>), check(v<SUB>449</SUB>, v<SUB>448</SUB>, Trueo) <BR/>  [ v<SUB>417</SUB> &rarr; v<SUB>447</SUB> : v<SUB>448</SUB> ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    1 -> 3 [label=""];
+    2 -> 6 [label=""];
+    3 -> 4 [label=""];
+    4 -> 5 [label=""];
+}

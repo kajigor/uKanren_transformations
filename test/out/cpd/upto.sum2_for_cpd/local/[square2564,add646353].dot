@@ -1,0 +1,30 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> square(v<SUB>25</SUB>, v<SUB>64</SUB>)>];
+    1 [label=<C <BR/> multiply(v<SUB>25</SUB>, v<SUB>25</SUB>, v<SUB>64</SUB>), add(v<SUB>64</SUB>, v<SUB>63</SUB>, v<SUB>53</SUB>) <BR/>  [  ] >];
+    2 [label=<O <BR/> multiply(v<SUB>25</SUB>, v<SUB>25</SUB>, v<SUB>64</SUB>)>];
+    3 [label=<C <BR/> add(0, v<SUB>63</SUB>, v<SUB>53</SUB>) <BR/>  [ v<SUB>25</SUB> &rarr; 0, v<SUB>64</SUB> &rarr; 0 ] >];
+    4 [label=<C <BR/> add((1 + v<SUB>86</SUB>), v<SUB>87</SUB>, v<SUB>64</SUB>), multiply((1 + v<SUB>86</SUB>), v<SUB>86</SUB>, v<SUB>87</SUB>), add(v<SUB>64</SUB>, v<SUB>63</SUB>, v<SUB>53</SUB>) <BR/>  [ v<SUB>25</SUB> &rarr; (1 + v<SUB>86</SUB>) ] >];
+    5 [label=<O <BR/> add(0, v<SUB>63</SUB>, v<SUB>53</SUB>)>];
+    6 [label=<S <BR/>  [ v<SUB>25</SUB> &rarr; 0, v<SUB>53</SUB> &rarr; v<SUB>63</SUB>, v<SUB>64</SUB> &rarr; 0 ] >];
+    7 [label=<O <BR/> add((1 + v<SUB>86</SUB>), v<SUB>87</SUB>, v<SUB>64</SUB>)>];
+    8 [label=<C <BR/> add(v<SUB>88</SUB>, v<SUB>87</SUB>, v<SUB>89</SUB>), multiply((1 + v<SUB>88</SUB>), v<SUB>88</SUB>, v<SUB>87</SUB>), add((1 + v<SUB>89</SUB>), v<SUB>63</SUB>, v<SUB>53</SUB>) <BR/>  [ v<SUB>25</SUB> &rarr; (1 + v<SUB>86</SUB>), v<SUB>64</SUB> &rarr; (1 + v<SUB>89</SUB>), v<SUB>86</SUB> &rarr; v<SUB>88</SUB> ] >];
+    9 [label=<O <BR/> add((1 + v<SUB>89</SUB>), v<SUB>63</SUB>, v<SUB>53</SUB>)>];
+    10 [label=<C <BR/> add(v<SUB>88</SUB>, v<SUB>87</SUB>, v<SUB>90</SUB>), multiply((1 + v<SUB>88</SUB>), v<SUB>88</SUB>, v<SUB>87</SUB>), add(v<SUB>90</SUB>, v<SUB>63</SUB>, v<SUB>91</SUB>) <BR/>  [ v<SUB>25</SUB> &rarr; (1 + v<SUB>86</SUB>), v<SUB>53</SUB> &rarr; (1 + v<SUB>91</SUB>), v<SUB>64</SUB> &rarr; (1 + v<SUB>89</SUB>), v<SUB>86</SUB> &rarr; v<SUB>88</SUB>, v<SUB>89</SUB> &rarr; v<SUB>90</SUB> ] >];
+    11 [label=<Leaf <BR/> add(v<SUB>88</SUB>, v<SUB>87</SUB>, v<SUB>90</SUB>), multiply((1 + v<SUB>88</SUB>), v<SUB>88</SUB>, v<SUB>87</SUB>), add(v<SUB>90</SUB>, v<SUB>63</SUB>, v<SUB>91</SUB>) <BR/>  [ v<SUB>25</SUB> &rarr; (1 + v<SUB>86</SUB>), v<SUB>53</SUB> &rarr; (1 + v<SUB>91</SUB>), v<SUB>64</SUB> &rarr; (1 + v<SUB>89</SUB>), v<SUB>86</SUB> &rarr; v<SUB>88</SUB>, v<SUB>89</SUB> &rarr; v<SUB>90</SUB> ] >];
+    0 -> 1 [label=""];
+    1 -> 2 [label=""];
+    2 -> 3 [label=""];
+    2 -> 4 [label=""];
+    3 -> 5 [label=""];
+    4 -> 7 [label=""];
+    5 -> 6 [label=""];
+    7 -> 8 [label=""];
+    8 -> 9 [label=""];
+    9 -> 10 [label=""];
+    10 -> 11 [label=""];
+}

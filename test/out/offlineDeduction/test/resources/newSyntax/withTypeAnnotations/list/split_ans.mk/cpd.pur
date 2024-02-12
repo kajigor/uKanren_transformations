@@ -1,0 +1,1 @@
+Program {getDefs = [splito "y0" "y1" = ("y1" = [Succ Succ Succ Zero] /\ "y0" = (Succ Zero :: (Succ Zero :: (Zero :: [Succ Succ Zero]))))], getGoal = splito "x2" "x3"}

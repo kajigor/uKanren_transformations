@@ -1,0 +1,16 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> one_step(v<SUB>257</SUB>, C Triple [[0] [1] [2]], v<SUB>259</SUB>)>];
+    1 [label=<C <BR/> notEqStick(v<SUB>260</SUB>, v<SUB>261</SUB>, Trueo), get(v<SUB>260</SUB>, C Triple [[0] [1] [2]], v<SUB>264</SUB> : v<SUB>265</SUB>), get(v<SUB>261</SUB>, C Triple [[0] [1] [2]], []), set(v<SUB>260</SUB>, v<SUB>265</SUB>, C Triple [[0] [1] [2]], v<SUB>267</SUB>), set(v<SUB>261</SUB>, [v<SUB>264</SUB>], v<SUB>267</SUB>, v<SUB>259</SUB>), check(v<SUB>259</SUB>, v<SUB>258</SUB>, Trueo) <BR/>  [ v<SUB>257</SUB> &rarr; (v<SUB>260</SUB>, v<SUB>261</SUB>), v<SUB>262</SUB> &rarr; Trueo, v<SUB>263</SUB> &rarr; v<SUB>264</SUB> : v<SUB>265</SUB>, v<SUB>266</SUB> &rarr; [] ] >];
+    2 [label=<C <BR/> notEqStick(v<SUB>260</SUB>, v<SUB>261</SUB>, Trueo), get(v<SUB>260</SUB>, C Triple [[0] [1] [2]], v<SUB>264</SUB> : v<SUB>265</SUB>), get(v<SUB>261</SUB>, C Triple [[0] [1] [2]], v<SUB>268</SUB> : v<SUB>269</SUB>), less(v<SUB>264</SUB>, v<SUB>268</SUB>, Trueo), set(v<SUB>260</SUB>, v<SUB>265</SUB>, C Triple [[0] [1] [2]], v<SUB>271</SUB>), set(v<SUB>261</SUB>, v<SUB>264</SUB> : v<SUB>268</SUB> : v<SUB>269</SUB>, v<SUB>271</SUB>, v<SUB>259</SUB>), check(v<SUB>259</SUB>, v<SUB>258</SUB>, Trueo) <BR/>  [ v<SUB>257</SUB> &rarr; (v<SUB>260</SUB>, v<SUB>261</SUB>), v<SUB>262</SUB> &rarr; Trueo, v<SUB>263</SUB> &rarr; v<SUB>264</SUB> : v<SUB>265</SUB>, v<SUB>266</SUB> &rarr; v<SUB>268</SUB> : v<SUB>269</SUB>, v<SUB>270</SUB> &rarr; Trueo ] >];
+    3 [label=<_|_>];
+    4 [label=<Leaf <BR/> notEqStick(v<SUB>260</SUB>, v<SUB>261</SUB>, Trueo), get(v<SUB>260</SUB>, C Triple [[0] [1] [2]], v<SUB>264</SUB> : v<SUB>265</SUB>), get(v<SUB>261</SUB>, C Triple [[0] [1] [2]], v<SUB>268</SUB> : v<SUB>269</SUB>), less(v<SUB>264</SUB>, v<SUB>268</SUB>, Trueo), set(v<SUB>260</SUB>, v<SUB>265</SUB>, C Triple [[0] [1] [2]], v<SUB>271</SUB>), set(v<SUB>261</SUB>, v<SUB>264</SUB> : v<SUB>268</SUB> : v<SUB>269</SUB>, v<SUB>271</SUB>, v<SUB>259</SUB>), check(v<SUB>259</SUB>, v<SUB>258</SUB>, Trueo) <BR/>  [ v<SUB>257</SUB> &rarr; (v<SUB>260</SUB>, v<SUB>261</SUB>), v<SUB>262</SUB> &rarr; Trueo, v<SUB>263</SUB> &rarr; v<SUB>264</SUB> : v<SUB>265</SUB>, v<SUB>266</SUB> &rarr; v<SUB>268</SUB> : v<SUB>269</SUB>, v<SUB>270</SUB> &rarr; Trueo ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    1 -> 3 [label=""];
+    2 -> 4 [label=""];
+}

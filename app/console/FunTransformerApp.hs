@@ -19,7 +19,7 @@ import           Language.Haskell.TH       (pprint)
 import           BTA.AnnotationsSetting    (setAnnotations)
 import           Printer.PrettyMkPrinter   (prettyMk)
 import FunConversion.Trans (transMultiMode)
-import FunConversion.Syntax (embedProgSafe)
+import FunConversion.Syntax (embedProgSafe, types)
 import FunConversion.OCamlPretty (prettyString)
 import Transformer.ConsPD (haskellPreamble)
 import Debug.Trace
@@ -40,6 +40,9 @@ runWithParser parser inputFile outDir heuristic deduction = do
   let haskellFile = uOutFile <.> "hs"
   let ocamlFile = uOutFile <.> "ml"
   
+  print $ "Chosen heuristic: " ++ show heuristic
+  print $ "Chosen deduction: " ++ show deduction
+  
   parsed <- parser inputFile
   
   case parsed of
@@ -47,10 +50,12 @@ runWithParser parser inputFile outDir heuristic deduction = do
       putStrLn err
     Right program -> do 
       let simpleProgram = convertToSimplePr program
+      print simpleProgram
       deduced@(Program defs goal) <- 
         case deduction of 
           Offline -> do
             let annotatedProgram = setAnnotations $ annotateInvokesPr program 
+            print annotatedProgram
             res <- Offline.transform' outDir baseName annotatedProgram Nothing heuristic
             writeFile (outFile <.> "deduced") $ prettyMk res    
             writeFile (outFile <.> "ann") $ show annotatedProgram
@@ -61,6 +66,8 @@ runWithParser parser inputFile outDir heuristic deduction = do
             return res 
             
       relName <- getName goal 
+      
+      print deduced
         
       let def = find (\def -> Def.getName def == relName) defs
       case def of

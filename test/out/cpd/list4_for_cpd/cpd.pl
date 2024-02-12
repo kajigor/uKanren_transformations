@@ -1,0 +1,1 @@
+maxMino(succ(succ(zero)), zero).

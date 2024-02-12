@@ -1,0 +1,8 @@
+rr x0 = (fresh x3, x2, x1, x4 in (((x3 == (S (O) :: [S (O)]) & x2 == S (O) & x1 == (x2 :: x4)) & rR x0 x4)));
+
+rR x0 x4 = (fresh x11, x10, x9 in (((x11 == [] & x10 == [] & x9 == S (O) & x4 == (x9 :: x11)) & r x0)));
+
+r x0 = (fresh x25, x24, x23 in ((x25 == [] & x24 == [] & x23 == S (O) & x0 == (x23 :: x25))));
+
+
+? rr x0

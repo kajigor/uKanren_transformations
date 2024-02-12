@@ -1,176 +1,56 @@
-check y0 = 
-  fresh q1, q2, q3, q4 in 
-    (((y0 == (q1 :: q3 :: q4) & one_stepOne_stepCheck q1 q3 q4)));
-    
-one_stepOne_stepCheck y1 y3 y4 = 
-  fresh q1, q2, q3 in
-    ((y4 == (q2 :: q3) & y1 == Pair One Two & one_stepOne_stepCheck1 y3 q2 q3) |
-    (y4 == (q2 :: q3) & y1 == Pair One Thr & one_stepOne_stepCheck28 y3 q2 q3));
-    
-one_stepOne_stepCheck1 y6 y8 y9 =
-  fresh q1, q2, q3, q4, q5, q6 in
-    ((y9 == (q2 :: q3) & y6 == Pair One Thr & one_stepOne_stepCheck2 y8 q2 q3) |
-    (y9 == (q2 :: q3) & y6 == Pair Two Thr & one_stepOne_stepCheck28 y8 q2 q3) |
-    (y9 == (q5 :: q6) & y6 == Pair Two One & one_stepOne_stepCheck y8 q5 q6));
-    
-one_stepOne_stepCheck2 y11 y13 y14 =
-  fresh q1, q2, q3, q4, q5, q6 in
-    (((y14 == (q2 :: q3) & y11 == Pair Two One & one_stepOne_stepCheck3 y13 q2 q3) |
-      (y14 == (q2 :: q3) & y11 == Pair Two Thr & one_stepOne_stepCheck27 y13 q2 q3) |
-      (y14 == (q5 :: q6) & y11 == Pair Thr One & one_stepOne_stepCheck1 y13 q5 q6)));
-      
-one_stepOne_stepCheck3 y16 y18 y19 =
-  fresh q1, q2, q3, q4, q5, q6 in
-    ((y19 == (q2 :: q3) & y16 == Pair One Two & one_stepOne_stepCheck2 y18 q2 q3) |
-    (y19 == (q2 :: q3) & y16 == Pair Thr Two & one_stepOne_stepCheck4 y18 q2 q3) |
-    (y19 == (q5 :: q6) & y16 == Pair One Thr & one_stepOne_stepCheck27 y18 q5 q6));
-    
-one_stepOne_stepCheck4 y21 y23 y24 =
-  fresh q1, q2, q3, q4, q5, q6 in
-    (((y24 == (q2 :: q3) & y21 == Pair One Thr & one_stepOne_stepCheck5 y23 q2 q3) |
-      (y24 == (q2 :: q3) & y21 == Pair Two Thr & one_stepOne_stepCheck3 y23 q2 q3) |
-      (y24 == (q5 :: q6) & y21 == Pair One Two & one_stepOne_stepCheck6 y23 q5 q6)));
-      
-one_stepOne_stepCheck5 y26 y28 y29 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y29 == (q2 :: q3) & y26 == Pair Two One & one_stepOne_stepCheck28 y28 q2 q3) |
-      (y29 == (q5 :: q6) & y26 == Pair Thr One & one_stepOne_stepCheck4 y28 q5 q6) |
-      (y29 == (q5 :: q6) & y26 == Pair Thr Two & one_stepOne_stepCheck6 y28 q5 q6)));
-      
-one_stepOne_stepCheck6 y31 y33 y34 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y34 == (q2 :: q3) & y31 == Pair One Thr & one_stepOne_stepCheck7 y33 q2 q3) |
-      (y34 == (q2 :: q3) & y31 == Pair Two Thr & one_stepOne_stepCheck5 y33 q2 q3) |
-      (y34 == (q5 :: q6) & y31 == Pair Two One & one_stepOne_stepCheck4 y33 q5 q6)));
-     
-one_stepOne_stepCheck7 y36 y38 y39 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y39 == (q2 :: q3) & y36 == Pair Two One & one_stepOne_stepCheck8 y38 q2 q3) |
-      (y39 == (q2 :: q3) & y36 == Pair Thr One & one_stepOne_stepCheck6 y38 q2 q3) |
-      (y39 == (q5 :: q6) & y36 == Pair Two Thr & one_stepOne_stepCheck26 y38 q5 q6)));
-    
-one_stepOne_stepCheck8 y41 y43 y44 =
-  fresh q1, q2, q3, q4, q5 in 
-    (((y44 == (q2 :: q3) & y41 == Pair One Two & one_stepOne_stepCheck7 y43 q2 q3) |
-      (y44 == (q2 :: q3) & y41 == Pair One Thr & one_stepOne_stepCheck26 y43 q2 q3) |
-      (y44 == [] & y41 == Pair Two Thr & one_step9 y43) |
-      (y44 == (q4 :: q5) & y41 == Pair Two Thr & one_stepOne_stepCheck10 y43 q4 q5)));
-    
-one_step9 y46 =
-  y46 == Pair One Thr;
-  
-one_stepOne_stepCheck10 y48 y50 y51 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y51 == [] & y48 == Pair One Two & one_step11 y50) |
-      (y51 == (q1 :: q2) & y48 == Pair One Two & one_stepOne_stepCheck12 y50 q1 q2) |
-      (y51 == (q1 :: q2) & y48 == Pair Thr Two & one_stepOne_stepCheck8 y50 q1 q2) |
-      (y51 == (q5 :: q6) & y48 == Pair One Thr & one_stepOne_stepCheck25 y50 q5 q6)));
-    
-one_step11 y53 =
-  y53 == Pair Two Thr;
-  
-one_stepOne_stepCheck12 y55 y57 y58 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y58 == [] & y55 == Pair Two One & one_step9 y57) |
-      (y58 == (q1 :: q2) & y55 == Pair Two One & one_stepOne_stepCheck10 y57 q1 q2) |
-      (y58 == (q1 :: q2) & y55 == Pair Thr One & one_stepOne_stepCheck13 y57 q1 q2) |
-      (y58 == (q5 :: q6) & y55 == Pair Two Thr & one_stepOne_stepCheck25 y57 q5 q6)));
-    
-one_stepOne_stepCheck13 y60 y62 y63 =
-  fresh q1, q2, q3, q4, q5 in 
-    (((y63 == [] & y60 == Pair One Thr & one_step11 y62) |
-      (y63 == (q1 :: q2) & y60 == Pair One Thr & one_stepOne_stepCheck12 y62 q1 q2) |
-      (y63 == (q4 :: q5) & y60 == Pair Two One & one_stepOne_stepCheck14 y62 q4 q5) |
-      (y63 == (q4 :: q5) & y60 == Pair Two Thr & one_stepOne_stepCheck24 y62 q4 q5)));
-    
-one_stepOne_stepCheck14 y65 y67 y68 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y68 == (q2 :: q3) & y65 == Pair One Two & one_stepOne_stepCheck13 y67 q2 q3) |
-      (y68 == (q2 :: q3) & y65 == Pair Thr Two & one_stepOne_stepCheck15 y67 q2 q3) |
-      (y68 == (q5 :: q6) & y65 == Pair One Thr & one_stepOne_stepCheck24 y67 q5 q6)));
-      
-one_stepOne_stepCheck15 y70 y72 y73 =
-  fresh q1, q2, q3, q4, q5, q6 in
-    (((y73 == (q2 :: q3) & y70 == Pair One Thr & one_stepOne_stepCheck16 y72 q2 q3) |
-      (y73 == (q2 :: q3) & y70 == Pair Two Thr & one_stepOne_stepCheck14 y72 q2 q3) |
-      (y73 == (q5 :: q6) & y70 == Pair One Two & one_stepOne_stepCheck23 y72 q5 q6)));
-      
-one_stepOne_stepCheck16 y75 y77 y78 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y78 == (q2 :: q3) & y75 == Pair One Two & one_stepOne_stepCheck17 y77 q2 q3) |
-      (y78 == (q5 :: q6) & y75 == Pair Thr One & one_stepOne_stepCheck15 y77 q5 q6) |
-      (y78 == (q5 :: q6) & y75 == Pair Thr Two & one_stepOne_stepCheck23 y77 q5 q6)));
-    
-one_stepOne_stepCheck17 y80 y82 y83 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y83 == (q2 :: q3) & y80 == Pair Two One & one_stepOne_stepCheck16 y82 q2 q3) |
-      (y83 == (q2 :: q3) & y80 == Pair Thr One & one_stepOne_stepCheck18 y82 q2 q3) |
-      (y83 == (q5 :: q6) & y80 == Pair Thr Two & one_stepOne_stepCheck22 y82 q5 q6)));
-    
-one_stepOne_stepCheck18 y85 y87 y88 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y88 == (q2 :: q3) & y85 == Pair One Thr & one_stepOne_stepCheck17 y87 q2 q3) |
-      (y88 == (q2 :: q3) & y85 == Pair Two Thr & one_stepOne_stepCheck19 y87 q2 q3) |
-      (y88 == (q5 :: q6) & y85 == Pair One Two & one_stepOne_stepCheck22 y87 q5 q6)));
-    
-one_stepOne_stepCheck19 y90 y92 y93 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y93 == (q2 :: q3) & y90 == Pair One Two & one_stepOne_stepCheck20 y92 q2 q3) |
-      (y93 == (q2 :: q3) & y90 == Pair One Thr & one_stepOne_stepCheck21 y92 q2 q3) |
-      (y93 == (q5 :: q6) & y90 == Pair Thr Two & one_stepOne_stepCheck18 y92 q5 q6)));
-    
-one_stepOne_stepCheck20 y95 y97 y98 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y98 == (q2 :: q3) & y95 == Pair Two One & one_stepOne_stepCheck19 y97 q2 q3) |
-      (y98 == (q2 :: q3) & y95 == Pair Thr One & one_stepOne_stepCheck23 y97 q2 q3) |
-      (y98 == (q5 :: q6) & y95 == Pair Two Thr & one_stepOne_stepCheck21 y97 q5 q6)));
-    
-one_stepOne_stepCheck21 y100 y102 y103 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y103 == (q2 :: q3) & y100 == Pair Two One & one_stepOne_stepCheck27 y102 q2 q3) |
-      (y103 == (q2 :: q3) & y100 == Pair Thr One & one_stepOne_stepCheck19 y102 q2 q3) |
-      (y103 == (q5 :: q6) & y100 == Pair Thr Two & one_stepOne_stepCheck20 y102 q5 q6)));
-    
-one_stepOne_stepCheck22 y105 y107 y108 =
-  fresh q1, q2, q3 in 
-    (((y108 == (q2 :: q3) & y105 == Pair Two One & one_stepOne_stepCheck18 y107 q2 q3) |
-      (y108 == (q2 :: q3) & y105 == Pair Two Thr & one_stepOne_stepCheck17 y107 q2 q3)));
-      
-one_stepOne_stepCheck23 y110 y112 y113 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y113 == (q2 :: q3) & y110 == Pair One Thr & one_stepOne_stepCheck20 y112 q2 q3) |
-      (y113 == (q2 :: q3) & y110 == Pair Two Thr & one_stepOne_stepCheck16 y112 q2 q3) |
-      (y113 == (q5 :: q6) & y110 == Pair Two One & one_stepOne_stepCheck15 y112 q5 q6)));
-      
-one_stepOne_stepCheck24 y115 y117 y118 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y118 == (q2 :: q3) & y115 == Pair One Two & one_stepOne_stepCheck26 y117 q2 q3) |
-      (y118 == (q2 :: q3) & y115 == Pair Thr Two & one_stepOne_stepCheck13 y117 q2 q3) |
-      (y118 == (q5 :: q6) & y115 == Pair Thr One & one_stepOne_stepCheck14 y117 q5 q6)));
-    
-one_stepOne_stepCheck25 y120 y122 y123 =
-  fresh q1, q2 in 
-    (((y123 == [] & y120 == Pair Thr One & one_step9 y122) |
-      (y123 == (q1 :: q2) & y120 == Pair Thr One & one_stepOne_stepCheck10 y122 q1 q2) |
-      (y123 == [] & y120 == Pair Thr Two & one_step11 y122) |
-      (y123 == (q1 :: q2) & y120 == Pair Thr Two & one_stepOne_stepCheck12 y122 q1 q2)));
-    
-one_stepOne_stepCheck26 y125 y127 y128 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y128 == (q2 :: q3) & y125 == Pair Two One & one_stepOne_stepCheck24 y127 q2 q3) |
-      (y128 == (q2 :: q3) & y125 == Pair Thr One & one_stepOne_stepCheck8 y127 q2 q3) |
-      (y128 == (q5 :: q6) & y125 == Pair Thr Two & one_stepOne_stepCheck7 y127 q5 q6)));
-    
-one_stepOne_stepCheck27 y130 y132 y133 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y133 == (q2 :: q3) & y130 == Pair One Two & one_stepOne_stepCheck21 y132 q2 q3) |
-      (y133 == (q2 :: q3) & y130 == Pair Thr Two & one_stepOne_stepCheck2 y132 q2 q3) |
-      (y133 == (q5 :: q6) & y130 == Pair Thr One & one_stepOne_stepCheck3 y132 q5 q6)));
-    
-one_stepOne_stepCheck28 y135 y137 y138 =
-  fresh q1, q2, q3, q4, q5, q6 in 
-    (((y138 == (q2 :: q3) & y135 == Pair One Two & one_stepOne_stepCheck5 y137 q2 q3) |
-      (y138 == (q2 :: q3) & y135 == Pair Thr Two & one_stepOne_stepCheck1 y137 q2 q3) |
-      (y138 == (q5 :: q6) & y135 == Pair Thr One & one_stepOne_stepCheck y137 q5 q6)));
+check y0 = (fresh q1 in (((y0 == ((One, Two) :: q1) & _check q1) | (y0 == ((One, Thr) :: q1) & __________________________check q1))));
+
+_check y1 = (fresh q1 in (((y1 == ((One, Thr) :: q1) & __check q1) | (y1 == ((Two, Thr) :: q1) & __________________________check q1) | (y1 == ((Two, One) :: q1) & check q1))));
+
+__check y2 = (fresh q1 in (((y2 == ((Two, One) :: q1) & ___check q1) | (y2 == ((Two, Thr) :: q1) & _________________________check q1) | (y2 == ((Thr, One) :: q1) & _check q1))));
+
+___check y3 = (fresh q1 in (((y3 == ((One, Two) :: q1) & __check q1) | (y3 == ((Thr, Two) :: q1) & ____check q1) | (y3 == ((One, Thr) :: q1) & _________________________check q1))));
+
+____check y4 = (fresh q1 in (((y4 == ((One, Thr) :: q1) & _____check q1) | (y4 == ((Two, Thr) :: q1) & ___check q1) | (y4 == ((One, Two) :: q1) & ______check q1))));
+
+_____check y5 = (fresh q1 in (((y5 == ((Two, One) :: q1) & __________________________check q1) | (y5 == ((Thr, One) :: q1) & ____check q1) | (y5 == ((Thr, Two) :: q1) & ______check q1))));
+
+______check y6 = (fresh q1 in (((y6 == ((One, Thr) :: q1) & _______check q1) | (y6 == ((Two, Thr) :: q1) & _____check q1) | (y6 == ((Two, One) :: q1) & ____check q1))));
+
+_______check y7 = (fresh q1 in (((y7 == ((Two, One) :: q1) & ________check q1) | (y7 == ((Thr, One) :: q1) & ______check q1) | (y7 == ((Two, Thr) :: q1) & ________________________check q1))));
+
+________check y8 = (fresh q1 in (((y8 == ((One, Two) :: q1) & _______check q1) | (y8 == ((One, Thr) :: q1) & ________________________check q1) | (y8 == ((Two, Thr) :: q1) & _________check q1))));
+
+_________check y9 = (fresh q1 in (((y9 == ((One, Two) :: q1) & __________check q1) | (y9 == ((Thr, Two) :: q1) & ________check q1) | (y9 == ((One, Thr) :: q1) & _______________________check q1))));
+
+__________check y10 = (fresh q1 in (((y10 == ((Two, One) :: q1) & _________check q1) | (y10 == ((Thr, One) :: q1) & ___________check q1) | (y10 == ((Two, Thr) :: q1) & _______________________check q1))));
+
+___________check y11 = (fresh q1 in (((y11 == ((One, Thr) :: q1) & __________check q1) | (y11 == ((Two, One) :: q1) & ____________check q1) | (y11 == ((Two, Thr) :: q1) & ______________________check q1))));
+
+____________check y12 = (fresh q1 in (((y12 == ((One, Two) :: q1) & ___________check q1) | (y12 == ((Thr, Two) :: q1) & _____________check q1) | (y12 == ((One, Thr) :: q1) & ______________________check q1))));
+
+_____________check y13 = (fresh q1 in (((y13 == ((One, Thr) :: q1) & ______________check q1) | (y13 == ((Two, Thr) :: q1) & ____________check q1) | (y13 == ((One, Two) :: q1) & _____________________check q1))));
+
+______________check y14 = (fresh q1 in (((y14 == ((One, Two) :: q1) & _______________check q1) | (y14 == ((Thr, One) :: q1) & _____________check q1) | (y14 == ((Thr, Two) :: q1) & _____________________check q1))));
+
+_______________check y15 = (fresh q1 in (((y15 == ((Two, One) :: q1) & ______________check q1) | (y15 == ((Thr, One) :: q1) & ________________check q1) | (y15 == ((Thr, Two) :: q1) & ____________________check q1))));
+
+________________check y16 = (fresh q1 in (((y16 == ((One, Thr) :: q1) & _______________check q1) | (y16 == ((Two, Thr) :: q1) & _________________check q1) | (y16 == ((One, Two) :: q1) & ____________________check q1))));
+
+_________________check y17 = (fresh q1 in (((y17 == ((One, Two) :: q1) & __________________check q1) | (y17 == ((One, Thr) :: q1) & ___________________check q1) | (y17 == ((Thr, Two) :: q1) & ________________check q1))));
+
+__________________check y18 = (fresh q1 in (((y18 == ((Two, One) :: q1) & _________________check q1) | (y18 == ((Thr, One) :: q1) & _____________________check q1) | (y18 == ((Two, Thr) :: q1) & ___________________check q1))));
+
+___________________check y19 = (fresh q1 in (((y19 == ((Two, One) :: q1) & _________________________check q1) | (y19 == ((Thr, One) :: q1) & _________________check q1) | (y19 == ((Thr, Two) :: q1) & __________________check q1))));
+
+____________________check y20 = (fresh q1 in (((y20 == ((Two, One) :: q1) & ________________check q1) | (y20 == ((Two, Thr) :: q1) & _______________check q1))));
+
+_____________________check y21 = (fresh q1 in (((y21 == ((One, Thr) :: q1) & __________________check q1) | (y21 == ((Two, Thr) :: q1) & ______________check q1) | (y21 == ((Two, One) :: q1) & _____________check q1))));
+
+______________________check y22 = (fresh q1 in (((y22 == ((One, Two) :: q1) & ________________________check q1) | (y22 == ((Thr, Two) :: q1) & ___________check q1) | (y22 == ((Thr, One) :: q1) & ____________check q1))));
+
+_______________________check y23 = (fresh q1 in ((y23 == [] | (y23 == ((Thr, One) :: q1) & _________check q1) | (y23 == ((Thr, Two) :: q1) & __________check q1))));
+
+________________________check y24 = (fresh q1 in (((y24 == ((Two, One) :: q1) & ______________________check q1) | (y24 == ((Thr, One) :: q1) & ________check q1) | (y24 == ((Thr, Two) :: q1) & _______check q1))));
+
+_________________________check y25 = (fresh q1 in (((y25 == ((One, Two) :: q1) & ___________________check q1) | (y25 == ((Thr, Two) :: q1) & __check q1) | (y25 == ((Thr, One) :: q1) & ___check q1))));
+
+__________________________check y26 = (fresh q1 in (((y26 == ((One, Two) :: q1) & _____check q1) | (y26 == ((Thr, Two) :: q1) & _check q1) | (y26 == ((Thr, One) :: q1) & check q1))));
+
 
 ? check x0

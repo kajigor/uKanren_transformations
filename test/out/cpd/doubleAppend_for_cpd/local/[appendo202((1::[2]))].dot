@@ -1,0 +1,14 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> appendo(v<SUB>20</SUB>, v<SUB>2</SUB>, 1 : [2])>];
+    1 [label=<S <BR/>  [ v<SUB>2</SUB> &rarr; 1 : [2], v<SUB>20</SUB> &rarr; [] ] >];
+    2 [label=<C <BR/> appendo(v<SUB>23</SUB>, v<SUB>2</SUB>, [2]) <BR/>  [ v<SUB>20</SUB> &rarr; v<SUB>22</SUB> : v<SUB>23</SUB>, v<SUB>22</SUB> &rarr; 1, v<SUB>24</SUB> &rarr; [2] ] >];
+    3 [label=<Leaf <BR/> appendo(v<SUB>23</SUB>, v<SUB>2</SUB>, [2]) <BR/>  [ v<SUB>20</SUB> &rarr; v<SUB>22</SUB> : v<SUB>23</SUB>, v<SUB>22</SUB> &rarr; 1, v<SUB>24</SUB> &rarr; [2] ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    2 -> 3 [label=""];
+}

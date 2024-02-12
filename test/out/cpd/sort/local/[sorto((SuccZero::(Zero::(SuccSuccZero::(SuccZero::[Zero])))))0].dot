@@ -1,0 +1,28 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> sorto(C Succ [Zero] : Zero : C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>0</SUB>)>];
+    1 [label=<C <BR/> splito(C Succ [Zero], Zero : C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>3</SUB>, v<SUB>5</SUB>), sorto(v<SUB>3</SUB>, v<SUB>6</SUB>), sorto(v<SUB>4</SUB>, v<SUB>7</SUB>), appendo(v<SUB>6</SUB>, C Succ [Zero] : v<SUB>7</SUB>, v<SUB>0</SUB>) <BR/>  [ v<SUB>1</SUB> &rarr; C Succ [Zero], v<SUB>2</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero] ] >];
+    2 [label=<O <BR/> splito(C Succ [Zero], Zero : C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>3</SUB>, v<SUB>5</SUB>)>];
+    3 [label=<C <BR/> le(Zero, C Succ [Zero]), splito(C Succ [Zero], C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>10</SUB>, v<SUB>5</SUB>), sorto(Zero : v<SUB>10</SUB>, v<SUB>6</SUB>), sorto(v<SUB>4</SUB>, v<SUB>7</SUB>), appendo(v<SUB>6</SUB>, C Succ [Zero] : v<SUB>7</SUB>, v<SUB>0</SUB>) <BR/>  [ v<SUB>1</SUB> &rarr; C Succ [Zero], v<SUB>2</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>3</SUB> &rarr; v<SUB>8</SUB> : v<SUB>10</SUB>, v<SUB>8</SUB> &rarr; Zero, v<SUB>9</SUB> &rarr; C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero] ] >];
+    4 [label=<C <BR/> gt(Zero, C Succ [Zero]), splito(C Succ [Zero], C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>3</SUB>, v<SUB>11</SUB>), sorto(v<SUB>3</SUB>, v<SUB>6</SUB>), sorto(v<SUB>4</SUB>, v<SUB>7</SUB>), appendo(v<SUB>6</SUB>, C Succ [Zero] : v<SUB>7</SUB>, v<SUB>0</SUB>) <BR/>  [ v<SUB>1</SUB> &rarr; C Succ [Zero], v<SUB>2</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>5</SUB> &rarr; v<SUB>8</SUB> : v<SUB>11</SUB>, v<SUB>8</SUB> &rarr; Zero, v<SUB>9</SUB> &rarr; C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero] ] >];
+    5 [label=<O <BR/> le(Zero, C Succ [Zero])>];
+    6 [label=<C <BR/> splito(C Succ [Zero], C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>10</SUB>, v<SUB>5</SUB>), sorto(Zero : v<SUB>10</SUB>, v<SUB>6</SUB>), sorto(v<SUB>4</SUB>, v<SUB>7</SUB>), appendo(v<SUB>6</SUB>, C Succ [Zero] : v<SUB>7</SUB>, v<SUB>0</SUB>) <BR/>  [ v<SUB>1</SUB> &rarr; C Succ [Zero], v<SUB>2</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>3</SUB> &rarr; v<SUB>8</SUB> : v<SUB>10</SUB>, v<SUB>8</SUB> &rarr; Zero, v<SUB>9</SUB> &rarr; C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero] ] >];
+    7 [label=<O <BR/> sorto(Zero : v<SUB>10</SUB>, v<SUB>6</SUB>)>];
+    8 [label=<C <BR/> splito(C Succ [Zero], C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>15</SUB>, v<SUB>5</SUB>), splito(Zero, v<SUB>15</SUB>, v<SUB>16</SUB>, v<SUB>18</SUB>), sorto(v<SUB>16</SUB>, v<SUB>19</SUB>), sorto(v<SUB>17</SUB>, v<SUB>20</SUB>), appendo(v<SUB>19</SUB>, Zero : v<SUB>20</SUB>, v<SUB>6</SUB>), sorto(v<SUB>4</SUB>, v<SUB>7</SUB>), appendo(v<SUB>6</SUB>, C Succ [Zero] : v<SUB>7</SUB>, v<SUB>0</SUB>) <BR/>  [ v<SUB>1</SUB> &rarr; C Succ [Zero], v<SUB>2</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>3</SUB> &rarr; v<SUB>8</SUB> : v<SUB>10</SUB>, v<SUB>8</SUB> &rarr; Zero, v<SUB>9</SUB> &rarr; C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>10</SUB> &rarr; v<SUB>15</SUB>, v<SUB>14</SUB> &rarr; Zero ] >];
+    9 [label=<Leaf <BR/> splito(C Succ [Zero], C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>15</SUB>, v<SUB>5</SUB>), splito(Zero, v<SUB>15</SUB>, v<SUB>16</SUB>, v<SUB>18</SUB>), sorto(v<SUB>16</SUB>, v<SUB>19</SUB>), sorto(v<SUB>17</SUB>, v<SUB>20</SUB>), appendo(v<SUB>19</SUB>, Zero : v<SUB>20</SUB>, v<SUB>6</SUB>), sorto(v<SUB>4</SUB>, v<SUB>7</SUB>), appendo(v<SUB>6</SUB>, C Succ [Zero] : v<SUB>7</SUB>, v<SUB>0</SUB>) <BR/>  [ v<SUB>1</SUB> &rarr; C Succ [Zero], v<SUB>2</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>3</SUB> &rarr; v<SUB>8</SUB> : v<SUB>10</SUB>, v<SUB>8</SUB> &rarr; Zero, v<SUB>9</SUB> &rarr; C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>10</SUB> &rarr; v<SUB>15</SUB>, v<SUB>14</SUB> &rarr; Zero ] >];
+    10 [label=<_|_>];
+    0 -> 1 [label=""];
+    1 -> 2 [label=""];
+    2 -> 3 [label=""];
+    2 -> 4 [label=""];
+    3 -> 5 [label=""];
+    4 -> 10 [label=""];
+    5 -> 6 [label=""];
+    6 -> 7 [label=""];
+    7 -> 8 [label=""];
+    8 -> 9 [label=""];
+}

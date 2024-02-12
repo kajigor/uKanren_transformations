@@ -47,4 +47,4 @@ prog_clause exp body =
       body == C Append l1 l2 l3
   );
 
-? depth exp d
+? depth (C Member O [S O, S (S O), S (S O), S (S (S O)), S O, O, S (S O), O, S O, S (S O), O, O]) d

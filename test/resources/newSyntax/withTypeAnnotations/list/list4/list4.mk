@@ -58,4 +58,4 @@ filter (static dynamic dynamic)
 maxMino x m l =
   maxo x m & mino x l;
 
-? maxMino x m l 
+? maxMino [Succ Zero, Zero, Succ (Succ Zero)] m l

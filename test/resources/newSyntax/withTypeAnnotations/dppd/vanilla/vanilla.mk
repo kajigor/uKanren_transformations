@@ -59,12 +59,4 @@ my_clause clause body =
       body == Nil
   );
 
-filter (dynamic)
-test2 r =
-  solve_atom (Solve_atom2 (App ([O, S O, S (S O)]) ([O, S O, S (S O), S (S (S O))]) r));
-
-filter (dynamic)
-test1 r =
-  solve_atom (App ([O, S O, S (S O)]) ([O, S O, S (S O), S (S (S O))]) r);
-
-? solve [DoubleApp x y z ([S, S O, S (S O), S O])]
+? solve [DoubleApp x y z ([S O, S O, S (S O), S O])]

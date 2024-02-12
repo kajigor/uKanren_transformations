@@ -1,0 +1,8 @@
+check y0 = (fresh q1 in (((y0 == ((One, Two) :: q1) & _check q1) | (y0 == ((One, Thr) :: q1) & ___check q1))));
+
+_check y1 = (fresh q1 in ((y1 == ((Two, Thr) :: q1) & ___check q1)));
+
+___check y2 = (fresh q1 in ((y2 == ((Thr, Two) :: q1) & _check q1)));
+
+
+? check x0

@@ -34,7 +34,7 @@ prettyMkTerm (V v) = v
 prettyMkTerm (C name []) | isNil name = "[]"
 prettyMkTerm (C name [h, C name1 []]) | isCons name && isNil name1 = printf "[%s]" (prettyMkTerm h)
 prettyMkTerm (C name [h, t]) | isCons name = printf "(%s :: %s)" (prettyMkTerm h) (prettyMkTerm t)
-prettyMkTerm (C name [x, y]) | isPair name = printf "(%s, %s)" (prettyMkTerm x) (prettyMkTerm y)
+--prettyMkTerm (C name [x, y]) | isPair name = printf "(%s, %s)" (prettyMkTerm x) (prettyMkTerm y)
 prettyMkTerm (C name ts) =
   case ts of
     [] -> name

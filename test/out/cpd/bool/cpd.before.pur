@@ -1,0 +1,1 @@
+Program {getDefs = [noto "x0" "x1" = (("x1" = Trueo /\ "x0" = Falso) \/ ("x1" = Falso /\ "x0" = Trueo))], getGoal = noto "x0" "x1"}

@@ -1,0 +1,26 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> Unfold input_clause (C Pos [C App [v<SUB>28</SUB> v<SUB>29</SUB> v<SUB>30</SUB>]] : v<SUB>38</SUB>)>];
+    1 [label=<C <BR/> Unfold proveall [] (C Pos [C App [[] v<SUB>43</SUB> v<SUB>43</SUB>]] : v<SUB>36</SUB>) <BR/>  [ v<SUB>28</SUB> &rarr; [], v<SUB>29</SUB> &rarr; v<SUB>43</SUB>, v<SUB>30</SUB> &rarr; v<SUB>43</SUB>, v<SUB>38</SUB> &rarr; [] ] >];
+    2 [label=<C <BR/> Unfold proveall ([C Neg [C App [v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>47</SUB>]]]) (C Pos [C App [v<SUB>44</SUB> : v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>44</SUB> : v<SUB>47</SUB>]] : v<SUB>36</SUB>) <BR/>  [ v<SUB>28</SUB> &rarr; v<SUB>44</SUB> : v<SUB>45</SUB>, v<SUB>29</SUB> &rarr; v<SUB>46</SUB>, v<SUB>30</SUB> &rarr; v<SUB>44</SUB> : v<SUB>47</SUB>, v<SUB>38</SUB> &rarr; [C Neg [C App [v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>47</SUB>]]] ] >];
+    3 [label=<O <BR/> Unfold proveall [] (C Pos [C App [[] v<SUB>43</SUB> v<SUB>43</SUB>]] : v<SUB>36</SUB>)>];
+    4 [label=<S <BR/>  [ v<SUB>28</SUB> &rarr; [], v<SUB>29</SUB> &rarr; v<SUB>43</SUB>, v<SUB>30</SUB> &rarr; v<SUB>43</SUB>, v<SUB>38</SUB> &rarr; [] ] >];
+    5 [label=<O <BR/> Unfold proveall ([C Neg [C App [v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>47</SUB>]]]) (C Pos [C App [v<SUB>44</SUB> : v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>44</SUB> : v<SUB>47</SUB>]] : v<SUB>36</SUB>)>];
+    6 [label=<C <BR/> Memo prove (C Neg [C App [v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>47</SUB>]]) (C Pos [C App [v<SUB>44</SUB> : v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>44</SUB> : v<SUB>47</SUB>]] : v<SUB>36</SUB>), Unfold proveall [] (C Pos [C App [v<SUB>44</SUB> : v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>44</SUB> : v<SUB>47</SUB>]] : v<SUB>36</SUB>) <BR/>  [ v<SUB>28</SUB> &rarr; v<SUB>44</SUB> : v<SUB>45</SUB>, v<SUB>29</SUB> &rarr; v<SUB>46</SUB>, v<SUB>30</SUB> &rarr; v<SUB>44</SUB> : v<SUB>47</SUB>, v<SUB>38</SUB> &rarr; [C Neg [C App [v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>47</SUB>]]], v<SUB>48</SUB> &rarr; C Neg [C App [v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>47</SUB>]], v<SUB>49</SUB> &rarr; [] ] >];
+    7 [label=<O <BR/> Unfold proveall [] (C Pos [C App [v<SUB>44</SUB> : v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>44</SUB> : v<SUB>47</SUB>]] : v<SUB>36</SUB>)>];
+    8 [label=<C <BR/> Memo prove (C Neg [C App [v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>47</SUB>]]) (C Pos [C App [v<SUB>44</SUB> : v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>44</SUB> : v<SUB>47</SUB>]] : v<SUB>36</SUB>) <BR/>  [ v<SUB>28</SUB> &rarr; v<SUB>44</SUB> : v<SUB>45</SUB>, v<SUB>29</SUB> &rarr; v<SUB>46</SUB>, v<SUB>30</SUB> &rarr; v<SUB>44</SUB> : v<SUB>47</SUB>, v<SUB>38</SUB> &rarr; [C Neg [C App [v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>47</SUB>]]], v<SUB>48</SUB> &rarr; C Neg [C App [v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>47</SUB>]], v<SUB>49</SUB> &rarr; [] ] >];
+    9 [label=<Leaf <BR/> Memo prove (C Neg [C App [v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>47</SUB>]]) (C Pos [C App [v<SUB>44</SUB> : v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>44</SUB> : v<SUB>47</SUB>]] : v<SUB>36</SUB>) <BR/>  [ v<SUB>28</SUB> &rarr; v<SUB>44</SUB> : v<SUB>45</SUB>, v<SUB>29</SUB> &rarr; v<SUB>46</SUB>, v<SUB>30</SUB> &rarr; v<SUB>44</SUB> : v<SUB>47</SUB>, v<SUB>38</SUB> &rarr; [C Neg [C App [v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>47</SUB>]]], v<SUB>48</SUB> &rarr; C Neg [C App [v<SUB>45</SUB> v<SUB>46</SUB> v<SUB>47</SUB>]], v<SUB>49</SUB> &rarr; [] ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    1 -> 3 [label=""];
+    2 -> 5 [label=""];
+    3 -> 4 [label=""];
+    5 -> 6 [label=""];
+    6 -> 7 [label=""];
+    7 -> 8 [label=""];
+    8 -> 9 [label=""];
+}

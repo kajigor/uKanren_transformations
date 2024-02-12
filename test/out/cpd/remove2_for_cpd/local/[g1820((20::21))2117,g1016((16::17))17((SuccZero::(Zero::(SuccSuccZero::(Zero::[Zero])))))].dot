@@ -1,0 +1,20 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> g(v<SUB>18</SUB>, v<SUB>20</SUB>, v<SUB>20</SUB> : v<SUB>21</SUB>, v<SUB>21</SUB>, v<SUB>17</SUB>)>];
+    1 [label=<C <BR/> f(v<SUB>21</SUB>, v<SUB>23</SUB>), g(v<SUB>10</SUB>, v<SUB>16</SUB>, v<SUB>16</SUB> : v<SUB>22</SUB> : v<SUB>23</SUB>, v<SUB>22</SUB> : v<SUB>23</SUB>, C Succ [Zero] : Zero : C Succ [C Succ [Zero]] : Zero : [Zero]) <BR/>  [ v<SUB>17</SUB> &rarr; v<SUB>22</SUB> : v<SUB>23</SUB>, v<SUB>18</SUB> &rarr; v<SUB>22</SUB>, v<SUB>20</SUB> &rarr; v<SUB>22</SUB> ] >];
+    2 [label=<C <BR/> neq(v<SUB>22</SUB>, v<SUB>20</SUB>), f(v<SUB>20</SUB> : v<SUB>21</SUB>, v<SUB>23</SUB>), g(v<SUB>10</SUB>, v<SUB>16</SUB>, v<SUB>16</SUB> : v<SUB>22</SUB> : v<SUB>23</SUB>, v<SUB>22</SUB> : v<SUB>23</SUB>, C Succ [Zero] : Zero : C Succ [C Succ [Zero]] : Zero : [Zero]) <BR/>  [ v<SUB>17</SUB> &rarr; v<SUB>22</SUB> : v<SUB>23</SUB>, v<SUB>18</SUB> &rarr; v<SUB>22</SUB> ] >];
+    3 [label=<Leaf <BR/> f(v<SUB>21</SUB>, v<SUB>23</SUB>), g(v<SUB>10</SUB>, v<SUB>16</SUB>, v<SUB>16</SUB> : v<SUB>22</SUB> : v<SUB>23</SUB>, v<SUB>22</SUB> : v<SUB>23</SUB>, C Succ [Zero] : Zero : C Succ [C Succ [Zero]] : Zero : [Zero]) <BR/>  [ v<SUB>17</SUB> &rarr; v<SUB>22</SUB> : v<SUB>23</SUB>, v<SUB>18</SUB> &rarr; v<SUB>22</SUB>, v<SUB>20</SUB> &rarr; v<SUB>22</SUB> ] >];
+    4 [label=<O <BR/> f(v<SUB>20</SUB> : v<SUB>21</SUB>, v<SUB>23</SUB>)>];
+    5 [label=<C <BR/> neq(v<SUB>22</SUB>, v<SUB>24</SUB>), h(v<SUB>24</SUB>, v<SUB>25</SUB>, v<SUB>23</SUB>), g(v<SUB>10</SUB>, v<SUB>16</SUB>, v<SUB>16</SUB> : v<SUB>22</SUB> : v<SUB>23</SUB>, v<SUB>22</SUB> : v<SUB>23</SUB>, C Succ [Zero] : Zero : C Succ [C Succ [Zero]] : Zero : [Zero]) <BR/>  [ v<SUB>17</SUB> &rarr; v<SUB>22</SUB> : v<SUB>23</SUB>, v<SUB>18</SUB> &rarr; v<SUB>22</SUB>, v<SUB>20</SUB> &rarr; v<SUB>24</SUB>, v<SUB>21</SUB> &rarr; v<SUB>25</SUB> ] >];
+    6 [label=<Leaf <BR/> neq(v<SUB>22</SUB>, v<SUB>24</SUB>), h(v<SUB>24</SUB>, v<SUB>25</SUB>, v<SUB>23</SUB>), g(v<SUB>10</SUB>, v<SUB>16</SUB>, v<SUB>16</SUB> : v<SUB>22</SUB> : v<SUB>23</SUB>, v<SUB>22</SUB> : v<SUB>23</SUB>, C Succ [Zero] : Zero : C Succ [C Succ [Zero]] : Zero : [Zero]) <BR/>  [ v<SUB>17</SUB> &rarr; v<SUB>22</SUB> : v<SUB>23</SUB>, v<SUB>18</SUB> &rarr; v<SUB>22</SUB>, v<SUB>20</SUB> &rarr; v<SUB>24</SUB>, v<SUB>21</SUB> &rarr; v<SUB>25</SUB> ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    1 -> 3 [label=""];
+    2 -> 4 [label=""];
+    4 -> 5 [label=""];
+    5 -> 6 [label=""];
+}

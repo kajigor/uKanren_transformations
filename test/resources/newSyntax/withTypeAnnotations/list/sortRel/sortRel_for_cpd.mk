@@ -25,9 +25,9 @@ smallesto l s l' =
   l == [s] & l' == Nil |
   (fresh  h, t, s', t', max in
       l' == (max :: t') &
-      l == (h :: t) &
       minmaxo h s' s max &
-      smallesto t s' t'
+      smallesto t s' t' &
+      l == (h :: t)
     );
 
 sorto x y =
@@ -37,4 +37,6 @@ sorto x y =
     sorto xs xs' &
     smallesto x s xs);
 
-? sorto x0 ([Zero, Succ Zero, Succ (Succ Zero), Succ (Succ (Succ Zero))])
+? sorto x0 ([Zero, Succ Zero, Succ (Succ Zero), Succ (Succ (Succ Zero)),
+                          Succ (Succ (Succ (Succ Zero))), Succ (Succ (Succ (Succ (Succ Zero)))),
+                          Succ (Succ (Succ (Succ (Succ (Succ Zero)))))])

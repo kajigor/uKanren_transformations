@@ -1,5 +1,5 @@
 
-filter (dynamic dynamic dynamic)
+filter (dynamic dynamic static)
 notEqStick x y q44 =
   (x == One) &
     (y == One & q44 == Falso |
@@ -19,14 +19,14 @@ isNil l q39 =
   (l == Nil & q39 == Trueo) |
   (fresh q41, q42 in l == Cons q41 q42 & q39 == Falso);
 
-filter (dynamic dynamic dynamic)
+filter (static static static)
 less a b q36 =
   (fresh b' in
     b == S b' &
     (a == O & q36 == Trueo |
     (fresh a' in a == S a' & less a' b' q36)));
 
-filter (dynamic dynamic dynamic)
+filter (static static dynamic)
 get name state q31 =
   (fresh s1, s2, s3 in
     state == Triple s1 s2 s3 &
@@ -34,7 +34,7 @@ get name state q31 =
      name == Two & s2 == q31 |
      name == Thr & s3 == q31));
 
-filter (dynamic dynamic dynamic dynamic)
+filter (static static static dynamic)
 set name stack state q26 =
   (fresh s1, s2, s3 in
     state == Triple s1 s2 s3 &
@@ -42,14 +42,14 @@ set name stack state q26 =
      name == Two & q26 == Triple s1 stack s3 |
      name == Thr & q26 == Triple s1 s2 stack));
 
-filter (dynamic dynamic dynamic)
+filter (dynamic static dynamic)
 one_step step state q13 =
   fresh fromN, toN, q15, q17, x, xs, q19 in
-    step == Pair fromN toN &
     q15 == Trueo &
-    q17 == Cons x xs &
     notEqStick fromN toN q15 &
+    step == Pair fromN toN &
     get fromN state q17 &
+    q17 == Cons x xs &
     get toN state q19 &
     ((fresh q20 in
         q19 == Nil &
@@ -73,8 +73,8 @@ check state steps q0 =
      (q1 == Falso & q0 == Falso |
       q1 == Trueo & q0 == q2)) |
   (fresh x, xs, q11 in
-    steps == Cons x xs &
     one_step x state q11 &
-    check q11 xs q0);
+    check q11 xs q0 &
+    steps == Cons x xs);
 
-? check (Triple (Cons Z (Cons (S Z) (Cons (S (S Z)) Nil))) Nil Nil) q Trueo
+? check (Triple (Cons O (Cons (S O) (Cons (S (S O)) Nil))) Nil Nil) q Trueo

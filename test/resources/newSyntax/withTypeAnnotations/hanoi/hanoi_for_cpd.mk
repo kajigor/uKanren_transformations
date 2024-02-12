@@ -38,11 +38,11 @@ set name stack state q26 =
 
 one_step step state q13 =
   fresh fromN, toN, q15, q17, x, xs, q19 in
-    step == Pair fromN toN &
     q15 == Trueo &
-    q17 == Cons x xs &
     notEqStick fromN toN q15 &
+    step == Pair fromN toN &
     get fromN state q17 &
+    q17 == Cons x xs &
     get toN state q19 &
     ((fresh q20 in
         q19 == Nil &
@@ -65,8 +65,8 @@ check state steps q0 =
      (q1 == Falso & q0 == Falso |
       q1 == Trueo & q0 == q2)) |
   (fresh x, xs, q11 in
-    steps == Cons x xs &
     one_step x state q11 &
-    check q11 xs q0);
+    check q11 xs q0 &
+    steps == Cons x xs);
 
-? check (Triple (Cons Z (Cons (S Z) (Cons (S (S Z)) Nil))) Nil Nil) q Trueo
+? check (Triple (Cons O (Cons (S O) (Cons (S (S O)) Nil))) Nil Nil) q Trueo

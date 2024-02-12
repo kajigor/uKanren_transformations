@@ -1,0 +1,18 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<Or <BR/> maxmin(C Succ [Zero] : C Succ [C Succ [Zero]] : [C Succ [C Succ [C Succ [Zero]]]], v<SUB>0</SUB>, v<SUB>1</SUB>) <BR/>  [  ] >];
+    1 [label=<Or <BR/> max(C Succ [C Succ [Zero]] : [C Succ [C Succ [C Succ [Zero]]]], C Succ [Zero], v<SUB>0</SUB>), min(C Succ [C Succ [Zero]] : [C Succ [C Succ [C Succ [Zero]]]], C Succ [Zero], v<SUB>1</SUB>) <BR/>  [ v<SUB>2</SUB> &rarr; C Succ [Zero], v<SUB>3</SUB> &rarr; C Succ [C Succ [Zero]] : [C Succ [C Succ [C Succ [Zero]]]] ] >];
+    2 [label=<Split <BR/> gt(C Succ [C Succ [Zero]], C Succ [Zero], Trueo), min([C Succ [C Succ [C Succ [Zero]]]], C Succ [Zero], v<SUB>1</SUB>) <BR/>  [ v<SUB>0</SUB> &rarr; C Succ [C Succ [C Succ [Zero]]], v<SUB>4</SUB> &rarr; C Succ [C Succ [Zero]], v<SUB>5</SUB> &rarr; [C Succ [C Succ [C Succ [Zero]]]], v<SUB>13</SUB> &rarr; C Succ [Zero], v<SUB>14</SUB> &rarr; Zero, v<SUB>15</SUB> &rarr; Zero, v<SUB>18</SUB> &rarr; C Succ [C Succ [C Succ [Zero]]], v<SUB>19</SUB> &rarr; [], v<SUB>28</SUB> &rarr; C Succ [C Succ [Zero]], v<SUB>29</SUB> &rarr; C Succ [Zero], v<SUB>31</SUB> &rarr; C Succ [Zero], v<SUB>32</SUB> &rarr; Zero, v<SUB>33</SUB> &rarr; Zero, v<SUB>36</SUB> &rarr; C Succ [C Succ [Zero]], v<SUB>37</SUB> &rarr; [C Succ [C Succ [C Succ [Zero]]]] ] >];
+    3 [label=<Leaf <BR/> gt(C Succ [C Succ [Zero]], C Succ [Zero], Trueo) <BR/>  [  ]  <BR/> gt(C Succ [C Succ [Zero]], C Succ [Zero], Trueo)>];
+    4 [label=<Or <BR/> min([C Succ [C Succ [C Succ [Zero]]]], C Succ [Zero], v<SUB>1</SUB>) <BR/>  [  ] >];
+    5 [label=<Success <BR/>  [ v<SUB>1</SUB> &rarr; C Succ [Zero], v<SUB>41</SUB> &rarr; C Succ [C Succ [C Succ [Zero]]], v<SUB>42</SUB> &rarr; [], v<SUB>54</SUB> &rarr; C Succ [C Succ [Zero]], v<SUB>55</SUB> &rarr; Zero, v<SUB>56</SUB> &rarr; C Succ [Zero] ] >];
+    0 -> 1 [label=""];
+    1 -> 2 [label=""];
+    2 -> 3 [label=""];
+    2 -> 4 [label=""];
+    4 -> 5 [label=""];
+}

@@ -30,6 +30,7 @@ purification (program@(Program defs x), names) =
   -- identity x
   --justTakeOutLets x
   --purificationWithErasure x
+--  conservativePurificationWithErasure program names
   let (goal', xs, defs') = conservativePurificationWithErasure program names in
 
   let (goal'', defs'') = until (\(g', df') -> clearPrg (g', df') == (g', df')) clearPrg (goal', defs') in
@@ -43,7 +44,7 @@ clearPrg (g, defs) =
   case g' of 
     Nothing -> error "Residualiation failed: no defs generated" 
     Just g'' -> (g'', defs')
-  
+
 clearDef :: [Def G X] -> Def G X -> Maybe (Def G X) 
 clearDef defs (Def n a g) = do 
    g' <- clearGoal defs g 

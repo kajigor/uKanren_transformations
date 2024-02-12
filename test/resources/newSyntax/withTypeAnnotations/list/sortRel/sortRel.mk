@@ -1,4 +1,4 @@
-filter (static static dynamic)
+filter (static static static)
 leo x y b =
   (x == Zero & b == Trueo) |
   ( fresh z in
@@ -8,7 +8,7 @@ leo x y b =
       x == Succ x' & y == Succ y' & leo x' y' b
   );
 
-filter (static static dynamic)
+filter (static static static)
 gto x y b =
   (x == Zero & b == Falso) |
   (fresh z in
@@ -41,4 +41,5 @@ sorto x y =
     sorto xs xs' &
     smallesto x s xs);
 
-? sorto x0 ([Zero, Zero, Succ Zero, Succ Zero, Succ (Succ Zero), Succ (Succ (Succ Zero)), Succ (Succ (Succ Zero))])
+? sorto x0 ([Zero, Succ Zero, Succ (Succ Zero), Succ (Succ (Succ Zero)),
+              Succ (Succ (Succ (Succ Zero))), Succ (Succ (Succ (Succ (Succ Zero))))])

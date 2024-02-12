@@ -81,7 +81,7 @@ sldResolutionStep gs env s seen isFirstTime heuristic =
       where
         go g' env' zipper isFirstTime =
           let Descend g ancs = cursor zipper in
-          let normalized = normalize $ traceShow g' g' in
+          let normalized = normalize g' in -- $ traceShow g'
           let unified = mapMaybe (unifyStuff s) normalized in
           let addDescends xs s =
                 substituteDescend s

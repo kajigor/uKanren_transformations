@@ -1,0 +1,14 @@
+check y0 = fresh q1 q2 q3 ((y0 = (q1 :: q2) /\ one_step q1 q3 /\ _check q2 q3))
+one_step y1 y2 = fresh q1 q2 ((y1 = (q1, q2) /\ ((q2 = Thr /\ q1 = One /\ y2 = Triple (1 :: [2]) [] [0]) \/ (q2 = Two /\ q1 = One /\ y2 = Triple (1 :: [2]) [0] []))))
+_check y3 y4 = fresh q1 q2 q3 q4 (((y3 = [] /\ y4 = Triple [] [] q1) \/ (y3 = (q2 :: q3) /\ _one_step y4 q2 q4 /\ __check q3 q4)))
+_one_step y5 y6 y7 = fresh q1 q2 q3 q4 q5 q6 q7 q8 q9 q10 q11 q12 q13 q14 (((y6 = (q1, q2) /\ ((q2 = Two /\ q1 = Thr /\ y5 = Triple q3 [] (q4 :: q5) /\ set y7 q4 q3 q5) \/ (q2 = One /\ q1 = Thr /\ y5 = Triple [] q6 (q4 :: q5) /\ _set y7 q4 q6 q5) \/ (q2 = Thr /\ q1 = Two /\ y5 = Triple q3 (q4 :: q5) [] /\ __set y7 q4 q3 q5) \/ (q2 = One /\ q1 = Two /\ y7 = Triple [q4] q5 q7 /\ y5 = Triple [] (q4 :: q5) q7) \/ (q2 = Thr /\ q1 = One /\ y7 = Triple q5 q6 [q4] /\ y5 = Triple (q4 :: q5) q6 []) \/ (q2 = Two /\ q1 = One /\ y7 = Triple q5 [q4] q7 /\ y5 = Triple (q4 :: q5) [] q7))) \/ (y6 = (q1, q2) /\ ((q2 = Two /\ q1 = Thr /\ y5 = Triple q8 (q9 :: q10) (q4 :: q5) /\ lessSet y7 q4 q8 q9 q10 q5) \/ (q2 = One /\ q1 = Thr /\ y5 = Triple (q9 :: q10) q11 (q4 :: q5) /\ _lessSet y7 q4 q11 q9 q10 q5) \/ (q2 = Thr /\ q1 = Two /\ y5 = Triple q8 (q4 :: q5) (q9 :: q10) /\ __lessSet y7 q4 q8 q9 q10 q5) \/ (q2 = One /\ q1 = Two /\ y7 = Triple (q4 :: (q9 :: q10)) q5 q12 /\ y5 = Triple (q9 :: q10) (q4 :: q5) q12 /\ less q4 q9) \/ (q2 = Thr /\ q1 = One /\ y7 = Triple q5 q11 (q4 :: (q9 :: q10)) /\ y5 = Triple (q4 :: q5) q11 (q9 :: q10) /\ less q4 q9) \/ (q2 = Two /\ q1 = One /\ ((y7 = Triple q5 (0 :: ((1 + q13) :: q10)) q12 /\ y5 = Triple (0 :: q5) ((1 + q13) :: q10) q12) \/ (y7 = Triple q5 ((1 + q14) :: ((1 + q13) :: q10)) q12 /\ y5 = Triple ((1 + q14) :: q5) ((1 + q13) :: q10) q12 /\ less q14 q13)))))))
+__check y8 y9 = fresh q1 q2 ((success  \/ (_one_step q1 q2 y9 /\ __check y8 y9)))
+set y10 y11 y12 y13 = y10 = Triple y12 [y11] y13
+_set y14 y15 y16 y17 = y14 = Triple [y15] y16 y17
+__set y18 y19 y20 y21 = y18 = Triple y20 y21 [y19]
+lessSet y22 y23 y24 y25 y26 y27 = (y22 = Triple y24 (y23 :: (y25 :: y26)) y27 /\ less y23 y25)
+_lessSet y28 y29 y30 y31 y32 y33 = (y28 = Triple (y29 :: (y31 :: y32)) y30 y33 /\ less y29 y31)
+__lessSet y34 y35 y36 y37 y38 y39 = (y34 = Triple y36 y39 (y35 :: (y37 :: y38)) /\ less y35 y37)
+less y40 y41 = fresh q1 q2 (((y41 = (1 + q1) /\ y40 = 0) \/ (y41 = (1 + q1) /\ y40 = (1 + q2) /\ less q2 q1)))
+
+check x0

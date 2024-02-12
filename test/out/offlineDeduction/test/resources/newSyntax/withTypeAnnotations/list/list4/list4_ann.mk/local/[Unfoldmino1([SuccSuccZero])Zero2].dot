@@ -1,0 +1,22 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> Unfold mino1 ([C Succ [C Succ [Zero]]]) Zero v<SUB>2</SUB>>];
+    1 [label=<C <BR/> Unfold leo (C Succ [C Succ [Zero]]) Zero Trueo, Unfold mino1 [] (C Succ [C Succ [Zero]]) v<SUB>2</SUB> <BR/>  [ v<SUB>23</SUB> &rarr; C Succ [C Succ [Zero]], v<SUB>24</SUB> &rarr; [] ] >];
+    2 [label=<C <BR/> Unfold gto (C Succ [C Succ [Zero]]) Zero Trueo, Unfold mino1 [] Zero v<SUB>2</SUB> <BR/>  [ v<SUB>26</SUB> &rarr; C Succ [C Succ [Zero]], v<SUB>27</SUB> &rarr; [] ] >];
+    3 [label=<_|_>];
+    4 [label=<O <BR/> Unfold gto (C Succ [C Succ [Zero]]) Zero Trueo>];
+    5 [label=<C <BR/> Unfold mino1 [] Zero v<SUB>2</SUB> <BR/>  [ v<SUB>26</SUB> &rarr; C Succ [C Succ [Zero]], v<SUB>27</SUB> &rarr; [], v<SUB>29</SUB> &rarr; C Succ [Zero] ] >];
+    6 [label=<O <BR/> Unfold mino1 [] Zero v<SUB>2</SUB>>];
+    7 [label=<S <BR/>  [ v<SUB>2</SUB> &rarr; Zero, v<SUB>26</SUB> &rarr; C Succ [C Succ [Zero]], v<SUB>27</SUB> &rarr; [], v<SUB>29</SUB> &rarr; C Succ [Zero] ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    1 -> 3 [label=""];
+    2 -> 4 [label=""];
+    4 -> 5 [label=""];
+    5 -> 6 [label=""];
+    6 -> 7 [label=""];
+}

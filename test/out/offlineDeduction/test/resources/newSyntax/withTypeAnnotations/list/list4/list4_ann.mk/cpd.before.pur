@@ -1,0 +1,12 @@
+maxMino x1 x2 = (fresh x13, x12, x9, x7, x6 in (((x13 == (Zero :: [Succ (Succ (Zero))]) & x12 == Succ (Zero) & x9 == Zero & x7 == (Zero :: [Succ (Succ (Zero))]) & x6 == Succ (Zero)) & (maxo1 x1 & mino1 x2))));
+
+maxo1 x1 = (fresh x15, x14 in (((x15 == [Succ (Succ (Zero))] & x14 == Zero) & _maxo1 x1)));
+
+_maxo1 x1 = (fresh x32, x31, x30, x27, x26 in ((x32 == Zero & x31 == Zero & x30 == Succ (Zero) & x27 == [] & x26 == Succ (Succ (Zero)) & x1 == Succ (Succ (Zero)))));
+
+mino1 x2 = (fresh x15, x14 in (((x15 == [Succ (Succ (Zero))] & x14 == Zero) & _mino1 x2)));
+
+_mino1 x2 = (fresh x29, x27, x26 in ((x29 == Succ (Zero) & x27 == [] & x26 == Succ (Succ (Zero)) & x2 == Zero)));
+
+
+? maxMino x1 x2

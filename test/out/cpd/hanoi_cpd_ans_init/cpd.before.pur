@@ -1,0 +1,8 @@
+check x0 = (fresh x3, x1, x2 in ((((x3 == Two & x1 == (One, x3) & x0 == (x1 :: x2)) & _check x2) | ((x3 == Thr & x1 == (One, x3) & x0 == (x1 :: x2)) & ___check x2))));
+
+_check x2 = (fresh x6, x4, x5 in (((x6 == Two & x4 == (x6, Thr) & x2 == (x4 :: x5)) & ___check x5)));
+
+___check x2 = (fresh x6, x4, x5 in (((x6 == Thr & x4 == (x6, Two) & x2 == (x4 :: x5)) & _check x5)));
+
+
+? check x0

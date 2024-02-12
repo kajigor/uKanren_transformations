@@ -1,0 +1,1 @@
+max_length(succ(succ(zero)), succ(succ(succ(succ(succ(zero)))))).

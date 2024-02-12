@@ -49,12 +49,12 @@ splito x xs l g =
 filter (static dynamic)
 sorto lst reslst = 
   (lst == [] & reslst == []) | 
-  (fresh h, t, l, r, g, lres, rres in 
+  (fresh h, t, l, r, lres, rres in
 	lst == (h :: t) & 
-	splito h t l g & 
+	splito h t l r &
 	sorto l lres & 
 	sorto r rres & 
 	appendo lres (h :: rres) reslst
   );
 
-? sorto lst reslst
+? sorto [Succ Zero, Zero, Succ (Succ Zero), Succ Zero, Zero] reslst

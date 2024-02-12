@@ -19,4 +19,4 @@ flip left right =
       left == Tree xt info yt)
   );
 
-? flipflip x y
+? flipflip x (Tree (Tree (Leaf (A [])) (E []) (Leaf (B []) ) ) (D []) (Leaf (C []) ) )

@@ -1,14 +1,14 @@
 applasto l x lst =
   fresh lx in
-    appendo l [x] lx &
-    lasto lst lx;
+    (appendo l [x] lx &
+    lasto lst lx);
 
 
 lasto x ys =
   fresh h, t in
-    ys == [x] |
+    (ys == [x] |
     (ys == (h :: t) &
-     lasto x t);
+     lasto x t));
 
 
 appendo xs ys rs =
@@ -18,4 +18,4 @@ appendo xs ys rs =
     rs == (h :: ts) &
     appendo t ys ts);
 
-? applasto l O (S O)
+? applasto l (S O) (S O)

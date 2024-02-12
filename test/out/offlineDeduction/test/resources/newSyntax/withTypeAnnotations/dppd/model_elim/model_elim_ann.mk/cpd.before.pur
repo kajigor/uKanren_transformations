@@ -1,0 +1,18 @@
+solve x0 x1 x2 = (fresh x7, x5, x6 in (((x7 == App (x0) (x1) (x2) & x5 == Pos (x7)) & _contrapositiveProveall x0 x1 x2 x6 [])));
+
+contrapositiveProveall x0 x1 x2 x6 = (fresh x9, x10, x13, x16, x12, x15, x11, x14 in ((((x9 == Pos (App (x0) (x1) (x2)) & x6 == x10) & _input_clauseProveall x0 x1 x2 [] x10) | ((x13 == x16 & x12 == x15 & x11 == Pos (App (x0) (x1) (x2)) & x6 == (x12 :: x13)) & input_clauseContrapositive1ProveProveall x0 x1 x2 [] x14 x15 x16))));
+
+input_clauseProveall x0 x1 x2 x10 = (fresh x15, x21, x20, x17, x18, x19, x16 in (((x10 == [] & x2 == x15 & x1 == x15 & x0 == []) | ((x21 == [] & x20 == Neg (App (x17) (x18) (x19)) & x10 == [Neg (App (x17) (x18) (x19))] & x2 == (x16 :: x19) & x1 == x18 & x0 == (x16 :: x17)) & _prove [] x16 x17 x18 x19))));
+
+prove x16 x17 x18 x19 = (fresh x26, x24, x25 in (((x26 == App (x17) (x18) (x19) & x24 == Pos (x26)) & _contrapositiveProveall x17 x18 x19 x25 ([Pos (App ((x16 :: x17)) (x18) ((x16 :: x19)))]))));
+
+_contrapositiveProveall x28 x29 x30 x31 x36 = (fresh x37, x38, x41, x44, x40, x43, x39, x42 in ((((x37 == Pos (App (x28) (x29) (x30)) & x31 == x38) & _input_clauseProveall x28 x29 x30 x36 x38) | ((x41 == x44 & x40 == x43 & x39 == Pos (App (x28) (x29) (x30)) & x31 == (x40 :: x41)) & input_clauseContrapositive1ProveProveall x28 x29 x30 x36 x42 x43 x44))));
+
+_input_clauseProveall x28 x29 x30 x36 x38 = (fresh x43, x49, x48, x45, x46, x47, x44 in (((x38 == [] & x30 == x43 & x29 == x43 & x28 == []) | ((x49 == [] & x48 == Neg (App (x45) (x46) (x47)) & x38 == [Neg (App (x45) (x46) (x47))] & x30 == (x44 :: x47) & x29 == x46 & x28 == (x44 :: x45)) & _prove x36 x44 x45 x46 x47))));
+
+_prove x36 x44 x45 x46 x47 = (fresh x55, x56, x54, x52, x53 in ((((x55 == Pos (App ((x44 :: x45)) (x46) ((x44 :: x47))) & x36 == x56) & member x45 x46 x47 x56) | ((x54 == App (x45) (x46) (x47) & x52 == Pos (x54)) & _contrapositiveProveall x45 x46 x47 x53 ((Pos (App ((x44 :: x45)) (x46) ((x44 :: x47))) :: x36))))));
+
+member x45 x46 x47 x56 = (fresh x57, x58, x59 in ((x56 == (Neg (App (x45) (x46) (x47)) :: x57) | (x56 == (x58 :: x59) & member x45 x46 x47 x59))));
+
+
+? solve x0 x1 x2

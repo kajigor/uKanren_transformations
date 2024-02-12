@@ -1,0 +1,10 @@
+splito(succ(succ(zero)), cons(zero, cons(succ(succ(zero)), cons(succ(zero), cons(succ(succ(succ(succ(zero)))), cons(succ(succ(succ(zero))), nil)))))).
+splito(succ(succ(zero)), cons(zero, cons(succ(succ(zero)), cons(succ(succ(succ(succ(zero)))), cons(succ(zero), cons(succ(succ(succ(zero))), nil)))))).
+splito(succ(succ(zero)), cons(zero, cons(succ(succ(zero)), cons(succ(succ(succ(succ(zero)))), cons(succ(succ(succ(zero))), cons(succ(zero), nil)))))).
+splito(succ(succ(zero)), cons(zero, cons(succ(succ(succ(succ(zero)))), cons(succ(succ(zero)), cons(succ(zero), cons(succ(succ(succ(zero))), nil)))))).
+splito(succ(succ(zero)), cons(zero, cons(succ(succ(succ(succ(zero)))), cons(succ(succ(zero)), cons(succ(succ(succ(zero))), cons(succ(zero), nil)))))).
+splito(succ(succ(zero)), cons(zero, cons(succ(succ(succ(succ(zero)))), cons(succ(succ(succ(zero))), cons(succ(succ(zero)), cons(succ(zero), nil)))))).
+splito(succ(succ(zero)), cons(succ(succ(succ(succ(zero)))), cons(zero, cons(succ(succ(zero)), cons(succ(zero), cons(succ(succ(succ(zero))), nil)))))).
+splito(succ(succ(zero)), cons(succ(succ(succ(succ(zero)))), cons(zero, cons(succ(succ(zero)), cons(succ(succ(succ(zero))), cons(succ(zero), nil)))))).
+splito(succ(succ(zero)), cons(succ(succ(succ(succ(zero)))), cons(zero, cons(succ(succ(succ(zero))), cons(succ(succ(zero)), cons(succ(zero), nil)))))).
+splito(succ(succ(zero)), cons(succ(succ(succ(succ(zero)))), cons(succ(succ(succ(zero))), cons(zero, cons(succ(succ(zero)), cons(succ(zero), nil)))))).
