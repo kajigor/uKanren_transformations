@@ -9,11 +9,11 @@ appendo x y xy =
 reverso x y =
   x == [] & y == [] |
   (fresh h, t, rt in
-    appendo rt [h] y &
     x == (h :: t) &
+    appendo rt [h] y &
     reverso t rt
   );
 
-help xs ys zs ts = reverso zs ts & appendo xs ys ts;
+help xs ys zs ts = appendo xs ys ts & reverso zs ts;
 
 ? help a b c [Succ (Succ Zero), Zero, Succ Zero, Succ Zero, Zero, Succ (Succ Zero), Succ Zero, Zero, Zero, Succ (Succ Zero)]

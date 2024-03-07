@@ -54,17 +54,19 @@ sldResolution goal = sldResolutionStep (map (`Descend` []) goal) True
 sldResolutionStep :: [DescendGoal] -> Bool -> Env.Env -> Subst.Subst S -> [[AnnG Term S]] -> LCcpd.Heuristic -> SldTree
 sldResolutionStep gs isFirstTime env s seen heu =
   let (temp, _) = FN.getFreshName (Env.getFreshNames env) in
-  let curs = map getCurr $ traceShow gs -- $ traceShow seen 
+  let curs = map getCurr -- $ trace ("Local: " ++ show gs) -- $ traceShow seen 
               gs in
   if instanceCheck curs seen
   then
-    Leaf gs s $ trace "instanceCheck" env
+    Leaf gs s -- $ trace "instanceCheck" 
+              env
   else
     unfoldNext (toZipper gs) isFirstTime gs s env
   where
     go :: AnnG Term S -> Env.Env -> Zipper (Descend (AnnG Term S)) -> Bool -> SldTree  
     go g' env' zipper isFirstTime =
-      let Descend g ancs = cursor zipper in
+      let Descend g ancs = cursor -- $ traceShow g' 
+                                    zipper in
       let normalized = normalize g' in
       let unified = mapMaybe (unifyStuff s) normalized in
       let addDescends xs s =
@@ -87,7 +89,8 @@ sldResolutionStep gs isFirstTime env s seen heu =
         ns | not $ isRightmost zipper ->
           unfoldNext (goRight zipper) False gs s env
         ns ->
-          Leaf gs s $ trace "unified" env
+          Leaf gs s -- $ trace "unified" 
+            env
                      
 
     unfoldNext :: Maybe (Zipper (Descend (AnnG Term S))) -> Bool -> [DescendGoal] -> Subst.Subst S -> Env.Env -> SldTree 
@@ -129,8 +132,10 @@ mcs (g:gs) =
                                     then (con, x : non, vs)
                                     else (x : con, non, nub $ vars x ++ vs))
               ([g], [], vars g)
+              -- $ trace ("mcs" ++ show gs) 
               gs
-  in  reverse con : mcs (reverse non)
+  in  reverse con : mcs ( --trace (show con ++ show non) 
+                          reverse non)
 
 vars :: (Eq a, Show a) => AnnG Term a -> [Term a]
 vars (Invoke _ args _) =
@@ -179,7 +184,7 @@ bmc d q (q':qCurly) = bmc d q qCurly
 split :: FN.FreshNames -> [AnnG Term S] -> [AnnG Term S] -> (([AnnG Term S], [AnnG Term S]), Generalizer, FN.FreshNames)
 split d q q' = -- q <= q'
   let n = length q in
-  let qCurly = filter (and . zipWith embed q) $ subconjs q' n in
+  let qCurly = filter (\q'' -> and $ zipWith embed q q'') $ subconjs q' n in
   let (bestMC, delta) = bmc d q qCurly in
   let (b, gen) = minimallyGeneral bestMC in
   ((b, if length q' > n then complementSubconjs b q' else []), gen, delta)

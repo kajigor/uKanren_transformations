@@ -18,6 +18,7 @@ import           BTA.AnnotatedProgram
 import           BTA.AnnotationType
 import           BTA.InvokeAnnotation
 import           BTA.SizeConversion
+import qualified Syntax                    as S
 import qualified Data.Map as Map
 
 
@@ -125,32 +126,32 @@ generateFreshName n names =
   else until (`notElem` names) ('_' :) n
 
 
-class Eq a => FreeVariables t a where
-  fv :: t a -> [a]
+-- class Eq a => FreeVariables t a where
+--   fv :: t a -> [a]
 
-instance Eq a => FreeVariables AbstractTerm a where
+instance Eq a => S.FreeVariables AbstractTerm a where
   fv :: Eq a => AbstractTerm a -> [a]
   fv = nub . go
     where
       go (Sum n mp)    = Map.keys mp
 
-instance FreeVariables (AnnG AbstractTerm) Int where
-  fv :: AnnG AbstractTerm Int -> [Int]
+instance S.FreeVariables t Int => S.FreeVariables (AnnG t) Int where
+  fv :: AnnG t Int -> [Int]
   fv = nub . go
     where
-      go (t1 :=:  t2) = fv t1 ++ fv t2
+      go (t1 :=:  t2) = S.fv t1 ++ S.fv t2
       go (Conjunction x y gs) = concatMap go (x : y : gs)
       go (Disjunction x y gs) = concatMap go (x : y : gs)
-      go (Invoke _ ts _) = concatMap fv ts
+      go (Invoke _ ts _) = concatMap S.fv ts
 
-instance FreeVariables (AnnG AbstractTerm) String where
-  fv :: AnnG AbstractTerm String -> [String]
+instance S.FreeVariables t String => S.FreeVariables (AnnG t) String where
+  fv :: AnnG t String -> [String]
   fv = nub . go
     where
-      go (t1 :=: t2) = fv t1 ++ fv t2
+      go (t1 :=: t2) = S.fv t1 ++ S.fv t2
       go (Conjunction x y gs) = concatMap go (x : y : gs)
       go (Disjunction x y gs) = concatMap go (x : y : gs)
-      go (Invoke _ ts _) = concatMap fv ts
+      go (Invoke _ ts _) = concatMap S.fv ts
       go (Fresh x g) = filter (x /=) $ go g
       go (Delay g) = go g
 
@@ -168,7 +169,7 @@ generateNewDef (Left g) = do
       (defs, n) <- get
       let potentialName = printf "rel_%d" n
       return (generateFreshName potentialName (map (\(Definition n _ _ _) -> n) defs))
-    args = fv g
+    args = S.fv g
 
 
 fresh :: [a] -> AnnG termType a -> AnnG termType a

@@ -41,4 +41,4 @@ elemo n s v =
     (n == Zero & s == (h :: t) & v == h) |
     (s == (h :: t) & elemo n' t v & n == Succ n');
 
-? evalo [] (Disj x x) Trueo
+? evalo [Trueo, Trueo, Trueo] x Trueo

@@ -20,6 +20,9 @@ data Term
     | Two
     | O
     | S Term
+    | Triple Term Term Term
+    | Falso
+    | Trueo
     deriving (Show, Eq, Generic, DS.NFData)
 
 natGen :: (MonadPlus m) => m Term

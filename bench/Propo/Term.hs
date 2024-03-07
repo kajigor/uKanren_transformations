@@ -18,5 +18,8 @@ data Term
     | Impl Term Term
     | Lit Term
     | Neg Term
+    | Succ Term
     | Trueo
+    | Var Term
+    | Zero
     deriving (Show, Eq, Generic, DS.NFData)

@@ -297,7 +297,7 @@ runAction args = do
     OfflineDeduction -> 
       OfflineDeductionApp.runWithParser getAnnotationActParser (input action) (output action) (branching action)
     FunTransformer -> 
-      FunTransformerApp.runWithParser getAnnotationTypeParser (input action) (output action) (branching action) (deduction action)
+      FunTransformerApp.runWithParser parser (input action) (output action) (branching action) (deduction action) (relName action) (fromMaybe [] $ groundVars action)
     x -> do
       let transformer = chooseTransformer (transformation action)
       if isInputADir action

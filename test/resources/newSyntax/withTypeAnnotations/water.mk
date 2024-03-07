@@ -42,8 +42,8 @@ createState bottle lvl1 lvl2 state =
 
 filter (static dynamic)
 capacities b cap =
-  b == Fst & cap == S (S (S (S O))) |
-  b == Snd & cap == S (S (S (S (S (S (S (S (S O)))))))) ;
+  b == Fst & cap == S (S (S (S (S O)))) |
+  b == Snd & cap == S (S (S (S (S (S (S (S (S O))))))));
 
 
 filter (dynamic dynamic dynamic)

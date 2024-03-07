@@ -17,9 +17,9 @@ gt x y =
 appendo x y xy =
   x == [] & y == xy |
   (fresh h, t, ty in
-    x == (h :: t) &
     xy == (h :: ty) &
-    appendo t y ty
+    appendo t y ty &
+    x == (h :: t)
   );
 
 
@@ -46,10 +46,10 @@ sorto lst reslst =
   (lst == [] & reslst == []) |
   (fresh h, t, l, r, g, lres, rres in
 	lst == (h :: t) &
-	splito h t l g &
+	splito h t l r &
 	sorto l lres &
 	sorto r rres &
 	appendo lres (h :: rres) reslst
   );
 
-? sorto reslst [Zero, Zero, Succ Zero, Succ Zero, Succ (Succ Zero)]
+? sorto reslst [Zero, Succ Zero, Succ (Succ Zero), Succ (Succ (Succ Zero))]

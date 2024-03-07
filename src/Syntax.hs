@@ -305,7 +305,7 @@ instance ShowVar String where
   showVar = id  
   
 instance Show a => ShowVar a where
-  showVar = show
+  showVar = printf "v.%s" . show
   
   
 predec :: Term a -> Term a

@@ -19,14 +19,14 @@ isNil l q39 =
   (l == Nil & q39 == Trueo) |
   (fresh q41, q42 in l == Cons q41 q42 & q39 == Falso);
 
-filter (static static static)
+filter (dynamic dynamic static)
 less a b q36 =
   (fresh b' in
     b == S b' &
     (a == O & q36 == Trueo |
     (fresh a' in a == S a' & less a' b' q36)));
 
-filter (static static dynamic)
+filter (static dynamic dynamic)
 get name state q31 =
   (fresh s1, s2, s3 in
     state == Triple s1 s2 s3 &
@@ -34,7 +34,7 @@ get name state q31 =
      name == Two & s2 == q31 |
      name == Thr & s3 == q31));
 
-filter (static static static dynamic)
+filter (static dynamic dynamic dynamic)
 set name stack state q26 =
   (fresh s1, s2, s3 in
     state == Triple s1 s2 s3 &
@@ -42,7 +42,7 @@ set name stack state q26 =
      name == Two & q26 == Triple s1 stack s3 |
      name == Thr & q26 == Triple s1 s2 stack));
 
-filter (dynamic static dynamic)
+filter (dynamic dynamic dynamic)
 one_step step state q13 =
   fresh fromN, toN, q15, q17, x, xs, q19 in
     q15 == Trueo &
@@ -62,7 +62,7 @@ one_step step state q13 =
        set fromN xs state q24 &
        set toN (Cons x (Cons y ys)) q24 q13));
 
-filter (static dynamic static)
+filter (dynamic dynamic static)
 check state steps q0 =
   (fresh q1, q2, q7, q9 in
      steps == Nil &
@@ -77,4 +77,4 @@ check state steps q0 =
     check q11 xs q0 &
     steps == Cons x xs);
 
-? check (Triple (Cons O (Cons (S O) (Cons (S (S O)) (Cons (S (S (S O))) Nil)))) Nil Nil) q Trueo
+? check (Triple (Cons O (Cons (S O) (Cons (S (S O)) Nil))) Nil Nil) q Trueo

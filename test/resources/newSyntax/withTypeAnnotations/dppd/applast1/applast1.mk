@@ -4,7 +4,7 @@ applasto l x lst =
     appendo l [x] lx &
     lasto lst lx;
 
-filter (dynamic dynamic)
+filter (static dynamic)
 lasto x ys =
   fresh h, t in
     ys == [x] |

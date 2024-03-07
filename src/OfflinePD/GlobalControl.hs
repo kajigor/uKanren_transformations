@@ -53,8 +53,11 @@ part = LC.mcs
 --
 abstract :: Descend [AnnG Term S] -> [AnnG Term S] -> FN.FreshNames -> ([([AnnG Term S], Generalizer)], FN.FreshNames)
 abstract descend goals d =
-  let qCurly = part goals in
-  let result = go (map (, Subst.empty) qCurly) d in
+  let qCurly = part -- $trace ("abstract" ++ show goals ++ show (getCurr descend) ++ show (getAncs descend))
+                    goals in
+  let result = go (map (, Subst.empty) qCurly) -- $ trace ("Curly" ++ show qCurly ++ "\n") 
+                                              d in
+  --traceShow result 
   result
    where
     go [] d = ([], d)
@@ -70,7 +73,7 @@ abstract descend goals d =
 
 whistle :: Descend [AnnG Term S] -> [AnnG Term S] -> Maybe [AnnG Term S]
 whistle descend m =
-  find (\b -> Embed.embed b m && not (Embed.isVariant b m)) (sequence descend)
+  find (\b -> Embed.embed b m && not (Embed.isVariant b m)) (sequence descend) --trace ("whistle " ++ show b ++ show m ++ show (Embed.embed b m) ++ show (not (Embed.isVariant b m))) 
 
 generalize :: [AnnG Term S] -> [AnnG Term S] -> FN.FreshNames -> ([([AnnG Term S], Generalizer)], FN.FreshNames)
 generalize m b d =
@@ -85,8 +88,10 @@ generalize m b d =
 abstractChild :: [[AnnG Term S]] -> (Subst.Subst S, [AnnG Term S], Maybe Env.Env) -> [(Subst.Subst S, [AnnG Term S], Generalizer, Env.Env)]
 abstractChild _ (_, _, Nothing) = []
 abstractChild ancs (subst, g, Just env) =
-  let (abstracted, d') = abstract (Descend.Descend g ancs) g (Env.getFreshNames env) in
-  map (\(g, gen) -> (subst, g, gen, Env.updateNames env d')) abstracted
+  let (abstracted, d') = abstract (Descend.Descend g ancs) g  -- $ trace ("abstractChild " ++ show g ++ show ancs ++ show subst ) 
+                                                              (Env.getFreshNames env) in
+  map (\(g, gen) -> (subst, g, gen, Env.updateNames env d')) -- $ traceShow abstracted 
+                                                              abstracted
 
 topLevel :: AnnotatedProgram (AnnG Term) X -> LCcpd.Heuristic -> (GlobalTree, AnnG Term S, [S])
 topLevel (AnnotatedProgram defs goal) heu =
@@ -100,11 +105,11 @@ topLevel (AnnotatedProgram defs goal) heu =
 --       else
         let subst = Subst.empty in
         -- let newNodes = (delete goal nodes) in
-        let newNodes = filter (not . Embed.isVariant goal) -- $ traceShow goal 
+        let newNodes = filter (not . Embed.isVariant goal) $ traceShow goal 
                         nodes in
 
-        let sldTree = LC.sldResolution (trace "Global" goal) env subst newNodes heu in
-        let (substs, bodies) = partition (null . snd3) $ LC.resultants -- $ trace (dot sldTree) 
+        let sldTree = LC.sldResolution (trace ("Global" ++ show d) goal) env subst newNodes heu in
+        let (substs, bodies) = partition (null . snd3) $ LC.resultants -- $ traceShow d  
                                sldTree in
           
 --        run printTree (path </> "local1.dot") sldTree
@@ -114,15 +119,16 @@ topLevel (AnnotatedProgram defs goal) heu =
           (Node d Subst.empty sldTree [], nodes)
         else
           let ancs' = goal : ancs in
-          let abstracted = map (abstractChild ancs') bodies in -- $ traceShow bodies bodies in
+          let abstracted = map (abstractChild ancs') -- $ traceShow bodies
+                            bodies in  
           let (toUnfold, toNotUnfold, newNodes) =
                   foldl (\ (yes, no, seen) gs ->
                               let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (Embed.isVariant g) seen) gs in
                               -- let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (LC.isInst g) seen) gs in
                               (yes ++ brandNew, no ++ variants, map snd4 brandNew ++ seen)
                         )
-                        ([], [], nodes) abstracted
-                      --  $ traceShow ("Abstracted" ++ show abstracted) abstracted
+                        ([], [], nodes) -- $ traceShow ("Abstracted" ++ show (zip bodies abstracted))
+                          abstracted
           in
           let (ch, everythingSeenSoFar) =
                   (swap . (reverse <$>) . swap) $
@@ -130,8 +136,8 @@ topLevel (AnnotatedProgram defs goal) heu =
                             let (t, s) = go seen (Descend.Descend g (goal : ancs)) env subst gen in
                             (t:trees, s)
                         )
-                        ([], newNodes) toUnfold
---                        $ traceShow ("toUnfold" ++ show toUnfold) toUnfold 
+                        ([], newNodes) -- $ traceShow ("toUnfold" ++ show toUnfold) 
+                          toUnfold 
           in
           let forgetEnv = map (\(x, y, _) -> (x, y, Subst.empty)) in
           let forgetStuff = map (\(x, y, gen, _) -> (x,y, gen)) in

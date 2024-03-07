@@ -145,7 +145,7 @@ instance AlwaysEmbeddable (Term a) where
 -- Strict homeomorphic embedding. Explore: use a variants check instead of the instance check.
 class (Homeo b, Instance a b, Eq b, Show a) => Embed a b | b -> a where
   embed :: b -> b -> Bool
-  embed g h =
+  embed g h = -- trace (show g ++ show h ++ show (homeo g h && not (isStrictInst h g))) $ 
     isAlwaysEmbeddable g || g == h || homeo g h && not (isStrictInst h g)
 
 instance (Ord a, Eq a, Show a) => Embed a (G a)

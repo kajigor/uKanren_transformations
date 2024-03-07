@@ -1,4 +1,4 @@
-filter (static static static)
+filter (dynamic dynamic static)
 leo x y b =
   (x == Zero & b == Trueo) |
   ( fresh z in
@@ -8,7 +8,7 @@ leo x y b =
       x == Succ x' & y == Succ y' & leo x' y' b
   );
 
-filter (static static static)
+filter (dynamic dynamic static)
 gto x y b =
   (x == Zero & b == Falso) |
   (fresh z in
@@ -18,7 +18,7 @@ gto x y b =
       x == Succ x' & y == Succ y' & gto x' y' b
   );
 
-filter (dynamic dynamic static static)
+filter (dynamic dynamic dynamic dynamic)
 minmaxo a b min max =
   min == a & b == max & leo a b Trueo |
   max == a & b == min & gto a b Trueo;
@@ -42,4 +42,4 @@ sorto x y =
     smallesto x s xs);
 
 ? sorto x0 ([Zero, Succ Zero, Succ (Succ Zero), Succ (Succ (Succ Zero)),
-              Succ (Succ (Succ (Succ Zero))), Succ (Succ (Succ (Succ (Succ Zero))))])
+              Succ (Succ (Succ (Succ Zero)))])

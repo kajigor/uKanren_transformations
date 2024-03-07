@@ -42,7 +42,6 @@ capacities b cap =
 checkStep state0 step0 isStepValid =
   fresh f, s, t, b, lvl1, lvl2 in
     state0 == Pair f s &
-    step0 == Pair t b &
     (b == Fst & f == lvl1 | b == Snd & s == lvl1) &
     (b == Fst & s == lvl2 | b == Snd & f == lvl2) &
     ( t == Fill & eqNat lvl1 O isStepValid |
@@ -54,7 +53,8 @@ checkStep state0 step0 isStepValid =
         capacities b' b'Cap &
         eqNat lvl2 b'Cap lvl2IsCap &
         (lvl1IsO == Trueo & q47 == Trueo | lvl1IsO == Falso & q47 == lvl2IsCap) &
-        (q47 == Trueo & isStepValid == Falso | q47 == Falso & isStepValid == Trueo)));
+        (q47 == Trueo & isStepValid == Falso | q47 == Falso & isStepValid == Trueo)) & 
+    step0 == Pair t b);
 
 doStep state0 step0 state =
   fresh f, s, t, b, lvl2 in
@@ -85,12 +85,12 @@ checkAnswer answer reqLvl r =
 checkAnswer' state0 answer reqLvl result =
   (answer == Nil & isFinishState state0 reqLvl result) |
   (fresh x, xs, isStepValid in
-    (answer == Cons x xs) &
     (checkStep state0 x isStepValid) &
     ((fresh state' in
        isStepValid == Trueo &
        doStep state0 x state' &
        checkAnswer' state' xs reqLvl result) |
-      isStepValid == Falso & result == Falso));
+      isStepValid == Falso & result == Falso) &
+    (answer == Cons x xs));
 
 ? checkAnswer answer (S (S (S (S (S (S (S O))))))) Trueo

@@ -57,11 +57,11 @@ main = defaultMain
     bgroup "RelSort7"
      [
         bench "offlineI1"   $ nf (eval (takeS 1) RelSort_Unfold.sortoI) rightSort
-      , bench "offlineO1"   $ nf (eval0 (takeS 10) RelSort_Unfold.sortoO) ()
+      , bench "offlineO1"   $ nf (eval0 (takeS 5) RelSort_Unfold.sortoO) ()
       , bench "onlineI"     $ nf (eval (takeS 1) RelSort_cpd_ans.sortoI) rightSort
-      , bench "onlineO"     $ nf (eval2 (takeS 10) RelSort_cpd_ans.sortoO) (sortGen, sortGen) -- Error
+      , bench "onlineO"     $ nf (eval2 (takeS 5) RelSort_cpd_ans.sortoO) (sortGen, sortGen) -- Error
       , bench "simpleI"     $ nf (eval2 (takeS 1) RelSort_Simple.sortoII) (rightSort, resSort0) -- timeout
-      , bench "simpleO"     $ nf (eval (takeS 10) RelSort_Simple.sortoOI) resSort0 -- timeout
+      , bench "simpleO"     $ nf (eval (takeS 5) RelSort_Simple.sortoOI) resSort0 -- timeout
      ]
   ]
 

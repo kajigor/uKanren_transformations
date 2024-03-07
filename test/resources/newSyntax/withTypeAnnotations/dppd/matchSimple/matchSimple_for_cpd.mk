@@ -37,9 +37,9 @@ match1 patl tl pat t =
         match1 ps ts pat t |
         (
           fresh x, t1 in
-            t == (x :: t1) &
+            (t == (x :: t1) &
             neq a b &
-            match1 pat t1 pat t1
+            match1 pat t1 pat t1)
         )
       )
     )

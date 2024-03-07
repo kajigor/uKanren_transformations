@@ -336,7 +336,7 @@ instance Term ST () ([ST] :+: [Int] :+: [String] :+: [Char] :+: Nil) where
 -}
 
 {-
-class HList Nil
+ HList Nil
 class HList t =>
 -}
 {-

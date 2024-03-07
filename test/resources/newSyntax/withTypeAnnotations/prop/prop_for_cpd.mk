@@ -24,15 +24,15 @@ implicationo x y b =
 evalo st fm u =
   fresh x, y, v, w, z in
     (fm == Lit u) |
-    (elemo z st u & fm == Var z) |
-    (noto v u & evalo st x v & fm == Neg x) |
-    (oro v w u & evalo st x v & evalo st y w & fm == Disj x y) |
-    (ando v w u & evalo st x v & evalo st y w & fm == Conj x y) |
-    (implicationo v w u & evalo st x v & evalo st y w & fm == Impl x y);
+    (fm == Var z & elemo z st u) |
+    (fm == Neg x & evalo st x v & noto v u) |
+    (fm == Disj x y & evalo st x v & evalo st y w & oro v w u ) |
+    (fm == Conj x y & evalo st x v & evalo st y w & ando v w u) |
+    (fm == Impl x y & evalo st x v & evalo st y w & implicationo v w u );
 
 elemo n s v =
   fresh h, t, n' in
     (n == Zero & s == (h :: t) & v == h) |
-    (s == (h :: t) & elemo n' t v & n == Succ n');
+    (s == (h :: t) & n == Succ n' & elemo n' t v);
 
-? evalo [] (Disj x x) Trueo
+? evalo [a, b] x Trueo

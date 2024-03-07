@@ -26,7 +26,7 @@ appendo x y xy =
   );
 
 
-filter (dynamic static dynamic static)
+filter (static dynamic static dynamic)
 splito x xs l g =
   (xs == [] & l == [] & g == []) |
   (fresh x1, xs1 in
@@ -49,12 +49,12 @@ splito x xs l g =
 filter (dynamic static)
 sorto lst reslst =
   (lst == [] & reslst == []) |
-  (fresh h, t, l, r, g, lres, rres in
+  (fresh h, t, l, r, lres, rres in
 	appendo lres (h :: rres) reslst &
 	sorto l lres &
 	sorto r rres &
-	splito h t l g &
+	splito h t l r &
 	lst == (h :: t)
   );
 
-? sorto reslst [Succ Zero, Zero, Succ (Succ Zero), Succ Zero, Zero]
+? sorto reslst [Zero, Succ Zero, Succ (Succ Zero), Succ (Succ (Succ Zero))]

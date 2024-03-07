@@ -21,7 +21,7 @@ eval listify f = listify . f
 
 main = defaultMain
   [
-    bgroup "RelSort"
+    bgroup "Prop"
      [
         bench "offlineO10"   $ nf (eval0 (takeS 10) Prop_offline.evaloO) ()
       , bench "onlineO10"    $ nf (eval0 (takeS 10) Prop_online.evaloO) ()
@@ -29,6 +29,12 @@ main = defaultMain
       , bench "onlineO50"    $ nf (eval0 (takeS 50) Prop_online.evaloO) ()
       , bench "offlineO200"   $ nf (eval0 (takeS 200) Prop_offline.evaloO) ()
       , bench "onlineO200"    $ nf (eval0 (takeS 200) Prop_online.evaloO) ()
+      , bench "offlineO10000"   $ nf (eval0 (takeS 10000) Prop_offline.evaloO) ()
+      , bench "onlineO10000"    $ nf (eval0 (takeS 10000) Prop_online.evaloO) ()
+      , bench "offlineO10^5"   $ nf (eval0 (takeS 100000) Prop_offline.evaloO) ()
+      , bench "onlineO10^5"    $ nf (eval0 (takeS 100000) Prop_online.evaloO) ()
+      , bench "offlineO10^6"   $ nf (eval0 (takeS 1000000) Prop_offline.evaloO) ()
+      , bench "onlineO10^6"    $ nf (eval0 (takeS 1000000) Prop_online.evaloO) ()
      ]
   ]
 

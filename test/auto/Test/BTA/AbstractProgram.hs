@@ -124,7 +124,7 @@ oneAnnInvoke = Fresh "h" $ Fresh "t" $ Fresh "n'" $
     ) []
 
 unit_annotateInvokes = do
-    let sumAnnInvoke1 = annotateInvokesPr sumAnn
+    let sumAnnInvoke1 = annotateInvokesPr Memo sumAnn
     sumAnnInvoke1 @?= sumAnnInvoke 
     program <- getAnnotationParser "test/resources/newSyntax/withTypeAnnotations/prop.mk"
     let propAnnInvokeDefs = either (*> []) (map getBody . getDefs . annotateInvokesPr) program

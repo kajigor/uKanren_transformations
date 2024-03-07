@@ -4,379 +4,120 @@ import Stream
 import Control.Monad
 import Term
 
-evaloI x0 = Immature $ msum [do {let {x6 = Trueo};
-                      ___evaloEvaloII x0 x6;
+evaloI x0 = Immature $ msum [do {let {x4 = Trueo};
+                      x5 <- case x0 of
+                            {Lit y5 -> return y5; _ -> mzero};
+                      guard (x5 == x4);
                       return ()},
-                  do {let {x7 = Trueo}; __evaloEvaloII x0 x7; return ()},
-                  do {let {x8 = Falso}; ___evaloEvaloII x0 x8; return ()}]
-___evaloEvaloII x0 x1 = Immature $ msum [do {let {x11 = Trueo};
-                                  guard (x1 == Trueo);
-                                  x12 <- case x0 of
-                                         {Lit y12 -> return y12; _ -> mzero};
-                                  guard (x12 == x11);
-                                  return ()},
-                              do {x2 <- case x0 of
-                                        {Neg y2 -> return y2; _ -> mzero};
-                                  x3 <- __evaloEvaloIO x2;
-                                  notoII x1 x3;
-                                  return ()},
-                              do {(x2, x4) <- case x0 of
-                                              {Disj y2 y4 -> return (y2, y4); _ -> mzero};
-                                  (x3, x5) <- oroEvaloEvaloEvaloEvaloIIOO x2 x4;
-                                  oroIII x1 x3 x5;
-                                  return ()},
-                              do {(x2, x4) <- case x0 of
-                                              {Conj y2 y4 -> return (y2, y4); _ -> mzero};
-                                  x3 <- ___evaloEvaloIO x2;
-                                  x5 <- ___evaloEvaloIO x4;
-                                  andoIII x1 x3 x5;
-                                  return ()},
-                              do {(x2, x4) <- case x0 of
-                                              {Impl y2 y4 -> return (y2, y4); _ -> mzero};
-                                  (x3, x5) <- implicationoEvaloEvaloEvaloEvaloIIOO x2 x4;
-                                  implicationoIII x1 x3 x5;
-                                  return ()}]
-___evaloEvaloIO x0 = Immature $ msum [do {let {x1 = Trueo};
-                               let {x11 = Trueo};
-                               x12 <- case x0 of
-                                      {Lit y12 -> return y12; _ -> mzero};
-                               guard (x12 == x11);
-                               return x1},
-                           do {x2 <- case x0 of
-                                     {Neg y2 -> return y2; _ -> mzero};
-                               x3 <- __evaloEvaloIO x2;
-                               x1 <- notoOI x3;
-                               return x1},
-                           do {(x2, x4) <- case x0 of
-                                           {Disj y2 y4 -> return (y2, y4); _ -> mzero};
-                               (x3, x5) <- oroEvaloEvaloEvaloEvaloIIOO x2 x4;
-                               x1 <- oroOII x3 x5;
-                               return x1},
-                           do {(x2, x4) <- case x0 of
-                                           {Conj y2 y4 -> return (y2, y4); _ -> mzero};
-                               x3 <- ___evaloEvaloIO x2;
-                               x5 <- ___evaloEvaloIO x4;
-                               x1 <- andoOII x3 x5;
-                               return x1},
-                           do {(x2, x4) <- case x0 of
-                                           {Impl y2 y4 -> return (y2, y4); _ -> mzero};
-                               (x3, x5) <- implicationoEvaloEvaloEvaloEvaloIIOO x2 x4;
-                               x1 <- implicationoOII x3 x5;
-                               return x1}]
-__evaloEvaloII x0 x1 = Immature $ msum [do {let {x9 = Falso};
-                                 guard (x1 == Falso);
-                                 x10 <- case x0 of
-                                        {Lit y10 -> return y10; _ -> mzero};
-                                 guard (x10 == x9);
-                                 return ()},
-                             do {x2 <- case x0 of
-                                       {Neg y2 -> return y2; _ -> mzero};
-                                 x3 <- ___evaloEvaloIO x2;
-                                 notoII x1 x3;
-                                 return ()},
-                             do {(x2, x4) <- case x0 of
-                                             {Disj y2 y4 -> return (y2, y4); _ -> mzero};
-                                 x3 <- __evaloEvaloIO x2;
-                                 x5 <- __evaloEvaloIO x4;
-                                 oroIII x1 x3 x5;
-                                 return ()},
-                             do {(x2, x4) <- case x0 of
-                                             {Conj y2 y4 -> return (y2, y4); _ -> mzero};
-                                 (x3, x5) <- andoEvaloEvaloEvaloEvaloIIOO x2 x4;
-                                 andoIII x1 x3 x5;
-                                 return ()},
-                             do {(x2, x4) <- case x0 of
-                                             {Impl y2 y4 -> return (y2, y4); _ -> mzero};
-                                 x3 <- ___evaloEvaloIO x2;
-                                 x5 <- __evaloEvaloIO x4;
-                                 implicationoIII x1 x3 x5;
-                                 return ()}]
-__evaloEvaloIO x0 = Immature $ msum [do {let {x1 = Falso};
-                              let {x9 = Falso};
-                              x10 <- case x0 of
-                                     {Lit y10 -> return y10; _ -> mzero};
-                              guard (x10 == x9);
-                              return x1},
-                          do {x2 <- case x0 of
-                                    {Neg y2 -> return y2; _ -> mzero};
-                              x3 <- ___evaloEvaloIO x2;
-                              x1 <- notoOI x3;
-                              return x1},
-                          do {(x2, x4) <- case x0 of
-                                          {Disj y2 y4 -> return (y2, y4); _ -> mzero};
-                              x3 <- __evaloEvaloIO x2;
-                              x5 <- __evaloEvaloIO x4;
-                              x1 <- oroOII x3 x5;
-                              return x1},
-                          do {(x2, x4) <- case x0 of
-                                          {Conj y2 y4 -> return (y2, y4); _ -> mzero};
-                              (x3, x5) <- andoEvaloEvaloEvaloEvaloIIOO x2 x4;
-                              x1 <- andoOII x3 x5;
-                              return x1},
-                          do {(x2, x4) <- case x0 of
-                                          {Impl y2 y4 -> return (y2, y4); _ -> mzero};
-                              x3 <- ___evaloEvaloIO x2;
-                              x5 <- __evaloEvaloIO x4;
-                              x1 <- implicationoOII x3 x5;
-                              return x1}]
-andoIII x0 x1 x2 = Immature $ msum [do {guard (x2 == Trueo);
-                             guard (x1 == Trueo);
-                             guard (x0 == Trueo);
-                             return ()},
-                         do {guard (x2 == Trueo);
-                             guard (x1 == Falso);
-                             guard (x0 == Falso);
-                             return ()},
-                         do {guard (x2 == Falso);
-                             guard (x1 == Trueo);
-                             guard (x0 == Falso);
-                             return ()},
-                         do {guard (x2 == Falso);
-                             guard (x1 == Falso);
-                             guard (x0 == Falso);
-                             return ()}]
-andoOII x1 x2 = Immature $ msum [do {let {x0 = Trueo};
-                          guard (x2 == Trueo);
-                          guard (x1 == Trueo);
-                          return x0},
-                      do {let {x0 = Falso};
-                          guard (x2 == Trueo);
-                          guard (x1 == Falso);
-                          return x0},
-                      do {let {x0 = Falso};
-                          guard (x2 == Falso);
-                          guard (x1 == Trueo);
-                          return x0},
-                      do {let {x0 = Falso};
-                          guard (x2 == Falso);
-                          guard (x1 == Falso);
-                          return x0}]
-andoEvaloEvaloEvaloEvaloIIOO x0 x1 = Immature $ msum [do {x2 <- __evaloEvaloIO x0;
-                                               x3 <- ___evaloEvaloIO x1;
-                                               return (x2, x3)},
-                                           do {x2 <- ___evaloEvaloIO x0;
-                                               x3 <- __evaloEvaloIO x1;
-                                               return (x2, x3)},
-                                           do {x2 <- __evaloEvaloIO x0;
-                                               x3 <- __evaloEvaloIO x1;
-                                               return (x2, x3)}]
-                                               
-evaloO = Immature $ msum [do {let {x6 = Trueo};
-                   x0 <- ___evaloEvaloOI x6;
+                  do {x1 <- case x0 of
+                            {Var y1 -> return y1; _ -> mzero};
+                      elemoI x1;
+                      return ()},
+                  do {x2 <- case x0 of
+                            {Neg y2 -> return y2; _ -> mzero};
+                      _evaloI x2;
+                      return ()},
+                  do {(x2, x3) <- case x0 of
+                                  {Disj y2 y3 -> return (y2, y3); _ -> mzero};
+                      oroEvaloEvaloII x2 x3;
+                      return ()},
+                  do {(x2, x3) <- case x0 of
+                                  {Conj y2 y3 -> return (y2, y3); _ -> mzero};
+                      evaloI x2;
+                      evaloI x3;
+                      return ()},
+                  do {(x2, x3) <- case x0 of
+                                  {Impl y2 y3 -> return (y2, y3); _ -> mzero};
+                      implicationoEvaloEvaloII x2 x3;
+                      return ()}]
+_evaloI x0 = Immature $ msum [do {let {x6 = Falso};
+                       x7 <- case x0 of
+                             {Lit y7 -> return y7; _ -> mzero};
+                       guard (x7 == x6);
+                       return ()},
+                   do {x1 <- case x0 of
+                             {Neg y1 -> return y1; _ -> mzero};
+                       evaloI x1;
+                       return ()},
+                   do {(x1, x2) <- case x0 of
+                                   {Disj y1 y2 -> return (y1, y2); _ -> mzero};
+                       _evaloI x1;
+                       _evaloI x2;
+                       return ()},
+                   do {(x1, x2) <- case x0 of
+                                   {Conj y1 y2 -> return (y1, y2); _ -> mzero};
+                       andoEvaloEvaloII x1 x2;
+                       return ()},
+                   do {(x1, x2) <- case x0 of
+                                   {Impl y1 y2 -> return (y1, y2); _ -> mzero};
+                       evaloI x1;
+                       _evaloI x2;
+                       return ()}]
+andoEvaloEvaloII x0 x1 = Immature $ msum [do {_evaloI x0;
+                                   evaloI x1;
+                                   return ()},
+                               do {evaloI x0; _evaloI x1; return ()},
+                               do {_evaloI x0; _evaloI x1; return ()}]
+elemoI x0 = Immature $ msum [do {guard (x0 == Zero); return ()},
+                  do {x1 <- case x0 of
+                            {Succ y1 -> return y1; _ -> mzero};
+                      _elemoI x1;
+                      return ()}]
+_elemoI x0 = Immature $ msum [do {guard (x0 == Zero); return ()},
+                   do {x1 <- case x0 of
+                             {Succ y1 -> return y1; _ -> mzero};
+                       __elemoI x1;
+                       return ()}]
+__elemoI x0 = Immature $ msum [do {guard (x0 == Zero); return ()}]
+evaloO = Immature $ msum [do {let {x4 = Trueo};
+                   let {x5 = x4};
+                   let {x0 = Lit x5};
                    return x0},
-               do {let {x7 = Trueo}; x0 <- __evaloEvaloOI x7; return x0},
-               do {let {x8 = Falso}; x0 <- ___evaloEvaloOI x8; return x0}]
-___evaloEvaloOI x1 = Immature $ msum [do {let {x11 = Trueo};
-                               guard (x1 == Trueo);
-                               let {x12 = x11};
-                               let {x0 = Lit x12};
-                               return x0},
-                           do {x3 <- notoIO x1;
-                               x2 <- __evaloEvaloOI x3;
-                               let {x0 = Neg x2};
-                               return x0},
-                           do {(x3, x5) <- oroIOO x1;
-                               (x2, x4) <- oroEvaloEvaloEvaloEvaloOOII x3 x5;
-                               let {x0 = Disj x2 x4};
-                               return x0},
-                           do {(x3, x5) <- andoIOO x1;
-                               x2 <- ___evaloEvaloOI x3;
-                               x4 <- ___evaloEvaloOI x5;
-                               let {x0 = Conj x2 x4};
-                               return x0},
-                           do {(x3, x5) <- implicationoIOO x1;
-                               (x2, x4) <- implicationoEvaloEvaloEvaloEvaloOOII x3 x5;
-                               let {x0 = Impl x2 x4};
-                               return x0}]
-__evaloEvaloOI x1 = Immature $ msum [do {let {x9 = Falso};
-                              guard (x1 == Falso);
-                              let {x10 = x9};
-                              let {x0 = Lit x10};
-                              return x0},
-                          do {x3 <- notoIO x1;
-                              x2 <- ___evaloEvaloOI x3;
-                              let {x0 = Neg x2};
-                              return x0},
-                          do {(x3, x5) <- oroIOO x1;
-                              x2 <- __evaloEvaloOI x3;
-                              x4 <- __evaloEvaloOI x5;
-                              let {x0 = Disj x2 x4};
-                              return x0},
-                          do {(x3, x5) <- andoIOO x1;
-                              (x2, x4) <- andoEvaloEvaloEvaloEvaloOOII x3 x5;
-                              let {x0 = Conj x2 x4};
-                              return x0},
-                          do {(x3, x5) <- implicationoIOO x1;
-                              x2 <- ___evaloEvaloOI x3;
-                              x4 <- __evaloEvaloOI x5;
-                              let {x0 = Impl x2 x4};
-                              return x0}]
-andoIOO x0 = Immature $ msum [do {let {x2 = Trueo};
-                       let {x1 = Trueo};
-                       guard (x0 == Trueo);
-                       return (x1, x2)},
-                   do {let {x2 = Trueo};
-                       let {x1 = Falso};
-                       guard (x0 == Falso);
-                       return (x1, x2)},
-                   do {let {x2 = Falso};
-                       let {x1 = Trueo};
-                       guard (x0 == Falso);
-                       return (x1, x2)},
-                   do {let {x2 = Falso};
-                       let {x1 = Falso};
-                       guard (x0 == Falso);
-                       return (x1, x2)}]
-andoEvaloEvaloEvaloEvaloOOII x2 x3 = Immature $ msum [do {x0 <- __evaloEvaloOI x2;
-                                               x1 <- ___evaloEvaloOI x3;
-                                               return (x0, x1)},
-                                           do {x0 <- ___evaloEvaloOI x2;
-                                               x1 <- __evaloEvaloOI x3;
-                                               return (x0, x1)},
-                                           do {x0 <- __evaloEvaloOI x2;
-                                               x1 <- __evaloEvaloOI x3;
-                                               return (x0, x1)}]
-implicationoIII x0 x1 x2 = Immature $ msum [do {guard (x2 == Trueo);
-                                     guard (x1 == Falso);
-                                     guard (x0 == Trueo);
-                                     return ()},
-                                 do {guard (x2 == Falso);
-                                     guard (x1 == Falso);
-                                     guard (x0 == Trueo);
-                                     return ()},
-                                 do {guard (x2 == Trueo);
-                                     guard (x1 == Trueo);
-                                     guard (x0 == Trueo);
-                                     return ()},
-                                 do {guard (x2 == Falso);
-                                     guard (x1 == Trueo);
-                                     guard (x0 == Falso);
-                                     return ()}]
-implicationoIOO x0 = Immature $ msum [do {let {x2 = Trueo};
-                               let {x1 = Falso};
-                               guard (x0 == Trueo);
-                               return (x1, x2)},
-                           do {let {x2 = Falso};
-                               let {x1 = Falso};
-                               guard (x0 == Trueo);
-                               return (x1, x2)},
-                           do {let {x2 = Trueo};
-                               let {x1 = Trueo};
-                               guard (x0 == Trueo);
-                               return (x1, x2)},
-                           do {let {x2 = Falso};
-                               let {x1 = Trueo};
-                               guard (x0 == Falso);
-                               return (x1, x2)}]
-implicationoOII x1 x2 = Immature $ msum [do {let {x0 = Trueo};
-                                  guard (x2 == Trueo);
-                                  guard (x1 == Falso);
-                                  return x0},
-                              do {let {x0 = Trueo};
-                                  guard (x2 == Falso);
-                                  guard (x1 == Falso);
-                                  return x0},
-                              do {let {x0 = Trueo};
-                                  guard (x2 == Trueo);
-                                  guard (x1 == Trueo);
-                                  return x0},
-                              do {let {x0 = Falso};
-                                  guard (x2 == Falso);
-                                  guard (x1 == Trueo);
-                                  return x0}]
-implicationoEvaloEvaloEvaloEvaloIIOO x0 x1 = Immature $ msum [do {x2 <- __evaloEvaloIO x0;
-                                                       x3 <- ___evaloEvaloIO x1;
-                                                       return (x2, x3)},
-                                                   do {x2 <- __evaloEvaloIO x0;
-                                                       x3 <- __evaloEvaloIO x1;
-                                                       return (x2, x3)},
-                                                   do {x2 <- ___evaloEvaloIO x0;
-                                                       x3 <- ___evaloEvaloIO x1;
-                                                       return (x2, x3)}]
-implicationoEvaloEvaloEvaloEvaloOOII x2 x3 = Immature $ msum [do {x0 <- __evaloEvaloOI x2;
-                                                       x1 <- ___evaloEvaloOI x3;
-                                                       return (x0, x1)},
-                                                   do {x0 <- __evaloEvaloOI x2;
-                                                       x1 <- __evaloEvaloOI x3;
-                                                       return (x0, x1)},
-                                                   do {x0 <- ___evaloEvaloOI x2;
-                                                       x1 <- ___evaloEvaloOI x3;
-                                                       return (x0, x1)}]
-notoII x0 x1 = Immature $ msum [do {guard (x1 == Trueo);
-                         guard (x0 == Falso);
-                         return ()},
-                     do {guard (x1 == Falso); guard (x0 == Trueo); return ()}]
-notoIO x0 = Immature $ msum [do {let {x1 = Trueo};
-                      guard (x0 == Falso);
-                      return x1},
-                  do {let {x1 = Falso}; guard (x0 == Trueo); return x1}]
-notoOI x1 = Immature $ msum [do {let {x0 = Falso};
-                      guard (x1 == Trueo);
-                      return x0},
-                  do {let {x0 = Trueo}; guard (x1 == Falso); return x0}]
-oroIII x0 x1 x2 = Immature $ msum [do {guard (x2 == Trueo);
-                            guard (x1 == Trueo);
-                            guard (x0 == Trueo);
-                            return ()},
-                        do {guard (x2 == Trueo);
-                            guard (x1 == Falso);
-                            guard (x0 == Trueo);
-                            return ()},
-                        do {guard (x2 == Falso);
-                            guard (x1 == Trueo);
-                            guard (x0 == Trueo);
-                            return ()},
-                        do {guard (x2 == Falso);
-                            guard (x1 == Falso);
-                            guard (x0 == Falso);
-                            return ()}]
-oroIOO x0 = Immature $ msum [do {let {x2 = Trueo};
-                      let {x1 = Trueo};
-                      guard (x0 == Trueo);
-                      return (x1, x2)},
-                  do {let {x2 = Trueo};
-                      let {x1 = Falso};
-                      guard (x0 == Trueo);
-                      return (x1, x2)},
-                  do {let {x2 = Falso};
-                      let {x1 = Trueo};
-                      guard (x0 == Trueo);
-                      return (x1, x2)},
-                  do {let {x2 = Falso};
-                      let {x1 = Falso};
-                      guard (x0 == Falso);
-                      return (x1, x2)}]
-oroOII x1 x2 = Immature $ msum [do {let {x0 = Trueo};
-                         guard (x2 == Trueo);
-                         guard (x1 == Trueo);
-                         return x0},
-                     do {let {x0 = Trueo};
-                         guard (x2 == Trueo);
-                         guard (x1 == Falso);
-                         return x0},
-                     do {let {x0 = Trueo};
-                         guard (x2 == Falso);
-                         guard (x1 == Trueo);
-                         return x0},
-                     do {let {x0 = Falso};
-                         guard (x2 == Falso);
-                         guard (x1 == Falso);
-                         return x0}]
-oroEvaloEvaloEvaloEvaloIIOO x0 x1 = Immature $ msum [do {x2 <- ___evaloEvaloIO x0;
-                                              x3 <- ___evaloEvaloIO x1;
-                                              return (x2, x3)},
-                                          do {x2 <- __evaloEvaloIO x0;
-                                              x3 <- ___evaloEvaloIO x1;
-                                              return (x2, x3)},
-                                          do {x2 <- ___evaloEvaloIO x0;
-                                              x3 <- __evaloEvaloIO x1;
-                                              return (x2, x3)}]
-oroEvaloEvaloEvaloEvaloOOII x2 x3 = Immature $ msum [do {x0 <- ___evaloEvaloOI x2;
-                                              x1 <- ___evaloEvaloOI x3;
-                                              return (x0, x1)},
-                                          do {x0 <- __evaloEvaloOI x2;
-                                              x1 <- ___evaloEvaloOI x3;
-                                              return (x0, x1)},
-                                          do {x0 <- ___evaloEvaloOI x2;
-                                              x1 <- __evaloEvaloOI x3;
-                                              return (x0, x1)}]
+               do {x1 <- elemoO; let {x0 = Var x1}; return x0},
+               do {x2 <- _evaloO; let {x0 = Neg x2}; return x0},
+               do {(x2, x3) <- oroEvaloEvaloOO; let {x0 = Disj x2 x3}; return x0},
+               do {x2 <- evaloO; x3 <- evaloO; let {x0 = Conj x2 x3}; return x0},
+               do {(x2, x3) <- implicationoEvaloEvaloOO;
+                   let {x0 = Impl x2 x3};
+                   return x0}]
+_evaloO = Immature $ msum [do {let {x6 = Falso};
+                    let {x7 = x6};
+                    let {x0 = Lit x7};
+                    return x0},
+                do {x1 <- evaloO; let {x0 = Neg x1}; return x0},
+                do {x1 <- _evaloO;
+                    x2 <- _evaloO;
+                    let {x0 = Disj x1 x2};
+                    return x0},
+                do {(x1, x2) <- andoEvaloEvaloOO;
+                    let {x0 = Conj x1 x2};
+                    return x0},
+                do {x1 <- evaloO; x2 <- _evaloO; let {x0 = Impl x1 x2}; return x0}]
+andoEvaloEvaloOO = Immature $ msum [do {x0 <- _evaloO;
+                             x1 <- evaloO;
+                             return (x0, x1)},
+                         do {x0 <- evaloO; x1 <- _evaloO; return (x0, x1)},
+                         do {x0 <- _evaloO; x1 <- _evaloO; return (x0, x1)}]
+elemoO = Immature $ msum [do {let {x0 = Zero}; return x0},
+               do {x1 <- _elemoO; let {x0 = Succ x1}; return x0}]
+_elemoO = Immature $ msum [do {let {x0 = Zero}; return x0},
+                do {x1 <- __elemoO; let {x0 = Succ x1}; return x0}]
+__elemoO = Immature $ msum [do {let {x0 = Zero}; return x0}]
+implicationoEvaloEvaloII x0 x1 = Immature $ msum [do {_evaloI x0;
+                                           evaloI x1;
+                                           return ()},
+                                       do {_evaloI x0; _evaloI x1; return ()},
+                                       do {evaloI x0; evaloI x1; return ()}]
+implicationoEvaloEvaloOO = Immature $ msum [do {x0 <- _evaloO;
+                                     x1 <- evaloO;
+                                     return (x0, x1)},
+                                 do {x0 <- _evaloO; x1 <- _evaloO; return (x0, x1)},
+                                 do {x0 <- evaloO; x1 <- evaloO; return (x0, x1)}]
+oroEvaloEvaloII x0 x1 = Immature $ msum [do {evaloI x0; evaloI x1; return ()},
+                              do {_evaloI x0; evaloI x1; return ()},
+                              do {evaloI x0; _evaloI x1; return ()}]
+oroEvaloEvaloOO = Immature $ msum [do {x0 <- evaloO;
+                            x1 <- evaloO;
+                            return (x0, x1)},
+                        do {x0 <- _evaloO; x1 <- evaloO; return (x0, x1)},
+                        do {x0 <- evaloO; x1 <- _evaloO; return (x0, x1)}]

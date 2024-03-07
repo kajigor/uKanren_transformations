@@ -65,7 +65,8 @@ instance (Ord a, Eq a, Show a) => Embed a (AnnG Term a)
 instance (Ord a, Eq a, Show a) => Embed a [AnnG Term a] where
   embed gs hs =
     let subs = subconjs hs (length gs) in
-    any (and . zipWith embed gs) subs -- $ trace (show gs ++ show hs ++ show (any (and . zipWith embed gs) subs))
+    any (and . zipWith embed gs)  -- $ trace (show gs ++ show hs ++ show (any (and . zipWith embed gs) subs))
+                                  subs -- $ trace (show gs ++ show hs ++ show (any (and . zipWith embed gs) subs))
     
 instance Generalization S (AnnG Term S) where
   generalize gen1 gen2 (Invoke f as ann) (Invoke g bs _) | f == g =

@@ -56,11 +56,11 @@ main = defaultMain
 --      , bench "det_unfO"     $ nf (eval (takeS 1) RelSort_Det_unf.sortoI) $ traceShow resSort1 rightSort
 --      , bench "onlineO"     $ nf (eval2 (takeS 1) RelSort_cpd_ans.sortoO) (natGen, natGen) -- failing
         bench "offlineI1"   $ nf (eval (takeS 1) RelSort_unfold1.sortoI) $ traceShow resSort rightSort
-      , bench "offlineO1"   $ nf (eval0 (takeS 10) RelSort_unfold1.sortoO) ()
+      , bench "offlineO1"   $ nf (eval0 (takeS 5) RelSort_unfold1.sortoO) ()
       , bench "onlineI"     $ nf (eval (takeS 1) RelSort_cpd_ans.sortoI) $ traceShow resSort0 rightSort 
-      , bench "onlineO"     $ nf (eval2 (takeS 10) RelSort_cpd_ans.sortoO) (sortGen, sortGen) -- падает
+      , bench "onlineO"     $ nf (eval2 (takeS 5) RelSort_cpd_ans.sortoO) (sortGen, sortGen) -- падает
       , bench "simpleI"     $ nf (eval2 (takeS 1) RelSort_simple.sortoII) (rightSort, resSort0)
-      , bench "simpleO"     $ nf (eval (takeS 10) RelSort_simple.sortoOI) resSort0
+      , bench "simpleO"     $ nf (eval (takeS 5) RelSort_simple.sortoOI) resSort0
      ]
   ]
 
