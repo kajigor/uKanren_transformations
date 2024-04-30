@@ -6,7 +6,6 @@ module BTA.BTA where
 import           Control.Monad.State
 import qualified Data.Map                  as Map
 import qualified Data.Set                  as Set
-
 import           BTA.AnnotationType
 import           BTA.AnnotatedDef
 import           BTA.NormalizeAnnotated

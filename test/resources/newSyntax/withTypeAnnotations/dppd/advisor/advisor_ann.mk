@@ -1,37 +1,37 @@
 filter (dynamic dynamic dynamic)
  proposalo daykind weatherkind proposal =
-  ((daykind == C Workday [] & proposal == C GoToWork []) |
-  (daykind == C Weekend [] & weatherkind == C Nice [] & proposal == C GoOutToTheNature []) |
-  (daykind == C Weekend [] & weatherkind == C Nice [] & proposal == C VisitTheGolfClub []) |
-  (daykind == C Weekend [] & weatherkind == C Nice [] & proposal == C WashYourCar []) |
-  (daykind == C Weekend [] & weatherkind == C Nasty [] & proposal == C GoOutToTheTown []) |
-  (daykind == C Weekend [] & weatherkind == C Nasty [] & proposal == C VisitTheBridgeClub []) |
-  (daykind == C Weekend [] & weatherkind == C Nasty [] & proposal == C EnjoyYourselfAtHome []) |
-  (daykind == C Weekend [] & proposal == C ItIsFunToLearnJapanese []) |
-  (daykind == C Badday [] & proposal == C YouHadBetterStayInBed []) |
-  (daykind == C Feastday [] & Memo proposalo (C Weekend []) weatherkind proposal));
+  ((daykind == Workday & proposal == GoToWork) |
+  (daykind == Weekend & weatherkind == Nice & proposal == GoOutToTheNature) |
+  (daykind == Weekend & weatherkind == Nice & proposal == VisitTheGolfClub) |
+  (daykind == Weekend & weatherkind == Nice & proposal == WashYourCar) |
+  (daykind == Weekend & weatherkind == Nasty & proposal == GoOutToTheTown) |
+  (daykind == Weekend & weatherkind == Nasty & proposal == VisitTheBridgeClub) |
+  (daykind == Weekend & weatherkind == Nasty & proposal == EnjoyYourselfAtHome) |
+  (daykind == Weekend & proposal == ItIsFunToLearnJapanese) |
+  (daykind == Badday & proposal == YouHadBetterStayInBed) |
+  (daykind == Feastday & Memo proposalo (Weekend) weatherkind proposal));
 
 filter (dynamic dynamic)
  kind_of_weathero weather weatherKind =
-  ((weather == Sunny & weatherKind == C Nice []) |
-  (weather == Rainy & weatherKind == C Nasty []) |
-  (weather == Foggy & weatherKind == C Nasty []) |
-  (weather == Windy & weatherKind == C Nasty []));
+  ((weather == Sunny & weatherKind == Nice) |
+  (weather == Rainy & weatherKind == Nasty) |
+  (weather == Foggy & weatherKind == Nasty) |
+  (weather == Windy & weatherKind == Nasty));
 
 filter (static dynamic)
  kind_of_dayo day daykind =
-  ((day == C Monday [] & daykind == C Workday []) |
-  (day == C Tuesday [] & daykind == C Workday []) |
-  (day == C Wednesday [] & daykind == C Workday []) |
-  (day == C Thursday [] & daykind == C Workday []) |
-  (day == C Friday [] & daykind == C Workday []) |
-  (day == C Saturday [] & daykind == C Weekend []) |
-  (day == C Sunday [] & daykind == C Weekend []) |
-  (day == C Eastern [] & daykind == C Feastday []) |
-  (day == C FirstOfMay [] & daykind == C Feastday []) |
-  (day == C Christmas [] & daykind == C Feastday []) |
-  (day == C NewYearsDay [] & daykind == C Badday []) |
-  (day == C FridayThe13th [] & daykind == C Badday []));
+  ((day == Monday & daykind == Workday) |
+  (day == Tuesday & daykind == Workday) |
+  (day == Wednesday & daykind == Workday) |
+  (day == Thursday & daykind == Workday) |
+  (day == Friday & daykind == Workday) |
+  (day == Saturday & daykind == Weekend) |
+  (day == Sunday & daykind == Weekend) |
+  (day == Eastern & daykind == Feastday) |
+  (day == FirstOfMay & daykind == Feastday) |
+  (day == Christmas & daykind == Feastday) |
+  (day == NewYearsDay & daykind == Badday) |
+  (day == FridayThe13th & daykind == Badday));
 
 filter (static dynamic dynamic)
  what_to_do_today today weather program =
@@ -41,6 +41,6 @@ filter (static dynamic dynamic)
   Unfold proposalo daykind weatherkind program)));
 
 filter ()
- fail  = Memo fail [];
+ fail  = Memo fail;
 
-(fresh day, weather, program in (Unfold what_to_do_today (C FirstOfMay []) weather program))
+(fresh day, weather, program in (Unfold what_to_do_today (FirstOfMay) weather program))

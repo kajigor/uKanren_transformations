@@ -1138,10 +1138,10 @@ ___gtoMinmaxoIIO x0 x1 = Immature $ msum [do {let {x2 = Zero};
                                    minmaxoIIII x130 x0 x1 x134;
                                    return x2}]
 minmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoOOIIII x2 x3 x4 x5 = Immature $ msum [do {(x0,
-                                                                          x1) <- Immature (minmaxoMinmaxoMinmaxoMinmaxoMinmaxoOOIIII x2 x3 x4 x5);
+                                                                          x1) <- (minmaxoMinmaxoMinmaxoMinmaxoMinmaxoOOIIII x2 x3 x4 x5);
                                                                          return (x0, x1)},
                                                                      do {(x0,
-                                                                          x1) <- Immature (_minmaxoMinmaxoMinmaxoMinmaxoMinmaxoOOIIII x2 x3 x4 x5);
+                                                                          x1) <- (_minmaxoMinmaxoMinmaxoMinmaxoMinmaxoOOIIII x2 x3 x4 x5);
                                                                          return (x0, x1)}]
 _minmaxoMinmaxoMinmaxoMinmaxoMinmaxoOOIIII x2 x3 x4 x5 = Immature $ msum [do {let {x258 = Zero};
                                                                    let {x257 = Succ x258};
@@ -1509,7 +1509,7 @@ __________gtoMinmaxoIIO x0 x1 = Immature $ msum [do {let {x2 = Zero};
                                           minmaxoIIII x207 x0 x1 x209;
                                           return x2}]
 sortoO gen_sortoO_x15 gen_sortoO_x21 = Immature $ msum [do {let {x19 = Nil};
-                                                 (x20, x15) <- do {x15 <- Immature gen_sortoO_x15;
+                                                 (x20, x15) <- do {x15 <- gen_sortoO_x15;
                                                                    return (x15, x15)};
                                                  (x2, x16) <- case x15 of
                                                               {Cons y2 y16 -> return (y2, y16);
@@ -1524,11 +1524,11 @@ sortoO gen_sortoO_x15 gen_sortoO_x21 = Immature $ msum [do {let {x19 = Nil};
                                                        {Cons y5 y19 -> do {guard (x19 == y19);
                                                                            return y5};
                                                         _ -> mzero};
-                                                 x1 <- Immature (minmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoOIIII x2 x3 x4 x5);
+                                                 x1 <- (minmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoOIIII x2 x3 x4 x5);
                                                  let {x0 = Cons x1 x20};
                                                  return x0},
                                              do {let {x25 = Nil};
-                                                 (x26, x21) <- do {x21 <- Immature gen_sortoO_x21;
+                                                 (x26, x21) <- do {x21 <- gen_sortoO_x21;
                                                                    return (x21, x21)};
                                                  (x2, x22) <- case x21 of
                                                               {Cons y2 y22 -> return (y2, y22);
@@ -1543,7 +1543,7 @@ sortoO gen_sortoO_x15 gen_sortoO_x21 = Immature $ msum [do {let {x19 = Nil};
                                                        {Cons y5 y25 -> do {guard (x25 == y25);
                                                                            return y5};
                                                         _ -> mzero};
-                                                 x1 <- Immature (_minmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoOIIII x2 x3 x4 x5);
+                                                 x1 <- (_minmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoOIIII x2 x3 x4 x5);
                                                  let {x0 = Cons x1 x26};
                                                  return x0}]
 _minmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoOIIII x1 x2 x3 x4 = Immature $ msum [do {(x5,
@@ -1582,11 +1582,11 @@ minmaxoIOII x0 x2 x3 = Immature $ msum [do {guard (x2 == x3);
                                  return x1},
                              do {guard (x0 == x2); gtoII x2 x3; let {x1 = x3}; return x1}]
 minmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoOIIII x1 x2 x3 x4 = Immature $ msum [do {(x5,
-                                                                                              x6) <- Immature (minmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoOOIIII x1 x2 x3 x4);
+                                                                                              x6) <- (minmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoOOIIII x1 x2 x3 x4);
                                                                                              x0 <- __________________minmaxoMinmaxoIOI x5 x6;
                                                                                              return x0},
                                                                                          do {(x5,
-                                                                                              x6) <- Immature (_minmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoOOIIII x1 x2 x3 x4);
+                                                                                              x6) <- (_minmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoOOIIII x1 x2 x3 x4);
                                                                                              x0 <- ________________________minmaxoMinmaxoIOI x5 x6;
                                                                                              return x0}]
 ________________________minmaxoMinmaxoIOI x0 x2 = Immature $ msum [do {let {x570 = Zero};

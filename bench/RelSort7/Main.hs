@@ -13,6 +13,9 @@ import Debug.Trace (traceShow)
 import qualified RelSort_Unfold
 import qualified RelSort_cpd_ans
 import qualified RelSort_Simple
+import qualified RelSort7_Unfold
+import qualified RelSort5_Unfold
+import qualified RelSort5_cpd_ans
 
 n0 = Zero
 n1 = Succ n0
@@ -37,8 +40,12 @@ rightSort = Cons n2 (Cons n1 (Cons n4 (Cons n0 (Cons n1 Nil))))
 wrongSort :: Term
 wrongSort = Cons n2 (Cons n1 (Cons n2 (Cons n0 (Cons n1 Nil))))
 
-resSort0 :: Term
-resSort0 = Cons n0 (Cons n1 (Cons n2 (Cons n3 (Cons n4 (Cons n5 (Cons n6 Nil))))))
+
+resSort4 :: Term
+resSort4 = Cons n0 (Cons n1 (Cons n2 (Cons n3 (Cons n4 Nil))))
+
+resSort5 :: Term
+resSort5 = Cons n0 (Cons n1 (Cons n2 (Cons n3 (Cons n4 (Cons n5 Nil)))))
 
 eval0 :: MonadPlus m => (m r -> [r]) -> m r -> a -> [r]
 eval0 listify f _ = listify f
@@ -59,9 +66,13 @@ main = defaultMain
         bench "offlineI1"   $ nf (eval (takeS 1) RelSort_Unfold.sortoI) rightSort
       , bench "offlineO1"   $ nf (eval0 (takeS 5) RelSort_Unfold.sortoO) ()
       , bench "onlineI"     $ nf (eval (takeS 1) RelSort_cpd_ans.sortoI) rightSort
+      , bench "offline5"    $ nf (eval0 (takeS 5) RelSort5_Unfold.sortodsO) ()
+      , bench "offline6"    $ nf (eval0 (takeS 5) RelSort7_Unfold.sortodsO) ()
+      , bench "simple5"    $ nf (eval (takeS 5) RelSort_Simple.sortoOI) resSort4
+      , bench "simple6"    $ nf (eval (takeS 5) RelSort_Simple.sortoOI) resSort5
+      -- , bench "online5"    $ RelSort5_cpd_ans
       , bench "onlineO"     $ nf (eval2 (takeS 5) RelSort_cpd_ans.sortoO) (sortGen, sortGen) -- Error
-      , bench "simpleI"     $ nf (eval2 (takeS 1) RelSort_Simple.sortoII) (rightSort, resSort0) -- timeout
-      , bench "simpleO"     $ nf (eval (takeS 5) RelSort_Simple.sortoOI) resSort0 -- timeout
+      -- , bench "simpleO"     $ nf (eval (takeS 5) RelSort_Simple.sortoOI) resSort0 -- timeout
      ]
   ]
 

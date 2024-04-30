@@ -22,4 +22,6 @@ data Term
     | Trueo
     | Var Term
     | Zero
+    | Nil 
+    | Cons Term Term
     deriving (Show, Eq, Generic, DS.NFData)

@@ -12,6 +12,7 @@ import Term
 import qualified Hanoi_offline
 import qualified Hanoi_online
 import qualified Hanoi_simple
+import qualified Parser.Parser as Parser
 
 eval0 :: MonadPlus m => (m r -> [r]) -> m r -> a -> [r]
 eval0 listify f _ = listify f
@@ -45,12 +46,17 @@ makeTerm x | x == [] = Nil
 
 triple = Triple (Cons O (Cons (S O) (Cons (S (S O)) Nil))) Nil Nil
 
+-- parser = Parser.importsParser Parser.Simple 
+-- hanoiRel = 
+--   case parser "test/resources/newSyntax/withTypeAnnotations/hanoi/hanoi_unfold.mk" of 
+--     (Right prg) -> prg
+
 main = defaultMain
   [
     bgroup "Hanoi3"
      [
-        bench "offlineI"    $ nf (eval (takeS 1) Hanoi_offline.checkI) (makeTerm lst)
-      , bench "onlineI"     $ nf (eval (takeS 1) Hanoi_online.checkI) (makeTerm lst)
+        -- bench "offlineI"    $ nf (eval (takeS 1) Hanoi_offline.checkI) $ traceShow hanoiRel (makeTerm lst)
+        bench "onlineI"     $ nf (eval (takeS 1) Hanoi_online.checkI) (makeTerm lst)
       , bench "offlineO"    $ nf (eval0 (takeS 5) Hanoi_offline.checkO) ()
       , bench "onlineO"     $ nf (eval21 (takeS 5) Hanoi_online.checkO) (numGen, numGen, numGen, numGen, numGen, numGen, numGen,
                                                                       numGen, numGen, numGen, numGen, numGen, numGen, numGen,

@@ -25,6 +25,7 @@ import qualified TranslateApp
 import           Util.File              (failIfNotExist, getFiles, isDir)
 import           Util.Miscellaneous     (mapLeft)
 import           CPD.LocalControl       (Heuristic (..))
+import qualified PrintProgs
 
 data Transformation
   = CPD
@@ -38,6 +39,7 @@ data Transformation
   | AnnotationsSetting
   | OfflineDeduction
   | FunTransformer
+  | PrintMkCode
 
 data Action = Action { transformation :: Transformation
                      , input          :: FilePath
@@ -49,6 +51,7 @@ data Action = Action { transformation :: Transformation
                      , relName        :: String
                      , branching      :: Heuristic
                      , deduction      :: Deduction
+                     , example        :: String
                      }
 
 data Args = Args
@@ -61,10 +64,11 @@ data Args = Args
   , relNameArg        :: String
   , branchingArg      :: Heuristic
   , deductionArg      :: Deduction
+  , exampleArg        :: String
   }
 
 transform :: Args -> IO Action
-transform (Args transformation input output parserType numAnswers groundVars relName branch deduct) = do
+transform (Args transformation input output parserType numAnswers groundVars relName branch deduct example) = do
     curDir <- getCurrentDirectory
     let i = fromMaybe curDir input
     failIfNotExist i
@@ -76,7 +80,7 @@ transform (Args transformation input output parserType numAnswers groundVars rel
 
     let pType = fromMaybe Parser.Simple parserType 
     
-    return $ Action transformation i out isInputADir pType numAnswers groundVars relName branch deduct
+    return $ Action transformation i out isInputADir pType numAnswers groundVars relName branch deduct example
 
 actionParser :: Parser Args
 actionParser =
@@ -89,6 +93,7 @@ actionParser =
         <*> relationNameParser
         <*> typeOfBranchingParser
         <*> typeOfDeductionParser
+        <*> exampleParser
 
 numAnswersParser :: Parser Int
 numAnswersParser = option auto
@@ -105,12 +110,20 @@ typeOfDeductionParser = option auto
   <> showDefault
   <> value Offline)
 
+exampleParser :: Parser String
+exampleParser = strOption
+  (  long "example"
+  <> help "Which example should be parsed"
+  <> showDefault
+  <> value ""
+  <> metavar "EXAMPLE")
+
 typeOfBranchingParser :: Parser Heuristic
 typeOfBranchingParser = option auto
   (  long "branching"
   <> help "Which type of branching use"
   <> showDefault
-  <> value Branching)
+  <> value Deterministic)
 
 groundVarsParser :: Parser [Int]
 groundVarsParser = option auto
@@ -163,6 +176,7 @@ parseTransformation =
   <|> annotationsSettingParser
   <|> offlineDeductionParser
   <|> funTransformerParser
+  <|> printMkParser
 
 funTransformerParser :: Parser Transformation
 funTransformerParser = flag' FunTransformer
@@ -181,6 +195,13 @@ annotationsSettingParser :: Parser Transformation
 annotationsSettingParser = flag' AnnotationsSetting
   (  long "annotationsSetting"
   <> help "Run check on safety unfolding"
+  )
+
+
+printMkParser :: Parser Transformation
+printMkParser = flag' PrintMkCode
+  (  long "printMkCode"
+  <> help "print minikanren code by haskell embedding"
   )
 
 normalizeParser :: Parser Transformation
@@ -264,6 +285,7 @@ defaultOutputDir args =
       AnnotationsSetting -> "annotationsSetting"
       OfflineDeduction -> "offlineDeduction"
       FunTransformer -> "funTransformer"
+      PrintMkCode -> "printMkCode"
 
 getAnnotationTypeParser :: (String -> IO (Either String (AnnotatedProgram G X)))
 getAnnotationTypeParser input = do 
@@ -280,6 +302,8 @@ runAction args = do
   action <- transform args
   let parser = chooseParser $ parserType action
   case transformation action of
+    PrintMkCode -> 
+      PrintProgs.run (example action)
     Eval ->
       EvalApp.runWithParser parser (input action) (numAnswers action)
     Mode ->

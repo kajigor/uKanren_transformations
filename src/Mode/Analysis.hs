@@ -148,6 +148,23 @@ isConstruction (Unif (Var v) t@(FTCon _ _)) =
   not (isBeforeGround v) && all isBeforeGround (varsFromTerm t)
 isConstruction _ = False
 
+
+notRecursiveGoal :: (Goal a) -> Bool 
+notRecursiveGoal goal@(Disj l) = all notRecursiveConj l 
+
+notRecursiveConj :: (Conj a) -> Bool 
+notRecursiveConj goal@(Conj l) = all notRecursiveBase l
+
+notRecursiveBase :: (Base a) -> Bool 
+notRecursiveBase goal@(Call _ _ _) = False
+notRecursiveBase _ = True
+
+notRecursive :: (Ord a) => Map.Map String (Def Goal a) -> Base (a, Mode) -> Bool
+notRecursive defs term@(Call _ name args) = 
+  let def@(Def _ _ body) = defs Map.! name in
+  notRecursiveGoal body 
+notRecursive _ _ = False
+
 popElem :: (a -> Bool) -> [a] -> Maybe (a, [a])
 popElem p =
     go []
@@ -198,9 +215,9 @@ generator _ = False
 directRecursion (Just (Call _ name args)) (Call _ name' args') | name == name' = identicalBeforeModes (map getVar args) (map getVar args')
 directRecursion _ _ = False
 
-prioritySelection :: (Show a, Ord a) => Maybe (Base (a, Mode)) -> Base (a, Mode) -> [Base (a, Mode)] -> (Base (a, Mode), [Base (a, Mode)])
-prioritySelection currentRelation x =
-  select [isGuard, isConstruction, isDeconstruction, isAssignment, returnsOne, directRecursion currentRelation, not.completelyFreeCall, varGenerator, not.completelyFreeUnif, groundifies] x
+prioritySelection :: (Show a, Ord a) => Map.Map String (Def Goal a) -> Maybe (Base (a, Mode)) -> Base (a, Mode) -> [Base (a, Mode)] -> (Base (a, Mode), [Base (a, Mode)])
+prioritySelection defs currentRelation x =
+  select [isGuard, isConstruction, isDeconstruction, isAssignment, notRecursive defs, returnsOne, directRecursion currentRelation, not.completelyFreeCall, varGenerator, not.completelyFreeUnif, groundifies] x
 
 analyze :: (Show a, Ord a)
         => AllowFree
@@ -234,7 +251,8 @@ analyze allowFree goal = do
 
     doStuff x xs = do
       currentRelation <- gets getCurrentRelation
-      case prioritySelection currentRelation x xs of
+      defs <- gets getDefinitions
+      case prioritySelection defs currentRelation x xs of
           (x, xs) -> do
             x <- goBase x
             xs <- mapM updateVars xs

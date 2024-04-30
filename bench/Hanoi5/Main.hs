@@ -12,6 +12,8 @@ import Term
 import qualified Hanoi_offline
 import qualified Hanoi_online
 import qualified Hanoi_simple
+import qualified Hanoi5_offline
+import qualified Hanoi6_offline
 
 eval0 :: MonadPlus m => (m r -> [r]) -> m r -> a -> [r]
 eval0 listify f _ = listify f
@@ -58,16 +60,18 @@ main = defaultMain
     bgroup "Hanoi4"
      [
         bench "offlineO"    $ nf (eval0 (takeS 5) Hanoi_offline.checkO) ()
---      , bench "onlineO"     $ nf (eval45 (takeS 1) Hanoi_online.checkO) (numGen, numGen, numGen, numGen, numGen,
---                                                                          numGen, numGen, numGen, numGen, numGen,
---                                                                          numGen, numGen, numGen, numGen, numGen,
---                                                                          numGen, numGen, numGen, numGen, numGen,
---                                                                          numGen, numGen, numGen, numGen, numGen,
---                                                                          numGen, numGen, numGen, numGen, numGen,
---                                                                          numGen, numGen, numGen, numGen, numGen,
---                                                                          numGen, numGen, numGen, numGen, numGen,
---                                                                          numGen, numGen, numGen, numGen, numGen)
---      , bench "simpleO"     $ nf (eval2 (takeS 1) Hanoi_simple.checkIOI) (triple, Trueo)
+      , bench "offlineO5"   $ nf (eval0 (takeS 1) Hanoi5_offline.checksdsO) ()
+      , bench "offlineO6"   $ nf (eval0 (takeS 1) Hanoi6_offline.checksdsO) ()
+    --  , bench "onlineO"     $ nf (eval45 (takeS 1) Hanoi_online.checkO) (numGen, numGen, numGen, numGen, numGen,
+    --                                                                      numGen, numGen, numGen, numGen, numGen,
+    --                                                                      numGen, numGen, numGen, numGen, numGen,
+    --                                                                      numGen, numGen, numGen, numGen, numGen,
+    --                                                                      numGen, numGen, numGen, numGen, numGen,
+    --                                                                      numGen, numGen, numGen, numGen, numGen,
+    --                                                                      numGen, numGen, numGen, numGen, numGen,
+    --                                                                      numGen, numGen, numGen, numGen, numGen,
+    --                                                                      numGen, numGen, numGen, numGen, numGen)
+    --  , bench "simpleO"     $ nf (eval2 (takeS 5) Hanoi_simple.checkIOI) (triple, Trueo)
      ]
 --    ,bgroup "SortGen"
 --    [

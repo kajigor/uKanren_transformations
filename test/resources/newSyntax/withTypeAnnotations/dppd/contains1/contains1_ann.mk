@@ -1,7 +1,19 @@
 filter (dynamic dynamic static)
- appendo2 xs ys rs = ((xs == [] & rs == ys) | (fresh h, t, ts in ((xs == (h :: t) & rs == (h :: ts) & Unfold appendo2 t ys ts))));
+ appendo2 xs ys rs = 
+ 	((xs == [] & rs == ys) | 
+	(fresh h, t, ts in 
+		((xs == (h :: t) &
+		  rs == (h :: ts) & 
+		  Unfold appendo2 t ys ts))));
+
 filter (static static dynamic)
- appendo1 xs ys rs = ((xs == [] & rs == ys) | (fresh h, t, ts in ((xs == (h :: t) & rs == (h :: ts) & Unfold appendo1 t ys ts))));
+ appendo1 xs ys rs = 
+ 	((xs == [] & rs == ys) | 
+	 (fresh h, t, ts in 
+	 	((xs == (h :: t) & 
+		  rs == (h :: ts) & 
+		  Unfold appendo1 t ys ts))));
+
 filter (dynamic static static dynamic dynamic)
  newo t prefix postfix new_prefix new_postfix = 
  	(fresh rem_postfix in 
@@ -24,6 +36,7 @@ filter (dynamic static static)
 
 filter (static dynamic)
  containso pat str = Unfold cono str [] pat;
+ 
 filter ()
  fail  = Memo fail [];
 

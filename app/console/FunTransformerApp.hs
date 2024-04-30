@@ -108,7 +108,7 @@ deductor outFile deduction outDir baseName program heuristic relName inputs pgoa
   case topLevelWithDefaultCall program relName inputs of
     Right program -> do
       let resMode = transformAnn (N.back program)
-      putStrLn $ show resMode
+      putStrLn $ show (N.back program)
       putStrLn $ show inputs
       let resModeAnalysis = AnnPr.AnnotatedProgram (AnnPr.getDefs resMode) $ transformWith (INV.annotateInvokes INV.Memo pgoal) (AnnPr.getGoal resMode)
       putStrLn "-------"

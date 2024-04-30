@@ -1,22 +1,18 @@
-filter (static static dynamic)
- sum1 lst s1 s2 = ((lst == [] & s1 == s2) | (fresh h, t, s0 in ((lst == (h :: t) & Unfold add h s1 s0 & Unfold sum1 t s0 s2))));
-filter (static dynamic)
- sum ns s = Unfold sum1 ns O s;
-filter (static dynamic)
- squares ns sons = ((ns == [] & sons == []) | (fresh h1, t1, h2, t2 in ((ns == (h1 :: t1) & sons == (h2 :: t2) & Unfold square h1 h2 & Unfold squares t1 t2))));
-filter (static dynamic)
- square ns son = Unfold multiply ns ns son;
-filter (static static dynamic)
- upto m n lst = ((m == S n & lst == []) | (Unfold le m n & (fresh t in ((Memo upto (S m) n t & lst == (m :: t))))));
-filter (static static)
- le m n = (m == O | (fresh t, t1 in ((m == S t & n == S t1 & Unfold le t t1))));
-filter (static dynamic)
- sumsquaresupto n s = (fresh ns, sons in ((Unfold upto (S O) n ns & Unfold squares ns sons & Unfold sum sons s)));
-filter (static static dynamic)
- multiply x y z = ((y == O & z == O) | (fresh t, z1 in ((y == S t & Unfold add x z1 z & Unfold multiply x t z1))));
-filter (static static dynamic)
- add x y z = ((x == O & y == z) | (fresh t1, t2 in ((x == S t1 & z == S t2 & Unfold add t1 y t2))));
-filter ()
- fail  = Memo fail [];
+filter (static dynamic) 
+ uptosd v0 v1 = ((v1 == [] & v0 == 0) | (fresh v3, v6, v2, v7 in ((v0 == (1 + v3) & v6 == v0 & Unfold uptosd v3 v2 & v7 == v2 & v1 == (v6 :: v7)))));
+filter (static static dynamic) 
+ sum1ssd v0 v1 v2 = ((v0 == [] & v1 == v2) | (fresh v3, v4, v5 in ((v0 == (v3 :: v4) & Unfold addssd v3 v1 v5 & Unfold sum1ssd v4 v5 v2))));
+filter (static dynamic) 
+ sumsd v0 v1 = (fresh v9 in ((v9 == 0 & Unfold sum1ssd v0 v9 v1)));
+filter (static static dynamic) 
+ addssd v0 v1 v2 = ((v0 == 0 & v1 == v2) | (fresh v3, v4 in ((v0 == (1 + v3) & Unfold addssd v3 v1 v4 & v2 == (1 + v4)))));
+filter (static static dynamic) 
+ multiplyssd v0 v1 v2 = ((v2 == 0 & v1 == 0) | (fresh v3, v4 in ((v1 == (1 + v3) & Unfold multiplyssd v0 v3 v4 & Unfold addssd v0 v4 v2))));
+filter (static dynamic) 
+ squaresd v0 v1 = (fresh v8 in ((v8 == v0 & Unfold multiplyssd v0 v8 v1)));
+filter (static dynamic) 
+ squaressd v0 v1 = ((v1 == [] & v0 == []) | (fresh v2, v3, v4, v5 in ((v0 == (v2 :: v3) & Unfold squaresd v2 v4 & Unfold squaressd v3 v5 & v1 == (v4 :: v5)))));
+filter (static dynamic) 
+ sumsquaresuptosd v0 v1 = (fresh v2, v3 in ((Unfold uptosd v0 v2 & Unfold squaressd v2 v3 & Unfold sumsd v3 v1)));
 
-(fresh s in (Unfold sumsquaresupto (S (S (S (S O)))) s))
+(fresh s in (Memo sumsquaresuptosd 4 s))

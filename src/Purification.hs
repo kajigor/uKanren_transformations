@@ -51,22 +51,22 @@ clearDef defs (Def n a g) = do
    return $ Def n a g'
 
 clearGoal :: [Def G X] -> G X -> Maybe (G X)
-clearGoal defs g@(Conjunction g1 g2 lstG) = do 
+clearGoal defs g@(Disjunction g1 g2 lstG) = do 
   gs <- mapM (clearGoal defs) (g1 : g2 : lstG)
-  return $ unsafeConj gs
-clearGoal defs g@(Disjunction g1 g2 lstG) = 
+  return $ unsafeDisj gs
+clearGoal defs g@(Conjunction g1 g2 lstG) = 
   let gs = mapMaybe (clearGoal defs) (g1 : g2 : lstG) in
   case gs of 
     [] -> Nothing
     [x] -> Just x 
-    (x1 : x2 : xs) -> Just $ Disjunction x1 x2 xs
+    (x1 : x2 : xs) -> Just $ Conjunction x1 x2 xs
 clearGoal defs (Delay g) = do 
   g' <- clearGoal defs g 
   return $ Delay g'
 clearGoal defs (Fresh x g) = do 
   g' <- clearGoal defs g
   return $ Fresh x g' 
-clearGoal defs g@(Invoke name _) | any (\(Def n a g) -> n == name) defs = 
+clearGoal defs g@(Invoke name _) | (any (\(Def n a g) -> n == name) defs) = 
   Just g 
 clearGoal defs g@(Invoke name _) = Nothing 
 clearGoal defs g@(t1 :=: t2) = Just g  
