@@ -1,0 +1,9 @@
+fail  = Goal (Disj [] (Conj [] (Call "fail" [] :| []) :| []))
+
+neq x y = Goal (Disj ["t","t","tx","ty"] (Conj [] (Unif "x" 0 :| [Unif "y" (1 + "t")]) :| [Conj [] (Unif "x" (1 + "t") :| [Unif "y" 0]),Conj [] (Unif "x" (1 + "tx") :| [Unif "y" (1 + "ty"),Call "neq" ["tx","ty"]])]))
+
+rr x y = Goal (Disj ["t"] (Conj [] (Call "r" ["t","y"] :| [Call "r" ["x","t"]]) :| []))
+
+r x y = Goal (Disj ["a","t","t1","ax","ay","t","t1"] (Conj [] (Unif "x" [] :| [Unif "y" []]) :| [Conj [] (Unif "x" ("a" :: ("a" :: "t")) :| [Unif "y" ("a" :: "t1"),Call "r" ["t","t1"]]),Conj [] (Unif "x" ("ax" :: ("ay" :: "t")) :| [Unif "y" ("ax" :: "t1"),Call "neq" ["ax","ay"],Call "r" [("ay" :: "t"),"t1"]])]))
+
+? Goal (Disj ["x"] (Conj [] (Call "rr" ["x",(1 :: (0 :: (S S 0 :: (0 :: [0]))))] :| []) :| []))

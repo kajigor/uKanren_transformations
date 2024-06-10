@@ -1,0 +1,4 @@
+maxMino x0 x1 = (fresh x55, x53, x52, x41, x40, x39, x38, x29, x28, x27, x24, x23, x12, x11, x8, x6, x5 in ((x55 == Succ (Zero) & x53 == [] & x52 == Succ (Succ (Zero)) & x41 == [Succ (Succ (Zero))] & x40 == Zero & x39 == (Zero :: [Succ (Succ (Zero))]) & x38 == Succ (Zero) & x29 == Zero & x28 == Zero & x27 == Succ (Zero) & x24 == [] & x23 == Succ (Succ (Zero)) & x12 == [Succ (Succ (Zero))] & x11 == Zero & x8 == Zero & x6 == (Zero :: [Succ (Succ (Zero))]) & x5 == Succ (Zero) & x1 == Zero & x0 == Succ (Succ (Zero)))));
+
+
+? maxMino x0 x1

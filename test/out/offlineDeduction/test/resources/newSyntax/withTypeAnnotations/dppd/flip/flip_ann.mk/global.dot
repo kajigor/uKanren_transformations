@@ -1,0 +1,26 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<N <BR/> flipflip(v<SUB>0</SUB>, v<SUB>1</SUB>) <BR/>  [  ] >];
+    1 [label=<L <BR/> >];
+    2 [label=<N <BR/> flip(v<SUB>4</SUB>, v<SUB>11</SUB>), flip(v<SUB>11</SUB>, v<SUB>13</SUB>) <BR/>  [  ] >];
+    3 [label=<N <BR/> flip(v<SUB>5</SUB>, v<SUB>10</SUB>), flip(v<SUB>10</SUB>, v<SUB>14</SUB>) <BR/>  [  ] >];
+    4 [label=<L <BR/> >];
+    5 [label=<L <BR/> flip(v<SUB>16</SUB>, v<SUB>23</SUB>), flip(v<SUB>23</SUB>, v<SUB>25</SUB>)>];
+    6 [label=<L <BR/> flip(v<SUB>17</SUB>, v<SUB>22</SUB>), flip(v<SUB>22</SUB>, v<SUB>26</SUB>)>];
+    7 [label=<L <BR/> >];
+    8 [label=<L <BR/> flip(v<SUB>16</SUB>, v<SUB>23</SUB>), flip(v<SUB>23</SUB>, v<SUB>25</SUB>)>];
+    9 [label=<L <BR/> flip(v<SUB>17</SUB>, v<SUB>22</SUB>), flip(v<SUB>22</SUB>, v<SUB>26</SUB>)>];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    0 -> 3 [label=""];
+    2 -> 4 [label=""];
+    2 -> 5 [label=""];
+    2 -> 6 [label=""];
+    3 -> 7 [label=""];
+    3 -> 8 [label=""];
+    3 -> 9 [label=""];
+}

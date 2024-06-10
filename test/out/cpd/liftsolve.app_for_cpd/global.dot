@@ -1,0 +1,12 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<N <BR/> solve(C Term [Clause [C Term [App C Term [Null []] : C Var [0] : [C Var [0]]]]] : [C Term [Clause C Term [App C Term [Cns C Var [0] : [C Var [1]]] : C Var [2] : [C Term [Cns C Var [0] : [C Var [3]]]]] : [C Term [App C Var [1] : C Var [2] : [C Var [3]]]]]], [C Term [App v<SUB>0</SUB> : v<SUB>1</SUB> : [v<SUB>2</SUB>]]]) <BR/>  [  ] >];
+    1 [label=<N <BR/> non_ground_member(C Term [Clause C Term [App v<SUB>0</SUB> : v<SUB>1</SUB> : [v<SUB>2</SUB>]] : v<SUB>6</SUB>], [C Term [Clause C Term [App C Term [Cns C Var [0] : [C Var [1]]] : C Var [2] : [C Term [Cns C Var [0] : [C Var [3]]]]] : [C Term [App C Var [1] : C Var [2] : [C Var [3]]]]]]), solve(C Term [Clause [C Term [App C Term [Null []] : C Var [0] : [C Var [0]]]]] : [C Term [Clause C Term [App C Term [Cns C Var [0] : [C Var [1]]] : C Var [2] : [C Term [Cns C Var [0] : [C Var [3]]]]] : [C Term [App C Var [1] : C Var [2] : [C Var [3]]]]]], v<SUB>6</SUB>) <BR/>  [  ] >];
+    2 [label=<N <BR/> mkng(C Var [0], v<SUB>77</SUB>, [C Sub [0 v<SUB>61</SUB>]], v<SUB>79</SUB>) <BR/>  [  ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+}

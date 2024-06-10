@@ -1,0 +1,22 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<N <BR/> depth(C C [Member 0 1 : 2 : 2 : 3 : 1 : 0 : 2 : 0 : 1 : 2 : 0 : [0]], v<SUB>2</SUB>) <BR/>  [  ] >];
+    1 [label=<N <BR/> depth(C C [True []], v<SUB>98</SUB>) <BR/>  [  ] >];
+    2 [label=<N <BR/> prog_clause(C C [Append v<SUB>120</SUB> 0 : v<SUB>12</SUB> 0 : 1 : 2 : 0 : [0]], v<SUB>127</SUB>), depth(v<SUB>127</SUB>, v<SUB>128</SUB>) <BR/>  [  ] >];
+    3 [label=<L <BR/> depth(C C [True []], v<SUB>128</SUB>)>];
+    4 [label=<N <BR/> prog_clause(C C [Append v<SUB>165</SUB> 0 : v<SUB>12</SUB> 0 : [0]], v<SUB>172</SUB>), depth(v<SUB>172</SUB>, v<SUB>173</SUB>) <BR/>  [  ] >];
+    5 [label=<L <BR/> depth(C C [True []], v<SUB>173</SUB>)>];
+    6 [label=<N <BR/> prog_clause(C C [Append v<SUB>180</SUB> 0 : v<SUB>12</SUB> [0]], v<SUB>187</SUB>), depth(v<SUB>187</SUB>, v<SUB>188</SUB>) <BR/>  [  ] >];
+    7 [label=<L <BR/> depth(C C [True []], v<SUB>188</SUB>)>];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    2 -> 3 [label=""];
+    2 -> 4 [label=""];
+    4 -> 5 [label=""];
+    4 -> 6 [label=""];
+    6 -> 7 [label=""];
+}

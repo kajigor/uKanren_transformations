@@ -1,0 +1,4 @@
+rr(cons(s(o), cons(s(o), cons(s(o), cons(s(o), cons(o, cons(o, cons(o, cons(o, cons(s(s, o), cons(s(s, o), cons(s(s, o), cons(s(s, o), cons(o, cons(o, cons(o, cons(o, cons(o, cons(o, cons(o, cons(o, nil))))))))))))))))))))).
+rr(cons(s(o), cons(s(o), cons(s(o), cons(o, cons(o, cons(o, cons(o, cons(s(s, o), cons(s(s, o), cons(s(s, o), cons(s(s, o), cons(o, cons(o, cons(o, cons(o, cons(o, cons(o, cons(o, cons(o, nil)))))))))))))))))))).
+rr(cons(s(o), cons(s(o), cons(o, cons(o, cons(o, cons(o, cons(s(s, o), cons(s(s, o), cons(s(s, o), cons(s(s, o), cons(o, cons(o, cons(o, cons(o, cons(o, cons(o, cons(o, cons(o, nil))))))))))))))))))).
+rr(cons(s(o), cons(o, cons(o, cons(o, cons(o, cons(s(s, o), cons(s(s, o), cons(s(s, o), cons(s(s, o), cons(o, cons(o, cons(o, cons(o, cons(o, cons(o, cons(o, cons(o, nil)))))))))))))))))).

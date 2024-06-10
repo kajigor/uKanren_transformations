@@ -1,0 +1,12 @@
+max_length x0 x1 = (fresh x20, x19, x18, x17, x16, x15, x14, x13, x12, x11, x10, x9, x8, x7, x6, x3, x2 in (((x20 == Zero & x19 == [] & x18 == Succ (Zero) & x17 == Succ (x20) & x16 == [Succ (Zero)] & x15 == Zero & x14 == Succ (x17) & x13 == (Zero :: [Succ (Zero)]) & x12 == Zero & x11 == Succ (x14) & x10 == (Zero :: (Zero :: [Succ (Zero)])) & x9 == Succ (Succ (Zero)) & x8 == Succ (x11) & x7 == (Succ (Succ (Zero)) :: (Zero :: (Zero :: [Succ (Zero)]))) & x6 == Succ (Zero) & x3 == (Succ (Succ (Zero)) :: (Zero :: (Zero :: [Succ (Zero)]))) & x2 == Succ (Zero) & x1 == Succ (x8)) & max1 x0)));
+
+max1 x0 = (fresh x27, x26, x25, x24 in (((x27 == Succ (Zero) & x26 == Zero & x25 == (Zero :: (Zero :: [Succ (Zero)])) & x24 == Succ (Succ (Zero))) & _max1 x0)));
+
+_max1 x0 = (fresh x31, x30 in (((x31 == (Zero :: [Succ (Zero)]) & x30 == Zero) & __max1 x0)));
+
+__max1 x0 = (fresh x35, x34 in (((x35 == [Succ (Zero)] & x34 == Zero) & ___max1 x0)));
+
+___max1 x0 = (fresh x41, x40, x39, x38 in ((x41 == Succ (Zero) & x40 == Zero & x39 == [] & x38 == Succ (Zero) & x0 == Succ (Succ (Zero)))));
+
+
+? max_length x0 x1

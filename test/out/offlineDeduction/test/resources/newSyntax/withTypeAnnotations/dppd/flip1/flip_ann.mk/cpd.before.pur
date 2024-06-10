@@ -1,0 +1,4 @@
+flipflip x0 = (fresh x57, x51, x45, x44, x43, x42, x41, x40, x38, x37, x36, x35, x34, x27, x21, x20, x19, x18, x17, x16, x9, x8, x7, x6, x5, x4, x2 in ((x57 == C ([]) & x51 == B ([]) & x45 == A ([]) & x44 == Leaf (A ([])) & x43 == Leaf (B ([])) & x42 == E ([]) & x41 == Leaf (x51) & x40 == Leaf (x45) & x38 == Tree (Leaf (B ([]))) (E ([])) (Leaf (A ([]))) & x37 == Leaf (C ([])) & x36 == D ([]) & x35 == Leaf (x57) & x34 == Tree (x40) (x42) (x41) & x27 == A ([]) & x21 == B ([]) & x20 == Leaf (B ([])) & x19 == Leaf (A ([])) & x18 == E ([]) & x17 == Leaf (x27) & x16 == Leaf (x21) & x9 == C ([]) & x8 == Leaf (C ([])) & x7 == Tree (Leaf (A ([]))) (E ([])) (Leaf (B ([]))) & x6 == D ([]) & x5 == Tree (x16) (x18) (x17) & x4 == Leaf (x9) & x2 == Tree (x4) (x6) (x5) & x0 == Tree (x34) (x36) (x35))));
+
+
+? flipflip x0

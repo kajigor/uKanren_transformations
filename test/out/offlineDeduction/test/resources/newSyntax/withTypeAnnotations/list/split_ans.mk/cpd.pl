@@ -1,0 +1,1 @@
+splito(cons(succ(zero), cons(succ(zero), cons(zero, cons(succ(succ(zero)), nil)))), cons(succ(succ(succ(zero))), nil)).

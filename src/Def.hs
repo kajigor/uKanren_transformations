@@ -1,5 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE InstanceSigs     #-}
+{-# LANGUAGE FlexibleInstances#-}
+
+{-# LANGUAGE IncoherentInstances #-}
 module Def where
 
 import           Text.Printf (printf)
@@ -18,3 +21,7 @@ instance Functor g => Functor (Def g) where
 instance (Show a, Show (g a)) => Show (Def g a) where
   show :: Show a => Def g a -> String
   show (Def name args body) = printf "%s %s = %s" name (unwords $ map show args) (show body)
+
+instance {-# OVERLAPPING #-} (Show (g String)) => Show (Def g String) where
+  show :: Def g String -> String
+  show (Def name args body) = printf "%s %s = %s" name (unwords args) (show body)

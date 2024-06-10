@@ -1,0 +1,78 @@
+sorto x0 = (fresh x68, x66, x67, x63, x47, x61, x65, x58, x45, x56, x60, x49, x48, x69, x46, x64, x44, x43, x41, x40, x59, x31, x30, x28, x27, x25, x24, x23, x22, x21, x12, x11, x10, x9, x8, x7, x6, x5, x4, x3, x2, x1, x55, x42, x57, x62, x32 in ((((x68 == [] & x66 == [x67] & x63 == [x47] & x61 == (x65 :: x66) & x58 == (x45 :: [x47]) & x56 == (x60 :: x61) & x49 == Succ (Succ (Succ (Zero))) & x48 == [] & x47 == x69 & x46 == [x47] & x45 == x64 & x44 == Succ (Succ (Zero)) & x43 == [Succ (Succ (Succ (Zero)))] & x41 == (x45 :: x46) & x40 == x59 & x31 == Succ (Zero) & x30 == Zero & x28 == Succ (Succ (Zero)) & x27 == Succ (Zero) & x25 == Succ (Succ (Succ (Zero))) & x24 == [] & x23 == Succ (Succ (Succ (Zero))) & x22 == [Succ (Succ (Succ (Zero)))] & x21 == Succ (Succ (Zero)) & x12 == [] & x11 == [] & x10 == Succ (Succ (Succ (Zero))) & x9 == [Succ (Succ (Succ (Zero)))] & x8 == [Succ (Succ (Succ (Zero)))] & x7 == Succ (Succ (Zero)) & x6 == (Succ (Succ (Zero)) :: [Succ (Succ (Succ (Zero)))]) & x5 == (x21 :: x22) & x4 == Succ (Zero) & x3 == (Succ (Zero) :: (Succ (Succ (Zero)) :: [Succ (Succ (Succ (Zero)))])) & x2 == (x40 :: x41) & x1 == Zero & x0 == (x55 :: x56)) & minmaxoMinmaxoMinmaxoMinmaxoMinmaxo x42 x55 x57 x59 x60 x62 x64 x65 x67 x69) | ((x68 == [] & x66 == [x67] & x63 == [x47] & x61 == (x65 :: x66) & x58 == (x45 :: [x47]) & x56 == (x60 :: x61) & x49 == Succ (Succ (Zero)) & x48 == [] & x47 == x69 & x46 == [x47] & x45 == x64 & x44 == Succ (Succ (Succ (Zero))) & x43 == [Succ (Succ (Zero))] & x41 == (x45 :: x46) & x40 == x59 & x32 == Zero & x31 == Zero & x30 == Succ (Zero) & x28 == Succ (Zero) & x27 == Succ (Succ (Zero)) & x25 == Succ (Succ (Succ (Zero))) & x24 == [] & x23 == Succ (Succ (Zero)) & x22 == [Succ (Succ (Zero))] & x21 == Succ (Succ (Succ (Zero))) & x12 == [] & x11 == [] & x10 == Succ (Succ (Succ (Zero))) & x9 == [Succ (Succ (Succ (Zero)))] & x8 == [Succ (Succ (Succ (Zero)))] & x7 == Succ (Succ (Zero)) & x6 == (Succ (Succ (Zero)) :: [Succ (Succ (Succ (Zero)))]) & x5 == (x21 :: x22) & x4 == Succ (Zero) & x3 == (Succ (Zero) :: (Succ (Succ (Zero)) :: [Succ (Succ (Succ (Zero)))])) & x2 == (x40 :: x41) & x1 == Zero & x0 == (x55 :: x56)) & _minmaxoMinmaxoMinmaxoMinmaxoMinmaxo x42 x55 x57 x59 x60 x62 x64 x65 x67 x69))));
+
+minmaxoMinmaxoMinmaxoMinmaxoMinmaxo x42 x55 x57 x59 x60 x62 x64 x65 x67 x69 = (fresh x77, x76, x78 in ((((x77 == Succ (Zero) & x76 == Zero & x59 == Succ (Zero) & x42 == Succ (Succ (Zero))) & (minmaxoMinmaxoMinmaxo x57 x60 x62 x64 x65 x67 x69 & ______minmaxo x55 x57)) | ((x78 == Zero & x77 == Zero & x76 == Succ (Zero) & x59 == Succ (Succ (Zero)) & x42 == Succ (Zero)) & (_minmaxoMinmaxoMinmaxo x57 x60 x62 x64 x65 x67 x69 & __________minmaxo x55 x57)))));
+
+minmaxoMinmaxoMinmaxo x57 x60 x62 x64 x65 x67 x69 = (fresh x86, x85, x83, x82, x87 in ((((x86 == Succ (Zero) & x85 == Zero & x83 == Succ (Succ (Zero)) & x82 == Succ (Zero) & x69 == Succ (Succ (Succ (Zero))) & x64 == Succ (Succ (Zero))) & minmaxoMinmaxo x57 x60 x62 x65 x67) | ((x87 == Zero & x86 == Zero & x85 == Succ (Zero) & x83 == Succ (Zero) & x82 == Succ (Succ (Zero)) & x69 == Succ (Succ (Zero)) & x64 == Succ (Succ (Succ (Zero)))) & _minmaxoMinmaxo x57 x60 x62 x65 x67))));
+
+minmaxoMinmaxo x57 x60 x62 x65 x67 = (((x62 == Succ (Succ (Zero)) & x57 == x60) & (leo x60 & minmaxo x65 x67)) | ((x60 == Succ (Succ (Zero)) & x57 == x62) & gtoMinmaxo x62 x65 x67));
+
+leo x60 = (fresh x92, x91 in ((x60 == Zero | ((x92 == Succ (Zero) & x60 == Succ (x91)) & _leo x91))));
+
+_leo x91 = (fresh x95, x94 in ((x91 == Zero | (x95 == Zero & x94 == Zero & x91 == Succ (x94)))));
+
+minmaxo x65 x67 = (fresh x92, x91, x96, x95, x94 in ((((x92 == Succ (Succ (Zero)) & x91 == Succ (Zero) & x67 == Succ (Succ (Succ (Zero))) & x65 == Succ (Succ (Zero))) & leo (Succ (Zero))) | (x96 == Zero & x95 == Zero & x94 == Succ (Zero) & x92 == Succ (Zero) & x91 == Succ (Succ (Zero)) & x67 == Succ (Succ (Zero)) & x65 == Succ (Succ (Succ (Zero)))))));
+
+gtoMinmaxo x62 x65 x67 = (fresh x90, x91, x92 in ((((x90 == Succ (Zero) & x62 == Zero) & _minmaxo x65 x67) | ((x91 == Succ (Zero) & x62 == Succ (x92)) & _gtoMinmaxo x65 x67 x92))));
+
+_minmaxo x65 x67 = (fresh x93 in (((x67 == Succ (Succ (Succ (Zero))) & x65 == Zero) | (x93 == Succ (Succ (Zero)) & x67 == Zero & x65 == Succ (Succ (Succ (Zero)))))));
+
+_gtoMinmaxo x65 x67 x92 = (fresh x93 in (((x93 == Zero & x92 == Zero) & __minmaxo x65 x67)));
+
+__minmaxo x65 x67 = (fresh x98, x97, x99 in ((((x98 == Succ (Succ (Zero)) & x97 == Zero & x67 == Succ (Succ (Succ (Zero))) & x65 == Succ (Zero)) & leo Zero) | (x99 == Succ (Zero) & x98 == Zero & x97 == Succ (Succ (Zero)) & x67 == Succ (Zero) & x65 == Succ (Succ (Succ (Zero)))))));
+
+_minmaxoMinmaxo x57 x60 x62 x65 x67 = (((x62 == Succ (Succ (Succ (Zero))) & x57 == x60) & (__leo x60 & ___minmaxo x65 x67)) | ((x60 == Succ (Succ (Succ (Zero))) & x57 == x62) & __gtoMinmaxo x62 x65 x67));
+
+__leo x60 = (fresh x92, x91 in ((x60 == Zero | ((x92 == Succ (Succ (Zero)) & x60 == Succ (x91)) & leo x91))));
+
+___minmaxo x65 x67 = ((x67 == Succ (Succ (Zero)) & x65 == Succ (Succ (Succ (Zero)))) & leo (Succ (Succ (Succ (Zero)))));
+
+__gtoMinmaxo x62 x65 x67 = (fresh x90, x91, x92 in ((((x90 == Succ (Succ (Zero)) & x62 == Zero) & __________minmaxo x65 x67) | ((x91 == Succ (Succ (Zero)) & x62 == Succ (x92)) & ___gtoMinmaxo x65 x67 x92))));
+
+___gtoMinmaxo x65 x67 x92 = (fresh x93, x94, x95 in ((((x93 == Succ (Zero) & x92 == Zero) & ____minmaxo x65 x67) | ((x94 == Succ (Zero) & x92 == Succ (x95)) & ____gtoMinmaxo x65 x67 x95))));
+
+____minmaxo x65 x67 = (fresh x99, x98, x97 in ((((x67 == Succ (Succ (Zero)) & x65 == Succ (Zero)) & leo (Succ (Zero))) | (x99 == Zero & x98 == Zero & x97 == Succ (Zero) & x67 == Succ (Zero) & x65 == Succ (Succ (Zero))))));
+
+____gtoMinmaxo x65 x67 x95 = (fresh x96 in (((x96 == Zero & x95 == Zero) & _____minmaxo x65 x67)));
+
+_____minmaxo x65 x67 = ((x67 == Succ (Succ (Zero)) & x65 == Succ (Succ (Zero))) & leo (Succ (Succ (Zero))));
+
+______minmaxo x55 x57 = (fresh x81 in ((((x57 == Succ (Zero) & x55 == Zero) & _leo Zero) | (x81 == Zero & x57 == Zero & x55 == Succ (Zero)))));
+
+_minmaxoMinmaxoMinmaxo x57 x60 x62 x64 x65 x67 x69 = (fresh x83, x82, x84 in ((((x83 == Succ (Succ (Zero)) & x82 == Zero & x69 == Succ (Succ (Succ (Zero))) & x64 == Succ (Zero)) & __minmaxoMinmaxo x57 x60 x62 x65 x67) | ((x84 == Succ (Zero) & x83 == Zero & x82 == Succ (Succ (Zero)) & x69 == Succ (Zero) & x64 == Succ (Succ (Succ (Zero)))) & ___minmaxoMinmaxo x57 x60 x62 x65 x67))));
+
+__minmaxoMinmaxo x57 x60 x62 x65 x67 = (((x62 == Succ (Zero) & x57 == x60) & (_leo x60 & __minmaxo x65 x67)) | ((x60 == Succ (Zero) & x57 == x62) & _____gtoMinmaxo x62 x65 x67));
+
+_____gtoMinmaxo x62 x65 x67 = (fresh x87 in (((x87 == Zero & x62 == Zero) & _minmaxo x65 x67)));
+
+___minmaxoMinmaxo x57 x60 x62 x65 x67 = (((x62 == Succ (Succ (Succ (Zero))) & x57 == x60) & (__leo x60 & _______minmaxo x65 x67)) | ((x60 == Succ (Succ (Succ (Zero))) & x57 == x62) & ______gtoMinmaxo x62 x65 x67));
+
+_______minmaxo x65 x67 = ((x67 == Succ (Zero) & x65 == Succ (Succ (Succ (Zero)))) & _leo (Succ (Succ (Succ (Zero)))));
+
+______gtoMinmaxo x62 x65 x67 = (fresh x87, x88, x89 in ((((x87 == Succ (Succ (Zero)) & x62 == Zero) & ______minmaxo x65 x67) | ((x88 == Succ (Succ (Zero)) & x62 == Succ (x89)) & _______gtoMinmaxo x65 x67 x89))));
+
+_______gtoMinmaxo x65 x67 x89 = (fresh x90, x91, x92 in ((((x90 == Succ (Zero) & x89 == Zero) & ________minmaxo x65 x67) | ((x91 == Succ (Zero) & x89 == Succ (x92)) & ________gtoMinmaxo x65 x67 x92))));
+
+________minmaxo x65 x67 = ((x67 == Succ (Zero) & x65 == Succ (Zero)) & _leo (Succ (Zero)));
+
+________gtoMinmaxo x65 x67 x92 = (fresh x93 in (((x93 == Zero & x92 == Zero) & _________minmaxo x65 x67)));
+
+_________minmaxo x65 x67 = ((x67 == Succ (Zero) & x65 == Succ (Succ (Zero))) & _leo (Succ (Succ (Zero))));
+
+__________minmaxo x55 x57 = (fresh x81 in ((((x57 == Succ (Succ (Zero)) & x55 == Zero) & leo Zero) | (x81 == Succ (Zero) & x57 == Zero & x55 == Succ (Succ (Zero))))));
+
+_minmaxoMinmaxoMinmaxoMinmaxoMinmaxo x42 x55 x57 x59 x60 x62 x64 x65 x67 x69 = (fresh x77, x76, x78 in ((((x77 == Succ (Succ (Zero)) & x76 == Zero & x59 == Succ (Zero) & x42 == Succ (Succ (Succ (Zero)))) & (__minmaxoMinmaxoMinmaxo x57 x60 x62 x64 x65 x67 x69 & ______minmaxo x55 x57)) | ((x78 == Succ (Zero) & x77 == Zero & x76 == Succ (Succ (Zero)) & x59 == Succ (Succ (Succ (Zero))) & x42 == Succ (Zero)) & (___minmaxoMinmaxoMinmaxo x57 x60 x62 x64 x65 x67 x69 & _minmaxo x55 x57)))));
+
+___minmaxoMinmaxoMinmaxo x57 x60 x62 x64 x65 x67 x69 = (fresh x83, x82, x84 in ((((x83 == Succ (Zero) & x82 == Zero & x69 == Succ (Succ (Zero)) & x64 == Succ (Zero)) & ____minmaxoMinmaxo x57 x60 x62 x65 x67) | ((x84 == Zero & x83 == Zero & x82 == Succ (Zero) & x69 == Succ (Zero) & x64 == Succ (Succ (Zero))) & _____minmaxoMinmaxo x57 x60 x62 x65 x67))));
+
+____minmaxoMinmaxo x57 x60 x62 x65 x67 = (((x62 == Succ (Zero) & x57 == x60) & (_leo x60 & ____minmaxo x65 x67)) | ((x60 == Succ (Zero) & x57 == x62) & _________gtoMinmaxo x62 x65 x67));
+
+_________gtoMinmaxo x62 x65 x67 = (fresh x87 in (((x87 == Zero & x62 == Zero) & __________minmaxo x65 x67)));
+
+_____minmaxoMinmaxo x57 x60 x62 x65 x67 = (((x62 == Succ (Succ (Zero)) & x57 == x60) & (leo x60 & _________minmaxo x65 x67)) | ((x60 == Succ (Succ (Zero)) & x57 == x62) & __________gtoMinmaxo x62 x65 x67));
+
+__________gtoMinmaxo x62 x65 x67 = (fresh x87, x88, x89 in ((((x87 == Succ (Zero) & x62 == Zero) & ______minmaxo x65 x67) | ((x88 == Succ (Zero) & x62 == Succ (x89)) & ___________gtoMinmaxo x65 x67 x89))));
+
+___________gtoMinmaxo x65 x67 x89 = (fresh x90 in (((x90 == Zero & x89 == Zero) & ________minmaxo x65 x67)));
+
+
+? sorto x0

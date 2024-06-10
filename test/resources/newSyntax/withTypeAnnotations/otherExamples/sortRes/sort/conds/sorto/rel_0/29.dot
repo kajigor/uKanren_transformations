@@ -1,0 +1,17 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<from_lst>];
+    1 [label=<from_reslst>];
+    2 [label=<to_g>];
+    3 [label=<to_xs1>];
+    4 [label=<to_l>];
+    5 [label=<to_x>];
+    6 [label=<to_x1>];
+    0 -> 3 [label=1];
+    0 -> 5 [label=1];
+    0 -> 6 [label=1];
+}

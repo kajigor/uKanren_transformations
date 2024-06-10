@@ -1,0 +1,48 @@
+sorto x0 = (fresh x1, x2, x3, x4 in (((x0 == (x1 :: (x2 :: (x3 :: [x4]))) & minmaxoMinmaxoMinmaxoMinmaxoMinmaxo x1 x2 x3 x4) | (x0 == (x1 :: (x2 :: (x3 :: [x4]))) & _minmaxoMinmaxoMinmaxoMinmaxoMinmaxo x1 x2 x3 x4))));
+
+minmaxoMinmaxoMinmaxoMinmaxoMinmaxo x1 x2 x3 x4 = (minmaxoMinmaxoMinmaxo______minmaxo x1 x2 x3 x4 | _minmaxoMinmaxoMinmaxo__________minmaxo x1 x2 x3 x4);
+
+minmaxoMinmaxoMinmaxo______minmaxo x1 x2 x3 x4 = (minmaxoMinmaxo______minmaxo x1 x2 x3 x4 | _minmaxoMinmaxo______minmaxo x1 x2 x3 x4);
+
+minmaxoMinmaxo______minmaxo x1 x2 x3 x4 = ((leo______minmaxo x1 x2 & minmaxo x3 x4) | (x2 == Succ (Succ (Zero)) & gtoMinmaxo______minmaxo x1 x3 x4));
+
+leo______minmaxo x1 x2 = ((x2 == Zero & x1 == Succ (Zero)) | (x2 == Succ (Zero) & x1 == Zero));
+
+minmaxo x3 x4 = ((x4 == Succ (Succ (Succ (Zero))) & x3 == Succ (Succ (Zero))) | (x4 == Succ (Succ (Zero)) & x3 == Succ (Succ (Succ (Zero)))));
+
+gtoMinmaxo______minmaxo x1 x3 x4 = ((x1 == Succ (Zero) & _minmaxo x3 x4) | (x1 == Zero & _gtoMinmaxo x3 x4));
+
+_minmaxo x3 x4 = ((x4 == Succ (Succ (Succ (Zero))) & x3 == Zero) | (x4 == Zero & x3 == Succ (Succ (Succ (Zero)))));
+
+_gtoMinmaxo x3 x4 = ((x4 == Succ (Succ (Succ (Zero))) & x3 == Succ (Zero)) | (x4 == Succ (Zero) & x3 == Succ (Succ (Succ (Zero)))));
+
+_minmaxoMinmaxo______minmaxo x1 x2 x3 x4 = (((x2 == Succ (Succ (Succ (Zero))) & x1 == Succ (Zero)) & __________minmaxo x3 x4) | ((x2 == Succ (Succ (Succ (Zero))) & x1 == Zero) & ____minmaxo x3 x4));
+
+__________minmaxo x3 x4 = ((x4 == Succ (Succ (Zero)) & x3 == Zero) | (x4 == Zero & x3 == Succ (Succ (Zero))));
+
+____minmaxo x3 x4 = ((x4 == Succ (Succ (Zero)) & x3 == Succ (Zero)) | (x4 == Succ (Zero) & x3 == Succ (Succ (Zero))));
+
+_minmaxoMinmaxoMinmaxo__________minmaxo x1 x2 x3 x4 = (__minmaxoMinmaxo__________minmaxo x1 x2 x3 x4 | ___minmaxoMinmaxo__________minmaxo x1 x2 x3 x4);
+
+__minmaxoMinmaxo__________minmaxo x1 x2 x3 x4 = ((_leo__________minmaxo x1 x2 & __minmaxo x3 x4) | (x2 == Succ (Zero) & _____gtoMinmaxo__________minmaxo x1 x3 x4));
+
+_leo__________minmaxo x1 x2 = ((x2 == Zero & __________minmaxo x1 Zero) | (x2 == Succ (Zero) & __________minmaxo x1 (Succ (Zero))));
+
+__minmaxo x3 x4 = ((x4 == Succ (Succ (Succ (Zero))) & x3 == Succ (Zero)) | (x4 == Succ (Zero) & x3 == Succ (Succ (Succ (Zero)))));
+
+_____gtoMinmaxo__________minmaxo x1 x3 x4 = (((x4 == Succ (Succ (Succ (Zero))) & x3 == Zero) & __________minmaxo x1 Zero) | ((x4 == Zero & x3 == Succ (Succ (Succ (Zero)))) & __________minmaxo x1 Zero));
+
+___minmaxoMinmaxo__________minmaxo x1 x2 x3 x4 = ((x4 == Succ (Zero) & x3 == Zero & x2 == Succ (Succ (Succ (Zero))) & x1 == Succ (Succ (Zero))) | (x4 == Zero & x3 == Succ (Zero) & x2 == Succ (Succ (Succ (Zero))) & x1 == Succ (Succ (Zero))));
+
+_minmaxoMinmaxoMinmaxoMinmaxoMinmaxo x1 x2 x3 x4 = (____minmaxoMinmaxo_minmaxo x1 x2 x3 x4 | _____minmaxoMinmaxo_minmaxo x1 x2 x3 x4);
+
+____minmaxoMinmaxo_minmaxo x1 x2 x3 x4 = ((_leo_minmaxo x1 x2 & ____minmaxo x3 x4) | (x2 == Succ (Zero) & _________gtoMinmaxo_minmaxo x1 x3 x4));
+
+_leo_minmaxo x1 x2 = ((x2 == Zero & _minmaxo x1 Zero) | (x2 == Succ (Zero) & _minmaxo x1 (Succ (Zero))));
+
+_________gtoMinmaxo_minmaxo x1 x3 x4 = (((x4 == Succ (Succ (Zero)) & x3 == Zero) & _minmaxo x1 Zero) | ((x4 == Zero & x3 == Succ (Succ (Zero))) & _minmaxo x1 Zero));
+
+_____minmaxoMinmaxo_minmaxo x1 x2 x3 x4 = ((x4 == Succ (Zero) & x3 == Zero & x2 == Succ (Succ (Zero)) & x1 == Succ (Succ (Succ (Zero)))) | (x4 == Zero & x3 == Succ (Zero) & x2 == Succ (Succ (Zero)) & x1 == Succ (Succ (Succ (Zero)))));
+
+
+? sorto x0

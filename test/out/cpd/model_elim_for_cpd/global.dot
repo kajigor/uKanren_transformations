@@ -1,0 +1,20 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<N <BR/> solve(C Neg [C App [v<SUB>0</SUB> v<SUB>1</SUB> v<SUB>2</SUB>]], []) <BR/>  [  ] >];
+    1 [label=<N <BR/> contrapositive(C Impl [C Pos [C App [v<SUB>0</SUB> v<SUB>1</SUB> v<SUB>2</SUB>]] v<SUB>6</SUB>]), proveall(v<SUB>6</SUB>, [C Pos [C App [v<SUB>0</SUB> v<SUB>1</SUB> v<SUB>2</SUB>]]]) <BR/>  [  ] >];
+    2 [label=<N <BR/> input_clause(C Pos [C App [v<SUB>0</SUB> v<SUB>1</SUB> v<SUB>2</SUB>]] : v<SUB>10</SUB>), proveall(v<SUB>10</SUB>, [C Pos [C App [v<SUB>0</SUB> v<SUB>1</SUB> v<SUB>2</SUB>]]]) <BR/>  [  ] >];
+    3 [label=<N <BR/> input_clause(v<SUB>15</SUB> : v<SUB>14</SUB>), contrapositive1(C Pos [C App [v<SUB>0</SUB> v<SUB>1</SUB> v<SUB>2</SUB>]], v<SUB>14</SUB>, v<SUB>16</SUB>), prove(v<SUB>15</SUB>, []), proveall(v<SUB>16</SUB>, []) <BR/>  [  ] >];
+    4 [label=<L <BR/> >];
+    5 [label=<N <BR/> prove(C Neg [C App [v<SUB>17</SUB> v<SUB>18</SUB> v<SUB>19</SUB>]], []) <BR/>  [  ] >];
+    6 [label=<L <BR/> contrapositive(C Impl [C Pos [C App [v<SUB>17</SUB> v<SUB>18</SUB> v<SUB>19</SUB>]] v<SUB>25</SUB>]), proveall(v<SUB>25</SUB>, [C Pos [C App [v<SUB>17</SUB> v<SUB>18</SUB> v<SUB>19</SUB>]]])>];
+    0 -> 1 [label=""];
+    1 -> 2 [label=""];
+    1 -> 3 [label=""];
+    2 -> 4 [label=""];
+    2 -> 5 [label=""];
+    5 -> 6 [label=""];
+}

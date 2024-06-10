@@ -1,0 +1,17 @@
+fail  = Goal (Disj [] (Conj [] (Call "fail" [] :| []) :| []))
+
+le x y b = Goal (Disj ["z","x'","y'"] (Conj [] (Unif "x" Zero :| [Unif "b" Trueo]) :| [Conj [] (Unif "x" Succ "z" :| [Unif "y" Zero,Unif "b" Falso]),Conj [] (Unif "x" Succ "x'" :| [Unif "y" Succ "y'",Call "le" ["x'","y'","b"]])]))
+
+gt x y b = Goal (Disj ["z","x'","y'"] (Conj [] (Unif "x" Zero :| [Unif "b" Falso]) :| [Conj [] (Unif "x" Succ "z" :| [Unif "y" Zero,Unif "b" Trueo]),Conj [] (Unif "x" Succ "x'" :| [Unif "y" Succ "y'",Call "gt" ["x'","y'","b"]])]))
+
+maxmin x a i = Goal (Disj ["h","t"] (Conj [] (Unif "x" [] :| [Unif "a" Zero,Unif "i" Zero]) :| [Conj [] (Unif "x" ("h" :: "t") :| [Call "max" ["t","h","a"],Call "min" ["t","h","i"]])]))
+
+max x n m = Goal (Disj ["h","t"] (Conj [] (Unif "x" [] :| [Unif "m" "n"]) :| [Conj [] (Unif "x" ("h" :: "t") :| [Call "rel_0" ["h","n","t","m"]])]))
+
+min x n m = Goal (Disj ["h","t"] (Conj [] (Unif "x" [] :| [Unif "m" "n"]) :| [Conj [] (Unif "x" ("h" :: "t") :| [Call "rel_1" ["h","n","t","m"]])]))
+
+rel_1 h n t m = Goal (Disj [] (Conj [] (Call "le" ["h","n",Trueo] :| [Call "min" ["t","h","m"]]) :| [Conj [] (Call "gt" ["h","n",Trueo] :| [Call "min" ["t","n","m"]])]))
+
+rel_0 h n t m = Goal (Disj [] (Conj [] (Call "le" ["h","n",Trueo] :| [Call "max" ["t","n","m"]]) :| [Conj [] (Call "gt" ["h","n",Trueo] :| [Call "max" ["t","h","m"]])]))
+
+? Goal (Disj ["a","i"] (Conj [] (Call "maxmin" [(Succ Zero :: (Succ Succ Zero :: Succ Succ Succ Zero)),"a","i"] :| []) :| []))

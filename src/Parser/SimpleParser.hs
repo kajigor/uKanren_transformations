@@ -42,13 +42,13 @@ commaSep1 p = sepBy1 p comma
 consList :: Parser (Term X)
 consList = do
   headTerms <- some (try (parseTerm <* symbol "::"))
-  tail <- parseVar
+  tail <- parseTerm
   return $ foldr (\h t -> C "Cons" [h, t]) tail headTerms
   <?> "consList"
 
 listTerm :: Parser (Term X)
 listTerm =
-  try (roundBr consList <|> elemList)
+  try (roundBr consList <|> elemList <|> roundBr elemList)
   <?> "listTerm"
 
 termsToList :: [Term X] -> Term X
@@ -87,6 +87,8 @@ parseTerm :: Parser (Term X)
 parseTerm =
   try (C <$> try constructorName <*> parseArguments)
   <|> parseSimpleTerm
+  <|> roundBr parseSimpleTerm
+  <|> roundBr (try (C <$> try constructorName <*> parseArguments))
   <?> "parseTerm"
 
 parseArguments :: Parser [Term X]

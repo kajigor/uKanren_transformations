@@ -1,0 +1,14 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> eval(v<SUB>173</SUB>, v<SUB>174</SUB>, (C Quad [False False False False], C Quad [True True True True]))>];
+    1 [label=<S <BR/>  [ v<SUB>173</SUB> &rarr; (C Quad [False False False False], C Quad [True True True True]), v<SUB>174</SUB> &rarr; [] ] >];
+    2 [label=<C <BR/> step(v<SUB>173</SUB>, v<SUB>175</SUB>, v<SUB>177</SUB>), eval(v<SUB>177</SUB>, v<SUB>176</SUB>, (C Quad [False False False False], C Quad [True True True True])) <BR/>  [ v<SUB>174</SUB> &rarr; v<SUB>175</SUB> : v<SUB>176</SUB> ] >];
+    3 [label=<Leaf <BR/> step(v<SUB>173</SUB>, v<SUB>175</SUB>, v<SUB>177</SUB>), eval(v<SUB>177</SUB>, v<SUB>176</SUB>, (C Quad [False False False False], C Quad [True True True True])) <BR/>  [ v<SUB>174</SUB> &rarr; v<SUB>175</SUB> : v<SUB>176</SUB> ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    2 -> 3 [label=""];
+}

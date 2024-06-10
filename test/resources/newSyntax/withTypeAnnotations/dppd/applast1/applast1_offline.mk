@@ -1,0 +1,9 @@
+applasto y0 =
+  fresh q1, q2 in
+    ((y0 == (q1 :: q2) & appendoLasto q1 q2));
+
+appendoLasto y1 y2 =
+  fresh q1, q2 in
+    ((y2 == (q1 :: q2) & appendoLasto q1 q2));
+
+? applasto x0

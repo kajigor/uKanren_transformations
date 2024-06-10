@@ -39,7 +39,7 @@ lIdentifier :: [String] -> Parser String
 lIdentifier reserved =
     (lexeme . try) (p >>= notReserved reserved)
   where
-    p = (:) <$> lowerChar <*> many identLetters
+    p = (:) <$> (lowerChar <|> char '_') <*> many identLetters
 
 uIdentifier :: [String] -> Parser String
 uIdentifier reserved =

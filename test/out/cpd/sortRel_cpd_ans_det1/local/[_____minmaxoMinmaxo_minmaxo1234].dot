@@ -1,0 +1,20 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> _____minmaxoMinmaxo_minmaxo(v<SUB>1</SUB>, v<SUB>2</SUB>, v<SUB>3</SUB>, v<SUB>4</SUB>)>];
+    1 [label=<C <BR/> __________gtoMinmaxo_minmaxo(v<SUB>1</SUB>, v<SUB>3</SUB>, v<SUB>4</SUB>) <BR/>  [ v<SUB>2</SUB> &rarr; C Succ [C Succ [Zero]] ] >];
+    2 [label=<O <BR/> __________gtoMinmaxo_minmaxo(v<SUB>1</SUB>, v<SUB>3</SUB>, v<SUB>4</SUB>)>];
+    3 [label=<C <BR/> ______minmaxo(v<SUB>3</SUB>, v<SUB>4</SUB>) <BR/>  [ v<SUB>1</SUB> &rarr; C Succ [C Succ [C Succ [Zero]]], v<SUB>2</SUB> &rarr; C Succ [C Succ [Zero]] ] >];
+    4 [label=<O <BR/> ______minmaxo(v<SUB>3</SUB>, v<SUB>4</SUB>)>];
+    5 [label=<S <BR/>  [ v<SUB>1</SUB> &rarr; C Succ [C Succ [C Succ [Zero]]], v<SUB>2</SUB> &rarr; C Succ [C Succ [Zero]], v<SUB>3</SUB> &rarr; Zero, v<SUB>4</SUB> &rarr; C Succ [Zero] ] >];
+    6 [label=<S <BR/>  [ v<SUB>1</SUB> &rarr; C Succ [C Succ [C Succ [Zero]]], v<SUB>2</SUB> &rarr; C Succ [C Succ [Zero]], v<SUB>3</SUB> &rarr; C Succ [Zero], v<SUB>4</SUB> &rarr; Zero ] >];
+    0 -> 1 [label=""];
+    1 -> 2 [label=""];
+    2 -> 3 [label=""];
+    3 -> 4 [label=""];
+    4 -> 5 [label=""];
+    4 -> 6 [label=""];
+}

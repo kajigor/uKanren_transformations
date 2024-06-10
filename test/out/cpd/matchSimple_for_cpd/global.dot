@@ -1,0 +1,36 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<N <BR/> match(v<SUB>0</SUB>, 2 : 1 : 1 : 0 : 0 : 2 : 0 : [1]) <BR/>  [  ] >];
+    1 [label=<L <BR/> >];
+    2 [label=<N <BR/> match1(v<SUB>3</SUB>, 1 : 1 : 0 : 0 : 2 : 0 : [1], 2 : v<SUB>3</SUB>, 2 : 1 : 1 : 0 : 0 : 2 : 0 : [1]) <BR/>  [  ] >];
+    3 [label=<L <BR/> >];
+    4 [label=<N <BR/> match1(v<SUB>9</SUB>, 1 : 0 : 0 : 2 : 0 : [1], 2 : 1 : v<SUB>9</SUB>, 2 : 1 : 1 : 0 : 0 : 2 : 0 : [1]) <BR/>  [  ] >];
+    5 [label=<L <BR/> >];
+    6 [label=<N <BR/> match1(v<SUB>15</SUB>, 0 : 0 : 2 : 0 : [1], 2 : 1 : 1 : v<SUB>15</SUB>, 2 : 1 : 1 : 0 : 0 : 2 : 0 : [1]) <BR/>  [  ] >];
+    7 [label=<L <BR/> >];
+    8 [label=<N <BR/> match1(v<SUB>21</SUB>, 0 : 2 : 0 : [1], 2 : 1 : 1 : 0 : v<SUB>21</SUB>, 2 : 1 : 1 : 0 : 0 : 2 : 0 : [1]) <BR/>  [  ] >];
+    9 [label=<L <BR/> >];
+    10 [label=<N <BR/> match1(v<SUB>27</SUB>, 2 : 0 : [1], 2 : 1 : 1 : 0 : 0 : v<SUB>27</SUB>, 2 : 1 : 1 : 0 : 0 : 2 : 0 : [1]) <BR/>  [  ] >];
+    11 [label=<L <BR/> >];
+    12 [label=<N <BR/> match1(v<SUB>33</SUB>, 0 : [1], 2 : 1 : 1 : 0 : 0 : 2 : v<SUB>33</SUB>, 2 : 1 : 1 : 0 : 0 : 2 : 0 : [1]) <BR/>  [  ] >];
+    13 [label=<L <BR/> >];
+    14 [label=<N <BR/> match1(v<SUB>39</SUB>, [1], 2 : 1 : 1 : 0 : 0 : 2 : 0 : v<SUB>39</SUB>, 2 : 1 : 1 : 0 : 0 : 2 : 0 : [1]) <BR/>  [  ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    2 -> 3 [label=""];
+    2 -> 4 [label=""];
+    4 -> 5 [label=""];
+    4 -> 6 [label=""];
+    6 -> 7 [label=""];
+    6 -> 8 [label=""];
+    8 -> 9 [label=""];
+    8 -> 10 [label=""];
+    10 -> 11 [label=""];
+    10 -> 12 [label=""];
+    12 -> 13 [label=""];
+    12 -> 14 [label=""];
+}

@@ -1,0 +1,20 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<from_a>];
+    1 [label=<from_b>];
+    2 [label=<from_t>];
+    3 [label=<from_s>];
+    4 [label=<from_y>];
+    5 [label=<to_x>];
+    6 [label=<to_y>];
+    0 -> 1 [label=0];
+    1 -> 0 [label=0];
+    3 -> 5 [label=1];
+    4 -> 0 [label=1];
+    4 -> 1 [label=1];
+    4 -> 6 [label=1];
+}

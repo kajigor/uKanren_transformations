@@ -1,0 +1,12 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> Unfold prune v<SUB>8</SUB> (C Leaf [0])>];
+    1 [label=<S <BR/>  [ v<SUB>8</SUB> &rarr; C Leaf [v<SUB>49</SUB>], v<SUB>49</SUB> &rarr; 0 ] >];
+    2 [label=<S <BR/>  [ v<SUB>8</SUB> &rarr; C Tree [v<SUB>50</SUB> v<SUB>51</SUB> v<SUB>52</SUB>], v<SUB>51</SUB> &rarr; 0, v<SUB>53</SUB> &rarr; 0 ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+}

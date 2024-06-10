@@ -1,0 +1,16 @@
+filter (static static dynamic) 
+ elemo "n" "s" "v" = fresh "h" "t" "n'" (((v."n" = Zero /\ v."s" = (v."h" : v."t") /\ v."v" = v."h") \/ (v."s" = (v."h" : v."t") /\ Delay (Unfold elemo v."n'" v."t" v."v") /\ v."n" = C Succ [v."n'"])))
+filter (static static dynamic) 
+ evalo "st" "fm" "u" = fresh "x" "y" "v" "w" "z" ((v."fm" = C Lit [v."u"] \/ (v."fm" = C Var [v."z"] /\ Delay (Unfold elemo v."z" v."st" v."u")) \/ (Unfold noto v."v" v."u" /\ Delay (Memo evalo v."st" v."x" v."v") /\ v."fm" = C Neg [v."x"]) \/ (Unfold oro v."v" v."w" v."u" /\ Delay (Memo evalo v."st" v."x" v."v") /\ Delay (Memo evalo v."st" v."y" v."w") /\ v."fm" = C Disj [v."x", v."y"]) \/ (Unfold ando v."v" v."w" v."u" /\ Delay (Memo evalo v."st" v."x" v."v") /\ Delay (Memo evalo v."st" v."y" v."w") /\ v."fm" = C Conj [v."x", v."y"]) \/ (Unfold implicationo v."v" v."w" v."u" /\ Delay (Memo evalo v."st" v."x" v."v") /\ Delay (Memo evalo v."st" v."y" v."w") /\ v."fm" = C Impl [v."x", v."y"])))
+filter (static static dynamic) 
+ implicationo "x" "y" "b" = ((v."x" = Falso /\ v."y" = Trueo /\ v."b" = Trueo) \/ (v."x" = Falso /\ v."y" = Falso /\ v."b" = Trueo) \/ (v."x" = Trueo /\ v."y" = Trueo /\ v."b" = Trueo) \/ (v."x" = Trueo /\ v."y" = Falso /\ v."b" = Falso))
+filter (static static) 
+ noto "x" "b" = ((v."x" = Trueo /\ v."b" = Falso) \/ (v."x" = Falso /\ v."b" = Trueo))
+filter (static static dynamic) 
+ oro "x" "y" "b" = ((v."x" = Trueo /\ v."y" = Trueo /\ v."b" = Trueo) \/ (v."x" = Falso /\ v."y" = Trueo /\ v."b" = Trueo) \/ (v."x" = Trueo /\ v."y" = Falso /\ v."b" = Trueo) \/ (v."x" = Falso /\ v."y" = Falso /\ v."b" = Falso))
+filter (static static dynamic) 
+ ando "x" "y" "b" = ((v."x" = Trueo /\ v."y" = Trueo /\ v."b" = Trueo) \/ (v."x" = Falso /\ v."y" = Trueo /\ v."b" = Falso) \/ (v."x" = Trueo /\ v."y" = Falso /\ v."b" = Falso) \/ (v."x" = Falso /\ v."y" = Falso /\ v."b" = Falso))
+filter () 
+ fail  = Memo fail 
+
+fresh "x" (Memo evalo [] (C Disj [v."x", v."x"]) Trueo)

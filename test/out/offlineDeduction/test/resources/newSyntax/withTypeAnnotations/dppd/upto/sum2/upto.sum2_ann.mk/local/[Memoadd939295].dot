@@ -1,0 +1,14 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> Memo add v<SUB>93</SUB> v<SUB>92</SUB> v<SUB>95</SUB>>];
+    1 [label=<S <BR/>  [ v<SUB>92</SUB> &rarr; v<SUB>95</SUB>, v<SUB>93</SUB> &rarr; 0 ] >];
+    2 [label=<C <BR/> Memo add v<SUB>102</SUB> v<SUB>92</SUB> v<SUB>103</SUB> <BR/>  [ v<SUB>93</SUB> &rarr; (1 + v<SUB>102</SUB>), v<SUB>95</SUB> &rarr; (1 + v<SUB>103</SUB>) ] >];
+    3 [label=<Leaf <BR/> Memo add v<SUB>102</SUB> v<SUB>92</SUB> v<SUB>103</SUB> <BR/>  [ v<SUB>93</SUB> &rarr; (1 + v<SUB>102</SUB>), v<SUB>95</SUB> &rarr; (1 + v<SUB>103</SUB>) ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    2 -> 3 [label=""];
+}

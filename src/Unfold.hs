@@ -50,6 +50,7 @@ normalize (Disjunction x y gs) = concatMap normalize (x : y : gs)
 normalize (Conjunction x y gs) = (++) <$> normalize x <*> normalize (unsafeConj (y : gs))
 normalize g@(Invoke _ _) = [[g]]
 normalize g@(_ :=: _) = [[g]]
+normalize (Delay g) = normalize g
 normalize g = error ("Unexpected goal type in normalization\n" ++ show g)
 
 unifyStuff :: Subst.Subst Int -> [G S] -> Maybe ([G S], Subst.Subst Int)

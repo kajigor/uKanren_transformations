@@ -1,0 +1,25 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<from_q19>];
+    1 [label=<from_fromN>];
+    2 [label=<from_xs>];
+    3 [label=<from_state>];
+    4 [label=<from_toN>];
+    5 [label=<from_x>];
+    6 [label=<from_q13>];
+    7 [label=<to_name>];
+    8 [label=<to_q26>];
+    9 [label=<to_s2>];
+    10 [label=<to_s3>];
+    11 [label=<to_stack>];
+    12 [label=<to_s1>];
+    4 -> 7 [label=0];
+    6 -> 8 [label=0];
+    7 -> 4 [label=0];
+    8 -> 6 [label=0];
+    11 -> 5 [label=1];
+}

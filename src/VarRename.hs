@@ -6,6 +6,7 @@ import           Def
 import           FreshNames
 import           Program
 import           Syntax
+import Debug.Trace
 
 data RenameState a = RenameState
   { getVarMap       :: M.Map X a
@@ -99,6 +100,5 @@ enumerateTerm (V v) = do
 enumerateTerm (C name args) = do
   args <- mapM enumerateTerm args
   return $ C name args
-
 
 

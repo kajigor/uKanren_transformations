@@ -1,0 +1,1 @@
+flipflip(tree(tree(leaf(a(nil)), e(nil), leaf(b(nil))), d(nil), leaf(c(nil)))).

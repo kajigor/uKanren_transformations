@@ -63,4 +63,4 @@ check state steps q0 =
     one_step x state q11 &
     check q11 xs q0);
 
-? check (Triple (Cons Z (Cons (S Z) (Cons (S (S Z)) Nil))) Nil Nil) q Trueo
+? check (Triple (Cons O (Cons (S O) (Cons (S (S O)) Nil))) Nil Nil) q Trueo

@@ -1,0 +1,32 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> swap((C Quad [True False False False], C Quad [False True True True]), v<SUB>26</SUB>)>];
+    1 [label=<C <BR/> eval((C Quad [False True True True], C Quad [True False False False]), v<SUB>25</SUB>, (C Quad [False False False False], C Quad [True True True True])) <BR/>  [ v<SUB>26</SUB> &rarr; (v<SUB>45</SUB>, v<SUB>44</SUB>), v<SUB>44</SUB> &rarr; C Quad [True False False False], v<SUB>45</SUB> &rarr; C Quad [False True True True] ] >];
+    2 [label=<O <BR/> eval((C Quad [False True True True], C Quad [True False False False]), v<SUB>25</SUB>, (C Quad [False False False False], C Quad [True True True True]))>];
+    3 [label=<C <BR/> step((C Quad [False True True True], C Quad [True False False False]), v<SUB>46</SUB>, v<SUB>48</SUB>), eval(v<SUB>48</SUB>, v<SUB>47</SUB>, (C Quad [False False False False], C Quad [True True True True])) <BR/>  [ v<SUB>25</SUB> &rarr; v<SUB>46</SUB> : v<SUB>47</SUB>, v<SUB>26</SUB> &rarr; (v<SUB>45</SUB>, v<SUB>44</SUB>), v<SUB>44</SUB> &rarr; C Quad [True False False False], v<SUB>45</SUB> &rarr; C Quad [False True True True] ] >];
+    4 [label=<O <BR/> step((C Quad [False True True True], C Quad [True False False False]), v<SUB>46</SUB>, v<SUB>48</SUB>)>];
+    5 [label=<C <BR/> get(C Quad [False True True True], Man, True), get(C Quad [True False False False], Man, False), step'(C Quad [False True True True], C Quad [True False False False], v<SUB>48</SUB>, v<SUB>46</SUB>), eval(v<SUB>48</SUB>, v<SUB>47</SUB>, (C Quad [False False False False], C Quad [True True True True])) <BR/>  [ v<SUB>25</SUB> &rarr; v<SUB>46</SUB> : v<SUB>47</SUB>, v<SUB>26</SUB> &rarr; (v<SUB>45</SUB>, v<SUB>44</SUB>), v<SUB>44</SUB> &rarr; C Quad [True False False False], v<SUB>45</SUB> &rarr; C Quad [False True True True], v<SUB>49</SUB> &rarr; C Quad [False True True True], v<SUB>50</SUB> &rarr; C Quad [True False False False] ] >];
+    6 [label=<C <BR/> get(C Quad [True False False False], Man, True), get(C Quad [False True True True], Man, False), step'(C Quad [True False False False], C Quad [False True True True], v<SUB>51</SUB>, v<SUB>46</SUB>), swap(v<SUB>51</SUB>, v<SUB>48</SUB>), eval(v<SUB>48</SUB>, v<SUB>47</SUB>, (C Quad [False False False False], C Quad [True True True True])) <BR/>  [ v<SUB>25</SUB> &rarr; v<SUB>46</SUB> : v<SUB>47</SUB>, v<SUB>26</SUB> &rarr; (v<SUB>45</SUB>, v<SUB>44</SUB>), v<SUB>44</SUB> &rarr; C Quad [True False False False], v<SUB>45</SUB> &rarr; C Quad [False True True True], v<SUB>49</SUB> &rarr; C Quad [False True True True], v<SUB>50</SUB> &rarr; C Quad [True False False False] ] >];
+    7 [label=<O <BR/> get(C Quad [False True True True], Man, True)>];
+    8 [label=<C <BR/> get(C Quad [True False False False], Man, False), step'(C Quad [False True True True], C Quad [True False False False], v<SUB>48</SUB>, v<SUB>46</SUB>), eval(v<SUB>48</SUB>, v<SUB>47</SUB>, (C Quad [False False False False], C Quad [True True True True])) <BR/>  [ v<SUB>25</SUB> &rarr; v<SUB>46</SUB> : v<SUB>47</SUB>, v<SUB>26</SUB> &rarr; (v<SUB>45</SUB>, v<SUB>44</SUB>), v<SUB>44</SUB> &rarr; C Quad [True False False False], v<SUB>45</SUB> &rarr; C Quad [False True True True], v<SUB>49</SUB> &rarr; C Quad [False True True True], v<SUB>50</SUB> &rarr; C Quad [True False False False], v<SUB>52</SUB> &rarr; False, v<SUB>53</SUB> &rarr; True, v<SUB>54</SUB> &rarr; True ] >];
+    9 [label=<O <BR/> get(C Quad [True False False False], Man, False)>];
+    10 [label=<C <BR/> step'(C Quad [False True True True], C Quad [True False False False], v<SUB>48</SUB>, v<SUB>46</SUB>), eval(v<SUB>48</SUB>, v<SUB>47</SUB>, (C Quad [False False False False], C Quad [True True True True])) <BR/>  [ v<SUB>25</SUB> &rarr; v<SUB>46</SUB> : v<SUB>47</SUB>, v<SUB>26</SUB> &rarr; (v<SUB>45</SUB>, v<SUB>44</SUB>), v<SUB>44</SUB> &rarr; C Quad [True False False False], v<SUB>45</SUB> &rarr; C Quad [False True True True], v<SUB>49</SUB> &rarr; C Quad [False True True True], v<SUB>50</SUB> &rarr; C Quad [True False False False], v<SUB>52</SUB> &rarr; False, v<SUB>53</SUB> &rarr; True, v<SUB>54</SUB> &rarr; True, v<SUB>55</SUB> &rarr; True, v<SUB>56</SUB> &rarr; False, v<SUB>57</SUB> &rarr; False ] >];
+    11 [label=<Leaf <BR/> step'(C Quad [False True True True], C Quad [True False False False], v<SUB>48</SUB>, v<SUB>46</SUB>), eval(v<SUB>48</SUB>, v<SUB>47</SUB>, (C Quad [False False False False], C Quad [True True True True])) <BR/>  [ v<SUB>25</SUB> &rarr; v<SUB>46</SUB> : v<SUB>47</SUB>, v<SUB>26</SUB> &rarr; (v<SUB>45</SUB>, v<SUB>44</SUB>), v<SUB>44</SUB> &rarr; C Quad [True False False False], v<SUB>45</SUB> &rarr; C Quad [False True True True], v<SUB>49</SUB> &rarr; C Quad [False True True True], v<SUB>50</SUB> &rarr; C Quad [True False False False], v<SUB>52</SUB> &rarr; False, v<SUB>53</SUB> &rarr; True, v<SUB>54</SUB> &rarr; True, v<SUB>55</SUB> &rarr; True, v<SUB>56</SUB> &rarr; False, v<SUB>57</SUB> &rarr; False ] >];
+    12 [label=<_|_>];
+    0 -> 1 [label=""];
+    1 -> 2 [label=""];
+    2 -> 3 [label=""];
+    3 -> 4 [label=""];
+    4 -> 5 [label=""];
+    4 -> 6 [label=""];
+    5 -> 7 [label=""];
+    6 -> 12 [label=""];
+    7 -> 8 [label=""];
+    8 -> 9 [label=""];
+    9 -> 10 [label=""];
+    10 -> 11 [label=""];
+}

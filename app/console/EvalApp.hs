@@ -37,4 +37,3 @@ runWithParser parser inputFile num = do
     Right p ->
       mapM_ putStrLn (toplevel num show (addVar p))
 
-

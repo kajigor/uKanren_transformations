@@ -58,4 +58,3 @@ simplify =
       if Fail `elem` simplified
       then Fail
       else f simplified
-

@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE FlexibleInstances #-}
 module NormalizedSyntax where
 
 import           Control.Monad.State
@@ -10,6 +11,7 @@ import           Def
 import           Program
 import           Syntax
 import           Text.Printf
+import Debug.Trace
 
 
 data Goal a = Goal (Disj a)
@@ -70,14 +72,14 @@ norm' g = return [norm'' g]
 norm'' :: G X -> Either (G X) (Base X)
 norm'' g@(Invoke _ _) = toBase g
 norm'' g@(_ :=: _) = toBase g
--- !!!
+norm'' (Delay g) = toBase g
 norm'' (Fresh _ g) = error "Fresh on the base level"
 norm'' g = Left g
 
 normalizeProg :: Program G X -> Prg
 normalizeProg (Program defs goal) =
   let d = mapM (\(Def name args body) -> do
-            b <- normalize body
+            b <- normalize (body)
             return $ Definition name args b
             ) defs
   in

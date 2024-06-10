@@ -85,4 +85,3 @@ instance (Show v) => Show (Subst v) where
 showSubst' :: (Show v) => Subst v -> String
 showSubst' s = printf " [ %s ] " (intercalate ", " (map (\(x,y) -> printf "%s -> %s" (show $ V x) (show y)) (Map.toList (getSubst s))))
 
-

@@ -1,0 +1,22 @@
+sorto x0 = (fresh x90, x89, x91, x87, x72, x88, x71, x70, x68, x67, x66, x58, x57, x56, x53, x52, x50, x49, x47, x46, x44, x43, x42, x34, x33, x32, x29, x28, x26, x25, x24, x21, x20, x19, x17, x15, x14, x10, x9, x8, x6, x5, x3, x2, x1, x92, x7, x48, x69, x45, x4 in (((x90 == Zero & x89 == x91 & x87 == Zero & x72 == x88 & x71 == [] & x70 == [] & x68 == [] & x67 == [] & x66 == Zero & x58 == [] & x57 == [] & x56 == Zero & x53 == Zero & x52 == [] & x50 == [Zero] & x49 == Succ (Zero) & x47 == (Zero :: x72) & x46 == (x49 :: x52) & x44 == (x56 :: x58) & x43 == (Succ (Zero) :: [Zero]) & x42 == Zero & x34 == [] & x33 == [] & x32 == Zero & x29 == Zero & x28 == Zero & x26 == (x32 :: x34) & x25 == [Zero] & x24 == Succ (Zero) & x21 == Zero & x20 == Zero & x19 == Succ (Zero) & x17 == [] & x15 == (Succ (Zero) :: [Zero]) & x14 == Succ (Succ (Zero)) & x10 == (x24 :: x26) & x9 == (Succ (Succ (Zero)) :: (Succ (Zero) :: [Zero])) & x8 == Zero & x6 == (x87 :: x89) & x5 == (x14 :: x17) & x3 == (x8 :: x10) & x2 == (Zero :: (Succ (Succ (Zero)) :: (Succ (Zero) :: [Zero]))) & x1 == Succ (Zero) & x0 == (x90 :: x92)) & (sortoAppendoAppendo x7 x48 x69 x88 x91 x92 & __sorto x45 x48 & __sorto x4 x7))));
+
+sortoAppendoAppendo x7 x48 x69 x88 x91 x92 = (fresh x103, x105, x104, x93, x94, x95, x97, x98, x99, x96 in ((((x103 == Zero & x92 == (x103 :: x105) & x91 == (Zero :: x48) & x88 == [] & x69 == [] & x48 == x104) & _appendo x105 (Succ (Zero)) x104 x7) | (x69 == (x93 :: x94) & (splitoAppendo x88 x93 x94 x95 x97 x98 x99 & appendoAppendo x7 x48 x88 x91 x92 & __sorto x95 x98 & __sorto x96 x99)))));
+
+appendo x7 x104 x105 = (fresh x106, x108, x107 in (((x105 == (Succ (Zero) :: x7) & x104 == []) | ((x105 == (x106 :: x108) & x104 == (x106 :: x107)) & _appendo x108 (Succ (Zero)) x107 x7))));
+
+appendoAppendo x7 x48 x88 x91 x92 = (fresh x104, x106, x102, x105, x107, x103 in ((((x91 == (Zero :: x48) & x88 == []) & _appendo x92 (Succ (Zero)) ((Zero :: x48)) x7) | ((x104 == x106 & x102 == x105 & x92 == (x105 :: x107) & x91 == (x102 :: x104) & x88 == (x102 :: x103)) & appendoAppendo x7 x48 x103 x106 x107))));
+
+splitoAppendo x88 x93 x94 x95 x97 x98 x99 = (fresh x102, x104, x103, x105 in ((((x97 == [] & x95 == [] & x94 == []) & _appendo x88 x93 x98 x99) | ((x95 == (x102 :: x104) & x94 == (x102 :: x103)) & (splitoAppendo x88 x93 x103 x104 x97 x98 x99 & le x93 x102)) | ((x97 == (x102 :: x105) & x94 == (x102 :: x103)) & (splitoAppendo x88 x93 x103 x95 x105 x98 x99 & gt x93 x102)))));
+
+_appendo x88 x93 x98 x99 = (fresh x106, x107, x108 in (((x98 == [] & x88 == (x93 :: x99)) | ((x98 == (x106 :: x107) & x88 == (x106 :: x108)) & _appendo x108 x93 x107 x99))));
+
+le x93 x102 = (fresh x106, x107 in ((x102 == Zero | ((x102 == Succ (x106) & x93 == Succ (x107)) & le x107 x106))));
+
+gt x93 x102 = (fresh x106, x107, x108 in (((x102 == Succ (x106) & x93 == Zero) | ((x102 == Succ (x107) & x93 == Succ (x108)) & gt x108 x107))));
+
+_sorto x45 x48 = (fresh x93, x94, x95, x97, x98, x99, x96 in (((x48 == [] & x45 == []) | (x45 == (x93 :: x94) & (splitoAppendo x48 x93 x94 x95 x97 x98 x99 & __sorto x95 x98 & __sorto x96 x99)))));
+
+__sorto x4 x7 = (fresh x93, x94, x95, x97, x98, x99, x96 in (((x7 == [] & x4 == []) | (x4 == (x93 :: x94) & (splitoAppendo x7 x93 x94 x95 x97 x98 x99 & __sorto x95 x98 & __sorto x96 x99)))));
+
+
+? sorto x0

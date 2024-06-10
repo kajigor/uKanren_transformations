@@ -1,0 +1,10 @@
+sorto x0 = (fresh x43, x42, x40, x41, x38, x37, x35, x39, x25, x24, x22, x21, x20, x19, x18, x9, x8, x7, x6, x5, x4, x3, x2, x1, x34, x36 in (((x43 == Succ (Zero) & x42 == [] & x40 == [x41] & x38 == Succ (Zero) & x37 == [Succ (Zero)] & x35 == (x39 :: x40) & x25 == Zero & x24 == Zero & x22 == Succ (Zero) & x21 == [] & x20 == Succ (Zero) & x19 == [Succ (Zero)] & x18 == Succ (Zero) & x9 == [] & x8 == [] & x7 == Succ (Zero) & x6 == [Succ (Zero)] & x5 == [Succ (Zero)] & x4 == Succ (Zero) & x3 == (Succ (Zero) :: [Succ (Zero)]) & x2 == (x18 :: x19) & x1 == Zero & x0 == (x34 :: x35)) & minmaxoMinmaxo x34 x36 x39 x41)));
+
+minmaxoMinmaxo x34 x36 x39 x41 = (fresh x49 in ((((x36 == Succ (Zero) & x34 == Zero) & minmaxo x39 x41) | ((x49 == Zero & x36 == Zero & x34 == Succ (Zero)) & _minmaxo x39 x41))));
+
+minmaxo x39 x41 = (fresh x54, x53 in ((x54 == Zero & x53 == Zero & x41 == Succ (Zero) & x39 == Succ (Zero))));
+
+_minmaxo x39 x41 = (fresh x52 in (((x41 == Succ (Zero) & x39 == Zero) | (x52 == Zero & x41 == Zero & x39 == Succ (Zero)))));
+
+
+? sorto x0

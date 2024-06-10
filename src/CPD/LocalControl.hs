@@ -22,8 +22,9 @@ import           Text.Printf
 import           Unfold              (getMaximumBranches, normalize, oneStepUnfold, unifyStuff)
 import           Util.ListZipper
 import qualified Util.Miscellaneous  as Util
+import           Debug.Trace
 
-data Heuristic = Deterministic | Branching
+data Heuristic = Deterministic | Branching deriving (Show, Read)
 
 type DescendGoal = Descend (G S)
 
@@ -55,6 +56,7 @@ isSelectable emb goal ancs =
 --   substitute s =
 --     map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
 
+substituteDescend :: (Subst.ApplySubst a, Ord v) => Subst.Subst v -> [Descend (a v)] -> [Descend (a v)]
 substituteDescend s = map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
 
 sldResolution :: [G S] -> Env.Env -> (Subst.Subst Int) -> [[G S]] -> Heuristic -> SldTree
@@ -79,7 +81,7 @@ sldResolutionStep gs env s seen isFirstTime heuristic =
       where
         go g' env' zipper isFirstTime =
           let Descend g ancs = cursor zipper in
-          let normalized = normalize g' in
+          let normalized = normalize g' in -- $ traceShow g'
           let unified = mapMaybe (unifyStuff s) normalized in
           let addDescends xs s =
                 substituteDescend s
