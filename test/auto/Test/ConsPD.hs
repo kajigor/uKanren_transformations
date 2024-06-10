@@ -29,7 +29,7 @@ module Test.ConsPD where
 
 -- runJu = JU.transform
 
-runConsPD = ConsPD.runConsPDNoGround
+-- runConsPD = ConsPD.runConsPDNoGround
 
 -- runRep = do
 --     runJu 100 "rep" rep
