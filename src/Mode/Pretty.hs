@@ -83,7 +83,6 @@ precedence (Unif _ _) = 9
 precedence (EtaD _) = 9
 precedence (Conj _ _ _) = 3
 precedence (Disj _ _ _) = 2
-precedence (EtaD _) = 9
 
 parensIfNeeded curr nested
   | precedence curr > precedence nested = parens

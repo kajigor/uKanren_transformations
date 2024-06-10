@@ -1,0 +1,14 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<from_today>];
+    1 [label=<from_weather>];
+    2 [label=<from_program>];
+    3 [label=<to_day>];
+    4 [label=<to_daykind>];
+    0 -> 3 [label=0];
+    3 -> 0 [label=0];
+}

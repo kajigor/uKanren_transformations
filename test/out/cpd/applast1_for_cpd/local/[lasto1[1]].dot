@@ -1,0 +1,14 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> lasto(1, [1])>];
+    1 [label=<S <BR/>  [  ] >];
+    2 [label=<C <BR/> lasto(1, []) <BR/>  [ v<SUB>5</SUB> &rarr; 1, v<SUB>6</SUB> &rarr; [] ] >];
+    3 [label=<_|_>];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    2 -> 3 [label=""];
+}

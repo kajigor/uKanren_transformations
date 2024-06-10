@@ -1,0 +1,14 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> nthOpt(v<SUB>0</SUB>, C Succ [C Succ [C Succ [Zero]]], v<SUB>1</SUB>)>];
+    1 [label=<S <BR/>  [ v<SUB>0</SUB> &rarr; [], v<SUB>1</SUB> &rarr; None ] >];
+    2 [label=<C <BR/> nthOpt(v<SUB>3</SUB>, C Succ [C Succ [Zero]], v<SUB>1</SUB>) <BR/>  [ v<SUB>0</SUB> &rarr; v<SUB>2</SUB> : v<SUB>3</SUB>, v<SUB>4</SUB> &rarr; C Succ [C Succ [Zero]] ] >];
+    3 [label=<Leaf <BR/> nthOpt(v<SUB>3</SUB>, C Succ [C Succ [Zero]], v<SUB>1</SUB>) <BR/>  [ v<SUB>0</SUB> &rarr; v<SUB>2</SUB> : v<SUB>3</SUB>, v<SUB>4</SUB> &rarr; C Succ [C Succ [Zero]] ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    2 -> 3 [label=""];
+}

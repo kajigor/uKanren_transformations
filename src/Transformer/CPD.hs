@@ -4,7 +4,7 @@ module Transformer.CPD where
 
 import           Control.Monad
 import qualified CPD.GlobalControl      as GC
-import qualified CPD.LocalControl       as LC
+import qualified CPD.LocalControl       as LC 
 import           CPD.Residualization
 import           Data.List
 import           Data.Maybe
@@ -15,6 +15,7 @@ import           Prelude                hiding (succ)
 import           Printer.Dot
 import           Printer.GlobalTree     ()
 import           Printer.SldTree        ()
+import           Printer.PrettyMkPrinter (prettyMk)
 import           Program
 import           Purification
 import           Residualization
@@ -24,6 +25,7 @@ import           System.Process         (system)
 import           Text.Printf
 import qualified Transformer.MkToProlog
 import           Util.File              (createDirRemoveExisting, shortenFileName)
+import           Debug.Trace (traceShow)
 
 data TransformResult = Result { original   :: [Def G X]
                               , globalTree :: GC.GlobalTree
@@ -48,7 +50,7 @@ renderLocalTree :: FilePath -> [G S] -> LC.SldTree -> IO ()
 renderLocalTree localDir goal =
     printTree (localDir </> shortenFileName (show goal) <.> "dot")
 
-transform' :: FilePath -> FilePath -> Program G X -> Maybe String -> LC.Heuristic -> IO ()
+transform' :: FilePath -> FilePath -> Program G X -> Maybe String -> LC.Heuristic -> IO (Program G X)
 transform' outDir filename goal@(Program definitions _) env heuristic = do
     let path = outDir </> filename
     let localDir = path </> "local"
@@ -59,18 +61,21 @@ transform' outDir filename goal@(Program definitions _) env heuristic = do
     Transformer.MkToProlog.transform (path </> "original.pl") definitions
     printTree (path </> "global.dot") (globalTree result)
     mapM_ (uncurry (renderLocalTree localDir)) (localTrees result)
-    writeFile (cpdFile <.> "before.pur") (show $ beforePur result)
+    writeFile (cpdFile <.> "before.pur") (prettyMk $ beforePur result)
     let pur@(goal,xs,defs) = purified result
     Transformer.MkToProlog.transform (cpdFile <.> "pl") defs
     let purified = Program defs goal
-    writeFile (cpdFile <.> "pur") (show purified)
+    writeFile (cpdFile <.> "pur") (prettyMk purified)
     let ocamlCodeFileName = cpdFile <.> "ml"
     OC.topLevel ocamlCodeFileName "topLevel" env pur
 
     mapM_ generatePdf [path, localDir]
+    return purified
 
 transform :: FilePath -> Program G X -> Maybe String -> LC.Heuristic -> IO ()
-transform = transform' "test/out/cpd"
+transform filePath pr str heu = do  
+  res <- transform' "test/out/cpd" filePath pr str heu
+  return ()
 
 -- doOcanrenize = do
 --   ocanren "unify" Program.Unify.query $ Just Program.Unify.env

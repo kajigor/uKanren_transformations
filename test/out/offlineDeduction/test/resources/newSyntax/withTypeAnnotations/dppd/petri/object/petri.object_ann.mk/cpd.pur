@@ -1,0 +1,10 @@
+unsafe y0 = (fresh q1 in (__unsafe q1 (S (O)) O));
+
+__unsafe y3 y4 y5 = (fresh q1, q2, q3, q4 in ((__unsafe q1 (S (y4)) y5 | (y4 == S (q2) & ___unsafe y5 q2) | (y4 == S (q3) & __unsafe (S (q4)) q3 (S (y5))))));
+
+___unsafe y6 y8 = (fresh q1, q2 in ((__unsafe q1 (S (y8)) (S (y6)) | (y8 == S (q2) & ___unsafe (S (y6)) q2))));
+
+_____unsafe y11 y13 = (fresh q1, q2 in ((__unsafe q1 (S (q2)) (S (S (S (S (S (S (S (S (S (y13)))))))))) | _____unsafe (S (q1)) (S (y13)))));
+
+
+? unsafe x0

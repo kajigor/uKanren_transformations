@@ -21,7 +21,7 @@ freeThenGroundMode = Mode { before = Free, after = Just Ground }
 unit_unifyAnalysis :: IO ()
 unit_unifyAnalysis = do
   let expected = N.Disj (N.Conj (N.Unif (Var (0, groundMode)) (FTVar (Var (1, freeThenGroundMode))) :| []) :| [])
-  let actual = evalStateT (prioritizeGround (N.Disj (N.Conj (N.Unif (Var (0, groundMode)) (FTVar (Var (1, freeMode))) :| []) :| []))) emptyAnalyzeState :: Either ModeAnalysisError (N.Goal (Int, Mode))
+  let actual = evalStateT (analyze (N.Disj (N.Conj (N.Unif (Var (0, groundMode)) (FTVar (Var (1, freeMode))) :| []) :| []))) (emptyAnalyzeState Nothing) :: Either ModeAnalysisError (N.Goal (Int, Mode))
   actual @?= Right expected
 
 run (Right r) = putStrLn $ prettyString $ N.back r

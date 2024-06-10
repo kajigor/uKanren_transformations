@@ -13,6 +13,8 @@ vars@[v0, v1, v2] = map V [0, 1, 2]
 
 [v3, v4, v5, v6, v7] = map V [3, 4, 5, 6, 7]
 
+[var0, var1, var2, var3, var4, var5, var6, var7, var8, var9] = map Var [0..9]
+
 nil :: Term a
 nil = C "nil" []
 
@@ -38,17 +40,17 @@ complexUnif = pair v0 (pair v1 v2) :=: pair (pair v3 v4) v5
 --   testFlattenTerm 3
 --     (list [v0, v1, v2])
 --     (3, FlattenState { getVarSource = 7
---                      , getVarMap = Map.fromList [ (3, FTCon "cons" [Var 0,Var 4])
---                                                 , (4, FTCon "cons" [Var 1,Var 5])
---                                                 , (5, FTCon "cons" [Var 2,Var 6])
+--                      , getVarMap = Map.fromList [ (3, FTCon "cons" [var0,var4])
+--                                                 , (4, FTCon "cons" [var1,var5])
+--                                                 , (5, FTCon "cons" [var2,var6])
 --                                                 , (6, FTCon "nil" [])]
 --                      , getNewVarMap = Map.empty } )
 --   testFlattenTerm (4 :: Int)
 --     (C "pair" [C "pair" [V 0, V 1], C "pair" [V 2, V 3]])
 --     (4, FlattenState { getVarSource = 7
---                      , getVarMap = Map.fromList [ (4, FTCon "pair" [Var 5, Var 6])
---                          , (5, FTCon "pair" [Var 0, Var 1])
---                          , (6, FTCon "pair" [Var 2, Var 3])]
+--                      , getVarMap = Map.fromList [ (4, FTCon "pair" [var5, var6])
+--                          , (5, FTCon "pair" [var0, var1])
+--                          , (6, FTCon "pair" [var2, var3])]
 --                      , getNewVarMap = Map.empty })
 
 testFlattenGoal :: (FreshName v, Ord v, Eq v, Show v) => v -> G v -> Goal v -> IO ()
@@ -59,34 +61,42 @@ unit_flattenNullaryConstructors :: IO ()
 unit_flattenNullaryConstructors = do
   testFlattenGoal (0 :: Int)
     (nil :=: nil)
-    (Unif (Var 0) (FTVar $ Var 0))
+    (Call "success" [])
 
 unit_flattenConstructors :: IO ()
 unit_flattenConstructors = do
   testFlattenGoal (6 :: Int)
     consUnif
-    (Conj (Unif (Var 0) (FTVar (Var 2))) (Unif (Var 1) (FTVar (Var 3))) [])
+    (Conj (Unif (var0) (FTVar (var2))) (Unif (var1) (FTVar (var3))) [])
 
 unit_flattenComplexConstructors :: IO ()
 unit_flattenComplexConstructors = do
   testFlattenGoal (6 :: Int)
     complexUnif
-    (Conj (Unif (Var 0) (FTCon "pair" [Var 3, Var 4])) (Unif (Var 5) (FTCon "pair" [Var 1, Var 2])) [])
+    (Conj (Unif (var0) (FTCon "pair" [var6, var7]))
+          (Unif (var5) (FTCon "pair" [var8, var9]))
+          [Unif (var6) (FTVar var3)
+          ,Unif (var7) (FTVar var4)
+          ,Unif (var8) (FTVar var1)
+          ,Unif (var9) (FTVar var2) ])
 
 unit_extraVarsNeeded :: IO ()
 unit_extraVarsNeeded = do
   testFlattenGoal (4 :: Int)
     (v0 :=: pair (pair v1 v2) v3)
-    (Conj (Unif (Var 0) (FTCon "pair" [Var 4, Var 3])) (Unif (Var 4) (FTCon "pair" [Var 1, Var 2])) [])
+    (Conj (Unif (var0) (FTCon "pair" [var5, var6]))
+          (Unif (var4) (FTCon "pair" [var1, var2]))
+          [Unif (var5) (FTVar var4)
+          ,Unif (var6) (FTVar var3)])
 
 unit_noExtraVarsNeeded :: IO ()
 unit_noExtraVarsNeeded = do
   testFlattenGoal (8 :: Int)
     (pair (pair v0 v1) (pair v2 v3) :=: pair (pair v4 v5) (pair v6 v7))
-    (Conj (Unif (Var 0) (FTVar (Var 4)))
-          (Unif (Var 1) (FTVar (Var 5)))
-          [ Unif (Var 2) (FTVar (Var 6))
-          , Unif (Var 3) (FTVar (Var 7))]
+    (Conj (Unif (var0) (FTVar (var4)))
+          (Unif (var1) (FTVar (var5)))
+          [ Unif (var2) (FTVar (var6))
+          , Unif (var3) (FTVar (var7))]
     )
 
 unit_flattenGoals :: IO ()
@@ -95,28 +105,28 @@ unit_flattenGoals = do
   let callF = call "f" [list vars]
   testFlattenGoal (2 :: Int)
     unif
-    (Unif (Var 0) (FTVar (Var 1)))
+    (Unif (var0) (FTVar (var1)))
   testFlattenGoal (4 :: Int)
     callF
-    (Conj ( Call "f" [Var 4] )
-          ( Unif (Var 4) (FTCon "cons" [Var 0,Var 5]) )
-          [ Unif (Var 5) (FTCon "cons" [Var 1,Var 6])
-          , Unif (Var 6) (FTCon "cons" [Var 2,Var 7])
-          , Unif (Var 7) (FTCon "nil" [])])
+    (Conj ( Call "f" [var4] )
+          ( Unif (var4) (FTCon "cons" [var0,var5]) )
+          [ Unif (var5) (FTCon "cons" [var1,var6])
+          , Unif (var6) (FTCon "cons" [var2,var7])
+          , Unif (var7) (FTCon "nil" [])])
   testFlattenGoal (4 :: Int)
     (Conjunction unif callF [])
-    (Conj (Unif (Var 0) (FTVar (Var 1)))
-          ( Call "f" [Var 4] )
-          [ Unif (Var 4) (FTCon "cons" [Var 0,Var 5])
-          , Unif (Var 5) (FTCon "cons" [Var 1,Var 6])
-          , Unif (Var 6) (FTCon "cons" [Var 2,Var 7])
-          , Unif (Var 7) (FTCon "nil" [])])
+    (Conj (Unif (var0) (FTVar (var1)))
+          ( Call "f" [var4] )
+          [ Unif (var4) (FTCon "cons" [var0,var5])
+          , Unif (var5) (FTCon "cons" [var1,var6])
+          , Unif (var6) (FTCon "cons" [var2,var7])
+          , Unif (var7) (FTCon "nil" [])])
   testFlattenGoal (4 :: Int)
     (Disjunction unif callF [])
-    (Disj (Unif (Var 0) (FTVar (Var 1)))
-          (Conj ( Call "f" [Var 4] )
-                ( Unif (Var 4) (FTCon "cons" [Var 0,Var 5]))
-                [ Unif (Var 5) (FTCon "cons" [Var 1,Var 6])
-                , Unif (Var 6) (FTCon "cons" [Var 2,Var 7])
-                , Unif (Var 7) (FTCon "nil" [])])
+    (Disj (Unif (var0) (FTVar (var1)))
+          (Conj ( Call "f" [var4] )
+                ( Unif (var4) (FTCon "cons" [var0,var5]))
+                [ Unif (var5) (FTCon "cons" [var1,var6])
+                , Unif (var6) (FTCon "cons" [var2,var7])
+                , Unif (var7) (FTCon "nil" [])])
           [])

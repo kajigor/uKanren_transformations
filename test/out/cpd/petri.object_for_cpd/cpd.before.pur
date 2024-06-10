@@ -1,0 +1,12 @@
+unsafe x0 = (fresh x9, x3, x1, x2, x6 in (((x9 == O & x3 == O & x1 == S (x2)) & ____unsafe x6 (S (O)) O)));
+
+_unsafe x11 x12 = (fresh x15, x13, x14, x17 in ((((x15 == O & x13 == S (x14)) & ___unsafe x14 x12 O) | (x12 == S (x17) & ____unsafe (S (x13)) x17 (S (O))))));
+
+__unsafe x12 x14 = (fresh x21, x18, x22 in (((x21 == O & ____unsafe x18 (S (x12)) O) | (x12 == S (x22) & ___unsafe (S (x18)) x22 (S (O))))));
+
+___unsafe x23 x24 x25 = (fresh x29, x26, x30 in (((x29 == O & ____unsafe x26 (S (x24)) x25) | (x24 == S (x30) & ___unsafe (S (x26)) x30 (S (x25))))));
+
+____unsafe x18 x19 x20 = (fresh x23, x21, x22, x25 in ((((x23 == O & x21 == S (x22)) & ___unsafe x22 x19 x20) | (x19 == S (x25) & ____unsafe (S (x21)) x25 (S (x20))))));
+
+
+? unsafe x0

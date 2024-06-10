@@ -1,0 +1,25 @@
+fail  = Goal (Disj [] (Conj [] (Call "fail" [] :| []) :| []))
+
+get side x q = Goal (Disj ["a","b","c"] (Conj [] (Unif "side" Quad "q" "a" "b" "c" :| [Unif "x" Goat]) :| [Conj [] (Unif "side" Quad "a" "q" "b" "c" :| [Unif "x" Wolf]),Conj [] (Unif "side" Quad "a" "b" "q" "c" :| [Unif "x" Cabbage]),Conj [] (Unif "side" Quad "a" "b" "c" "q" :| [Unif "x" Man])]))
+
+safe' side = Goal (Disj [] (Conj [] (Call "get" ["side",Man,True] :| []) :| [Conj [] (Call "rel_0" ["side"] :| [Call "get" ["side",Man,False]])]))
+
+safe state = Goal (Disj ["left","right"] (Conj [] (Unif "state" ("left", "right") :| [Call "safe'" ["left"],Call "safe'" ["right"]]) :| []))
+
+swap state state' = Goal (Disj ["left","right"] (Conj [] (Unif "state" ("left", "right") :| [Unif "state'" ("right", "left")]) :| []))
+
+step' left right state' move = Goal (Disj ["lm","lg","lw","lc","rm","rg","rw","rc"] (Conj [] (Unif "left" Quad "lm" "lg" "lw" "lc" :| [Unif "right" Quad "rm" "rg" "rw" "rc",Call "rel_2" ["move","state'","lm","lg","lw","rm","rg","rw","left"]]) :| []))
+
+step state move state' = Goal (Disj ["left","right"] (Conj [] (Unif "state" ("left", "right") :| [Call "rel_3" ["left","right","state'","move"]]) :| []))
+
+eval state moves state' = Goal (Disj ["move","moves'","state''"] (Conj [] (Unif "moves" [] :| [Unif "state" "state'"]) :| [Conj [] (Call "step" ["state","move","state''"] :| [Call "eval" ["state''","moves'","state'"],Unif "moves" ("move" :: "moves'")])]))
+
+rel_3 left right state' move = Goal (Disj ["state''"] (Conj [] (Call "get" ["left",Man,True] :| [Call "get" ["right",Man,False],Call "step'" ["left","right","state'","move"]]) :| [Conj [] (Call "get" ["right",Man,True] :| [Call "get" ["left",Man,False],Call "step'" ["right","left","state''","move"],Call "swap" ["state''","state'"]])]))
+
+rel_2 move state' lm lg lw rm rg rw left = Goal (Disj [] (Conj [] (Unif "move" Empty :| [Unif "state'" (Quad "lm" "lg" "lw" False, Quad "rm" "rg" "rw" True),Call "safe" ["state'"]]) :| [Conj [] (Unif "move" Goat :| [Call "get" ["left",Goat,True],Unif "state'" (Quad False "lg" "lw" False, Quad True "rg" "rw" True),Call "safe" ["state'"]]),Conj [] (Unif "move" Wolf :| [Call "get" ["left",Wolf,True],Unif "state'" (Quad "lm" False "lw" False, Quad "rg" True "rw" True),Call "safe" ["state'"]]),Conj [] (Unif "move" Cabbage :| [Call "get" ["left",Cabbage,True],Unif "state'" (Quad "lm" "lg" False False, Quad "rm" "rg" True True),Call "safe" ["state'"]])]))
+
+rel_0 side = Goal (Disj [] (Conj [] (Call "get" ["side",Goat,False] :| []) :| [Conj [] (Call "rel_1" ["side"] :| [Call "get" ["side",Goat,True]])]))
+
+rel_1 side = Goal (Disj [] (Conj [] (Call "get" ["side",Cabbage,True] :| [Call "get" ["side",Wolf,True]]) :| [Conj [] (Call "get" ["side",Cabbage,False] :| [Call "get" ["side",Wolf,False]])]))
+
+? Goal (Disj ["x"] (Conj [] (Call "eval" [(Quad True True True True, Quad False False False False),"x",(Quad False False False False, Quad True True True True)] :| []) :| []))

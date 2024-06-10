@@ -1,0 +1,16 @@
+what_to_do_today(sunny, c(goOutToTheNature, nil)).
+what_to_do_today(sunny, c(visitTheGolfClub, nil)).
+what_to_do_today(sunny, c(washYourCar, nil)).
+what_to_do_today(sunny, c(itIsFunToLearnJapanese, nil)).
+what_to_do_today(rainy, c(goOutToTheTown, nil)).
+what_to_do_today(rainy, c(visitTheBridgeClub, nil)).
+what_to_do_today(rainy, c(enjoyYourselfAtHome, nil)).
+what_to_do_today(rainy, c(itIsFunToLearnJapanese, nil)).
+what_to_do_today(foggy, c(goOutToTheTown, nil)).
+what_to_do_today(foggy, c(visitTheBridgeClub, nil)).
+what_to_do_today(foggy, c(enjoyYourselfAtHome, nil)).
+what_to_do_today(foggy, c(itIsFunToLearnJapanese, nil)).
+what_to_do_today(windy, c(goOutToTheTown, nil)).
+what_to_do_today(windy, c(visitTheBridgeClub, nil)).
+what_to_do_today(windy, c(enjoyYourselfAtHome, nil)).
+what_to_do_today(windy, c(itIsFunToLearnJapanese, nil)).

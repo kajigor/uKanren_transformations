@@ -1,0 +1,14 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> Unfold addo v<SUB>0</SUB> (C Succ [C Succ [Zero]]) v<SUB>2</SUB>>];
+    1 [label=<S <BR/>  [ v<SUB>0</SUB> &rarr; Zero, v<SUB>2</SUB> &rarr; C Succ [C Succ [Zero]] ] >];
+    2 [label=<C <BR/> Memo addo v<SUB>3</SUB> (C Succ [C Succ [C Succ [Zero]]]) v<SUB>2</SUB> <BR/>  [ v<SUB>0</SUB> &rarr; C Succ [v<SUB>3</SUB>] ] >];
+    3 [label=<Leaf <BR/> Memo addo v<SUB>3</SUB> (C Succ [C Succ [C Succ [Zero]]]) v<SUB>2</SUB> <BR/>  [ v<SUB>0</SUB> &rarr; C Succ [v<SUB>3</SUB>] ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    2 -> 3 [label=""];
+}

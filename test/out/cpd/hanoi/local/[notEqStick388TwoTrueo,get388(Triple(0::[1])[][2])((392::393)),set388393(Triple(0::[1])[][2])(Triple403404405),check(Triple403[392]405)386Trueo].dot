@@ -1,0 +1,32 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> notEqStick(v<SUB>388</SUB>, Two, Trueo)>];
+    1 [label=<C <BR/> get(One, C Triple [0 : [1] [] [2]], v<SUB>392</SUB> : v<SUB>393</SUB>), set(One, v<SUB>393</SUB>, C Triple [0 : [1] [] [2]], C Triple [v<SUB>403</SUB> v<SUB>404</SUB> v<SUB>405</SUB>]), check(C Triple [v<SUB>403</SUB> [v<SUB>392</SUB>] v<SUB>405</SUB>], v<SUB>386</SUB>, Trueo) <BR/>  [ v<SUB>388</SUB> &rarr; One ] >];
+    2 [label=<C <BR/> get(Thr, C Triple [0 : [1] [] [2]], v<SUB>392</SUB> : v<SUB>393</SUB>), set(Thr, v<SUB>393</SUB>, C Triple [0 : [1] [] [2]], C Triple [v<SUB>403</SUB> v<SUB>404</SUB> v<SUB>405</SUB>]), check(C Triple [v<SUB>403</SUB> [v<SUB>392</SUB>] v<SUB>405</SUB>], v<SUB>386</SUB>, Trueo) <BR/>  [ v<SUB>388</SUB> &rarr; Thr ] >];
+    3 [label=<O <BR/> get(One, C Triple [0 : [1] [] [2]], v<SUB>392</SUB> : v<SUB>393</SUB>)>];
+    4 [label=<C <BR/> set(One, [1], C Triple [0 : [1] [] [2]], C Triple [v<SUB>403</SUB> v<SUB>404</SUB> v<SUB>405</SUB>]), check(C Triple [v<SUB>403</SUB> [0] v<SUB>405</SUB>], v<SUB>386</SUB>, Trueo) <BR/>  [ v<SUB>388</SUB> &rarr; One, v<SUB>392</SUB> &rarr; 0, v<SUB>393</SUB> &rarr; [1], v<SUB>406</SUB> &rarr; 0 : [1], v<SUB>407</SUB> &rarr; [], v<SUB>408</SUB> &rarr; [2] ] >];
+    5 [label=<O <BR/> set(One, [1], C Triple [0 : [1] [] [2]], C Triple [v<SUB>403</SUB> v<SUB>404</SUB> v<SUB>405</SUB>])>];
+    6 [label=<C <BR/> check(C Triple [[1] [0] [2]], v<SUB>386</SUB>, Trueo) <BR/>  [ v<SUB>388</SUB> &rarr; One, v<SUB>392</SUB> &rarr; 0, v<SUB>393</SUB> &rarr; [1], v<SUB>403</SUB> &rarr; [1], v<SUB>404</SUB> &rarr; v<SUB>410</SUB>, v<SUB>405</SUB> &rarr; v<SUB>411</SUB>, v<SUB>406</SUB> &rarr; 0 : [1], v<SUB>407</SUB> &rarr; [], v<SUB>408</SUB> &rarr; [2], v<SUB>409</SUB> &rarr; 0 : [1], v<SUB>410</SUB> &rarr; [], v<SUB>411</SUB> &rarr; [2] ] >];
+    7 [label=<Leaf <BR/> check(C Triple [[1] [0] [2]], v<SUB>386</SUB>, Trueo) <BR/>  [ v<SUB>388</SUB> &rarr; One, v<SUB>392</SUB> &rarr; 0, v<SUB>393</SUB> &rarr; [1], v<SUB>403</SUB> &rarr; [1], v<SUB>404</SUB> &rarr; v<SUB>410</SUB>, v<SUB>405</SUB> &rarr; v<SUB>411</SUB>, v<SUB>406</SUB> &rarr; 0 : [1], v<SUB>407</SUB> &rarr; [], v<SUB>408</SUB> &rarr; [2], v<SUB>409</SUB> &rarr; 0 : [1], v<SUB>410</SUB> &rarr; [], v<SUB>411</SUB> &rarr; [2] ] >];
+    8 [label=<O <BR/> get(Thr, C Triple [0 : [1] [] [2]], v<SUB>392</SUB> : v<SUB>393</SUB>)>];
+    9 [label=<C <BR/> set(Thr, [], C Triple [0 : [1] [] [2]], C Triple [v<SUB>403</SUB> v<SUB>404</SUB> v<SUB>405</SUB>]), check(C Triple [v<SUB>403</SUB> [2] v<SUB>405</SUB>], v<SUB>386</SUB>, Trueo) <BR/>  [ v<SUB>388</SUB> &rarr; Thr, v<SUB>392</SUB> &rarr; 2, v<SUB>393</SUB> &rarr; [], v<SUB>406</SUB> &rarr; 0 : [1], v<SUB>407</SUB> &rarr; [], v<SUB>408</SUB> &rarr; [2] ] >];
+    10 [label=<O <BR/> set(Thr, [], C Triple [0 : [1] [] [2]], C Triple [v<SUB>403</SUB> v<SUB>404</SUB> v<SUB>405</SUB>])>];
+    11 [label=<C <BR/> check(C Triple [0 : [1] [2] []], v<SUB>386</SUB>, Trueo) <BR/>  [ v<SUB>388</SUB> &rarr; Thr, v<SUB>392</SUB> &rarr; 2, v<SUB>393</SUB> &rarr; [], v<SUB>403</SUB> &rarr; v<SUB>409</SUB>, v<SUB>404</SUB> &rarr; v<SUB>410</SUB>, v<SUB>405</SUB> &rarr; [], v<SUB>406</SUB> &rarr; 0 : [1], v<SUB>407</SUB> &rarr; [], v<SUB>408</SUB> &rarr; [2], v<SUB>409</SUB> &rarr; 0 : [1], v<SUB>410</SUB> &rarr; [], v<SUB>411</SUB> &rarr; [2] ] >];
+    12 [label=<Leaf <BR/> check(C Triple [0 : [1] [2] []], v<SUB>386</SUB>, Trueo) <BR/>  [ v<SUB>388</SUB> &rarr; Thr, v<SUB>392</SUB> &rarr; 2, v<SUB>393</SUB> &rarr; [], v<SUB>403</SUB> &rarr; v<SUB>409</SUB>, v<SUB>404</SUB> &rarr; v<SUB>410</SUB>, v<SUB>405</SUB> &rarr; [], v<SUB>406</SUB> &rarr; 0 : [1], v<SUB>407</SUB> &rarr; [], v<SUB>408</SUB> &rarr; [2], v<SUB>409</SUB> &rarr; 0 : [1], v<SUB>410</SUB> &rarr; [], v<SUB>411</SUB> &rarr; [2] ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    1 -> 3 [label=""];
+    2 -> 8 [label=""];
+    3 -> 4 [label=""];
+    4 -> 5 [label=""];
+    5 -> 6 [label=""];
+    6 -> 7 [label=""];
+    8 -> 9 [label=""];
+    9 -> 10 [label=""];
+    10 -> 11 [label=""];
+    11 -> 12 [label=""];
+}

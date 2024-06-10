@@ -1,0 +1,16 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> Unfold neq v<SUB>22</SUB> v<SUB>24</SUB>>];
+    1 [label=<S <BR/>  [ v<SUB>22</SUB> &rarr; Zero, v<SUB>24</SUB> &rarr; C Succ [v<SUB>31</SUB>] ] >];
+    2 [label=<S <BR/>  [ v<SUB>22</SUB> &rarr; C Succ [v<SUB>31</SUB>], v<SUB>24</SUB> &rarr; Zero ] >];
+    3 [label=<C <BR/> Unfold neq v<SUB>32</SUB> v<SUB>33</SUB> <BR/>  [ v<SUB>22</SUB> &rarr; C Succ [v<SUB>32</SUB>], v<SUB>24</SUB> &rarr; C Succ [v<SUB>33</SUB>] ] >];
+    4 [label=<Leaf <BR/> Unfold neq v<SUB>32</SUB> v<SUB>33</SUB> <BR/>  [ v<SUB>22</SUB> &rarr; C Succ [v<SUB>32</SUB>], v<SUB>24</SUB> &rarr; C Succ [v<SUB>33</SUB>] ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    0 -> 3 [label=""];
+    3 -> 4 [label=""];
+}

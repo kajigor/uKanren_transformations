@@ -1,22 +1,33 @@
 module Main where
 
-import Options.Applicative
-import Data.Maybe (fromMaybe)
-import qualified EvalApp
-import qualified Transformer.PrologToMk
-import System.Directory (getCurrentDirectory)
 import qualified ConsPDApp
 import qualified CPDApp
-import qualified ParseApp
-import qualified NormalizeApp
+import           Data.Maybe             (fromMaybe)
+import qualified EvalApp
 import qualified ModeApp
+import qualified FunTransformerApp      
+import           FunTransformerApp      (Deduction (..))
+import qualified NormalizeApp
+import qualified AnnotationsSettingApp
+import qualified OfflineDeductionApp
+import qualified Parser.AnnotatedParser as AnnotatedParser
+import           Options.Applicative
+import qualified ParseApp
+import qualified Parser.Parser          as Parser
+import           Program
+import           BTA.AnnotatedProgram
+import qualified BTA.InvokeAnnotation   as Inv
+import           Syntax                 (G, X, Term)
+import           System.Directory       (getCurrentDirectory)
+import           Text.Printf            (printf)
+import qualified Transformer.PrologToMk
 import qualified TranslateApp
-import Util.File (failIfNotExist, isDir, getFiles)
-import Util.Miscellaneous (mapLeft)
-import qualified Parser.Parser as Parser
-import Syntax (X, G)
-import Program
-import Text.Printf (printf)
+import qualified UpdatedTranslate
+import qualified DepApp
+import           Util.File              (failIfNotExist, getFiles, isDir)
+import           Util.Miscellaneous     (mapLeft)
+import           CPD.LocalControl       (Heuristic (..))
+import qualified PrintProgs
 
 data Transformation
   = CPD
@@ -27,29 +38,41 @@ data Transformation
   | PrologToMk
   | Mode
   | Translate
+  | UpdatedTranslate
+  | Dependence
+  | AnnotationsSetting
+  | OfflineDeduction
+  | FunTransformer
+  | PrintMkCode
 
 data Action = Action { transformation :: Transformation
-                     , input :: FilePath
-                     , output :: FilePath
-                     , isInputADir :: Bool
-                     , parserType :: Parser.ParserType
-                     , numAnswers :: Int
-                     , groundVars :: [Int]
-                     , relName :: String
+                     , input          :: FilePath
+                     , output         :: FilePath
+                     , isInputADir    :: Bool
+                     , parserType     :: Parser.ParserType
+                     , numAnswers     :: Int
+                     , groundVars     :: Maybe [Int]
+                     , relName        :: String
+                     , branching      :: Heuristic
+                     , deduction      :: Deduction
+                     , example        :: String
                      }
 
 data Args = Args
   { transformationArg :: Transformation
-  , inputArg :: Maybe FilePath
-  , outputArg :: Maybe FilePath
-  , parserTypeArg :: Maybe Parser.ParserType
-  , numAnswersArg :: Int
-  , groundVarsArg :: [Int]
-  , relNameArg :: String
+  , inputArg          :: Maybe FilePath
+  , outputArg         :: Maybe FilePath
+  , parserTypeArg     :: Maybe Parser.ParserType
+  , numAnswersArg     :: Int
+  , groundVarsArg     :: Maybe [Int]
+  , relNameArg        :: String
+  , branchingArg      :: Heuristic
+  , deductionArg      :: Deduction
+  , exampleArg        :: String
   }
 
 transform :: Args -> IO Action
-transform (Args transformation input output parserType numAnswers groundVars relName) = do
+transform (Args transformation input output parserType numAnswers groundVars relName branch deduct example) = do
     curDir <- getCurrentDirectory
     let i = fromMaybe curDir input
     failIfNotExist i
@@ -59,9 +82,9 @@ transform (Args transformation input output parserType numAnswers groundVars rel
     let out = fromMaybe defaultOutput output
     -- forM_ output createDirRemoveExisting
 
-    let pType = fromMaybe Parser.Simple parserType
-
-    return $ Action transformation i out isInputADir pType numAnswers groundVars relName
+    let pType = fromMaybe Parser.Simple parserType 
+    
+    return $ Action transformation i out isInputADir pType numAnswers groundVars relName branch deduct example
 
 actionParser :: Parser Args
 actionParser =
@@ -70,8 +93,11 @@ actionParser =
         <*> optional outputParser
         <*> optional parserTypeParser
         <*> numAnswersParser
-        <*> groundVarsParser
+        <*> optional groundVarsParser
         <*> relationNameParser
+        <*> typeOfBranchingParser
+        <*> typeOfDeductionParser
+        <*> exampleParser
 
 numAnswersParser :: Parser Int
 numAnswersParser = option auto
@@ -81,12 +107,33 @@ numAnswersParser = option auto
   <> value 1
   <> metavar "INT" )
 
+typeOfDeductionParser :: Parser Deduction
+typeOfDeductionParser = option auto
+  (  long "deduction"
+  <> help "Which type of deduction use"
+  <> showDefault
+  <> value Offline)
+
+exampleParser :: Parser String
+exampleParser = strOption
+  (  long "example"
+  <> help "Which example should be parsed"
+  <> showDefault
+  <> value ""
+  <> metavar "EXAMPLE")
+
+typeOfBranchingParser :: Parser Heuristic
+typeOfBranchingParser = option auto
+  (  long "branching"
+  <> help "Which type of branching use"
+  <> showDefault
+  <> value Deterministic)
+
 groundVarsParser :: Parser [Int]
 groundVarsParser = option auto
   (  long "ground"
   <> help "Which variables are supposed to be treated as ground"
   <> showDefault
-  <> value []
   <> metavar "GROUND")
 
 relationNameParser :: Parser String
@@ -130,6 +177,38 @@ parseTransformation =
   <|> prologToMkParser
   <|> modeParser
   <|> translateParser
+  <|> utranslateParser
+  <|> dependenceParser
+  <|> annotationsSettingParser
+  <|> offlineDeductionParser
+  <|> funTransformerParser
+  <|> printMkParser
+
+funTransformerParser :: Parser Transformation
+funTransformerParser = flag' FunTransformer
+  (
+    long "funTransformer"
+  <> help "quick transformation with type of deduction and branching"
+  )
+
+offlineDeductionParser :: Parser Transformation
+offlineDeductionParser = flag' OfflineDeduction 
+  (  long "offlineDeduction"
+  <> help "offline partial deduction"
+  )
+
+annotationsSettingParser :: Parser Transformation
+annotationsSettingParser = flag' AnnotationsSetting
+  (  long "annotationsSetting"
+  <> help "Run check on safety unfolding"
+  )
+
+
+printMkParser :: Parser Transformation
+printMkParser = flag' PrintMkCode
+  (  long "printMkCode"
+  <> help "print minikanren code by haskell embedding"
+  )
 
 normalizeParser :: Parser Transformation
 normalizeParser = flag' Normalize
@@ -159,6 +238,18 @@ translateParser :: Parser Transformation
 translateParser = flag' Translate
   ( long "translate"
   <> help "Translate miniKanren to Haskell"
+  )
+
+utranslateParser :: Parser Transformation
+utranslateParser = flag' UpdatedTranslate
+  ( long "utranslate"
+  <> help "Translate miniKanren to Haskell using updated translator"
+  )
+
+dependenceParser :: Parser Transformation
+dependenceParser = flag' Dependence
+  (  long "dep"
+  <> help "Run dependence check on miniKanren"
   )
 
 cpdParser :: Parser Transformation
@@ -209,16 +300,33 @@ defaultOutputDir args =
       Parser -> "parse"
       Mode -> "mode"
       Translate -> "translate"
+      Dependence -> "dep"
+      AnnotationsSetting -> "annotationsSetting"
+      OfflineDeduction -> "offlineDeduction"
+      FunTransformer -> "funTransformer"
+      PrintMkCode -> "printMkCode"
+
+getAnnotationTypeParser :: (String -> IO (Either String (AnnotatedProgram G X)))
+getAnnotationTypeParser input = do 
+  res <- Parser.parseImports AnnotatedParser.parseProgramWithImports input
+  return $ mapLeft show res
+
+getAnnotationActParser :: (String -> IO (Either String (AnnotatedProgram (Inv.AnnG Term) X)))
+getAnnotationActParser input = do 
+  res <- Parser.parseImports AnnotatedParser.parseAnnProgramWithImports input
+  return $ mapLeft show res
 
 runAction :: Args -> IO ()
 runAction args = do
   action <- transform args
   let parser = chooseParser $ parserType action
   case transformation action of
+    PrintMkCode -> 
+      PrintProgs.run (example action)
     Eval ->
       EvalApp.runWithParser parser (input action) (numAnswers action)
     Mode ->
-      ModeApp.runWithParser parser (input action) (relName action) (groundVars action)
+      ModeApp.runWithParser parser (input action) (relName action) (fromMaybe [] $ groundVars action)
     Normalize ->
       NormalizeApp.runWithParser parser (input action)
     Parser ->
@@ -227,11 +335,21 @@ runAction args = do
       Transformer.PrologToMk.transform (input action)
     Translate ->
       TranslateApp.runWithParser parser (input action) (output action) (relName action) (groundVars action)
+    UpdatedTranslate ->
+      UpdatedTranslate.runWithParser parser (input action) (output action) (relName action) (groundVars action)
+    Dependence -> 
+      DepApp.runWithParser parser (input action)
+    AnnotationsSetting -> 
+      AnnotationsSettingApp.runWithParser getAnnotationTypeParser (input action) (output action)
+    OfflineDeduction -> 
+      OfflineDeductionApp.runWithParser getAnnotationActParser (input action) (output action) (branching action)
+    FunTransformer -> 
+      FunTransformerApp.runWithParser parser (input action) (output action) (branching action) (deduction action) (relName action) (fromMaybe [] $ groundVars action)
     x -> do
       let transformer = chooseTransformer (transformation action)
       if isInputADir action
       then do
         files <- getFiles "mk" (input action)
-        mapM_ (transformer parser (output action)) files
+        mapM_ (\x -> transformer parser (output action) (groundVars action) x (branching action)) files
       else
-        transformer parser (output action) (input action)
+        transformer parser (output action) (groundVars action) (input action) (branching action)

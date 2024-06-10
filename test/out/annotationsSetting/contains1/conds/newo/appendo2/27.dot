@@ -1,0 +1,18 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<from_t>];
+    1 [label=<from_prefix>];
+    2 [label=<from_postfix>];
+    3 [label=<from_new_prefix>];
+    4 [label=<from_new_postfix>];
+    5 [label=<to_xs>];
+    6 [label=<to_ys>];
+    7 [label=<to_rs>];
+    3 -> 6 [label=0];
+    6 -> 3 [label=0];
+    7 -> 0 [label=1];
+}

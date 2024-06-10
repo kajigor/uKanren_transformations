@@ -7,7 +7,7 @@ import           Stream
 import qualified Subst
 import           Syntax
 
-reify :: Subst.Subst -> Ts -> Term S
+reify :: Subst.Subst S -> Ts -> Term S
 reify s x@(V v) =
   case Subst.lookup v s of
     Nothing -> x
@@ -36,5 +36,4 @@ runWithParser parser inputFile num = do
       putStrLn err
     Right p ->
       mapM_ putStrLn (toplevel num show (addVar p))
-
 

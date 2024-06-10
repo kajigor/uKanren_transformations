@@ -1,0 +1,16 @@
+sumtrsquaretr y0 y1 y2 y3 = (fresh q1, q2, q3, q4, q5 in (((y0 == O & multiplyAdd y2 y3 q1 & multiply y1 y1 q1) | (y3 == S (q2) & addMultiplyAddMultiplyAddAddAdd q3 q4 q5 q2 & y0 == S (q3) & multiply y2 y2 q4 & multiply y1 y1 q5))));
+
+multiplyAdd y4 y5 y7 = (fresh q1, q2, q3 in (((y5 == y7 & y4 == O) | (y5 == S (q1) & _addAdd y7 q2 q3 q1 & y4 == S (q2) & multiply (S (q2)) q2 q3))));
+
+multiply y8 y9 y10 = (fresh q1, q2 in (((y10 == O & y9 == O) | (y9 == S (q1) & _add q2 y8 y10 & multiply y8 q1 q2))));
+
+_add y14 y15 y16 = (fresh q1, q2 in (((y15 == O & y14 == y16) | (y16 == S (q1) & y15 == S (q2) & _add y14 q2 q1))));
+
+addMultiplyAddMultiplyAddAddAdd y19 y21 y22 y26 = (fresh q1, q2, q3, q4, q5, q6, q7, q8, q9, q10 in (((y19 == O & _add (S (y22)) y21 y26) | (y26 == S (q1) & __addAdd (S (S (q2))) q3 q4 q5 q2 & y19 == S (q5) & __addAdd (S (S (q6))) q7 q8 q5 q6 & multiply (S (S (q5))) q5 q4 & multiply (S (S (q5))) q5 q8 & _add y22 q7 q9 & _add (S (S (q9))) y21 q10 & _add q10 q3 q1))));
+
+_addAdd y32 y33 y34 y36 = (fresh q1, q2 in (((y33 == O & _add y32 y34 y36) | (y36 == S (q1) & y33 == S (q2) & _addAdd y32 q2 y34 q1))));
+
+__addAdd y37 y38 y39 y40 y41 = (fresh q1, q2, q3 in (((y40 == O & y37 == y38 & _add y39 O y41) | (y41 == S (q1) & y40 == S (q2) & y38 == S (q3) & __addAdd y37 q3 y39 q2 q1))));
+
+
+? sumtrsquaretr x0 x1 x3 x4

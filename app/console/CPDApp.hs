@@ -6,11 +6,12 @@ import           Syntax
 import           System.FilePath  (takeBaseName)
 import qualified Transformer.CPD
 
-runWithParser :: (String -> IO (Either String (Program G X))) -> FilePath -> FilePath -> IO ()
-runWithParser parser outDir inputFile = do
+runWithParser :: (String -> IO (Either String (Program G X))) -> FilePath -> Maybe [Int] -> FilePath -> CPD.LocalControl.Heuristic -> IO ()
+runWithParser parser outDir ground inputFile heu = do
   res <- parser inputFile
   case res of
     Left err ->
       putStrLn err
-    Right program ->
-      Transformer.CPD.transform' outDir (takeBaseName inputFile) program Nothing Deterministic
+    Right program -> do 
+      res <- Transformer.CPD.transform' outDir (takeBaseName inputFile) program Nothing heu
+      return ()

@@ -1,0 +1,20 @@
+containso x0 = (fresh x4, x15, x16, x3, x2, x1, x13, x14, x18, x17, x9, x8, x7, x6, x5 in ((((x4 == (x15 :: x16) & x3 == S (O) & x2 == (O :: [S (S (O))]) & x1 == [S (O)] & x0 == (x3 :: x4)) & newoCono x13 x14 x15 x16) | ((x18 == [] & x17 == [] & x9 == (x16 :: x17) & x8 == [] & x7 == [x3] & x6 == S (O) & x5 == (O :: [S (S (O))]) & x3 == x16 & x2 == (S (O) :: (O :: [S (S (O))])) & x1 == [] & x0 == (x3 :: x4)) & _cono x4))));
+
+newoCono x13 x14 x15 x16 = (fresh x24, x23, x22, x30, x31, x28, x29, x19, x18, x17, x20, x21 in ((((x24 == [O] & x23 == [] & x22 == S (O) & x16 == (x30 :: x31) & x15 == O & x14 == [S (S (O))] & x13 == (x22 :: x24)) & _newoCono x28 x29 x30 x31) | ((x24 == [x15] & x23 == [] & x22 == S (O) & x19 == (x22 :: x24) & x18 == O & x17 == [S (S (O))]) & __appendoAppendoAppendoCono x13 x14 x15 x16 x20 x21))));
+
+_newoCono x28 x29 x30 x31 = (fresh x42, x41, x40, x39, x38, x37, x34, x33, x32, x35, x36 in ((((x42 == [S (S (O))] & x41 == [] & x40 == O & x39 == (x40 :: x42) & x38 == [O] & x37 == S (O) & x30 == S (S (O)) & x29 == [] & x28 == (x37 :: x39)) & cono x31) | ((x42 == [x30] & x41 == [] & x40 == O & x39 == (x40 :: x42) & x38 == [O] & x37 == S (O) & x34 == (x37 :: x39) & x33 == S (S (O)) & x32 == []) & appendoAppendoAppendoCono x28 x29 x30 x31 x35 x36))));
+
+cono x31 = success [];
+
+appendoAppendoAppendoCono x28 x29 x30 x31 x35 x36 = (fresh x66, x65, x64, x63, x62, x61, x57, x56, x54, x53, x55, x52, x51, x50, x49, x48, x46, x47 in ((((x66 == [S (S (O))] & x65 == [] & x64 == O & x63 == (x64 :: x66) & x62 == [O] & x61 == S (O) & x57 == [] & x56 == [] & x54 == [x30] & x53 == (x55 :: x56) & x52 == O & x51 == (O :: [x30]) & x50 == (x52 :: x53) & x49 == S (O) & x36 == (x49 :: x50) & x35 == (S (O) :: [O]) & x30 == x55 & x29 == (x61 :: x63) & x28 == []) & _cono x31) | ((x48 == [O] & x46 == S (O) & x28 == (x46 :: x47)) & _appendoAppendoAppendoCono x29 x30 x31 x35 x36 x47))));
+
+_appendoAppendoAppendoCono x29 x30 x31 x35 x36 x47 = (fresh x60, x59, x58, x57, x55, x54, x53, x56, x52, x66, x67, x64, x65 in (((x60 == [S (S (O))] & x59 == [] & x58 == O & x57 == [x30] & x55 == O & x54 == (O :: [x30]) & x53 == (x55 :: x56) & x52 == S (O) & x47 == [] & x36 == (x52 :: x53) & x35 == [O] & x31 == (x66 :: x67) & x29 == (x58 :: x60)) & (newoCono x64 x65 x66 x67 & appendo x30 x56))));
+
+appendo x30 x56 = (x56 == [] & x30 == S (O));
+
+__appendoAppendoAppendoCono x13 x14 x15 x16 x20 x21 = (fresh x42, x41, x40, x36, x35, x33, x32, x34, x31, x30, x29, x28, x43 in ((((x42 == (O :: [S (S (O))]) & x41 == [] & x40 == S (O) & x36 == [] & x35 == [] & x33 == [x15] & x32 == (x34 :: x35) & x31 == S (O) & x21 == (x31 :: x32) & x20 == [S (O)] & x15 == x34 & x14 == (x40 :: x42) & x13 == []) & _cono x16) | ((x36 == [x15] & x34 == S (O) & x30 == [] & x29 == [] & x28 == S (O) & x21 == (x34 :: x35) & x20 == [] & x16 == (x42 :: x43) & x14 == (O :: [S (S (O))]) & x13 == (x28 :: x29)) & (newoCono x40 x41 x42 x43 & appendo x15 x35)))));
+
+_cono x4 = (fresh x28, x39, x40, x27, x26, x25, x37, x38, x42, x41, x33, x32, x31, x30, x29 in ((((x28 == (x39 :: x40) & x27 == S (O) & x26 == (O :: [S (S (O))]) & x25 == [S (O)] & x4 == (x27 :: x28)) & newoCono x37 x38 x39 x40) | ((x42 == [] & x41 == [] & x33 == (x40 :: x41) & x32 == [] & x31 == [x27] & x30 == S (O) & x29 == (O :: [S (S (O))]) & x27 == x40 & x26 == (S (O) :: (O :: [S (S (O))])) & x25 == [] & x4 == (x27 :: x28)) & _cono x28))));
+
+
+? containso x0

@@ -38,7 +38,7 @@ semify d = d
 
 getDet :: DetState -> Lang -> DetType
 getDet _ Empty = DetFail
-getDet state (Call _ n _ _) = Det `fromMaybe` Map.lookup n state
+getDet state (Call _ _ n _ _) = Det `fromMaybe` Map.lookup n state
 getDet _ (Return _) = Det
 getDet state (Sum xs) = foldl (if disjointCheck xs then detDisjointDisj else detDisj) DetFail (map (getDet state) xs)
 getDet state (Match _ (_, x)) = semify (getDet state x)
@@ -89,7 +89,7 @@ instance DetQuotable Def TH.Dec where
     return $ TH.FunD (TH.mkName (name d)) [ds]
     where
       go :: Def -> Either Error TH.Clause
-      go (Def _ args gens body) = do
+      go (Def _ args gens body _) = do
         args <- mapM pvar args
         gens <- mapM pgen gens
         b <- toDetQuote det body

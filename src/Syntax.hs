@@ -3,6 +3,9 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE IncoherentInstances   #-}
+
 
 module Syntax where
 
@@ -11,6 +14,7 @@ import           Data.List          (intercalate, nub)
 import           Data.List.NonEmpty (NonEmpty (..), toList)
 import           Text.Printf        (printf)
 import           Util.Miscellaneous (parenthesize)
+import           Debug.Trace
 
 type X = String -- Syntactic variables
 type S = Int    -- Semantic variables
@@ -53,7 +57,7 @@ infix  8 ===
 (&&&) :: G a -> G a -> G a
 (&&&) g1 g2 = goalFromList Conjunction [g1, g2]
 
-goalFromList :: (G a -> G a -> [G a] -> G a) -> [G a] -> G a
+goalFromList :: (g a -> g a -> [g a] -> g a) -> [g a] -> g a
 goalFromList f (x : y : xs) = f x y xs
 goalFromList _ [x] = x
 goalFromList _ [] = error "Empty list"
@@ -62,7 +66,7 @@ flatConj :: G a -> G a -> G a
 flatConj g1 g2 =
     case (getFirstNonConj g1, getFirstNonConj g2) of
       (Just (x1, y1, gs1), Just (x2, y2, gs2)) ->
-        Conjunction x1 x2 $ gs1 ++ (x2 : y2 : gs2)
+        Conjunction x1 x2 $ gs1 ++ (y1 : y2 : gs2)
       (Just (x1, y1, gs1), Nothing) ->
         Conjunction x1 y1 (gs1 ++ [g2])
       (Nothing, Just (x2, y2, gs2)) ->
@@ -185,7 +189,8 @@ substInGoal v t (Invoke n ts) = Invoke n $ map (substInTerm v t) ts
 instance Show a => Show (Term a) where
   show (V v) = showVar v
   show (C name []) | isNil name = "[]"
-  show (C name [h, t]) | isCons name = printf "(%s : %s)" (show h) (show t)
+  show (C name [h, C name1 []]) | isCons name && isNil name1 = printf "[%s]" (show h)
+  show (C name [h, t]) | isCons name = printf "(%s :: %s)" (show h) (show t)
   show (C name [x, y]) | isPair name = printf "(%s, %s)" (show x) (show y)
   show t@(C name ts) =
     case prettifyNum show showVar t of
@@ -193,7 +198,21 @@ instance Show a => Show (Term a) where
       Nothing ->
         case ts of
           [] -> name
-          _  -> printf "C %s [%s]" name (intercalate ", " $ map show ts)
+          _  -> printf "%s %s" name (intercalate " " $ map show ts)
+          
+instance {-# OVERLAPPING #-} Show (Term String) where
+  show (V v) = showVar v
+  show (C name []) | isNil name = "[]"
+  show (C name [h, C name1 []]) | isCons name && isNil name1 = printf "[%s]" (show h)
+  show (C name [h, t]) | isCons name = printf "(%s :: %s)" (show h) (show t)
+  show (C name [x, y]) | isPair name = printf "(%s, %s)" (show x) (show y)
+  show t@(C name ts) =
+    case prettifyNum show showVar t of
+      Just s -> s
+      Nothing ->
+        case ts of
+          [] -> name
+          _  -> printf "%s %s" name (intercalate " " $ map show ts)
 
 instance Show a => Show (G a) where
   show (t1 :=:  t2) = printf "%s = %s" (show t1) (show t2)
@@ -201,7 +220,19 @@ instance Show a => Show (G a) where
   show (Disjunction x y gs) = printf "(%s)" (intercalate " \\/ " $ show <$> (x : y : gs))
   show (Fresh name g) =
     let (names, goal) = freshVars [name] g in
-    printf "fresh %s (%s)" (unwords $ map show names) (show goal)
+    printf "fresh %s (%s)" (unwords $ map showVar names) (show goal)
+  show (Invoke name ts) =
+    printf "%s %s" name (unwords $ map (parenthesize . show) ts)
+  show (Delay g) = printf "Delay (%s)" (show g)
+  
+  
+instance {-# OVERLAPPING #-} Show (G String) where
+  show (t1 :=: t2) = printf "%s = %s" (show t1) (show t2)
+  show (Conjunction x y gs) = printf "(%s)" (intercalate " /\\ " $ show <$> (x : y : gs))
+  show (Disjunction x y gs) = printf "(%s)" (intercalate " \\/ " $ show <$> (x : y : gs))
+  show (Fresh name g) =
+    let (names, goal) = freshVars [name] g in
+    printf "fresh %s (%s)" (unwords names) (show goal)
   show (Invoke name ts) =
     printf "%s %s" name (unwords $ map (parenthesize . show) ts)
   show (Delay g) = printf "Delay (%s)" (show g)
@@ -264,9 +295,19 @@ isPair s = map toLower s == "pair"
 dotVar :: Dot a => a -> String
 dotVar = printf "v<SUB>%s</SUB>" . dot
 
-showVar :: Show a => a -> String
-showVar = printf "v.%s" . show
+-- showVar :: Show a => a -> String
+-- showVar = printf "v.%s" . show
+  
+class Show a => ShowVar a where
+  showVar :: a -> String 
 
+instance ShowVar String where
+  showVar = id  
+  
+instance Show a => ShowVar a where
+  showVar = printf "v.%s" . show
+  
+  
 predec :: Term a -> Term a
 predec c@(C _ [a]) | isSucc c = a
 predec c = error $ printf "Failed to get predecessor"

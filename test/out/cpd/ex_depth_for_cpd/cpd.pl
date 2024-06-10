@@ -1,0 +1,8 @@
+solve(cons(s(s(o)), cons(s(o), cons(o, cons(s(s(o)), cons(s(o), cons(o, cons(s(o), cons(s(s(o)), cons(o, nil))))))))), s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o)))))))))))))))).
+solve(cons(s(s(o)), cons(s(o), cons(o, cons(s(s(o)), cons(s(o), cons(o, cons(s(o), cons(s(s(o)), cons(o, nil))))))))), s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o))))))))))))))))).
+solve(cons(s(s(o)), cons(s(o), cons(o, cons(s(s(o)), cons(s(o), cons(o, cons(s(o), cons(s(s(o)), cons(o, nil))))))))), s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o))))))))))))))))))).
+solve(cons(s(s(o)), cons(s(o), cons(o, cons(s(s(o)), cons(s(o), cons(o, cons(s(o), cons(s(s(o)), cons(o, nil))))))))), s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o)))))))))))))))))))).
+solve(cons(s(s(o)), cons(s(o), cons(o, cons(s(s(o)), cons(s(o), cons(o, cons(s(o), cons(s(s(o)), cons(o, nil))))))))), s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o))))))))))))))))).
+solve(cons(s(s(o)), cons(s(o), cons(o, cons(s(s(o)), cons(s(o), cons(o, cons(s(o), cons(s(s(o)), cons(o, nil))))))))), s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o)))))))))))))))))).
+solve(cons(s(s(o)), cons(s(o), cons(o, cons(s(s(o)), cons(s(o), cons(o, cons(s(o), cons(s(s(o)), cons(o, nil))))))))), s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o)))))))))))))))))))).
+solve(cons(s(s(o)), cons(s(o), cons(o, cons(s(s(o)), cons(s(o), cons(o, cons(s(o), cons(s(s(o)), cons(o, nil))))))))), s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(o))))))))))))))))))))).

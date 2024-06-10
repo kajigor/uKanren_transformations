@@ -3,13 +3,7 @@ module Test.FunConversion.PropForward where
 
 import Test.FunConversion.PropProg (evalo)
 import Program (Program(Program))
-import qualified FunConversion.Trans as TR
-import qualified FunConversion.Syntax as S
 
-import Control.Monad (msum, guard)
-import Stream
-import qualified Language.Haskell.TH as TH
-import qualified FunConversion.Syntax as S
 import qualified Mode.Toplevel as TL
 import qualified Mode.Pretty as TP
 import qualified Mode.NormSyntax as TN

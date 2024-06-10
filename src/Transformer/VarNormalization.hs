@@ -88,6 +88,7 @@ allVarsDefined (Program defs goal) =
         go (Fresh v g) = do
           modify (v:)
           go g
+        go (Delay g) = go g
     checkDef (Def _ args goal) =
       checkGoal goal args
 
@@ -117,6 +118,7 @@ allRelationsDefined (Program defs goal) =
         go (Disjunction g1 g2 gs) = do
           and <$> mapM go (g1 : g2 : gs)
         go (Fresh v g) = go g
+        go (Delay g) = go g
     checkDef (Def _ _ goal) =
       checkGoal goal
 

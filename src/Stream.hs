@@ -3,6 +3,7 @@ module Stream (takeS, takeWhileS, maybeToStream, isMature, fmap, pure, (<*>), em
 
 import           Control.Applicative
 import           Control.Monad
+import qualified Control.Monad.Fail as Fail
 
 -- Stream
 data Stream a = Empty
@@ -53,7 +54,10 @@ instance Alternative Stream where
 
 instance Monad Stream where
   Empty >>= _ = mzero
-  Mature x xs >>= g = g x `mplus` (xs >>= g)
+  Mature x xs >>= g = g x <|> (xs >>= g)
   Immature x  >>= y = Immature $ x >>= y
 
 instance MonadPlus Stream where
+
+instance Fail.MonadFail Stream where
+  fail _ = empty

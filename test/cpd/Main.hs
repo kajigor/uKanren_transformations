@@ -252,20 +252,20 @@ doOcanrenize = do
         system (printf "dot -O -Tpdf %s/*.dot" pathLocal)
         let prog = residualizationTopLevel tree
         writeFile (printf "%s/%s.before.pur" path filename) (show prog)
-        traceM "Wait"
+--        traceM "Wait"
         let pur@(goal, xs, defs) = purification (prog, vident <$> reverse names)
-        traceM ("LKSDJFLKJS: " ++ show xs)
-        traceM "waht"
-        traceM "goal"
-        traceM (show $ length defs)
-        traceM (show goal)
+--        traceM ("LKSDJFLKJS: " ++ show xs)
+--        traceM "waht"
+--        traceM "goal"
+--        traceM (show $ length defs)
+--        traceM (show goal)
         let prog = Program defs goal
         writeFile (printf "%s/%s.pur" path filename) (show prog)
-        traceM "Are"
+--        traceM "Are"
         let ocamlCodeFileName = printf "%s/%s.ml" path filename
-        traceM "you"
+--        traceM "you"
         OC.topLevel ocamlCodeFileName "topLevel" env pur
-        traceM "kidding me?"
+--        traceM "kidding me?"
         print "doOcanrenize done"
 
 -- doResidualization = do

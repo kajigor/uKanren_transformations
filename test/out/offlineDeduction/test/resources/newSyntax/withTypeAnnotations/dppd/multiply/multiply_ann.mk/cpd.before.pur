@@ -1,0 +1,16 @@
+multiply x0 x1 = (fresh x3, x2, x5, x4 in ((((x3 == Succ (Succ (Succ (Succ (Zero)))) & x1 == Succ (x2) & x0 == Zero) & multiply Zero x2) | ((x5 == Succ (Succ (Succ (Zero))) & x1 == Succ (x2) & x0 == Succ (x4)) & addMultiply x2 x3 x4))));
+
+addMultiply x2 x3 x4 = (fresh x23, x22, x21, x17, x16, x15, x14, x20, x11, x10, x9, x8, x7, x6 in ((((x23 == Zero & x22 == Zero & x21 == Zero & x17 == Succ (Zero) & x16 == Zero & x15 == Succ (Zero) & x14 == Succ (x20) & x11 == Succ (Succ (Zero)) & x10 == Zero & x9 == Succ (Succ (Zero)) & x8 == Succ (x14) & x4 == Zero & x3 == Succ (Succ (Succ (Zero))) & x2 == Succ (x8)) & _multiply x20) | ((x7 == Succ (Succ (Zero)) & x4 == Succ (x6)) & _addMultiply x2 x3 x6))));
+
+_multiply x20 = x20 == Zero;
+
+_addMultiply x2 x3 x6 = (fresh x15, x14, x13, x12, x11, x10, x9, x8 in ((((x15 == Zero & x14 == Zero & x13 == Succ (Zero) & x12 == Succ (Zero) & x11 == Zero & x6 == Zero & x3 == Succ (Succ (Zero)) & x2 == Succ (x10)) & __multiply x10) | ((x9 == Succ (Zero) & x6 == Succ (x8)) & __addMultiply x2 x3 x8))));
+
+__multiply x10 = x10 == Zero;
+
+__addMultiply x2 x3 x8 = (fresh x11, x10 in (((x11 == Zero & x10 == Zero & x8 == Succ (x10) & x3 == Zero) & ___multiply x2)));
+
+___multiply x2 = x2 == Zero;
+
+
+? multiply x0 x1

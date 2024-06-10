@@ -1,0 +1,1 @@
+Program {getDefs = [evalo "y0" "y1" = fresh "q1" ((("y1" = Succ Succ Zero /\ "y0" = Zero) \/ ("y0" = Succ "q1" /\ addoAddo "y1" "q1"))),addoAddo "y3" "y4" = fresh "q1" ((("y4" = Zero /\ "y3" = Succ Zero) \/ ("y4" = Succ "q1" /\ addoAddo (Succ "y3") "q1")))], getGoal = evalo "x0" "x1"}

@@ -12,10 +12,10 @@ import           Syntax
 import           Unfold              (oneStep)
 
 data SymTree = Fail
-             | Success Subst.Subst
-             | Disj [SymTree] [G S] Subst.Subst
-             | Conj [SymTree] [G S] Subst.Subst
-             | Prune [G S] Subst.Subst
+             | Success (Subst.Subst S)
+             | Disj [SymTree] [G S] (Subst.Subst S)
+             | Conj [SymTree] [G S] (Subst.Subst S)
+             | Prune [G S] (Subst.Subst S)
              deriving (Show, Eq)
 
 topLevel :: Int -> Program G X -> SymTree
@@ -38,7 +38,7 @@ topLevel depth (Program defs goal) =
             (goal : ctx)
             subst
 
-leaf :: Subst.Subst -> SymTree
+leaf :: Subst.Subst S -> SymTree
 leaf x = if Subst.null x then Fail else Success x
 
 simplify :: SymTree -> SymTree
@@ -58,4 +58,3 @@ simplify =
       if Fail `elem` simplified
       then Fail
       else f simplified
-

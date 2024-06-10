@@ -1,0 +1,8 @@
+open GT
+open OCanren
+open OCanren.Std
+open Helper
+
+let topLevel x0 = 
+  let rec rr y0 = ((y0 === (((Nat.succ Nat.zero)) % ((((Nat.succ Nat.zero)) % ((((Nat.succ Nat.zero)) % ((((Nat.succ Nat.zero)) % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((((s ((s ())) Nat.zero)) % ((((s ((s ())) Nat.zero)) % ((((s ((s ())) Nat.zero)) % ((((s ((s ())) Nat.zero)) % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((List.nil ())))))))))))))))))))))))))))))))))))))))))) ||| (y0 === (((Nat.succ Nat.zero)) % ((((Nat.succ Nat.zero)) % ((((Nat.succ Nat.zero)) % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((((s ((s ())) Nat.zero)) % ((((s ((s ())) Nat.zero)) % ((((s ((s ())) Nat.zero)) % ((((s ((s ())) Nat.zero)) % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((List.nil ())))))))))))))))))))))))))))))))))))))))) ||| (y0 === (((Nat.succ Nat.zero)) % ((((Nat.succ Nat.zero)) % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((((s ((s ())) Nat.zero)) % ((((s ((s ())) Nat.zero)) % ((((s ((s ())) Nat.zero)) % ((((s ((s ())) Nat.zero)) % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((List.nil ())))))))))))))))))))))))))))))))))))))) ||| (y0 === (((Nat.succ Nat.zero)) % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((((s ((s ())) Nat.zero)) % ((((s ((s ())) Nat.zero)) % ((((s ((s ())) Nat.zero)) % ((((s ((s ())) Nat.zero)) % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((Nat.zero % ((List.nil ()))))))))))))))))))))))))))))))))))))) 
+  in  (rr x0)

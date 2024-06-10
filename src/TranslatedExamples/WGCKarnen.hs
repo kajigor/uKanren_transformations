@@ -9,17 +9,17 @@ import Def
 
 data Move = Empty | Goat | Wolf | Cabbage deriving (Show, Eq)
 
-fresh1' :: (Show x) => x -> (Tx -> G X) -> G X
-fresh1' i f = fresh ["a" ++ show i] (f (V $ "a" ++ show i))
+fresh1' :: X -> (Tx -> G X) -> G X
+fresh1' i f = fresh ["a" ++ i] (f (V $ "a" ++ i))
 
-fresh2' :: (Show x) => x -> (Tx -> Tx -> G X) -> G X
-fresh2' i f = fresh ["a" ++ show i, "b" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i))
+fresh2' :: X -> (Tx -> Tx -> G X) -> G X
+fresh2' i f = fresh ["a" ++ i, "b" ++ i] (f (V $ "a" ++ i) (V $ "b" ++ i))
 
-fresh3' :: (Show x) => x -> (Tx -> Tx -> Tx -> G X) -> G X
-fresh3' i f = fresh ["a" ++ show i, "b" ++ show i, "c" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i) (V $ "c" ++ show i))
+fresh3' :: X -> (Tx -> Tx -> Tx -> G X) -> G X
+fresh3' i f = fresh ["a" ++ i, "b" ++ i, "c" ++ i] (f (V $ "a" ++ i) (V $ "b" ++ i) (V $ "c" ++ i))
 
-fresh4' :: (Show x) => x -> (Tx -> Tx -> Tx -> Tx -> G X) -> G X
-fresh4' i f = fresh ["a" ++ show i, "b" ++ show i, "c" ++ show i, "d" ++ show i] (f (V $ "a" ++ show i) (V $ "b" ++ show i) (V $ "c" ++ show i) (V $ "d" ++ show i))
+fresh4' :: X -> (Tx -> Tx -> Tx -> Tx -> G X) -> G X
+fresh4' i f = fresh ["a" ++ i, "b" ++ i, "c" ++ i, "d" ++ i] (f (V $ "a" ++ i) (V $ "b" ++ i) (V $ "c" ++ i) (V $ "d" ++ i))
 
 fresh1 = fresh1' ""
 
@@ -117,8 +117,11 @@ startState = pair (qua' True True True True) (qua' False False False False)
 endState :: Tx
 endState = pair (qua' False False False False) (qua' True True True True)
 
+wgcProgram :: Program G X
+wgcProgram = Program [Def "evalWGC" ["state", "moves", "state'"] (evalWGC (V "state") (V "moves") (V "state'"))] $ fresh1 $ \moves -> call "evalWGC" [startState, moves, endState]
+
 mainWGC :: IO ()
 mainWGC =
   mapM_
     (putStrLn . showSubst')
-    (takeS 1 $ run $ Program [Def "evalWGC" ["state", "moves", "state'"] (evalWGC (V "state") (V "moves") (V "state'"))] $ fresh1 $ \moves -> call "evalWGC" [startState, moves, endState])
+    (takeS 1 $ run $ wgcProgram)

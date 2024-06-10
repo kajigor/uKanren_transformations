@@ -1,0 +1,25 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<from_patl>];
+    1 [label=<from_tl>];
+    2 [label=<from_pat>];
+    3 [label=<from_t>];
+    4 [label=<to_a>];
+    5 [label=<to_b>];
+    6 [label=<to_ps>];
+    7 [label=<to_ts>];
+    8 [label=<to_pat>];
+    9 [label=<to_t>];
+    0 -> 4 [label=1];
+    0 -> 6 [label=1];
+    1 -> 5 [label=1];
+    1 -> 7 [label=1];
+    2 -> 8 [label=0];
+    3 -> 9 [label=0];
+    8 -> 2 [label=0];
+    9 -> 3 [label=0];
+}

@@ -1,0 +1,26 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> rr(v<SUB>0</SUB>, v<SUB>1</SUB>)>];
+    1 [label=<C <BR/> r(v<SUB>0</SUB>, v<SUB>2</SUB>), r(v<SUB>2</SUB>, v<SUB>1</SUB>) <BR/>  [  ] >];
+    2 [label=<O <BR/> r(v<SUB>0</SUB>, v<SUB>2</SUB>)>];
+    3 [label=<C <BR/> r([], v<SUB>1</SUB>) <BR/>  [ v<SUB>0</SUB> &rarr; [], v<SUB>2</SUB> &rarr; [] ] >];
+    4 [label=<C <BR/> r(v<SUB>4</SUB>, v<SUB>5</SUB>), r(v<SUB>3</SUB> : v<SUB>5</SUB>, v<SUB>1</SUB>) <BR/>  [ v<SUB>0</SUB> &rarr; v<SUB>3</SUB> : v<SUB>3</SUB> : v<SUB>4</SUB>, v<SUB>2</SUB> &rarr; v<SUB>3</SUB> : v<SUB>5</SUB> ] >];
+    5 [label=<C <BR/> neq(v<SUB>6</SUB>, v<SUB>7</SUB>), r(v<SUB>7</SUB> : v<SUB>8</SUB>, v<SUB>9</SUB>), r(v<SUB>6</SUB> : v<SUB>9</SUB>, v<SUB>1</SUB>) <BR/>  [ v<SUB>0</SUB> &rarr; v<SUB>6</SUB> : v<SUB>7</SUB> : v<SUB>8</SUB>, v<SUB>2</SUB> &rarr; v<SUB>6</SUB> : v<SUB>9</SUB> ] >];
+    6 [label=<O <BR/> r([], v<SUB>1</SUB>)>];
+    7 [label=<S <BR/>  [ v<SUB>0</SUB> &rarr; [], v<SUB>1</SUB> &rarr; [], v<SUB>2</SUB> &rarr; [] ] >];
+    8 [label=<Leaf <BR/> r(v<SUB>4</SUB>, v<SUB>5</SUB>), r(v<SUB>3</SUB> : v<SUB>5</SUB>, v<SUB>1</SUB>) <BR/>  [ v<SUB>0</SUB> &rarr; v<SUB>3</SUB> : v<SUB>3</SUB> : v<SUB>4</SUB>, v<SUB>2</SUB> &rarr; v<SUB>3</SUB> : v<SUB>5</SUB> ] >];
+    9 [label=<Leaf <BR/> neq(v<SUB>6</SUB>, v<SUB>7</SUB>), r(v<SUB>7</SUB> : v<SUB>8</SUB>, v<SUB>9</SUB>), r(v<SUB>6</SUB> : v<SUB>9</SUB>, v<SUB>1</SUB>) <BR/>  [ v<SUB>0</SUB> &rarr; v<SUB>6</SUB> : v<SUB>7</SUB> : v<SUB>8</SUB>, v<SUB>2</SUB> &rarr; v<SUB>6</SUB> : v<SUB>9</SUB> ] >];
+    0 -> 1 [label=""];
+    1 -> 2 [label=""];
+    2 -> 3 [label=""];
+    2 -> 4 [label=""];
+    2 -> 5 [label=""];
+    3 -> 6 [label=""];
+    4 -> 8 [label=""];
+    5 -> 9 [label=""];
+    6 -> 7 [label=""];
+}

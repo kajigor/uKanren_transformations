@@ -1,0 +1,8 @@
+applasto x0 = (fresh x1, x2, x4, x3 in ((((x1 == [S (O)] & x0 == []) & lasto []) | ((x1 == (x2 :: x4) & x0 == (x2 :: x3)) & appendoLasto x2 x3 x4))));
+
+lasto  = success [];
+
+appendoLasto x2 x3 x4 = (fresh x9, x8, x5, x7, x6 in ((((x9 == [S (O)] & x4 == [S (O)] & x3 == [] & x2 == x8) & lasto []) | ((x9 == (x5 :: x7) & x4 == (x5 :: x7) & x3 == (x5 :: x6) & x2 == x8) & appendoLasto x5 x6 x7))));
+
+
+? applasto x0

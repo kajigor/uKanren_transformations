@@ -16,12 +16,12 @@ import           Unfold              (normalize, oneStepUnfold, unifyStuff)
 import           Util.Miscellaneous  (fst3)
 
 data PDTree = Fail
-            | Success Subst.Subst
-            | Or [PDTree] (Descend.Descend (G S)) Subst.Subst
-            | Conj [PDTree] [G S] Subst.Subst
+            | Success (Subst.Subst Int)
+            | Or [PDTree] (Descend.Descend (G S)) (Subst.Subst Int)
+            | Conj [PDTree] [G S] (Subst.Subst Int)
             | Gen PDTree (G S)
-            | Leaf (G S) Subst.Subst
-            | Split [PDTree] [G S] Subst.Subst
+            | Leaf (G S) (Subst.Subst Int)
+            | Split [PDTree] [G S] (Subst.Subst Int)
             deriving (Show, Eq)
 
 topLevel :: Program G X -> (PDTree, G S, [S])
@@ -58,7 +58,7 @@ topLevel (Program defs goal) =
                     subst
       in (treeResult, V 1 === V 2, [4, 5, 6, 7])
 
-leaf :: Subst.Subst -> PDTree
+leaf :: (Subst.Subst Int) -> PDTree
 leaf x = if Subst.null x then Fail else Success x
 
 simplify :: PDTree -> PDTree
@@ -80,4 +80,3 @@ simplify =
       if Fail `elem` simplified
       then Fail
       else f simplified
-

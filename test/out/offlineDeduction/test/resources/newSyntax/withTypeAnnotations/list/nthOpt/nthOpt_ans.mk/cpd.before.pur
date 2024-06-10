@@ -1,0 +1,10 @@
+nthOpt x0 x2 = (fresh x5, x3, x4 in (((x2 == None & x0 == []) | ((x5 == Succ (Succ (Zero)) & x0 == (x3 :: x4)) & _nthOpt x2 x4))));
+
+_nthOpt x2 x4 = (fresh x8, x6, x7 in (((x4 == [] & x2 == None) | ((x8 == Succ (Zero) & x4 == (x6 :: x7)) & __nthOpt x2 x7))));
+
+__nthOpt x2 x7 = (fresh x11, x9, x10 in (((x7 == [] & x2 == None) | ((x11 == Zero & x7 == (x9 :: x10)) & ___nthOpt x2 x10))));
+
+___nthOpt x2 x10 = (fresh x12, x13 in (((x10 == [] & x2 == None) | (x10 == (x12 :: x13) & x2 == Some (x12)))));
+
+
+? nthOpt x0 x2

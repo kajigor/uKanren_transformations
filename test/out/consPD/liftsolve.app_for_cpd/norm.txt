@@ -1,0 +1,17 @@
+fail  = Goal (Disj [] (Conj [] (Call "fail" [] :| []) :| []))
+
+solve rules res = Goal (Disj ["ngh","ngt","clause","ngbody","clause"] (Conj [] (Unif "res" [] :| []) :| [Conj [] (Unif "res" ("ngh" :: "ngt") :| [Call "non_ground_member" [Term Clause ("ngh" :: "ngbody"),"rules"],Call "solve" ["rules","ngbody"],Call "solve" ["rules","ngt"]])]))
+
+non_ground_member ngx ngl = Goal (Disj ["grh","grt"] (Conj [] (Unif "ngl" ("grh" :: "grt") :| [Call "rel_0" ["ngx","grt","grh"]]) :| []))
+
+make_non_ground g ng = Goal (Disj ["sub"] (Conj [] (Call "mkng" ["g","ng",[],"sub"] :| []) :| []))
+
+neq x y = Goal (Disj ["t","t","t1","t2"] (Conj [] (Unif "x" Zero :| [Unif "y" Succ "t"]) :| [Conj [] (Unif "x" Succ "t" :| [Unif "y" Zero]),Conj [] (Unif "x" Succ "t1" :| [Unif "y" Succ "t2",Call "neq" ["t1","t2"]])]))
+
+mkng term1 term2 inSub outSub = Goal (Disj ["n","n","t","n","m","t","t1","y","f","args","iArgs"] (Conj [] (Unif "term1" Var "n" :| [Unif "inSub" [],Unif "outSub" [Sub "n" "term2"]]) :| [Conj [] (Unif "term1" Var "n" :| [Unif "inSub" (Sub "n" "term2" :: "t"),Unif "outSub" (Sub "n" "term2" :: "t")]),Conj [] (Unif "term1" Var "n" :| [Unif "inSub" (Sub "m" "y" :: "t"),Unif "outSub" (Sub "m" "y" :: "t1"),Call "neq" ["n","m"],Call "mkng" ["term1","term2","t","t1"]]),Conj [] (Unif "term1" Term "f" "args" :| [Unif "term2" Term "f" "iArgs",Call "l_mkng" ["args","iArgs","inSub","outSub"]])]))
+
+l_mkng lst1 lst2 inSub outSub = Goal (Disj ["h","t","ih","it","intSub"] (Conj [] (Unif "lst1" [] :| [Unif "lst2" [],Unif "inSub" "outSub"]) :| [Conj [] (Unif "lst1" ("h" :: "t") :| [Unif "lst2" ("ih" :: "it"),Call "mkng" ["h","ih","inSub","intSub"],Call "l_mkng" ["t","it","intSub","outSub"]])]))
+
+rel_0 ngx grt grh = Goal (Disj [] (Conj [] (Call "non_ground_member" ["ngx","grt"] :| []) :| [Conj [] (Call "make_non_ground" ["grh","ngx"] :| [])]))
+
+? Goal (Disj ["x","y","z"] (Conj [] (Call "solve" [(Term Clause [Term App (Term Null [] :: (Var 0 :: [Var 0]))] :: [Term Clause (Term App (Term Cons (Var 0 :: [Var 1]) :: (Var 2 :: [Term Cons (Var 0 :: [Var 3])])) :: [Term App (Var 1 :: (Var 2 :: [Var 3]))])]),[Term App ("x" :: ("y" :: ["z"]))]] :| []) :| []))

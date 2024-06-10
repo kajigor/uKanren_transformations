@@ -104,6 +104,7 @@ papers/miniKanren/slides/presentation.log
 
 .vscode/
 test/resources/newSyntax/out/*
+test/resources/out/*
 
 
 test/resources/newSyntax/out/

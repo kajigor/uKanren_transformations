@@ -1,0 +1,15 @@
+{
+  "name": "ukanren_transformations",
+  "version": "1.0.0",
+  "description": "[![GitHub CI](https://github.com/kajigor/uKanren_transformations/workflows/CI/badge.svg)](https://github.com/kajigor/uKanren_transformations/actions)",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

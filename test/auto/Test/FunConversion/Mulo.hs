@@ -3,7 +3,6 @@
 module Test.FunConversion.Mulo where
 
 import Program.Num
-import Program (Program(Program))
 import qualified FunConversion.Trans as TR
 import qualified FunConversion.Syntax as S
 import Data.List (subsequences)
@@ -32,7 +31,7 @@ testMuloOIO n x y z =
 
 testMuloOOI :: Int -> Term -> Term -> Term -> IO ()
 testMuloOOI n x y z =
-  let answers = takeS n $ muloOOI z genNat genNat in
+  let answers = takeS n $ muloOOI z genNat in
   assertAnswerExists "muloOOI" (x, y) answers
 
 testMuloIOO :: Int -> Term -> Term -> Term -> IO ()

@@ -1,0 +1,37 @@
+open GT
+open OCanren
+open OCanren.Std
+open Helper
+
+let topLevel x0 = 
+  let rec sorto y0 = (fresh (q1 q2 q3 q4) ((((y0 === (q1 % ((q2 % ((q3 % ((q4 % ((List.nil ())))))))))) &&& (minmaxoMinmaxoMinmaxoMinmaxoMinmaxo q1 q2 q3 q4)) ||| ((y0 === (q1 % ((q2 % ((q3 % ((q4 % ((List.nil ())))))))))) &&& (_minmaxoMinmaxoMinmaxoMinmaxoMinmaxo q1 q2 q3 q4))))) 
+  and minmaxoMinmaxoMinmaxoMinmaxoMinmaxo y1 y2 y3 y4 = ((minmaxoMinmaxoMinmaxo______minmaxo y1 y2 y3 y4) ||| (_minmaxoMinmaxoMinmaxo__________minmaxo y1 y2 y3 y4)) 
+  and minmaxoMinmaxoMinmaxo______minmaxo y5 y6 y7 y8 = ((minmaxoMinmaxo______minmaxo y5 y6 y7 y8) ||| (_minmaxoMinmaxo______minmaxo y5 y6 y7 y8)) 
+  and minmaxoMinmaxo______minmaxo y10 y11 y12 y13 = (((leo______minmaxo y10 y11) &&& (minmaxo y12 y13)) ||| ((y11 === (succ ((succ ((zero ())))))) &&& (gtoMinmaxo______minmaxo y10 y12 y13))) 
+  and leo______minmaxo y15 y16 = (((y16 === (zero ())) &&& (y15 === (succ ((zero ()))))) ||| ((y16 === (succ ((zero ())))) &&& (y15 === (zero ())))) 
+  and minmaxo y17 y18 = (((y18 === (succ ((succ ((succ ((zero ())))))))) &&& (y17 === (succ ((succ ((zero ()))))))) ||| ((y18 === (succ ((succ ((zero ())))))) &&& (y17 === (succ ((succ ((succ ((zero ())))))))))) 
+  and gtoMinmaxo______minmaxo y19 y20 y21 = (((y19 === (succ ((zero ())))) &&& (_minmaxo y20 y21)) ||| ((y19 === (zero ())) &&& (_gtoMinmaxo y20 y21))) 
+  and _minmaxo y23 y24 = (((y24 === (succ ((succ ((succ ((zero ())))))))) &&& (y23 === (zero ()))) ||| ((y24 === (zero ())) &&& (y23 === (succ ((succ ((succ ((zero ())))))))))) 
+  and _gtoMinmaxo y25 y26 = (((y26 === (succ ((succ ((succ ((zero ())))))))) &&& (y25 === (succ ((zero ()))))) ||| ((y26 === (succ ((zero ())))) &&& (y25 === (succ ((succ ((succ ((zero ())))))))))) 
+  and _minmaxoMinmaxo______minmaxo y27 y28 y29 y30 = ((y28 === (succ ((succ ((succ ((zero ())))))))) &&& (__gtoMinmaxo______minmaxo y27 y29 y30)) 
+  and __leo______minmaxo y32 y33 = (((y33 === (zero ())) &&& (y32 === (succ ((zero ()))))) ||| ((y33 === (succ ((zero ())))) &&& (y32 === (zero ())))) 
+  and __gtoMinmaxo______minmaxo y34 y35 y36 = (((y34 === (succ ((zero ())))) &&& (__________minmaxo y35 y36)) ||| ((y34 === (zero ())) &&& (____minmaxo y35 y36))) 
+  and __________minmaxo y38 y39 = (((y39 === (succ ((succ ((zero ())))))) &&& (y38 === (zero ()))) ||| ((y39 === (zero ())) &&& (y38 === (succ ((succ ((zero ())))))))) 
+  and ____minmaxo y40 y41 = (((y41 === (succ ((succ ((zero ())))))) &&& (y40 === (succ ((zero ()))))) ||| ((y41 === (succ ((zero ())))) &&& (y40 === (succ ((succ ((zero ())))))))) 
+  and _minmaxoMinmaxoMinmaxo__________minmaxo y42 y43 y44 y45 = ((__minmaxoMinmaxo__________minmaxo y42 y43 y44 y45) ||| (___minmaxoMinmaxo__________minmaxo y42 y43 y44 y45)) 
+  and __minmaxoMinmaxo__________minmaxo y47 y48 y49 y50 = (((_leo__________minmaxo y47 y48) &&& (__minmaxo y49 y50)) ||| ((y48 === (succ ((zero ())))) &&& (_____gtoMinmaxo__________minmaxo y47 y49 y50))) 
+  and _leo__________minmaxo y52 y53 = (((y53 === (zero ())) &&& (__________minmaxo y52 ((zero ())))) ||| ((y53 === (succ ((zero ())))) &&& (__________minmaxo y52 ((succ ((zero ()))))))) 
+  and __minmaxo y54 y55 = (((y55 === (succ ((succ ((succ ((zero ())))))))) &&& (y54 === (succ ((zero ()))))) ||| ((y55 === (succ ((zero ())))) &&& (y54 === (succ ((succ ((succ ((zero ())))))))))) 
+  and _____gtoMinmaxo__________minmaxo y56 y57 y58 = (((y58 === (succ ((succ ((succ ((zero ())))))))) &&& (y57 === (zero ())) &&& (__________minmaxo y56 ((zero ())))) ||| ((y58 === (zero ())) &&& (y57 === (succ ((succ ((succ ((zero ())))))))) &&& (__________minmaxo y56 ((zero ()))))) 
+  and ___minmaxoMinmaxo__________minmaxo y60 y61 y62 y63 = ((y61 === (succ ((succ ((succ ((zero ())))))))) &&& (______gtoMinmaxo__________minmaxo y60 y62 y63)) 
+  and __leo__________minmaxo y65 y66 = (((y66 === (zero ())) &&& (__________minmaxo y65 ((zero ())))) ||| ((y66 === (succ ((succ ((zero ())))))) &&& (y65 === (zero ())))) 
+  and ______gtoMinmaxo__________minmaxo y67 y68 y69 = ((y67 === (succ ((succ ((zero ())))))) &&& (______minmaxo y68 y69)) 
+  and ______minmaxo y71 y72 = (((y72 === (succ ((zero ())))) &&& (y71 === (zero ()))) ||| ((y72 === (zero ())) &&& (y71 === (succ ((zero ())))))) 
+  and _minmaxoMinmaxoMinmaxoMinmaxoMinmaxo y73 y74 y75 y76 = ((____minmaxoMinmaxo_minmaxo y73 y74 y75 y76) ||| (_____minmaxoMinmaxo_minmaxo y73 y74 y75 y76)) 
+  and ____minmaxoMinmaxo_minmaxo y77 y78 y79 y80 = (((_leo_minmaxo y77 y78) &&& (____minmaxo y79 y80)) ||| ((y78 === (succ ((zero ())))) &&& (_________gtoMinmaxo_minmaxo y77 y79 y80))) 
+  and _leo_minmaxo y82 y83 = (((y83 === (zero ())) &&& (_minmaxo y82 ((zero ())))) ||| ((y83 === (succ ((zero ())))) &&& (_minmaxo y82 ((succ ((zero ()))))))) 
+  and _________gtoMinmaxo_minmaxo y84 y85 y86 = (((y86 === (succ ((succ ((zero ())))))) &&& (y85 === (zero ())) &&& (_minmaxo y84 ((zero ())))) ||| ((y86 === (zero ())) &&& (y85 === (succ ((succ ((zero ())))))) &&& (_minmaxo y84 ((zero ()))))) 
+  and _____minmaxoMinmaxo_minmaxo y88 y89 y90 y91 = ((y89 === (succ ((succ ((zero ())))))) &&& (__________gtoMinmaxo_minmaxo y88 y90 y91)) 
+  and leo_minmaxo y93 y94 = ((y94 === (zero ())) &&& (_minmaxo y93 ((zero ())))) 
+  and __________gtoMinmaxo_minmaxo y95 y96 y97 = ((y95 === (succ ((succ ((succ ((zero ())))))))) &&& (______minmaxo y96 y97)) 
+  in                               (sorto x0)

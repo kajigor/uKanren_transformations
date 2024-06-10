@@ -1,21 +1,19 @@
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE PatternSynonyms #-}
 module Mode.NormSyntax where
 
 import           Control.Monad.State
-import           Data.List           (nub)
-import           Data.List.NonEmpty  (NonEmpty (..))
+import qualified Data.List.NonEmpty  as NE
+import           Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.Set            as Set
 import           Def
 import qualified Mode.Syntax         as S
 import           Mode.Term
 import           Program
-
-data Delayed = Delayed
-             | NotDelayed
-             deriving (Show, Eq)
+import Data.Semigroup (sconcat)
 
 data Base a = Unif (Var a) (FlatTerm a)
-            | Call Delayed String [Var a]
+            | Call String [Var a]
             deriving (Show, Eq, Functor)
 
 newtype Conj a = Conj (NonEmpty (Base a))
@@ -23,6 +21,47 @@ newtype Conj a = Conj (NonEmpty (Base a))
 
 newtype Disj a = Disj (NonEmpty (Conj a))
                deriving (Show, Eq, Functor)
+
+instance Foldable Disj where 
+  foldMap f (Disj conjs) = sconcat $ NE.map (foldMap f) conjs
+
+instance Foldable Conj where 
+  foldMap f (Conj goals) = sconcat $ NE.map (foldMap f) goals
+
+instance Foldable Base where 
+  foldMap f (Unif v t) = foldMap f v <> foldMap f t
+  foldMap f (Call _ vars) = foldMap (foldMap f) vars
+
+instance Traversable Disj where 
+  traverse f (Disj conjs) = Disj <$> traverse (traverse f) conjs
+
+instance Traversable Conj where 
+  traverse f (Conj goals) = Conj <$> traverse (traverse f) goals
+
+instance Traversable Base where 
+  traverse f (Unif v t) = Unif <$> traverse f v <*> traverse f t
+  traverse f (Call name vars) = Call name <$> traverse (traverse f) vars
+
+-- instance Foldable Conj where 
+--   foldMap f (Conj gs) = sconcat (foldMap f gs)
+
+walkConj :: (Base a -> b) -> Conj a -> [b]
+walkConj f (Conj (x :| xs)) = f <$> (x:xs)
+
+walkConjM :: (Monad m) => (Base a -> m b) -> Conj a -> m [b]
+walkConjM f (Conj (x :| xs)) = f `mapM` (x:xs)
+
+walkConjM_ :: (Monad m) => (Base a -> m b) -> Conj a -> m ()
+walkConjM_ f (Conj (x :| xs)) = f `mapM_` (x:xs)
+
+walkDisj :: (Base a -> b) -> Disj a -> [b]
+walkDisj f (Disj (x :| xs)) = (walkConj f) `concatMap` (x:xs)
+
+walkDisjM :: (Monad m) => (Base a -> m b) -> Disj a -> m [b]
+walkDisjM f (Disj (x :| xs)) = concat <$> (walkConjM f) `mapM` (x:xs)
+
+walkDisjM_ :: (Monad m) => (Base a -> m b) -> Disj a -> m ()
+walkDisjM_ f (Disj (x :| xs)) = (walkConjM_ f) `mapM_` (x:xs)
 
 type Goal = Disj
 
@@ -106,13 +145,13 @@ normalizeGoal name =
         modify $ \s -> s { getNameSource = nameSource { usedNames = Set.insert n $ usedNames nameSource }}
         return n
 
-    newCall delayed goal = do
+    newCall goal = do
       n <- newName
       boundVars <- gets getBoundVars
       let vars = Set.intersection boundVars (S.allVars goal)
       let newDef = Def { getName = n, getArgs = Set.toList vars, getBody = goal }
       modify $ \state -> state { getNewDefs = Set.insert newDef (getNewDefs state) }
-      return $ Call delayed n $ map Var (Set.toList vars)
+      return $ Call n $ map Var (Set.toList vars)
     goDisj (S.Disj x y xs) = do
       x <- goConj x
       y <- goConj y
@@ -127,24 +166,22 @@ normalizeGoal name =
       xs <- mapM goBase xs
       return $ Conj $ x :| (y : xs)
     goConj goal@(S.Disj _ _ _) = do
-      call <- newCall NotDelayed goal
+      call <- newCall goal
       return $ Conj $ call :| []
     goConj goal = do
       goal <- goBase goal
       return $ Conj $ goal :| []
     goBase (S.Call n as) = do
       modify $ addNewBoundVars (Set.fromList $ map getVar as)
-      return $ Call NotDelayed n as
+      return $ Call n as
     goBase (S.Unif x t) = do
       modify $ addNewBoundVars (Set.insert (getVar x) (varsFromTerm t))
       return $ Unif x t
     goBase (S.EtaD (S.Call n as)) = do
       modify $ addNewBoundVars (Set.fromList $ map getVar as)
-      return $ Call Delayed n as
-    goBase (S.EtaD goal) = do
-      newCall Delayed goal
+      return $ Call n as
     goBase goal =
-      newCall NotDelayed goal
+      newCall goal
 
 normalize :: (Ord a, Eq a, Show a) => Program S.Goal a -> Program Goal a
 normalize program =
@@ -178,8 +215,7 @@ backConj (Conj (x :| [])) = backBase x
 
 backBase :: Base a -> S.Goal a
 backBase (Unif x t) = S.Unif x t
-backBase (Call NotDelayed name args) = S.Call name args
-backBase (Call Delayed name args) = S.EtaD $ S.Call name args
+backBase (Call name args) = S.EtaD $ S.Call name args
 
 allVars :: (Ord a, Eq a) => Goal a -> Set.Set a
 allVars =
@@ -187,5 +223,5 @@ allVars =
   where
     goDisj (Disj (x :| xs)) = Set.unions (goConj x : map goConj xs)
     goConj (Conj (x :| xs)) = Set.unions (goBase x : map goBase xs)
-    goBase (Call _ _ args) = Set.fromList $ map getVar args
+    goBase (Call _ args) = Set.fromList $ map getVar args
     goBase (Unif v t) = Set.insert (getVar v) $ varsFromTerm t

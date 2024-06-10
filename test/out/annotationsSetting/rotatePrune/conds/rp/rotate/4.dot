@@ -1,0 +1,11 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<from_t1>];
+    1 [label=<from_t2>];
+    2 [label=<to_t1>];
+    3 [label=<to_t2>];
+}

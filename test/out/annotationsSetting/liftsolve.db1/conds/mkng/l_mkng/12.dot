@@ -1,0 +1,18 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<from_term1>];
+    1 [label=<from_term2>];
+    2 [label=<from_inSub>];
+    3 [label=<from_outSub>];
+    4 [label=<to_lst1>];
+    5 [label=<to_lst2>];
+    6 [label=<to_inSub>];
+    7 [label=<to_outSub>];
+    0 -> 4 [label=1];
+    2 -> 6 [label=0];
+    6 -> 2 [label=0];
+}

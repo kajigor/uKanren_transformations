@@ -1,13 +1,10 @@
 module TranslatedExamples.EvalLoop where
 
-import Data.List (intercalate)
-import Data.Maybe (catMaybes)
 import Def
 import Eval (run)
 import Program
 import Stream (takeS)
-import Subst (Subst, showSubst')
-import qualified Subst (lookup)
+import Subst (showSubst')
 import Syntax
 
 data Nop = Nop

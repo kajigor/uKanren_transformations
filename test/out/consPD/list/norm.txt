@@ -1,0 +1,57 @@
+fail  = Goal (Disj [] (Conj [] (Call "fail" [] :| []) :| []))
+
+listo x = Goal (Disj ["h","t"] (Conj [] (Unif "x" [] :| []) :| [Conj [] (Unif "x" ("h" : "t") :| [Call "listo" ["t"]])]))
+
+membero x list = Goal (Disj ["h","t"] (Conj [] (Unif "list" ("h" : "t") :| [Call "rel_0" ["x","h","t"]]) :| []))
+
+inBotho x ys zs = Goal (Disj [] (Conj [] (Call "membero" ["x","ys"] :| [Call "membero" ["x","zs"]]) :| []))
+
+nilo l = Goal (Disj [] (Conj [] (Unif "l" [] :| []) :| []))
+
+singletono l x = Goal (Disj [] (Conj [] (Unif "l" ("x" : []) :| []) :| []))
+
+maxLengtho x m l = Goal (Disj [] (Conj [] (Call "maxo" ["x","m"] :| [Call "lengtho" ["x","l"]]) :| []))
+
+maxMino x m l = Goal (Disj [] (Conj [] (Call "maxo" ["x","m"] :| [Call "mino" ["x","l"]]) :| []))
+
+copy l c = Goal (Disj ["h","t","t'"] (Conj [] (Unif "l" [] :| [Unif "c" []]) :| [Conj [] (Unif "l" ("h" : "t") :| [Unif "c" ("h" : "t'"),Call "copy" ["t","t'"]])]))
+
+copy2 l c = Goal (Disj ["h","h1","h2","t","t'"] (Conj [] (Unif "l" [] :| [Unif "c" []]) :| [Conj [] (Unif "l" ("h" : []) :| [Unif "c" ("h" : [])]),Conj [] (Unif "l" ("h1" : ("h2" : "t")) :| [Unif "c" ("h1" : "t'"),Call "copy2" ["t","t'"]])]))
+
+copycopy l l1 l2 = Goal (Disj [] (Conj [] (Call "copy" ["l","l1"] :| [Call "copy2" ["l","l2"]]) :| []))
+
+lengtho x l = Goal (Disj ["h","t","z"] (Conj [] (Unif "x" [] :| [Unif "l" Zero]) :| [Conj [] (Unif "x" ("h" : "t") :| [Unif "l" C Succ ["z"],Call "lengtho" ["t","z"]])]))
+
+lengtho' x l = Goal (Disj ["h","t","z"] (Conj [] (Unif "x" [] :| [Unif "l" Zero]) :| [Conj [] (Unif "x" ("h" : "t") :| [Call "lengtho'" ["t","z"],Unif "l" C Succ ["z"]])]))
+
+maxo x m = Goal (Disj [] (Conj [] (Call "maxo1" ["x",Zero,"m"] :| []) :| []))
+
+maxo1 x n m = Goal (Disj ["h","t","z","h","t","z"] (Conj [] (Unif "x" [] :| [Unif "m" "n"]) :| [Conj [] (Unif "x" ("h" : "t") :| [Call "leo" ["h","n",Trueo],Call "maxo1" ["t","n","m"]]),Conj [] (Unif "x" ("h" : "t") :| [Call "gto" ["h","n",Trueo],Call "maxo1" ["t","h","m"]])]))
+
+mino x m = Goal (Disj ["h","t"] (Conj [] (Unif "x" [] :| [Unif "m" Zero]) :| [Conj [] (Unif "x" ("h" : "t") :| [Call "mino1" ["t","h","m"]])]))
+
+mino1 x n m = Goal (Disj ["h","t","z","h","t","z"] (Conj [] (Unif "x" [] :| [Unif "m" "n"]) :| [Conj [] (Unif "x" ("h" : "t") :| [Call "leo" ["h","n",Trueo],Call "mino1" ["t","h","m"]]),Conj [] (Unif "x" ("h" : "t") :| [Call "gto" ["h","n",Trueo],Call "mino1" ["t","n","m"]])]))
+
+appLengtho  = Goal (Disj ["xs","ys","zs","m","n","s"] (Conj [] (Call "appendo" ["xs","ys","zs"] :| [Call "lengtho" ["xs","m"],Call "lengtho" ["ys","n"],Call "lengtho" ["zs","s"],Call "addo" ["m","n","s"]]) :| []))
+
+appendo x y xy = Goal (Disj ["h","t","ty"] (Conj [] (Unif "x" [] :| [Unif "y" "xy"]) :| [Conj [] (Unif "x" ("h" : "t") :| [Unif "xy" ("h" : "ty"),Call "appendo" ["t","y","ty"]])]))
+
+appendo' x y xy = Goal (Disj ["h","t","ty"] (Conj [] (Unif "x" [] :| [Unif "xy" "y"]) :| [Conj [] (Unif "x" ("h" : "t") :| []),Conj [] (Unif "xy" ("h" : "ty") :| []),Conj [] (Call "appendo'" ["t","y","ty"] :| [])]))
+
+reverso x y = Goal (Disj ["h","t","rt"] (Conj [] (Unif "x" [] :| [Unif "y" []]) :| [Conj [] (Unif "x" ("h" : "t") :| [Call "reverso" ["t","rt"],Call "appendo" ["rt",("h" : []),"y"]])]))
+
+doubleReverso xs = Goal (Disj ["sx"] (Conj [] (Call "reverso" ["xs","sx"] :| [Call "reverso" ["sx","xs"]]) :| []))
+
+revAcco xs acc sx = Goal (Disj ["h","t"] (Conj [] (Unif "xs" [] :| [Unif "sx" "acc"]) :| [Conj [] (Unif "xs" ("h" : "t") :| [Call "revacco" ["t",("h" : "acc"),"sx"]])]))
+
+assoco x xs v = Goal (Disj ["a","b","tl"] (Conj [] (Unif "xs" (("a", "b") : "tl") :| [Call "rel_1" ["a","x","b","v","tl"]]) :| []))
+
+nthOpt xs n r = Goal (Disj ["h","t","x"] (Conj [] (Unif "xs" [] :| [Unif "r" None]) :| [Conj [] (Unif "xs" ("h" : "t") :| [Call "rel_2" ["n","r","h","x","t"]])]))
+
+rel_2 n r h x t = Goal (Disj [] (Conj [] (Unif "n" Zero :| [Unif "r" C Some ["h"]]) :| [Conj [] (Unif "n" C Succ ["x"] :| [Call "nthOpt" ["t","n","r"]])]))
+
+rel_1 a x b v tl = Goal (Disj [] (Conj [] (Unif "a" "x" :| [Unif "b" "v"]) :| [Conj [] (Call "assoco" ["x","tl","v"] :| [])]))
+
+rel_0 x h t = Goal (Disj [] (Conj [] (Unif "x" "h" :| []) :| [Conj [] (Call "membero" ["x","t"] :| [])]))
+
+? Goal (Disj ["xs","ys","ts","zs","rs"] (Conj [] (Call "appendo" ["xs","ys","ts"] :| [Call "appendo" ["ts","zs","rs"]]) :| []))

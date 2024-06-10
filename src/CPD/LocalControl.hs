@@ -22,16 +22,17 @@ import           Text.Printf
 import           Unfold              (getMaximumBranches, normalize, oneStepUnfold, unifyStuff)
 import           Util.ListZipper
 import qualified Util.Miscellaneous  as Util
+import           Debug.Trace
 
-data Heuristic = Deterministic | Branching
+data Heuristic = Deterministic | Branching deriving (Show, Read)
 
 type DescendGoal = Descend (G S)
 
 data SldTree = Fail
-             | Success Subst.Subst
-             | Or [SldTree] (Maybe (G S)) Subst.Subst
-             | Conj SldTree [DescendGoal] Subst.Subst
-             | Leaf [DescendGoal] Subst.Subst Env.Env
+             | Success (Subst.Subst Int)
+             | Or [SldTree] (Maybe (G S)) (Subst.Subst Int)
+             | Conj SldTree [DescendGoal] (Subst.Subst Int)
+             | Leaf [DescendGoal] (Subst.Subst Int) Env.Env
 
 select :: [DescendGoal] -> Maybe DescendGoal
 select = find (\x -> isSelectable embed (getCurr x) (getAncs x))
@@ -51,16 +52,19 @@ isSelectable emb goal ancs =
     fineToUnfold _            = False
     basics = [] -- ["leo", "gto"]-- [] -- ["eqNat", "eqPair"] -- ["leo", "gto"]
 
-instance Subst.ApplySubst [Descend (G S)] where
-  substitute s =
-    map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
+-- instance Subst.ApplySubst [Descend (G S)] where
+--   substitute s =
+--     map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
 
-sldResolution :: [G S] -> Env.Env -> Subst.Subst -> [[G S]] -> Heuristic -> SldTree
+substituteDescend :: (Subst.ApplySubst a, Ord v) => Subst.Subst v -> [Descend (a v)] -> [Descend (a v)]
+substituteDescend s = map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
+
+sldResolution :: [G S] -> Env.Env -> (Subst.Subst Int) -> [[G S]] -> Heuristic -> SldTree
 sldResolution goal env subst seen =
   -- sldResolutionStep (map (\x -> Descend x Set.empty) goal) env subst Set.empty True
   sldResolutionStep (map (\x -> Descend x []) goal) env subst seen True
 
-sldResolutionStep :: [DescendGoal] -> Env.Env -> Subst.Subst -> [[G S]] -> Bool -> Heuristic -> SldTree
+sldResolutionStep :: [DescendGoal] -> Env.Env -> (Subst.Subst Int) -> [[G S]] -> Bool -> Heuristic -> SldTree
 sldResolutionStep gs env s seen isFirstTime heuristic =
   let (temp, _) = FN.getFreshName (Env.getFreshNames env) in
   let curs = map getCurr gs in
@@ -77,10 +81,10 @@ sldResolutionStep gs env s seen isFirstTime heuristic =
       where
         go g' env' zipper isFirstTime =
           let Descend g ancs = cursor zipper in
-          let normalized = normalize g' in
+          let normalized = normalize g' in -- $ traceShow g'
           let unified = mapMaybe (unifyStuff s) normalized in
           let addDescends xs s =
-                Subst.substitute s
+                substituteDescend s
                                 ( left zipper ++
                                   map (\x -> Descend x (g : ancs)) xs ++
                                   right zipper
@@ -121,7 +125,7 @@ leaves (Conj ch  _ _) = leaves ch
 leaves (Leaf ds _ _)  = [map getCurr ds]
 leaves _              = []
 
-resultants :: SldTree -> [(Subst.Subst, [G S], Maybe Env.Env)]
+resultants :: SldTree -> [((Subst.Subst Int), [G S], Maybe Env.Env)]
 resultants (Success s)     = [(s, [], Nothing)]
 resultants (Or disjs _ _)  = concatMap resultants disjs
 resultants (Conj ch _ _)   = resultants ch

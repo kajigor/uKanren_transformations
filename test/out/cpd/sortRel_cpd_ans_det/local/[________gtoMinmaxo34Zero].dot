@@ -1,0 +1,16 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> ________gtoMinmaxo(v<SUB>3</SUB>, v<SUB>4</SUB>, Zero)>];
+    1 [label=<C <BR/> _________minmaxo(v<SUB>3</SUB>, v<SUB>4</SUB>) <BR/>  [  ] >];
+    2 [label=<O <BR/> _________minmaxo(v<SUB>3</SUB>, v<SUB>4</SUB>)>];
+    3 [label=<C <BR/> _leo(C Succ [C Succ [Zero]]) <BR/>  [ v<SUB>3</SUB> &rarr; C Succ [C Succ [Zero]], v<SUB>4</SUB> &rarr; C Succ [Zero] ] >];
+    4 [label=<_|_>];
+    0 -> 1 [label=""];
+    1 -> 2 [label=""];
+    2 -> 3 [label=""];
+    3 -> 4 [label=""];
+}

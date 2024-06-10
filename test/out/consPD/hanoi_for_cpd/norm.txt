@@ -1,0 +1,33 @@
+fail  = Goal (Disj [] (Conj [] (Call "fail" [] :| []) :| []))
+
+notEqStick x y q44 = Goal (Disj [] (Conj [] (Unif "x" One :| [Call "rel_0" ["y","q44"]]) :| [Conj [] (Unif "x" Two :| [Call "rel_1" ["y","q44"]]),Conj [] (Unif "x" Thr :| [Call "rel_2" ["y","q44"]])]))
+
+isNil l q39 = Goal (Disj ["q41","q42"] (Conj [] (Unif "l" [] :| [Unif "q39" Trueo]) :| [Conj [] (Unif "l" ("q41" :: "q42") :| [Unif "q39" Falso])]))
+
+less a b q36 = Goal (Disj ["b'"] (Conj [] (Unif "b" (1 + "b'") :| [Call "rel_3" ["a","q36","b'"]]) :| []))
+
+get name state q31 = Goal (Disj ["s1","s2","s3"] (Conj [] (Unif "state" Triple "s1" "s2" "s3" :| [Call "rel_4" ["name","s1","q31","s2","s3"]]) :| []))
+
+set name stack state q26 = Goal (Disj ["s1","s2","s3"] (Conj [] (Unif "state" Triple "s1" "s2" "s3" :| [Call "rel_5" ["name","q26","stack","s2","s3","s1"]]) :| []))
+
+one_step step state q13 = Goal (Disj ["fromN","toN","q15","q17","x","xs","q19"] (Conj [] (Unif "step" ("fromN", "toN") :| [Unif "q15" Trueo,Unif "q17" ("x" :: "xs"),Call "notEqStick" ["fromN","toN","q15"],Call "get" ["fromN","state","q17"],Call "get" ["toN","state","q19"],Call "rel_6" ["q19","fromN","xs","state","toN","x","q13"]]) :| []))
+
+check state steps q0 = Goal (Disj ["q1","q2","q7","q9","x","xs","q11"] (Conj [] (Unif "steps" [] :| [Call "get" [One,"state","q7"],Call "isNil" ["q7","q1"],Call "get" [Two,"state","q9"],Call "isNil" ["q9","q2"],Call "rel_7" ["q1","q0","q2"]]) :| [Conj [] (Unif "steps" ("x" :: "xs") :| [Call "one_step" ["x","state","q11"],Call "check" ["q11","xs","q0"]])]))
+
+rel_7 q1 q0 q2 = Goal (Disj [] (Conj [] (Unif "q1" Falso :| [Unif "q0" Falso]) :| [Conj [] (Unif "q1" Trueo :| [Unif "q0" "q2"])]))
+
+rel_6 q19 fromN xs state toN x q13 = Goal (Disj ["q20","y","ys","q23","q24"] (Conj [] (Unif "q19" [] :| [Call "set" ["fromN","xs","state","q20"],Call "set" ["toN",["x"],"q20","q13"]]) :| [Conj [] (Unif "q19" ("y" :: "ys") :| [Unif "q23" Trueo,Call "less" ["x","y","q23"],Call "set" ["fromN","xs","state","q24"],Call "set" ["toN",("x" :: ("y" :: "ys")),"q24","q13"]])]))
+
+rel_5 name q26 stack s2 s3 s1 = Goal (Disj [] (Conj [] (Unif "name" One :| [Unif "q26" Triple "stack" "s2" "s3"]) :| [Conj [] (Unif "name" Two :| [Unif "q26" Triple "s1" "stack" "s3"]),Conj [] (Unif "name" Thr :| [Unif "q26" Triple "s1" "s2" "stack"])]))
+
+rel_4 name s1 q31 s2 s3 = Goal (Disj [] (Conj [] (Unif "name" One :| [Unif "s1" "q31"]) :| [Conj [] (Unif "name" Two :| [Unif "s2" "q31"]),Conj [] (Unif "name" Thr :| [Unif "s3" "q31"])]))
+
+rel_3 a q36 b' = Goal (Disj ["a'"] (Conj [] (Unif "a" 0 :| [Unif "q36" Trueo]) :| [Conj [] (Unif "a" (1 + "a'") :| [Call "less" ["a'","b'","q36"]])]))
+
+rel_2 y q44 = Goal (Disj [] (Conj [] (Unif "y" One :| [Unif "q44" Trueo]) :| [Conj [] (Unif "y" Two :| [Unif "q44" Trueo]),Conj [] (Unif "y" Thr :| [Unif "q44" Falso])]))
+
+rel_1 y q44 = Goal (Disj [] (Conj [] (Unif "y" One :| [Unif "q44" Trueo]) :| [Conj [] (Unif "y" Two :| [Unif "q44" Falso]),Conj [] (Unif "y" Thr :| [Unif "q44" Trueo])]))
+
+rel_0 y q44 = Goal (Disj [] (Conj [] (Unif "y" One :| [Unif "q44" Falso]) :| [Conj [] (Unif "y" Two :| [Unif "q44" Trueo]),Conj [] (Unif "y" Thr :| [Unif "q44" Trueo])]))
+
+? Goal (Disj ["q"] (Conj [] (Call "check" [Triple (0 :: (1 :: [2])) [] [],"q",Trueo] :| []) :| []))

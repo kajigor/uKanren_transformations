@@ -1,0 +1,1 @@
+Program {getDefs = [addo "x0" "x2" = fresh "x3" ((("x2" = Succ Succ Zero /\ "x0" = Zero) \/ ("x0" = Succ "x3" /\ _addo "x2" "x3" (Succ Zero)))),_addo "x2" "x4" "x5" = fresh "x6" ((("x4" = Zero /\ "x2" = Succ Succ "x5") \/ ("x4" = Succ "x6" /\ _addo "x2" "x6" (Succ "x5"))))], getGoal = addo "x0" "x2"}

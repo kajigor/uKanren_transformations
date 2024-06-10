@@ -4,6 +4,8 @@ module FunConversion.Syntax where
 import           Util.String
 import qualified Language.Haskell.TH as TH
 
+import qualified FunConversion.DetMode as D
+
 type Var = String
 type Name = String
 type Generator = String
@@ -15,8 +17,11 @@ data Delayed = Delayed
              | NotDelayed
              deriving (Show, Eq)
 
+data MaybeConversion = FromMaybe
+                     | NoConversion
+                     deriving (Show, Eq)
 data Lang = Empty
-          | Call Delayed Name [Var] [Generator]
+          | Call Delayed MaybeConversion Name [Var] [Generator]
           | Return [Term]
           | Sum [Lang]
           | Match Var (Term, Lang)
@@ -24,7 +29,7 @@ data Lang = Empty
           | Guard Var Term
           | Gen Generator deriving (Show, Eq)
 
-data Def = Def { name :: Name, args :: [Var], generators :: [Generator], body :: Lang } deriving (Show, Eq)
+data Def = Def { name :: Name, args :: [Var], generators :: [Generator], body :: Lang, isSemidet :: Bool } deriving (Show, Eq)
 
 newtype TypeData = TypeData [(String, Int)] deriving (Show, Eq)
 
@@ -50,7 +55,7 @@ embedProgSafe n p@(Program _ _ call) = do
   return $ decs ++ call
 
 callToDec :: String -> Maybe Lang -> Maybe TH.Exp -> Either Error [TH.Dec]
-callToDec n (Just (Call _ _ args gens)) (Just body) = do
+callToDec n (Just (Call _ _ _ args gens)) (Just body) = do
   args <- mapM pvar args
   gens <- mapM pgen gens
   return [TH.FunD (TH.mkName n) [TH.Clause (args ++ gens) (TH.NormalB body) []]]
@@ -62,7 +67,7 @@ qvar v
     | otherwise = Right $ TH.VarE $ TH.mkName v
 
 pvar :: Var -> Either Error TH.Pat
-pvar v 
+pvar v
     | null v = Left "Var name cannot be empty"
     | otherwise = Right $ TH.VarP $ TH.mkName v
 
@@ -96,7 +101,7 @@ instance Quotable Def TH.Dec where
     return $ TH.FunD (TH.mkName (name d)) [ds]
     where
       go :: Def -> Either Error TH.Clause
-      go (Def _ args gens body) = do
+      go (Def _ args gens body _) = do
         args <- mapM pvar args
         gens <- mapM pgen gens
         b <- toQuote body
@@ -107,12 +112,13 @@ instance Quotable Def TH.Dec where
 
 instance Quotable Lang TH.Exp where
   toQuote Empty = qname "mzero"
-  toQuote (Call d name args gens) = do
+  toQuote (Call d conv name args gens) = do
     let immature = if d == Delayed then TH.AppE (TH.ConE $ TH.mkName "Immature") else id
+    let conversion = if conv == FromMaybe then TH.AppE (TH.VarE $ TH.mkName "maybeToStream") else id
     n <- qname name
     xs <- mapM qvar args
     gs <- mapM qgen gens
-    return $ immature $ n $: (xs ++ gs) -- TODO: Test immature
+    return $ immature $ conversion $ n $: (xs ++ gs) -- TODO: Test immature
   toQuote (Gen g) = qgen g
   toQuote (Return exprs) = do
     fn <- qname "return"

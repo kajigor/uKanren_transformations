@@ -3,6 +3,6 @@
 :: callZero x = {call x zero (succ x)}
 
 
-:: boxedZero x = x === <box: zero>  
+:: boxedZero x = x === <box: zero>
 
 :: boxedOne x = x === <box : succ zero>

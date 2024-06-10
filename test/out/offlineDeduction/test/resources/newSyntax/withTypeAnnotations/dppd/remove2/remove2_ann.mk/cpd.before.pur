@@ -1,0 +1,48 @@
+rr x0 = (fresh x5, x6, x7, x3, x8, x9, x1, x4, x2 in (((x5 == (x6 :: x7) & x3 == (x8 :: x9) & x1 == (x4 :: x5) & x0 == (x2 :: x3)) & gG x2 x4 x6 x7 x8 x9)));
+
+gG x2 x4 x6 x7 x8 x9 = (fresh x11, x12, x13, x10 in ((((x11 == (x6 :: x7) & x9 == (x12 :: x13) & x8 == x10 & x4 == x10 & x2 == x10) & hG x6 x7 x10 x12 x13) | ((x11 == (x6 :: x7) & x9 == x13 & x8 == x12 & x4 == x10 & x2 == x10) & _neqHG x6 x7 x10 x12 x13))));
+
+hG x6 x7 x10 x12 x13 = (fresh x14, x15 in ((((x13 == [] & x7 == [] & x6 == x12) & _______g x10 x12 x12 [] []) | (x13 == (x14 :: x15) & _gG x6 x7 x10 x12 x14 x15))));
+
+_gG x6 x7 x10 x12 x14 x15 = (fresh x16, x17, x19, x18 in ((((x14 == x16 & x12 == x16 & x7 == x17 & x6 == x16) & fG x10 x15 x16 x17) | ((x15 == x19 & x14 == x18 & x12 == x16 & x7 == x17 & x6 == x16) & neqHG x10 x16 x17 x18 x19))));
+
+fG x10 x15 x16 x17 = (fresh x18, x19 in ((((x17 == [] & x15 == []) & _______g x10 x16 x16 [] []) | (x15 == (x18 :: x19) & __hG x10 x17 x19 x18 x16 x16))));
+
+_hG x10 x16 x17 x18 x19 = (fresh x20, x21 in ((((x19 == [] & x17 == [x18]) & _______g x10 x16 x16 [x18] [x18]) | (x19 == (x20 :: x21) & ___gG x10 x17 x18 x16 x16 x20 x21))));
+
+_g x10 x16 x18 = (fresh x27, x25, x23, x22, x26, x24 in (((x27 == [] & x25 == [x18] & x23 == (Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero]))) & x22 == Succ (Zero) & x18 == x26 & x16 == x24 & x10 == x22) & _neqG x24 x26 [])));
+
+neqG x24 x26 = (fresh x28 in (((x28 == Zero & x24 == Zero) & _____g Zero ((Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero])))) x26 [])));
+
+__gG x10 x16 x17 x18 x20 x21 = (fresh x22, x23, x25, x24 in ((((x20 == x22 & x18 == x22 & x17 == (x22 :: x23)) & _fG x10 x16 x16 x21 x22 x23) | ((x21 == x25 & x20 == x24 & x18 == x22 & x17 == (x22 :: x23)) & (neq x22 x24 & h x24 x25 x23 & _______g x10 x16 x16 ((x22 :: x23)) ((x22 :: x23)))))));
+
+f x24 x25 = (fresh x28, x29 in (((x25 == [] & x24 == []) | (x24 == (x28 :: x29) & h x28 x29 x25))));
+
+___g x10 x16 x26 x27 = (fresh x29, x28, x31, x32, x33, x30 in ((((x29 == (Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero]))) & x28 == Succ (Zero) & x16 == x10 & x10 == x28) & f x27 ((Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero]))))) | ((x31 == (x32 :: x33) & x29 == (Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero]))) & x28 == Succ (Zero) & x26 == x31 & x16 == x30 & x10 == x28) & _neqG x30 x32 x33))));
+
+_neqG x30 x32 x33 = (fresh x34 in (((x34 == Zero & x30 == Zero) & _____g Zero ((Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero])))) x32 x33)));
+
+____g x32 x33 = (fresh x38, x37, x39 in ((((x38 == (Succ (Succ (Zero)) :: (Zero :: [Zero])) & x37 == Zero & x32 == Zero) & f x33 ((Succ (Succ (Zero)) :: (Zero :: [Zero])))) | ((x38 == (Succ (Succ (Zero)) :: (Zero :: [Zero])) & x37 == Zero & x32 == Succ (x39)) & f ((Succ (x39) :: x33)) ((Succ (Succ (Zero)) :: (Zero :: [Zero])))))));
+
+h x26 x27 x28 = (fresh x31, x32 in (((x28 == [x26] & x27 == []) | (x27 == (x31 :: x32) & _____g x26 x28 x31 x32))));
+
+_____g x26 x28 x31 x32 = (fresh x33, x34, x36, x35 in ((((x31 == x33 & x28 == (x33 :: x34) & x26 == x33) & f x32 x34) | ((x32 == x36 & x31 == x35 & x28 == (x33 :: x34) & x26 == x33) & (neq x33 x35 & h x35 x36 x34)))));
+
+neq x22 x24 = (fresh x31, x33, x32 in (((x24 == Succ (x31) & x22 == Zero) | (x24 == Zero & x22 == Succ (x31)) | ((x24 == Succ (x33) & x22 == Succ (x32)) & neq x32 x33))));
+
+neqHG x10 x16 x17 x18 x19 = (fresh x20, x22, x21 in ((((x18 == Succ (x20) & x16 == Zero) & __hG x10 x17 x19 (Succ (x20)) Zero Zero) | ((x18 == Zero & x16 == Succ (x20)) & __hG x10 x17 x19 Zero (Succ (x20)) (Succ (x20))) | ((x18 == Succ (x22) & x16 == Succ (x21)) & (__hG x10 x17 x19 (Succ (x22)) (Succ (x21)) (Succ (x21)) & neq x21 x22)))));
+
+__hG x10 x17 x19 x25 x26 x27 = (fresh x28, x29 in ((((x19 == [] & x17 == [x25]) & _______g x10 x26 x27 [x25] [x25]) | (x19 == (x28 :: x29) & ___gG x10 x17 x25 x26 x27 x28 x29))));
+
+______g x10 x25 x26 x27 = (fresh x31, x30, x35, x33, x32, x34 in ((((x31 == (Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero]))) & x30 == Succ (Zero) & x26 == x10 & x10 == x30) & f [x25] ((Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero]))))) | ((x35 == [] & x33 == [x25] & x31 == (Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero]))) & x30 == Succ (Zero) & x27 == x32 & x25 == x34 & x10 == x30) & (neq (Succ (Zero)) x26 & _____g x32 ((Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero])))) x34 [])))));
+
+___gG x10 x17 x25 x26 x27 x28 x29 = (fresh x30, x31, x33, x32 in ((((x28 == x30 & x25 == x30 & x17 == (x30 :: x31)) & _fG x10 x26 x27 x29 x30 x31) | ((x29 == x33 & x28 == x32 & x25 == x30 & x17 == (x30 :: x31)) & (neq x30 x32 & h x32 x33 x31 & _______g x10 x26 x27 ((x30 :: x31)) ((x30 :: x31)))))));
+
+_fG x10 x26 x27 x29 x30 x31 = (fresh x32, x33 in ((((x31 == [] & x29 == []) & _______g x10 x26 x27 [x30] [x30]) | (x29 == (x32 :: x33) & (h x32 x33 x31 & _______g x10 x26 x27 ((x30 :: x31)) ((x30 :: x31)))))));
+
+_______g x10 x26 x27 x37 x38 = (fresh x40, x39, x42, x43, x44, x41 in ((((x40 == (Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero]))) & x39 == Succ (Zero) & x26 == x10 & x10 == x39) & f x38 ((Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero]))))) | ((x42 == (x43 :: x44) & x40 == (Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero]))) & x39 == Succ (Zero) & x37 == x42 & x27 == x41 & x10 == x39) & (neq (Succ (Zero)) x26 & _____g x41 ((Zero :: (Succ (Succ (Zero)) :: (Zero :: [Zero])))) x43 x44)))));
+
+_neqHG x6 x7 x10 x12 x13 = (fresh x14, x16, x15 in ((((x12 == Succ (x14) & x10 == Zero) & hG x6 x7 Zero (Succ (x14)) x13) | ((x12 == Zero & x10 == Succ (x14)) & hG x6 x7 (Succ (x14)) Zero x13) | ((x12 == Succ (x16) & x10 == Succ (x15)) & (hG x6 x7 (Succ (x15)) (Succ (x16)) x13 & neq x15 x16)))));
+
+
+? rr x0

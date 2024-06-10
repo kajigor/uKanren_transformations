@@ -1,0 +1,26 @@
+sumtrsquaretr y0 y1 y2 y3 = (fresh q1, q2, q3, q4, q5, q6 in (((y0 == O & squareAdd O q1 q2 & squareAdd y1 y3 q1 & square y2 q2) | (y3 == S (q3) & addMultiplySquareAddAddAdd q4 q5 q6 q3 & y0 == S (q4) & square y1 q5 & square y2 q6))));
+
+squareAdd y4 y5 y6 = (fresh q1, q2 in (((y5 == y6 & y4 == O) | (y5 == S (q1) & y4 == S (q2) & addMultiplyAdd y6 q2 q1))));
+
+addMultiplyAdd y8 y10 y12 = (fresh q1, q2, q3 in (((y10 == O & y8 == y12) | (y12 == S (q1) & _addMultiply q2 q3 (S (q2)) q2 & y10 == S (q2) & addAdd y8 q2 (S (S (q3))) q1))));
+
+addAdd y13 y14 y15 y17 = (fresh q1, q2 in (((y14 == O & add y13 y15 y17) | (y17 == S (q1) & y14 == S (q2) & addAdd y13 q2 y15 q1))));
+
+multiply y18 y19 y20 = (fresh q1, q2 in (((y20 == O & y19 == O) | (y20 == S (q1) & y19 == S (q2) & _addMultiply y18 q1 y18 q2))));
+
+add y21 y22 y23 = (fresh q1, q2 in (((y22 == O & y21 == y23) | (y23 == S (q1) & y22 == S (q2) & add y21 q2 q1))));
+
+square y24 y25 = (fresh q1, q2 in (((y25 == O & y24 == O) | (y25 == S (q1) & y24 == S (q2) & _addMultiply q2 q1 q2 q2))));
+
+_addMultiply y29 y31 y32 y33 = (fresh q1, q2 in (((y29 == O & multiply y32 y33 y31) | (y31 == S (q1) & y29 == S (q2) & _addMultiply q2 q1 y32 y33))));
+
+addMultiplySquareAddAddAdd y35 y38 y40 y42 = (fresh q1, q2, q3, q4 in (((y35 == O & squareAddAdd y42 y38 y40 O) | (y42 == S (q1) & squareAddAdd q2 y38 y40 (S (q3)) & y35 == S (q3) & _addMultiply q3 q4 (S (q3)) q3 & addAdd q2 q3 (S (S (q4))) q1))));
+
+squareAddAdd y43 y45 y47 y48 = (fresh q1 in (((y48 == O & add (S (y47)) y45 y43) | (y48 == S (q1) & addMultiplyAddAdd y43 y45 y47 q1))));
+
+addMultiplyAddAdd y49 y50 y51 y53 = (fresh q1 in (((y53 == O & add (S (S (S (S (y51))))) y50 y49) | (y53 == S (q1) & addAddAddMultiplyAddAdd y49 y50 y51 q1))));
+
+addAddAddMultiplyAddAdd y56 y57 y58 y61 = (fresh q1, q2, q3, q4, q5 in (((y61 == O & add (S (S (S (S (S (S (S (S (S (y58)))))))))) y57 y56) | (y61 == S (q1) & _addMultiply q1 q2 (S (S (S (q1)))) q1 & addAdd y58 q1 (S (S (S (S (q3))))) q4 & add (S (S (S (S (q5))))) q1 q3 & add (S (S (S (S (q2))))) q1 q5 & add (S (S (S (S (q4))))) y57 y56))));
+
+
+? sumtrsquaretr x0 x1 x2 x3

@@ -1,0 +1,28 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<O <BR/> g(v<SUB>10</SUB>, v<SUB>16</SUB>, v<SUB>16</SUB> : v<SUB>26</SUB>, v<SUB>27</SUB>, C Succ [Zero] : Zero : C Succ [C Succ [Zero]] : Zero : [Zero])>];
+    1 [label=<C <BR/> f(v<SUB>27</SUB>, Zero : C Succ [C Succ [Zero]] : Zero : [Zero]) <BR/>  [ v<SUB>10</SUB> &rarr; v<SUB>28</SUB>, v<SUB>16</SUB> &rarr; v<SUB>10</SUB>, v<SUB>28</SUB> &rarr; C Succ [Zero], v<SUB>29</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : Zero : [Zero] ] >];
+    2 [label=<C <BR/> neq(C Succ [Zero], v<SUB>16</SUB>), f(v<SUB>16</SUB> : v<SUB>26</SUB>, Zero : C Succ [C Succ [Zero]] : Zero : [Zero]) <BR/>  [ v<SUB>10</SUB> &rarr; v<SUB>28</SUB>, v<SUB>28</SUB> &rarr; C Succ [Zero], v<SUB>29</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : Zero : [Zero] ] >];
+    3 [label=<Leaf <BR/> f(v<SUB>27</SUB>, Zero : C Succ [C Succ [Zero]] : Zero : [Zero]) <BR/>  [ v<SUB>10</SUB> &rarr; v<SUB>28</SUB>, v<SUB>16</SUB> &rarr; v<SUB>10</SUB>, v<SUB>28</SUB> &rarr; C Succ [Zero], v<SUB>29</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : Zero : [Zero] ] >];
+    4 [label=<O <BR/> neq(C Succ [Zero], v<SUB>16</SUB>)>];
+    5 [label=<C <BR/> f(Zero : v<SUB>26</SUB>, Zero : C Succ [C Succ [Zero]] : Zero : [Zero]) <BR/>  [ v<SUB>10</SUB> &rarr; v<SUB>28</SUB>, v<SUB>16</SUB> &rarr; Zero, v<SUB>28</SUB> &rarr; C Succ [Zero], v<SUB>29</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : Zero : [Zero], v<SUB>30</SUB> &rarr; Zero ] >];
+    6 [label=<C <BR/> neq(Zero, v<SUB>32</SUB>), f(C Succ [v<SUB>32</SUB>] : v<SUB>26</SUB>, Zero : C Succ [C Succ [Zero]] : Zero : [Zero]) <BR/>  [ v<SUB>10</SUB> &rarr; v<SUB>28</SUB>, v<SUB>16</SUB> &rarr; C Succ [v<SUB>32</SUB>], v<SUB>28</SUB> &rarr; C Succ [Zero], v<SUB>29</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : Zero : [Zero], v<SUB>31</SUB> &rarr; Zero ] >];
+    7 [label=<Leaf <BR/> f(Zero : v<SUB>26</SUB>, Zero : C Succ [C Succ [Zero]] : Zero : [Zero]) <BR/>  [ v<SUB>10</SUB> &rarr; v<SUB>28</SUB>, v<SUB>16</SUB> &rarr; Zero, v<SUB>28</SUB> &rarr; C Succ [Zero], v<SUB>29</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : Zero : [Zero], v<SUB>30</SUB> &rarr; Zero ] >];
+    8 [label=<O <BR/> neq(Zero, v<SUB>32</SUB>)>];
+    9 [label=<C <BR/> f(C Succ [C Succ [v<SUB>33</SUB>]] : v<SUB>26</SUB>, Zero : C Succ [C Succ [Zero]] : Zero : [Zero]) <BR/>  [ v<SUB>10</SUB> &rarr; v<SUB>28</SUB>, v<SUB>16</SUB> &rarr; C Succ [v<SUB>32</SUB>], v<SUB>28</SUB> &rarr; C Succ [Zero], v<SUB>29</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : Zero : [Zero], v<SUB>31</SUB> &rarr; Zero, v<SUB>32</SUB> &rarr; C Succ [v<SUB>33</SUB>] ] >];
+    10 [label=<Leaf <BR/> f(C Succ [C Succ [v<SUB>33</SUB>]] : v<SUB>26</SUB>, Zero : C Succ [C Succ [Zero]] : Zero : [Zero]) <BR/>  [ v<SUB>10</SUB> &rarr; v<SUB>28</SUB>, v<SUB>16</SUB> &rarr; C Succ [v<SUB>32</SUB>], v<SUB>28</SUB> &rarr; C Succ [Zero], v<SUB>29</SUB> &rarr; Zero : C Succ [C Succ [Zero]] : Zero : [Zero], v<SUB>31</SUB> &rarr; Zero, v<SUB>32</SUB> &rarr; C Succ [v<SUB>33</SUB>] ] >];
+    0 -> 1 [label=""];
+    0 -> 2 [label=""];
+    1 -> 3 [label=""];
+    2 -> 4 [label=""];
+    4 -> 5 [label=""];
+    4 -> 6 [label=""];
+    5 -> 7 [label=""];
+    6 -> 8 [label=""];
+    8 -> 9 [label=""];
+    9 -> 10 [label=""];
+}

@@ -130,7 +130,7 @@ generateGoalFromTree definitions invocations tree args =
       Nothing -> error $ printf "Failed to generate relation body for %s" (show $ nodeContent tree)
     -- Res.vident <$> (disj (map conj $ filter (not . null) $ go tree))
   where
-    residualizeEnv :: Subst.Subst -> Maybe (G S)
+    residualizeEnv :: Subst.Subst S -> Maybe (G S)
     residualizeEnv xs =
       (conj $ map (\(s, ts) -> (V s) === ts) $ reverse (Subst.toList xs)) <|> return success
 

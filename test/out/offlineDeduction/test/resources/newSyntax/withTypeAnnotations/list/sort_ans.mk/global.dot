@@ -1,0 +1,8 @@
+digraph {
+    graph [rankdir=TB
+          ,bgcolor=transparent];
+    node [shape=box
+         ,fillcolor=white
+         ,style=filled];
+    0 [label=<N <BR/> sorto(C Succ [Zero] : Zero : C Succ [C Succ [Zero]] : C Succ [Zero] : [Zero], v<SUB>1</SUB>) <BR/>  [  ] >];
+}

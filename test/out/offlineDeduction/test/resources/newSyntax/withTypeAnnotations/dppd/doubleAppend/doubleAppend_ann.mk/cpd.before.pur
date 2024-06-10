@@ -1,0 +1,32 @@
+double_appendo x0 x1 x2 = (fresh x4, x10, x8, x7, x9, x5, x6 in ((((x1 == x4 & x0 == []) & appendo x2 x4) | ((x10 == (S (S (O)) :: (S (S (S (O))) :: (O :: (O :: (S (O) :: [S (S (O))]))))) & x8 == S (O) & x7 == x9 & x5 == x8 & x4 == (x5 :: x7) & x0 == (x5 :: x6)) & appendoAppendo x1 x2 x6 x9))));
+
+appendo x2 x4 = (fresh x10, x8, x9 in (((x4 == [] & x2 == (S (O) :: (S (S (O)) :: (S (S (S (O))) :: (O :: (O :: (S (O) :: [S (S (O))]))))))) | ((x10 == (S (S (O)) :: (S (S (S (O))) :: (O :: (O :: (S (O) :: [S (S (O))]))))) & x8 == S (O) & x4 == (x8 :: x9)) & _appendo x2 x9))));
+
+_appendo x2 x9 = (fresh x13, x11, x12 in (((x9 == [] & x2 == (S (S (O)) :: (S (S (S (O))) :: (O :: (O :: (S (O) :: [S (S (O))])))))) | ((x13 == (S (S (S (O))) :: (O :: (O :: (S (O) :: [S (S (O))])))) & x11 == S (S (O)) & x9 == (x11 :: x12)) & __appendo x2 x12))));
+
+__appendo x2 x12 = (fresh x16, x14, x15 in (((x12 == [] & x2 == (S (S (S (O))) :: (O :: (O :: (S (O) :: [S (S (O))]))))) | ((x16 == (O :: (O :: (S (O) :: [S (S (O))]))) & x14 == S (S (S (O))) & x12 == (x14 :: x15)) & ___appendo x2 x15))));
+
+___appendo x2 x15 = (fresh x19, x17, x18 in (((x15 == [] & x2 == (O :: (O :: (S (O) :: [S (S (O))])))) | ((x19 == (O :: (S (O) :: [S (S (O))])) & x17 == O & x15 == (x17 :: x18)) & ____appendo x2 x18))));
+
+____appendo x2 x18 = (fresh x22, x20, x21 in (((x18 == [] & x2 == (O :: (S (O) :: [S (S (O))]))) | ((x22 == (S (O) :: [S (S (O))]) & x20 == O & x18 == (x20 :: x21)) & _____appendo x2 x21))));
+
+_____appendo x2 x21 = (fresh x25, x23, x24 in (((x21 == [] & x2 == (S (O) :: [S (S (O))])) | ((x25 == [S (S (O))] & x23 == S (O) & x21 == (x23 :: x24)) & ______appendo x2 x24))));
+
+______appendo x2 x24 = (fresh x28, x27, x26 in (((x24 == [] & x2 == [S (S (O))]) | (x28 == [] & x27 == [] & x26 == S (S (O)) & x24 == (x26 :: x27) & x2 == []))));
+
+appendoAppendo x1 x2 x6 x9 = (fresh x16, x14, x13, x15, x11, x12 in ((((x6 == [] & x1 == x9) & _appendo x2 x9) | ((x16 == (S (S (S (O))) :: (O :: (O :: (S (O) :: [S (S (O))])))) & x14 == S (S (O)) & x13 == x15 & x11 == x14 & x9 == (x11 :: x13) & x6 == (x11 :: x12)) & _appendoAppendo x1 x2 x12 x15))));
+
+_appendoAppendo x1 x2 x12 x15 = (fresh x22, x20, x19, x21, x17, x18 in ((((x12 == [] & x1 == x15) & __appendo x2 x15) | ((x22 == (O :: (O :: (S (O) :: [S (S (O))]))) & x20 == S (S (S (O))) & x19 == x21 & x17 == x20 & x15 == (x17 :: x19) & x12 == (x17 :: x18)) & __appendoAppendo x1 x2 x18 x21))));
+
+__appendoAppendo x1 x2 x18 x21 = (fresh x28, x26, x25, x27, x23, x24 in ((((x18 == [] & x1 == x21) & ___appendo x2 x21) | ((x28 == (O :: (S (O) :: [S (S (O))])) & x26 == O & x25 == x27 & x23 == x26 & x21 == (x23 :: x25) & x18 == (x23 :: x24)) & ___appendoAppendo x1 x2 x24 x27))));
+
+___appendoAppendo x1 x2 x24 x27 = (fresh x34, x32, x31, x33, x29, x30 in ((((x24 == [] & x1 == x27) & ____appendo x2 x27) | ((x34 == (S (O) :: [S (S (O))]) & x32 == O & x31 == x33 & x29 == x32 & x27 == (x29 :: x31) & x24 == (x29 :: x30)) & ____appendoAppendo x1 x2 x30 x33))));
+
+____appendoAppendo x1 x2 x30 x33 = (fresh x40, x38, x37, x39, x35, x36 in ((((x30 == [] & x1 == x33) & _____appendo x2 x33) | ((x40 == [S (S (O))] & x38 == S (O) & x37 == x39 & x35 == x38 & x33 == (x35 :: x37) & x30 == (x35 :: x36)) & _____appendoAppendo x1 x2 x36 x39))));
+
+_____appendoAppendo x1 x2 x36 x39 = (fresh x46, x45, x44, x43, x41, x42 in ((((x36 == [] & x1 == x39) & ______appendo x2 x39) | ((x46 == [] & x45 == [] & x44 == S (S (O)) & x43 == x45 & x41 == x44 & x39 == (x41 :: x43) & x36 == (x41 :: x42) & x2 == []) & _______appendo x1 x42))));
+
+_______appendo x1 x42 = (x42 == [] & x1 == []);
+
+
+? double_appendo x0 x1 x2
