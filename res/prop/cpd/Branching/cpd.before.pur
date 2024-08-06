@@ -1,0 +1,6 @@
+evalo x0 = (fresh x4, x3, x1, x2 in ((x0 == Lit (Trueo) | ((x4 == Trueo & x3 == Trueo & x0 == Disj (x1) (x2)) & (evalo x1 & evalo x2)) | ((x4 == Trueo & x3 == Falso & x0 == Disj (x1) (x2)) & (_evalo x1 & evalo x2)) | ((x4 == Falso & x3 == Trueo & x0 == Disj (x1) (x2)) & (evalo x1 & _evalo x2)) | ((x4 == Trueo & x3 == Trueo & x0 == Conj (x1) (x2)) & (evalo x1 & evalo x2)))));
+
+_evalo x1 = (fresh x9, x8, x6, x7 in ((x1 == Lit (Falso) | ((x9 == Falso & x8 == Falso & x1 == Disj (x6) (x7)) & (_evalo x6 & _evalo x7)) | ((x9 == Trueo & x8 == Falso & x1 == Conj (x6) (x7)) & (_evalo x6 & evalo x7)) | ((x9 == Falso & x8 == Trueo & x1 == Conj (x6) (x7)) & (evalo x6 & _evalo x7)) | ((x9 == Falso & x8 == Falso & x1 == Conj (x6) (x7)) & (_evalo x6 & _evalo x7)))));
+
+
+? evalo x0

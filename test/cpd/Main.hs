@@ -29,6 +29,7 @@ import           System.Process      (system)
 import           Text.Printf
 import           Util.ConjRetriever
 import           Util.Miscellaneous
+import           Util.System (graphsToPdf)
 
 
 main :: IO ()
@@ -248,8 +249,7 @@ doOcanrenize = do
           (\(goal, tree) ->
             printTree (printf "%s/%s.dot" pathLocal (filter (/=' ') $ show goal)) tree
           )
-        system (printf "dot -O -Tpdf %s/*.dot" path)
-        system (printf "dot -O -Tpdf %s/*.dot" pathLocal)
+        mapM_ graphsToPdf [path, pathLocal]
         let prog = residualizationTopLevel tree
         writeFile (printf "%s/%s.before.pur" path filename) (show prog)
 --        traceM "Wait"

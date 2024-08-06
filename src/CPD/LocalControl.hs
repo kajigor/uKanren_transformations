@@ -33,6 +33,7 @@ data SldTree = Fail
              | Or [SldTree] (Maybe (G S)) (Subst.Subst Int)
              | Conj SldTree [DescendGoal] (Subst.Subst Int)
              | Leaf [DescendGoal] (Subst.Subst Int) Env.Env
+             deriving (Show)
 
 select :: [DescendGoal] -> Maybe DescendGoal
 select = find (\x -> isSelectable embed (getCurr x) (getAncs x))

@@ -2,10 +2,10 @@ module Purification where
 
 import           Control.Monad.State
 import           Data.List
-import           Debug.Trace         (trace)
 import           Data.Maybe
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
+import           Debug.Trace
 import           Def
 import           Program
 import           Syntax
@@ -26,7 +26,7 @@ type ErasureElem = (Name, Int)
 purification :: (Program G X, [String]) -> (G X, [String], [Def G X])
 purification (program@(Program defs x), names) =
   -- justTakeOutLetsProgram program names
-  -- trace_pur (x, names) $
+  -- tracePur (x, names) $
   -- identity x
   --justTakeOutLets x
   --purificationWithErasure x
@@ -38,39 +38,38 @@ purification (program@(Program defs x), names) =
   (goal'', xs, defs'')
 
 clearPrg :: (G X, [Def G X]) -> (G X, [Def G X])
-clearPrg (g, defs) = 
-  let g' = clearGoal defs g in 
-  let defs' = mapMaybe (clearDef defs) defs in 
-  case g' of 
-    Nothing -> error "Residualiation failed: no defs generated" 
+clearPrg (g, defs) =
+  let g' = clearGoal defs g in
+  let defs' = mapMaybe (clearDef defs) defs in
+  case g' of
+    Nothing -> error "Residualiation failed: no defs generated"
     Just g'' -> (g'', defs')
 
-clearDef :: [Def G X] -> Def G X -> Maybe (Def G X) 
-clearDef defs (Def n a g) = do 
-   g' <- clearGoal defs g 
-   return $ Def n a g'
+clearDef :: [Def G X] -> Def G X -> Maybe (Def G X)
+clearDef defs (Def n a g) = do
+   Def n a <$> clearGoal defs g
 
 clearGoal :: [Def G X] -> G X -> Maybe (G X)
-clearGoal defs g@(Disjunction g1 g2 lstG) = do 
+clearGoal defs g@(Disjunction g1 g2 lstG) = do
   gs <- mapM (clearGoal defs) (g1 : g2 : lstG)
   return $ unsafeDisj gs
-clearGoal defs g@(Conjunction g1 g2 lstG) = 
+clearGoal defs g@(Conjunction g1 g2 lstG) =
   let gs = mapMaybe (clearGoal defs) (g1 : g2 : lstG) in
-  case gs of 
+  case gs of
     [] -> Nothing
-    [x] -> Just x 
+    [x] -> Just x
     (x1 : x2 : xs) -> Just $ Conjunction x1 x2 xs
-clearGoal defs (Delay g) = do 
-  g' <- clearGoal defs g 
-  return $ Delay g'
-clearGoal defs (Fresh x g) = do 
+clearGoal defs (Delay g) = do
   g' <- clearGoal defs g
-  return $ Fresh x g' 
-clearGoal defs g@(Invoke name _) | (any (\(Def n a g) -> n == name) defs) = 
-  Just g 
-clearGoal defs g@(Invoke name _) = Nothing 
-clearGoal defs g@(t1 :=: t2) = Just g  
-  
+  return $ Delay g'
+clearGoal defs (Fresh x g) = do
+  g' <- clearGoal defs g
+  return $ Fresh x g'
+clearGoal defs g@(Invoke name _) | any (\(Def n a g) -> n == name) defs =
+  Just g
+clearGoal defs g@(Invoke name _) = Nothing
+clearGoal defs g@(t1 :=: t2) = Just g
+
 
 {-------------------------------------------}
 {-------------------------------------------}
@@ -86,13 +85,12 @@ justTakeOutLetsProgram program args =
     (Program defs goalWithoutLets) = evalState state initialFvs
     state = do
       renamed <- renameProgram program
-      escaped <- escapeFreeVarsProgram renamed
-      return escaped
+      escapeFreeVarsProgram renamed
       -- evalState (renameProgram program >>= escapeFreeVarsProgram) initialFvs
 
 {-------------------------------------------}
 justTakeOutLets :: (G X, [String]) -> (G X, [String], [Def G X])
-justTakeOutLets (goal, args) = (goal, args, [])  where
+justTakeOutLets (goal, args) = (goal, args, [])
 
 {-------------------------------------------}
 {-------------------------------------------}
@@ -114,17 +112,17 @@ purificationWithErasure x = (g''', args', defs''') where
   defs'            = map rulesToDef internalFuncs'
   (Def _ args' g') = rulesToDef mainFuncs'
 
-  defs''           = map (\(Def n a g) -> (Def n a (removeSuccess $ removeLinks (Set.fromList a) g))) defs'
+  defs''           = map (\(Def n a g) -> Def n a (removeSuccess $ removeLinks (Set.fromList a) g)) defs'
   g''              = removeSuccess $ removeLinks (Set.fromList args') g'
 
-  defs'''          = map (\(Def n a g) -> (Def n a (renameFreshVars $ closeByFresh a g))) defs''
+  defs'''          = map (\(Def n a g) -> Def n a (renameFreshVars $ closeByFresh a g)) defs''
   g'''             = renameFreshVars $ closeByFresh args' g''
 
   {-------------------------------------------}
   ruleToOcanren :: [X] -> Rule -> G X
   ruleToOcanren v ((_, a), bd) =
-    let unifies = map (\(v, t) -> V v === t) $ zip v a in
-    let calls   = map (\(n, a) -> Invoke n a) bd in
+    let unifies = zipWith (\v t -> V v === t) v a in
+    let calls   = map (uncurry Invoke) bd in
     unsafeConj $ unifies ++ calls
 
   {-------------------------------------------}
@@ -154,14 +152,17 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
     erasure        = removeRedundantArgs (mainFuncs ++ concat internalFuncs) initialErasure
 
     goalAfterPurification  = snd $ purify "main" args goalWithoutLets
-    defsAfterPurification  = filter (\(Def _ a _) -> not $ null a) $ map (\(Def n a g) -> let (a', g') = purify n a g in (Def n a' g')) defs
+    defsAfterPurification  =
+      let purified = map (\(Def n a g) -> let (a', g') = purify n a g in Def n a' g') defs in
+      filter (\(Def _ a _) -> not $ null a) $
+      map (\(Def n a g) -> let (a', g') = purify n a g in Def n a' g') defs
 
     -- defsAfterPurification  = {- filter (not . null . snd3) $ -} map (\(Def n a g) -> let (a', g') = purify n a g in (Def n a' g')) defs
 
     purify :: Name -> [X] -> G X -> ([X], G X)
-    purify n a g = let a' = applyErasure erasure n a in
-      let g1 = (purifyUni a' .applyErasureToG erasure . snd . freshVars []) g in 
-      (((,) a') . renameFreshVars . closeByFresh a' . purifyUni a' . applyErasureToG erasure . snd . freshVars []) g 
+    purify n a g =
+      let a' = applyErasure erasure n a in
+      (((,) a') . renameFreshVars . closeByFresh a' . purifyUni a' . applyErasureToG erasure . snd . freshVars []) g
 
     purifyUni :: [X] -> G X -> G X
     purifyUni a g = snd $ purifyU (Set.fromList a) [] g where
@@ -198,14 +199,6 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
                     _ -> (conjs'', flatConj g1'' g2'')
         in
         res
-      -- purifyU constrV conjs (g1 :/\: g2) =
-      --   let (g2' :conjs' , g1' ) = purifyU constrV (g2 :conjs ) g1  in
-      --   let (g1'':conjs'', g2'') = purifyU constrV (g1':conjs') g2' in
-      --   case (g1'', g2'') of
-      --     _ | isSuccess g1'' && isSuccess g2'' -> (con{js'', success      )
-      --     _ | isSuccess g1'' -> (conjs'', g2'' )
-      --     _ | isSuccess g2'' -> (conjs'', g1'' )
-      --     _ -> (conjs'', g1'' &&& g2'')
       purifyU constrV conjs g = (conjs, g)
 
 {-------------------------------------------}
@@ -317,7 +310,7 @@ closeByFresh a g = fresh (fv g \\ a) g
 
 renameGoal :: G X -> Map X X -> G X
 renameGoal goal mapping =
-    (\x -> maybe x id (Map.lookup x mapping)) <$> goal
+    (\x -> fromMaybe x (Map.lookup x mapping)) <$> goal
 
 renameDef :: Def G X -> State [S] (Def G X)
 renameDef (Def name args body) = do
@@ -398,15 +391,15 @@ toMaybe False _ = Nothing
 {-------------------------------------------}
 getFstLink :: Set X -> (G X -> G X) -> (G X -> G X) -> (G X -> G X) -> G X -> Maybe (G X -> G X, G X, X, Term X)
 getFstLink a disjC conjC branch g@(t1@(V x1) :=: t2@(V x2)) =
-  if (x1 == x2)
+  if x1 == x2
   then Nothing
   else
     case (Set.member x1 a, Set.member x2 a) of
-      (_,     False) -> if (hasVar (branch success) x2) then Nothing else Just (disjC, conjC success, x2, t1)
-      (False, True)  -> if (hasVar (branch success) x1) then Nothing else Just (disjC, conjC success, x1, t2)
+      (_,     False) -> if hasVar (branch success) x2 then Nothing else Just (disjC, conjC success, x2, t1)
+      (False, True)  -> if hasVar (branch success) x1 then Nothing else Just (disjC, conjC success, x1, t2)
       _              -> Nothing
 getFstLink a disjC conjC branch g@((V x) :=: t@(C _ _)) =
-  if (Set.member x a || hasVar (branch success) x || termHasVars t)
+  if Set.member x a || hasVar (branch success) x || termHasVars t
   then Nothing
   else Just (disjC, conjC success, x, t)
 getFstLink a disjC conjC branch (Disjunction g1 g2 gs) =
@@ -456,8 +449,8 @@ renameFreshVars g =
 {-------------------------------------------}
 {-------------------------------------------}
 {-------------------------------------------}
-trace_pur ::  (Program G X, [String]) -> (G X, [String], [Def G X]) -> (G X, [String], [Def G X])
-trace_pur (Program defs1 g1, _) result@(g2, _, defs2) =
+tracePur ::  (Program G X, [String]) -> (G X, [String], [Def G X]) -> (G X, [String], [Def G X])
+tracePur (Program defs1 g1, _) result@(g2, _, defs2) =
     trace (printf "pur(fresh,unify,arg,constr,var,calls):\n%s -> %s\n"
             (show $ calcProg $ Program defs1 g1)
             (show $ calcProg $ Program defs2 g2)) $
@@ -482,4 +475,4 @@ trace_pur (Program defs1 g1, _) result@(g2, _, defs2) =
     calcDef (Def _ a g) = (0, 0, length a, 0, 0, 0) <+> calc g
 
     calcProg (Program defs goal) =
-      (calc goal <+> (foldr (\d acc -> calcDef d <+> acc) (0,0,0,0,0,0) defs))
+      calc goal <+> foldr (\d acc -> calcDef d <+> acc) (0,0,0,0,0,0) defs

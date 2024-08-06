@@ -13,8 +13,9 @@ rev = Program reverso $ fresh ["x", "y"] (call "reverso" [V "x", V "y"])
 prop = Program.Prop.query3
 
 unit_partialDeductionTest = do
-  transform "da" dA
-  transform "rev" rev
-  transform "revAcco" revAcco'
-  transform "prop" prop
+  -- transform "da" "out" dA
+  -- transform "rev" "out"  rev
+  -- transform "revAcco" "out" revAcco'
+  transform "prop" "out" prop
+
 

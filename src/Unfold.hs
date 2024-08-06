@@ -73,6 +73,7 @@ maximumBranches def@(Def _ args body) =
     succeed (Conjunction x y g) = unsafeConj $ succeed <$> (x : y : g)
     succeed (Disjunction x y g) = unsafeDisj $ succeed <$> (x : y : g)
     succeed (Fresh name g) = Fresh name $ succeed g
+    succeed (Delay g) = Delay $ succeed g 
 
     success = C "" [] :=: C "" []
 

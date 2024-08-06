@@ -25,14 +25,15 @@ evalo st fm u =
   fresh x, y, v, w, z in
     (fm == Lit u) |
     (fm == Var z & Delay elemo z st u) |
-    (noto v u & Delay evalo st x v & fm == Neg x) |
+    -- (noto v u & Delay evalo st x v & fm == Neg x) |
     (oro v w u & Delay evalo st x v & Delay evalo st y w & fm == Disj x y) |
-    (ando v w u & Delay evalo st x v & Delay evalo st y w & fm == Conj x y) |
-    (implicationo v w u & Delay evalo st x v & Delay evalo st y w & fm == Impl x y);
+    (ando v w u & Delay evalo st x v & Delay evalo st y w & fm == Conj x y) {- |
+    (implicationo v w u & Delay evalo st x v & Delay evalo st y w & fm == Impl x y) -} ;
 
 elemo n s v =
   fresh h, t, n' in
     (n == Zero & s == (h :: t) & v == h) |
     (s == (h :: t) & Delay elemo n' t v & n == Succ n');
 
-? evalo [] (Disj x x) Trueo
+-- ? evalo [] (Disj x x) Trueo
+? evalo [] x Trueo

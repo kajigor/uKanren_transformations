@@ -14,6 +14,8 @@ import qualified Data.Set                          as Set
 import           Syntax
 import           Text.Printf
 
+import Debug.Trace
+
 treeToGraph :: DotPrinter a => a -> Gr Text Text
 treeToGraph tree =
   let (vs, es') = label tree in
@@ -79,6 +81,6 @@ removeQuots =
 
 simplyPrintTree tree = unpack $ removeQuots $ renderDot $ toDot $ graphToDot params $ treeToGraph tree
 
-printTree :: DotPrinter a => FilePath -> a -> IO ()
-printTree filename tree =
+printTree :: (Show a, DotPrinter a) => FilePath -> a -> IO ()
+printTree filename tree = 
   writeFile filename $ unpack $ removeQuots $ renderDot $ toDot $ graphToDot params $ treeToGraph $ simplify tree

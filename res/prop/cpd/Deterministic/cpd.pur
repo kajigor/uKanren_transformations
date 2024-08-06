@@ -1,0 +1,10 @@
+evalo y0 = (fresh q1, q2 in ((y0 == Lit (Trueo) | (y0 == Disj (q1) (q2) & oroEvaloEvalo q1 q2) | (y0 == Conj (q1) (q2) & evalo q1 & evalo q2))));
+
+oroEvaloEvalo y1 y2 = ((evalo y1 & evalo y2) | (_evalo y1 & evalo y2) | (evalo y1 & _evalo y2));
+
+_evalo y5 = (fresh q1, q2 in ((y5 == Lit (Falso) | (y5 == Disj (q1) (q2) & _evalo q1 & _evalo q2) | (y5 == Conj (q1) (q2) & andoEvaloEvalo q1 q2))));
+
+andoEvaloEvalo y6 y7 = ((_evalo y6 & evalo y7) | (evalo y6 & _evalo y7) | (_evalo y6 & _evalo y7));
+
+
+? evalo x0

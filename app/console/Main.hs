@@ -1,5 +1,6 @@
 module Main where
 
+import qualified AllTransformationsApp
 import qualified ConsPDApp
 import qualified CPDApp
 import           Data.Maybe             (fromMaybe)
@@ -27,7 +28,6 @@ import qualified DepApp
 import           Util.File              (failIfNotExist, getFiles, isDir)
 import           Util.Miscellaneous     (mapLeft)
 import           CPD.LocalControl       (Heuristic (..))
-import qualified PrintProgs
 
 data Transformation
   = CPD
@@ -44,6 +44,7 @@ data Transformation
   | OfflineDeduction
   | FunTransformer
   | PrintMkCode
+  | AllTransformations
 
 data Action = Action { transformation :: Transformation
                      , input          :: FilePath
@@ -182,7 +183,7 @@ parseTransformation =
   <|> annotationsSettingParser
   <|> offlineDeductionParser
   <|> funTransformerParser
-  <|> printMkParser
+  <|> allTransformationsParser
 
 funTransformerParser :: Parser Transformation
 funTransformerParser = flag' FunTransformer
@@ -190,6 +191,14 @@ funTransformerParser = flag' FunTransformer
     long "funTransformer"
   <> help "quick transformation with type of deduction and branching"
   )
+
+allTransformationsParser :: Parser Transformation
+allTransformationsParser =
+  flag'
+    AllTransformations
+    ( long "all"
+      <> help "run all existing transformations"
+    )
 
 offlineDeductionParser :: Parser Transformation
 offlineDeductionParser = flag' OfflineDeduction 
@@ -201,13 +210,6 @@ annotationsSettingParser :: Parser Transformation
 annotationsSettingParser = flag' AnnotationsSetting
   (  long "annotationsSetting"
   <> help "Run check on safety unfolding"
-  )
-
-
-printMkParser :: Parser Transformation
-printMkParser = flag' PrintMkCode
-  (  long "printMkCode"
-  <> help "print minikanren code by haskell embedding"
   )
 
 normalizeParser :: Parser Transformation
@@ -304,7 +306,7 @@ defaultOutputDir args =
       AnnotationsSetting -> "annotationsSetting"
       OfflineDeduction -> "offlineDeduction"
       FunTransformer -> "funTransformer"
-      PrintMkCode -> "printMkCode"
+      AllTransformations -> "all"
 
 getAnnotationTypeParser :: (String -> IO (Either String (AnnotatedProgram G X)))
 getAnnotationTypeParser input = do 
@@ -321,8 +323,6 @@ runAction args = do
   action <- transform args
   let parser = chooseParser $ parserType action
   case transformation action of
-    PrintMkCode -> 
-      PrintProgs.run (example action)
     Eval ->
       EvalApp.runWithParser parser (input action) (numAnswers action)
     Mode ->
@@ -341,6 +341,8 @@ runAction args = do
       DepApp.runWithParser parser (input action)
     AnnotationsSetting -> 
       AnnotationsSettingApp.runWithParser getAnnotationTypeParser (input action) (output action)
+    AllTransformations -> 
+      AllTransformationsApp.runWithParser parser (input action) (output action)
     OfflineDeduction -> 
       OfflineDeductionApp.runWithParser getAnnotationActParser (input action) (output action) (branching action)
     FunTransformer -> 

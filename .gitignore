@@ -108,3 +108,7 @@ test/resources/out/*
 
 
 test/resources/newSyntax/out/
+
+test/resources/out/
+
+.DS_Store

@@ -1,2 +1,0 @@
-module OfflinePD.GlobalControl where
-

@@ -67,8 +67,8 @@ runWithParser parser inputFile outDir relName inputs = do
       copyFile streamFile (outDir </> streamFileName)
 
 
-haskellPreamble :: String -> String
-haskellPreamble uBaseName =
-  "module " ++ uBaseName ++ " where\n\n\
-  \import Stream\n\
-  \import Control.Monad\n\n"
+    haskellPreamble :: String -> String
+    haskellPreamble uBaseName =
+      "module " ++ uBaseName ++ " where\n\n\
+      \import Stream\n\
+      \import Control.Monad\n\n"

@@ -21,6 +21,7 @@ import           Util.Miscellaneous
 data GlobalTree = Leaf  (Descend [G S]) Generalizer (Subst.Subst S)
                 | Node  (Descend [G S]) Generalizer LC.SldTree [GlobalTree]
                 | Prune (Descend [G S]) (Subst.Subst S)
+                deriving (Show)
 
 sequence :: Descend a -> [a]
 sequence = getAncs

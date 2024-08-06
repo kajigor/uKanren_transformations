@@ -79,7 +79,7 @@ norm'' g = Left g
 normalizeProg :: Program G X -> Prg
 normalizeProg (Program defs goal) =
   let d = mapM (\(Def name args body) -> do
-            b <- normalize (body)
+            b <- normalize body
             return $ Definition name args b
             ) defs
   in

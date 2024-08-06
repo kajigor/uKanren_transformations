@@ -1,0 +1,15 @@
+fail  = Goal (Disj [] (Conj [] (Call "fail" [] :| []) :| []))
+
+ando x y b = Goal (Disj [] (Conj [] (Unif v."x" Trueo :| [Unif v."y" Trueo,Unif v."b" Trueo]) :| [Conj [] (Unif v."x" Falso :| [Unif v."y" Trueo,Unif v."b" Falso]),Conj [] (Unif v."x" Trueo :| [Unif v."y" Falso,Unif v."b" Falso]),Conj [] (Unif v."x" Falso :| [Unif v."y" Falso,Unif v."b" Falso])]))
+
+oro x y b = Goal (Disj [] (Conj [] (Unif v."x" Trueo :| [Unif v."y" Trueo,Unif v."b" Trueo]) :| [Conj [] (Unif v."x" Falso :| [Unif v."y" Trueo,Unif v."b" Trueo]),Conj [] (Unif v."x" Trueo :| [Unif v."y" Falso,Unif v."b" Trueo]),Conj [] (Unif v."x" Falso :| [Unif v."y" Falso,Unif v."b" Falso])]))
+
+noto x b = Goal (Disj [] (Conj [] (Unif v."x" Trueo :| [Unif v."b" Falso]) :| [Conj [] (Unif v."x" Falso :| [Unif v."b" Trueo])]))
+
+implicationo x y b = Goal (Disj [] (Conj [] (Unif v."x" Falso :| [Unif v."y" Trueo,Unif v."b" Trueo]) :| [Conj [] (Unif v."x" Falso :| [Unif v."y" Falso,Unif v."b" Trueo]),Conj [] (Unif v."x" Trueo :| [Unif v."y" Trueo,Unif v."b" Trueo]),Conj [] (Unif v."x" Trueo :| [Unif v."y" Falso,Unif v."b" Falso])]))
+
+evalo st fm u = Goal (Disj ["x","y","v","w","z"] (Conj [] (Unif v."fm" Lit v."u" :| []) :| [Conj [] (Unif v."fm" Var v."z" :| [Call "elemo" [v."z",v."st",v."u"]]),Conj [] (Call "oro" [v."v",v."w",v."u"] :| [Call "evalo" [v."st",v."x",v."v"],Call "evalo" [v."st",v."y",v."w"],Unif v."fm" Disj v."x" v."y"]),Conj [] (Call "ando" [v."v",v."w",v."u"] :| [Call "evalo" [v."st",v."x",v."v"],Call "evalo" [v."st",v."y",v."w"],Unif v."fm" Conj v."x" v."y"])]))
+
+elemo n s v = Goal (Disj ["h","t","n'"] (Conj [] (Unif v."n" Zero :| [Unif v."s" (v."h" :: v."t"),Unif v."v" v."h"]) :| [Conj [] (Unif v."s" (v."h" :: v."t") :| [Call "elemo" [v."n'",v."t",v."v"],Unif v."n" Succ v."n'"])]))
+
+? Goal (Disj ["x"] (Conj [] (Call "evalo" [[],v."x",Trueo] :| []) :| []))

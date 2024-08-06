@@ -20,12 +20,14 @@ import           Program
 import           Purification
 import           Residualization
 import           Syntax
-import           System.FilePath        ((<.>), (</>))
+import           System.FilePath        ((<.>), (</>), takeBaseName)
 import           System.Process         (system)
 import           Text.Printf
 import qualified Transformer.MkToProlog
 import           Util.File              (createDirRemoveExisting, shortenFileName)
+import           Util.System            (graphsToPdf)
 import           Debug.Trace (traceShow)
+import Util.System (graphsToPdf)
 
 data TransformResult = Result { original   :: [Def G X]
                               , globalTree :: GC.GlobalTree
@@ -42,17 +44,14 @@ runTransformation goal@(Program original _) heuristic =
   let purified = purification (beforePur, vident <$> reverse names) in
   Result original globalTree localTrees beforePur purified
 
-generatePdf :: FilePath -> IO GHC.IO.Exception.ExitCode
-generatePdf dir =
-  system (printf "dot -O -Tpdf %s/*.dot" dir)
-
 renderLocalTree :: FilePath -> [G S] -> LC.SldTree -> IO ()
 renderLocalTree localDir goal =
     printTree (localDir </> shortenFileName (show goal) <.> "dot")
 
 transform' :: FilePath -> FilePath -> Program G X -> Maybe String -> LC.Heuristic -> IO (Program G X)
 transform' outDir filename goal@(Program definitions _) env heuristic = do
-    let path = outDir </> filename
+    let cpdDir = "cpd"
+    let path = outDir </> takeBaseName filename </> cpdDir </> show heuristic
     let localDir = path </> "local"
     let cpdFile = path </> "cpd"
     mapM_ createDirRemoveExisting [path, localDir]
@@ -69,7 +68,7 @@ transform' outDir filename goal@(Program definitions _) env heuristic = do
     let ocamlCodeFileName = cpdFile <.> "ml"
     OC.topLevel ocamlCodeFileName "topLevel" env pur
 
-    mapM_ generatePdf [path, localDir]
+    mapM_ graphsToPdf [path, localDir]
     return purified
 
 transform :: FilePath -> Program G X -> Maybe String -> LC.Heuristic -> IO ()

@@ -52,8 +52,8 @@ instance OCanren v => OCanren (Term v) where
       getSucc name [x] | name == "s" = Just $ printf "(Nat.succ %s)" (parenthesize $ ocanren x)
       getSucc _ _ = Nothing
 
-      getBool "true" [] = Just "!!true"
-      getBool "false" [] = Just "!!false"
+      getBool name [] | name == "true" || name == "trueo" = Just "!!true"
+      getBool name [] | name == "false" || name == "falso" = Just "!!false"
       getBool _ _ = Nothing
 
       getPair "pair" [f, s] =

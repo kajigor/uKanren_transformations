@@ -8,6 +8,7 @@ module Generalization where
 
 import           Control.Exception.Base
 import           Control.Monad.State
+import           Control.Monad          (foldM)
 import           Data.List              hiding (group, groupBy)
 import qualified Data.Map               as Map
 import           Embed

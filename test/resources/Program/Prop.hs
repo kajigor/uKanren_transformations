@@ -264,7 +264,7 @@ plainEvaloDef =
 evalo :: [Def G X]
 evalo = evaloDef : ando ++ oro ++ noto ++ assoco
 
--- ando/oro last
+-- ando/oro first
 -- uses assoco
 evaloDef :: Def G X
 evaloDef =
@@ -292,6 +292,9 @@ evaloDef =
           (
             fm === C "var" [var] &&&
             call "assoco" [var, st, u]
+          ) ||| 
+          (
+            fm === C "lit" [u] 
           )
         )
       )

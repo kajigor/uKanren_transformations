@@ -4,6 +4,7 @@ module BTA.BTA where
 
 
 import           Control.Monad.State
+import           Control.Monad
 import qualified Data.Map                  as Map
 import qualified Data.Set                  as Set
 import           BTA.AnnotationType

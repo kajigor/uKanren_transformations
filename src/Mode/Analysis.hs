@@ -5,13 +5,12 @@
 module Mode.Analysis where
 
 import Control.Monad.State
-    ( msum,
-      zipWithM,
-      StateT,
+    ( StateT,
       gets,
       modify,
       evalStateT,
       MonadTrans(lift) )
+import           Control.Monad (zipWithM, msum)
 import           Data.List.NonEmpty    (NonEmpty (..))
 import qualified Data.Map              as Map
 import Data.Maybe ( fromJust, fromMaybe, isJust )

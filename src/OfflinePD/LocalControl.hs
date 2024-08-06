@@ -32,6 +32,8 @@ data SldTree = Fail
              | Or [SldTree] (Maybe (AnnG Term S)) (Subst.Subst S)
              | Conj SldTree [DescendGoal] (Subst.Subst S)
              | Leaf [DescendGoal] (Subst.Subst S) Env.Env
+             deriving (Show)
+
 
 conjToList :: AnnG Term a -> [AnnG Term a]
 conjToList (Conjunction x y gs) = x : y : gs

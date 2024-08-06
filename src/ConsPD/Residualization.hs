@@ -47,11 +47,6 @@ generateDefs tree =
   let (_, newGoal) = generateInvocation definitions (toplevel, toplevel) in
   (defs, Res.vident <$> newGoal)
 
-showDefinitions :: CpdR.Definitions -> String
-showDefinitions = intercalate "\n\n" . map go
-  where
-    go (gs, n, args) = printf "%s %s: %s" n (show args) (show gs)
-
 generateInvocation :: CpdR.Definitions -> ([G S], [G S]) -> ([G S], G S)
 generateInvocation defs (gs, v) =
     let Just (goal, n, as) = find ((v ==) . fst3) defs in

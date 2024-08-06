@@ -29,6 +29,7 @@ import Debug.Trace (traceShow, trace)
 data GlobalTree = Leaf  (Descend [AnnG Term S]) Generalizer (Subst.Subst S)
                 | Node  (Descend [AnnG Term S]) Generalizer LC.SldTree [GlobalTree]
                 | Prune (Descend [AnnG Term S]) (Subst.Subst S)
+                deriving (Show)
 
 sequence :: Descend a -> [a]
 sequence = getAncs

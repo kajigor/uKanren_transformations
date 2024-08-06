@@ -37,6 +37,7 @@ import qualified Transformer.MkToProlog
 import qualified OCanrenize as OC
 import           Data.List           (find, partition)
 import           Util.Miscellaneous
+import           Util.System (graphsToPdf)
 
 
 data TransformResult = Result { original   :: [AnnotatedDef (AnnG Term) X]
@@ -78,10 +79,6 @@ runTransformation goal@(AnnotatedProgram original _) heu =
   let beforePur = residualizationTopLevel $ transformGlobal globalTree in
   let purified = purification (beforePur, vident <$> reverse names) in
   Result original globalTree localTrees beforePur purified
---
-generatePdf :: FilePath -> IO GHC.IO.Exception.ExitCode
-generatePdf dir =
-  system (printf "dot -O -Tpdf %s/*.dot" dir)
 
 renderLocalTree :: FilePath -> [AnnG Term S] -> LC.SldTree -> IO ()
 renderLocalTree localDir goal =
@@ -126,7 +123,7 @@ transform' outDir filename program@(AnnotatedProgram defs goal) env heu = do
     let ocamlCodeFileName = cpdFile <.> "ml"
     OC.topLevel ocamlCodeFileName "topLevel" env pur
 
-    mapM_ generatePdf [path, localDir]
+    mapM_ graphsToPdf [path, localDir]
     return purified
 
 transform :: FilePath -> AnnotatedProgram (AnnG Term) X -> Maybe String -> LCcpd.Heuristic -> IO ()

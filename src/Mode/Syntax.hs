@@ -2,6 +2,7 @@
 module Mode.Syntax where
 
 import           Control.Monad.State
+import           Control.Monad       (zipWithM)
 import qualified Data.Map.Strict     as Map
 import qualified Data.Set            as Set
 import           Def

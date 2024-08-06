@@ -15,12 +15,13 @@ import           Program
 import           Purification
 import           Residualization        (vident)
 import           Syntax
-import           System.FilePath        ((<.>), (</>))
+import           System.FilePath        ((<.>), (</>), takeBaseName)
 import           System.Process         (system)
 import           Text.Printf
 import qualified Transformer.MkToProlog
 import           Util.File              (createDirRemoveExisting)
 import           Util.Miscellaneous     (escapeTick)
+import           Util.System            (graphsToPdf)
 import           Printer.PrettyMkPrinter (prettyMk)
 
 import qualified FunConversion.Trans as F
@@ -38,7 +39,7 @@ type Transformer = Program G X -> (ConsPD.ConsPDTree, G S, [S])
 
 runTransformation :: Program G X -> Transformer -> TransformResult
 runTransformation goal@(Program original _) transformer =
-  let transformed@(tree, logicGoal, names) = transformer (goal) in
+  let transformed@(tree, logicGoal, names) = transformer goal in
   let namesX = vident <$> reverse names in
   let simplifiedTree = ConsPD.simplify tree in
   if ConsPD.noPrune tree
@@ -58,22 +59,20 @@ runConsPD l = Transformer.ConsPD.transform "test/out/consPD" Nothing (ConsPD.top
 
 runConsPDNoGround l = (runConsPD l) Nothing
 
-runConsPD' :: [Char] -> Maybe [Int] -> FilePath -> Program G X -> IO ()
+runConsPD' :: FilePath -> Maybe [Int] -> FilePath -> Program G X -> IO ()
 runConsPD' outDir = Transformer.ConsPD.transform outDir Nothing (ConsPD.topLevel (-1))
 
-transform :: [Char] -> Maybe String -> (Program G X -> (ConsPD.ConsPDTree, G S, [S])) -> Maybe [Int] -> FilePath -> Program G X -> IO ()
-transform outDir env function ground filename prg = do
+transform :: FilePath -> Maybe String -> (Program G X -> (ConsPD.ConsPDTree, G S, [S])) -> Maybe [Int] -> FilePath -> Program G X -> IO ()
+transform outDir env function ground inputFile prg = do
+  let filename = takeBaseName inputFile
+  let consPDDir = "consPD"
   let norm = normalizeProg prg
-  -- print norm
-
-  -- let goal@(Program definitions _) = makeNormal prg
   let goal@(Program definitions _) = prg
-  let path = outDir </> filename
+  let path = outDir </> filename </> consPDDir 
   createDirRemoveExisting path
   let consPdFile = path </> "conspd"
 
   Transformer.MkToProlog.transform (path </> "original.pl") definitions
-
 
   let result = runTransformation goal function
 
@@ -82,7 +81,7 @@ transform outDir env function ground filename prg = do
   Transformer.MkToProlog.transform (path </> "original.pl") definitions -- Aims?
   printTree (path </> "tree.dot") (tree result)
   printTree (path </> "tree.after.dot") (simplifiedTree result)
-  system (printf "dot -O -Tpdf %s/*.dot" (escapeTick path))
+  graphsToPdf (escapeTick path)
 
   guard (isJust $ beforePurification result)
   let ocamlCodeFileName = path </> filename <.> "before.ml"

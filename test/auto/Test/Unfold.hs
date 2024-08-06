@@ -13,7 +13,7 @@ unit_maximumBranches = do
   runTest reversoDef 2
   runTest nandoDef 4
   runTest andoDef 1
-  runTest Program.Prop.evaloDef 4
+  runTest Program.Prop.evaloDef 5
 
 runTest =
   test maximumBranches
