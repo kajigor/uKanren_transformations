@@ -106,7 +106,7 @@ papers/miniKanren/slides/presentation.log
 test/resources/newSyntax/out/*
 test/resources/out/*
 
-
+out/
 test/resources/newSyntax/out/
 
 test/resources/out/
