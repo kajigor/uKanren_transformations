@@ -28,8 +28,9 @@ import           System.Directory
 import           System.Process      (system)
 import           Text.Printf
 import           Util.ConjRetriever
+import           Util.File           (removeDirIfExists)
 import           Util.Miscellaneous
-import           Util.System (graphsToPdf)
+import           Util.System         (graphsToPdf)
 
 
 main :: IO ()
@@ -236,9 +237,7 @@ doOcanrenize = do
         traceM ("\n\n NAMES \n\n" ++ show (vident <$> reverse names) )
         let path = printf "test/out/%s" filename
         exists <- doesDirectoryExist path
-        if exists
-        then removeDirectoryRecursive path
-        else return ()
+        removeDirIfExists path 
         let pathLocal = printf "%s/local" path
         createDirectoryIfMissing True path
         printTree (printf "%s/global.dot" path) tree

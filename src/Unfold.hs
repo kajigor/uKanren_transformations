@@ -15,6 +15,8 @@ import           Util.ListZipper
 import           Util.Miscellaneous  (pinpoint)
 import qualified VarInterpretation   as VI
 
+import Debug.Trace
+
 oneStepUnfold :: G S -> State Env.Env (G S)
 oneStepUnfold g@(Invoke f as) = do
   env <- get
@@ -60,7 +62,7 @@ unifyStuff state gs =
     go [] state conjs = Just (reverse conjs, state)
     go (g@(Invoke _ _) : gs) state conjs = go gs state (g : conjs)
     go ((t :=: u) : gs) state conjs = do
-      s <- E.unify  (Just state) t u
+      s <- E.unify (Just state) t u
       go gs s conjs
 
 maximumBranches :: Def G X -> Int
@@ -122,8 +124,6 @@ findTupling env subst goal ancs =
     cross [] = [([],Subst.empty)]
     cross (x:xs) = [ (y ++ z, Subst.union s' s'') | (y, s') <- x, (z, s'') <- cross xs ]
 
-
-
 findBestByComplexity :: Env.Env -> Subst.Subst Int -> [G S] -> Maybe (Zipper (G S))
 findBestByComplexity env sigma goals =
     let estimated = map (\g -> (g, unfoldComplexity env sigma g)) goals in
@@ -133,10 +133,10 @@ findBestByComplexity env sigma goals =
                             <|> maxBranch estimated
                             <|> partialSubst estimated)
   where
-    onlySubsts xs = pinpoint (\(g, compl) -> curBranches compl == substs compl) xs
+    onlySubsts = pinpoint (\(g, compl) -> curBranches compl == substs compl) 
     deterministic = pinpoint (\(g, compl) -> curBranches compl == 1)
-    maxBranch  xs = pinpoint (\(g, compl) -> maxBranches compl > curBranches compl) xs
-    partialSubst xs = pinpoint (\(g, compl) -> substs compl > 0) xs
+    maxBranch = pinpoint (\(g, compl) -> maxBranches compl > curBranches compl)
+    partialSubst = pinpoint (\(g, compl) -> substs compl > 0) 
     throwAwayComplexity z = (fst <$>) <$> z
 
 unfoldComplexity :: Env.Env -> Subst.Subst Int -> G S -> Complexity

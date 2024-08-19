@@ -3,9 +3,12 @@ module Util.File where
 import           Control.Monad    (unless, when)
 import           Data.Maybe       (fromMaybe)
 import           System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, doesPathExist,
-                                   listDirectory, removeDirectoryRecursive)
-import           System.FilePath  (isExtensionOf, replaceExtension, (</>))
+                                   listDirectory, removeDirectoryRecursive, listDirectory)
+import           System.FilePath  (isExtensionOf, replaceExtension, (</>), takeFileName)
 import           Text.Printf      (printf)
+import Control.Monad.Extra (concatMapM)
+import Control.Monad (filterM)
+import Control.Monad (guard)
 
 prologExt :: FilePath -> FilePath
 prologExt p = replaceExtension p "pl"
@@ -22,9 +25,23 @@ checkIfFileExists directory file = do
 
 createDirRemoveExisting :: FilePath -> IO ()
 createDirRemoveExisting path = do
+  removeDirIfExists path 
+  createDirectoryIfMissing True path
+
+removeDirIfExists :: FilePath -> IO ()
+removeDirIfExists path = do 
   exists <- doesDirectoryExist path
   when exists (removeDirectoryRecursive path)
-  createDirectoryIfMissing True path
+
+listDirectoriesRecursive :: FilePath -> FilePath -> IO [FilePath]
+listDirectoriesRecursive dirToIgnore dir = do
+  isDir <- doesDirectoryExist dir
+  guard isDir
+  dirs <- filter (/= dirToIgnore) <$> listDirectory dir
+  fullFilePaths <- filterM doesDirectoryExist $ map (dir </>) dirs
+  mapM_ (removeDirIfExists . (</> dirToIgnore)) fullFilePaths
+  recursiveDirs <- concatMapM (listDirectoriesRecursive dirToIgnore) fullFilePaths
+  return $ fullFilePaths ++ recursiveDirs
 
 shortenFileName :: FilePath -> FilePath
 shortenFileName =

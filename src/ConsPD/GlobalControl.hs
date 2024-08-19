@@ -1,12 +1,15 @@
 {-# LANGUAGE TupleSections #-}
 
-module CPD.GlobalControl where
+module ConsPD.GlobalControl where
 
-import           Control.Monad.State 
-import qualified CPD.LocalControl    as LC
-import           CPD.State 
+import           Control.Monad.State
+import qualified ConsPD.LocalControl as LC
+import ConsPD.State
+
 import           Data.List           (find, partition)
 import qualified Data.Set            as Set 
+import           Data.Tuple
+
 import           Descend
 import           Embed
 import qualified Environment         as Env
@@ -18,7 +21,7 @@ import           Program
 import qualified Subst
 import           Syntax
 import           Util.Miscellaneous
-import Debug.Trace
+-- import qualified Data.IntMap as Set
 
 data GlobalTree = Leaf  (Descend [G S]) Generalizer (Subst.Subst S)
                 | Node  (Descend [G S]) Generalizer LC.SldTree [GlobalTree]
@@ -75,10 +78,10 @@ topLevel :: Program G X -> LC.Heuristic -> (GlobalTree, G S, [S])
 topLevel (Program defs goal) heuristic =
     let env = Env.fromDefs defs in
     let ((logicGoal, names), env') = runState (E.preEval goal) env in
-    let tree = evalState (go (Descend.init [logicGoal]) Subst.empty Subst.empty) (CPD.State.init env') in 
+    let tree = evalState (go (Descend.init [logicGoal]) Subst.empty Subst.empty) (ConsPD.State.init env') in 
     (tree, logicGoal, names) 
   where
-    go :: Descend.Descend [G S] -> Subst.Subst S -> Generalizer -> State CPDState GlobalTree
+    go :: Descend.Descend [G S] -> Subst.Subst S -> Generalizer -> State ConsPDState GlobalTree
     go d@(Descend.Descend goal ancs) subst generalizer = do 
       seen <- gets getSeen 
       sldTree <- LC.sldResolution goal subst heuristic

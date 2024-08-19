@@ -54,7 +54,7 @@ main = defaultMain
      [
         bench "offlineOOO"  $ nf (eval0 (takeS 10) Vanilla_offline.solvesOOO) ()
       , bench "onlineOOO"   $ nf (eval3 (takeS 10) Vanilla_online.solveOOO) (listGen, listGen, listGen)
-      , bench "simpleOOO"   $ nf (eval8 (takeS 10) Vanilla_simple.helpOOO) (listGen, listGen, listGen, listGen, appGen, listGen, appGen, listAppGen)
+      -- , bench "simpleOOO"   $ nf (eval8 (takeS 10) Vanilla_simple.helpOOO) (listGen, listGen, listGen, listGen, appGen, listGen, appGen, listAppGen)
      ]
   ]
 

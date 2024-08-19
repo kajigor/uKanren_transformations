@@ -59,8 +59,8 @@ generateSplits xs n =
 
 pinpoint :: (a -> Bool) -> [a] -> Maybe (Zipper a)
 pinpoint p l = do
-    z <- toZipper l
-    goRightUntil p z
+  z <- toZipper l
+  goRightUntil p z
 
 show' :: Show a => [a] -> String
 show' xs =

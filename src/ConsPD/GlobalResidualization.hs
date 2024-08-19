@@ -2,19 +2,19 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 
-module CPD.Residualization where
+module ConsPD.GlobalResidualization where
 
-import           CPD.GlobalControl
-import qualified CPD.LocalControl   as LC
+import           ConsPD.GlobalControl
+import qualified ConsPD.LocalControl   as LC
 import           Data.Char
 import           Data.List
-import           Data.Maybe
-import qualified Data.Set           as Set
+import           Data.Maybe   
+import qualified Data.Set              as Set
 import           Def
 import           Eval
 import           Program
-import qualified Residualization    as Res
-import qualified Subst
+import qualified Residualization       as Res
+import qualified Subst 
 import           Syntax
 import           Text.Printf
 import           Util.Miscellaneous
@@ -65,7 +65,7 @@ unifyInvocationLists _ _ _ = Nothing
 generateInvocation :: [G S] -> Definitions -> G X
 generateInvocation goals defs = do
   fromMaybe
-    (error $ printf "Residualization failed: invocation of an undefined relation.\nGoals: %s\nDefs:\n%s\n" (show goals) (intercalate "\n" $ map show defs)) 
+    (error "Residualization failed: invocation of the undefined relation.")
     (conj =<< conjInvocation goals defs)
   where
     generate args subst = map (\a -> Res.toX $ fromMaybe (V a) (Subst.lookup a subst)) args

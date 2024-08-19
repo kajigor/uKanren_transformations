@@ -5,6 +5,7 @@
 module ConsPD.Unfold where
 
 import           Control.Monad.State
+import           ConsPD.State
 import           Data.Foldable       (foldlM)
 import           Data.List           (delete, partition)
 import qualified Data.Map.Strict     as M
@@ -21,6 +22,9 @@ import qualified Subst
 import           Syntax
 import           Unfold              (findBestByComplexity, findTupling, isGoalStatic, oneStep)
 import           Util.ListZipper
+import qualified Data.Set as Set
+
+-- import Debug.Trace
 
 data ConsPDTree = Fail
                 | Success (Subst.Subst S) Env.Env
@@ -32,32 +36,10 @@ data ConsPDTree = Fail
                 | Prune [G S] (Subst.Subst S)
                 deriving (Show, Eq)
 
-
--- conjConcat :: [([([G S], E.Sigma)], Env.Env)] -> Maybe ([([G S], E.Sigma)], Env.Env)
--- conjConcat x = do
---     let (goals, envs) = unzip x
---     cGoals <- mapM goalsConcat goals
---     cGammas <- gammaConcat envs
---     return (cGoals, cGammas)
---   where
---     gammaConcat xs =
---       foldlM (\(p, i, d) (_, i', d') -> do
---                   i'' <- mergeI i i'
---                   return (p, i'', mergeD d d'))
---              (head xs)
---              (tail xs)
---     mergeD (x:xs) (y:ys) = if x >= y then x : xs else y : ys
---     mergeI (d, f) i@(d', f') =
---       let dd' = d \\ d' in
---       let intersection = d `intersect` d' in
---       if map f intersection /= map f' intersection
---       then Nothing
---       else Just $ foldl (\interp x -> VI.extend interp x (f x)) i dd'
-
-statesConcat :: [(Subst.Subst S)] -> Maybe (Subst.Subst S)
+statesConcat :: [Subst.Subst S] -> Maybe (Subst.Subst S)
 statesConcat = unifySubsts
 
-goalsConcat :: [([a], (Subst.Subst S))] -> Maybe ([a], (Subst.Subst S))
+goalsConcat :: [([a], Subst.Subst S)] -> Maybe ([a], Subst.Subst S)
 goalsConcat x = do
   let (goals, states) = unzip x
   cStates <- statesConcat states
@@ -81,7 +63,7 @@ restrictSubsts =
     go _ Fail                = Fail
 
 
-incrDeepOneStep :: Int -> Int -> G S -> Env.Env -> (Subst.Subst S) -> Maybe ([([G S], (Subst.Subst S))], Env.Env)
+incrDeepOneStep :: Int -> Int -> G S -> Env.Env -> Subst.Subst S -> Maybe ([([G S], Subst.Subst S)], Env.Env)
 incrDeepOneStep limit depth _ _ _ | limit < depth = Nothing
 incrDeepOneStep limit depth goal env state =
     let (unified, env') = runState (oneStep goal state) env in
@@ -117,11 +99,11 @@ realIncrDeep globalLimit f x =
     go localLimit curr f x =
       go localLimit (curr + 1) f (f x)
 
-leaf :: (Subst.Subst S) -> Env.Env -> ConsPDTree
+leaf :: Subst.Subst S -> Env.Env -> ConsPDTree
 leaf s _ | Subst.null s = Fail
 leaf s e = Success s e
 
-unifySubsts :: [(Subst.Subst S)] -> Maybe (Subst.Subst S)
+unifySubsts :: [Subst.Subst S] -> Maybe (Subst.Subst S)
 unifySubsts [] = return Subst.empty
 unifySubsts [s] = return s
 unifySubsts (x : y : xs) = do
@@ -160,25 +142,33 @@ justUnfold limit (Program defs goal) =
                          ) unified in
       Or children d subst
 
+trace _ x = x 
+traceShow _ x = x 
+
 topLevel :: Int -> Program G X -> (ConsPDTree, G S, [S])
 topLevel limit (Program defs goal) =
     let env = Env.fromDefs defs in
     let ((logicGoal, names), env') = runState (E.preEval goal) env in
-    let seen = [] in
-    let failed = [] in
-    let descend = Descend (conjToList logicGoal) [] in
-    let tree = evalState (go descend Subst.empty) (seen, failed, env') in
+    let descend = Descend.init (conjToList logicGoal) in
+    let tree = evalState (go descend Subst.empty) (ConsPD.State.init env') in
     (tree, logicGoal, names)
   where
-    go :: Descend [G S] -> Subst.Subst S -> State ([[G S]], [[G S]], Env.Env) ConsPDTree
+    report goal seen = 
+      trace "\nGo\nGoal" $ 
+      traceShow goal $ 
+      trace "Seen" $ 
+      traceShow seen 
+
+    go :: Descend [G S] -> Subst.Subst S -> State ConsPDState ConsPDTree
     go (Descend goal' ancs') state = do
-      (seen, failed, env :: Env.Env) <- get
+      (ConsPDState seen failed env) <- get
       let (hd, _) = FN.getFreshName (Env.getFreshNames env)
       let goal = Subst.substituteList state goal'
-      let seen' = goal : seen
+      let seen' = Set.insert goal seen
+      
       let ancs = goal : ancs'
       let addAnc x = Descend x ancs
-      if variantCheck goal failed
+      if report goal seen $ variantCheck goal failed
       then
         return Fail
       else
@@ -188,7 +178,7 @@ topLevel limit (Program defs goal) =
         else
           case if isGround goal then Nothing else findVariant goal seen of
             Just v ->
-              return $ Leaf goal state env v
+              return $ trace "Is variant!" $ traceShow v $ Leaf goal state env v
             Nothing | any (`embed` goal) ancs' ->
               -- A test for accumulating parameter
               -- f (x, y) /\ f (z, y) -> f (m, n) /\ f (z, C (n))
@@ -196,32 +186,30 @@ topLevel limit (Program defs goal) =
               then
                 case findInstance goal seen of
                   Just v ->
-                    return $ Leaf goal state env v
+                    return $ trace "Is instance!" $ traceShow v $ Leaf goal state env v
                   Nothing -> do
                     let (allFree, generalizer, env') = generalizeAllVarsToFree goal env
-                    put (seen', failed, env')
+                    put (ConsPDState seen' failed env')
                     ch <- go (addAnc allFree) state
-                    return $ Gen ch goal allFree generalizer state
+                    return $ trace "Is gen!" $ Gen ch goal allFree generalizer state
               else do
-                put (seen', failed, env)
+                put (ConsPDState seen' failed env)
                 let unified = zip (map (:[]) goal) (repeat state)
                 children <- unfoldSequentially unified addAnc
                 split children goal state
             Nothing ->
               if length goal == 1
               then do
-                put (seen', failed, env)
+                put (ConsPDState seen' failed env)
                 unified <- adaptState (oneStep (head goal) state)
-                -- let (unified, env') = runState (oneStep (head goal) state) env
-                -- put (seen', failed, env')
-                ch <- unfoldSequentially unified addAnc
-                or ch (addAnc goal) state
+                ch <- trace "unified: " $ traceShow unified $ trace "ancs" $ traceShow ancs $ unfoldSequentially unified addAnc
+                or (trace "4" $ ch) (addAnc goal) state
               else
                 case findTupling env state goal ancs of
                   Just (unfolded, newEnv) -> do
-                    put (seen', failed, newEnv)
+                    put (ConsPDState seen' failed newEnv)
                     ch <- unfoldSequentially unfolded addAnc
-                    or ch (addAnc goal) state
+                    or (trace "3" $ ch) (addAnc goal) state
                   Nothing ->
                     case findBestByComplexity env state goal of
                       -- Either ls or rs is not empty!
@@ -231,20 +219,19 @@ topLevel limit (Program defs goal) =
                         let rs = right zipper in
                         case if isGoalStatic env x then Nothing else findVariant [x] seen' of
                           Just v -> do
-                            -- let x' = Conj [Leaf [x] state env v] [x] state in
+                            modifySeen (const seen')
                             let x' = Leaf [x] state env v
                             ls' <- unfoldNotNull ls state addAnc
                             rs' <- unfoldNotNull rs state addAnc
                             split (catMaybes [ls', Just x', rs']) goal state
                           Nothing -> do
-                            -- let (unified, env') = runState (oneStep x state) env
-                            -- put ([x]:seen', failed, env')
                             unified <- adaptState (oneStep x state)
-                            -- modify (\(seen', f, e) -> ([x]:seen', f, e))
-                            -- modifySeen ([x]:) -- WHY???
                             modifySeen (const seen')
                             ch <- unfoldSequentially unified addAnc
-                            x' <- or ch (addAnc [x]) state
+                            x' <- or (trace "2\nChildren: " $ traceShow ch $ ch) (addAnc [x]) state
+                            -- ls' <- unfoldNotNull ls state addAnc
+                            -- rs' <- unfoldNotNull rs state addAnc
+                            -- split (catMaybes [ls', Just x', rs']) goal state
                             case computedAnswers x' of
                               Just xs ->
                                 if all (\(gs, _, _) -> null gs || instanceCheck gs seen) xs
@@ -259,7 +246,8 @@ topLevel limit (Program defs goal) =
                                         modifyEnv (const newEnv)
                                         go (addAnc toUnfold) subst
                                     ) xs
-                                  or (reverse children) (addAnc $ wrap ls rs [x]) state
+                                  modifySeen (const seen)
+                                  or (trace "1" $ trace "computed" $ traceShow xs $ reverse children) (addAnc $ wrap ls rs [x]) state
                                 else do
                                   ls' <- unfoldNotNull ls state addAnc
                                   rs' <- unfoldNotNull rs state addAnc
@@ -269,53 +257,140 @@ topLevel limit (Program defs goal) =
                                 rs' <- unfoldNotNull rs state addAnc
                                 split (catMaybes [ls', Just x', rs']) goal state
                       Nothing -> do
-                        put (seen', failed, env)
+                        put (ConsPDState seen' failed env)
                         children <- unfoldSequentially (zip (map (:[]) goal) (repeat state)) addAnc
                         split children goal state
+
+    -- go :: Descend [G S] -> Subst.Subst S -> State ConsPDState ConsPDTree
+    -- go (Descend goal' ancs') state = do
+    --   (ConsPDState seen failed env) <- get
+    --   let (hd, _) = FN.getFreshName (Env.getFreshNames env)
+    --   let goal = Subst.substituteList state goal'
+    --   let seen' = Set.insert goal seen
+      
+    --   let ancs = goal : ancs'
+    --   let addAnc x = Descend x ancs
+    --   if report goal seen $ variantCheck goal failed
+    --   then
+    --     return Fail
+    --   else
+    --     if limit > 0 && hd > limit
+    --     then
+    --       return $ Prune goal state
+    --     else
+    --       case if isGround goal then Nothing else findVariant goal seen of
+    --         Just v ->
+    --           return $ trace "Is variant!" $ traceShow v $ Leaf goal state env v
+    --         Nothing | any (`embed` goal) ancs' ->
+    --           -- A test for accumulating parameter
+    --           -- f (x, y) /\ f (z, y) -> f (m, n) /\ f (z, C (n))
+    --           if length goal == 1
+    --           then
+    --             case findInstance goal seen of
+    --               Just v ->
+    --                 return $ trace "Is instance!" $ traceShow v $ Leaf goal state env v
+    --               Nothing -> do
+    --                 let (allFree, generalizer, env') = generalizeAllVarsToFree goal env
+    --                 put (ConsPDState seen' failed env')
+    --                 ch <- go (addAnc allFree) state
+    --                 return $ trace "Is gen!" $ Gen ch goal allFree generalizer state
+    --           else do
+    --             put (ConsPDState seen' failed env)
+    --             let unified = zip (map (:[]) goal) (repeat state)
+    --             children <- unfoldSequentially unified addAnc
+    --             split children goal state
+    --         Nothing ->
+    --           if length goal == 1
+    --           then do
+    --             put (ConsPDState seen' failed env)
+    --             unified <- adaptState (oneStep (head goal) state)
+    --             -- let (unified, env') = runState (oneStep (head goal) state) env
+    --             -- put (seen', failed, env')
+    --             ch <- trace "unified: " $ traceShow unified $ trace "ancs" $ traceShow ancs $ unfoldSequentially unified addAnc
+    --             or (trace "4" $ ch) (addAnc goal) state
+    --           else
+    --             case findTupling env state goal ancs of
+    --               Just (unfolded, newEnv) -> do
+    --                 put (ConsPDState seen' failed newEnv)
+    --                 ch <- unfoldSequentially unfolded addAnc
+    --                 or (trace "3" $ ch) (addAnc goal) state
+    --               Nothing ->
+    --                 case findBestByComplexity env state goal of
+    --                   -- Either ls or rs is not empty!
+    --                   Just zipper ->
+    --                     let ls = left zipper in
+    --                     let x  = cursor zipper in
+    --                     let rs = right zipper in
+    --                     case if isGoalStatic env x then Nothing else findVariant [x] seen' of
+    --                       Just v -> do
+    --                         modifySeen (const seen')
+    --                         -- let x' = Conj [Leaf [x] state env v] [x] state in
+    --                         let x' = Leaf [x] state env v
+    --                         ls' <- unfoldNotNull ls state addAnc
+    --                         rs' <- unfoldNotNull rs state addAnc
+    --                         split (catMaybes [ls', Just x', rs']) goal state
+    --                       Nothing -> do
+    --                         -- let (unified, env') = runState (oneStep x state) env
+    --                         -- put ([x]:seen', failed, env')
+    --                         unified <- adaptState (oneStep x state)
+    --                         -- modify (\(seen', f, e) -> ([x]:seen', f, e))
+    --                         -- modifySeen ([x]:) -- WHY???
+    --                         modifySeen (const seen')
+    --                         ch <- unfoldSequentially unified addAnc
+    --                         x' <- or (trace "2" $ ch) (addAnc [x]) state
+    --                         case computedAnswers x' of
+    --                           Just xs ->
+    --                             if all (\(gs, _, _) -> null gs || instanceCheck gs seen) xs
+    --                             then do
+    --                               -- WHAT IF IT RENAMES WITHIN THIS SUBTREE???
+    --                               children <- mapM (\(goals, subst, newEnv) -> do
+    --                                   let toUnfold = wrap ls rs goals
+    --                                   if null toUnfold
+    --                                   then
+    --                                     return $ leaf subst newEnv
+    --                                   else do
+    --                                     modifyEnv (const newEnv)
+    --                                     go (addAnc toUnfold) subst
+    --                                 ) xs
+    --                               or (trace "1" $ trace "computed" $ traceShow xs $ reverse children) (addAnc $ wrap ls rs [x]) state
+    --                             else do
+    --                               ls' <- unfoldNotNull ls state addAnc
+    --                               rs' <- unfoldNotNull rs state addAnc
+    --                               split (catMaybes [ls', Just x', rs']) goal state
+    --                           Nothing -> do
+    --                             ls' <- unfoldNotNull ls state addAnc
+    --                             rs' <- unfoldNotNull rs state addAnc
+    --                             split (catMaybes [ls', Just x', rs']) goal state
+    --                   Nothing -> do
+    --                     put (ConsPDState seen' failed env)
+    --                     children <- unfoldSequentially (zip (map (:[]) goal) (repeat state)) addAnc
+    --                     split children goal state
     wrap left right x = left ++ x ++ right
 
-    modifySeen f =
-      modify (\(seen, failed, env) -> (f seen, failed, env))
-
-    modifyEnv f =
-      modify (\(seen, failed, env) -> (seen, failed, f env))
-
-    adaptState :: State Env.Env a -> State (b, c, Env.Env) a
+    adaptState :: State Env.Env a -> State ConsPDState a
     adaptState state = do
-      (_,_,e) <- get
+      (ConsPDState _ _ e) <- get
       let (r, env) = runState state e
-      modify (\(x,y,_) -> (x,y,env))
+      modifyEnv (const env)
       return r
 
-    nullGoals goals subst env _ | null goals = leaf subst env
-    nullGoals _ _ _ v = v
-
-    unfoldNotNull :: [G S] -> (Subst.Subst S) -> ([G S] -> Descend [G S]) -> State ([[G S]], [[G S]], Env.Env) (Maybe ConsPDTree)
+    unfoldNotNull :: [G S] -> Subst.Subst S -> ([G S] -> Descend [G S]) -> State ConsPDState (Maybe ConsPDTree)
     unfoldNotNull xs _ _ | null xs = return Nothing
     unfoldNotNull xs state addAnc = do
       children <- unfoldSequentially (zip (map (:[]) xs) (repeat state)) addAnc
       n <- split children xs state
       return $ Just n
 
-    unfoldSequentially :: [([G S], (Subst.Subst S))] -> ([G S] -> Descend [G S]) -> State ([[G S]], [[G S]], Env.Env) [ConsPDTree]
+    unfoldSequentially :: [([G S], Subst.Subst S)] -> ([G S] -> Descend [G S]) -> State ConsPDState [ConsPDTree]
     unfoldSequentially unified addAnc = do
-      (_, _, env) <- get
+      (ConsPDState _ _ env) <- get
       mapM  (\(goals, subst) ->
                 if null goals
                 then return $ leaf subst env
                 else go (addAnc goals) subst
             ) unified
 
-createLeafNode :: [[G S]] -> ([G S], (Subst.Subst S), Env.Env) -> ConsPDTree
-createLeafNode seen = go
-  where
-    go ([], state, env) = leaf state env
-    go (gs, state, env) =
-      case findVariant gs seen of
-        Just v -> Leaf  gs state env v
-        Nothing -> Prune gs state
-
-computedAnswers :: ConsPDTree -> Maybe [([G S], (Subst.Subst S), Env.Env)]
+computedAnswers :: ConsPDTree -> Maybe [([G S], Subst.Subst S, Env.Env)]
 computedAnswers (Success s e) = Just [([], s, e)]
 computedAnswers Fail = Just []
 computedAnswers (Leaf g s e _) = Just [(g, s, e)]
@@ -329,7 +404,7 @@ computedAnswers _ = Nothing
 -- Finds a conjunct, for which at least one substitution exists in the unfolding.
 -- The result is the pair in which first element is list of conjuncts excluding the one which generates substitutions.
 -- The second element is the unfolding result for the selected conjunct.
-tryFindSubsts :: [G S] -> Env.Env -> (Subst.Subst S) -> Maybe ([G S], (([(Subst.Subst S)], [([G S], (Subst.Subst S))]), Env.Env), [G S])
+tryFindSubsts :: [G S] -> Env.Env -> Subst.Subst S -> Maybe ([G S], (([Subst.Subst S], [([G S], Subst.Subst S)]), Env.Env), [G S])
 tryFindSubsts =
     -- TODO USE PINPOINT
     go []
@@ -342,7 +417,7 @@ tryFindSubsts =
       then go (g:left) gs env state
       else Just (reverse left, ((map snd substs, notSubsts), env'), gs)
 
-doStep :: G S -> Env.Env -> (Subst.Subst S) -> ([([G S], (Subst.Subst S))], Env.Env)
+doStep :: G S -> Env.Env -> Subst.Subst S -> ([([G S], Subst.Subst S)], Env.Env)
 doStep goal env state =
     fromMaybe
       (runState (oneStep goal state) env)
@@ -352,26 +427,27 @@ isFail :: ConsPDTree -> Bool
 isFail Fail = True
 isFail _ = False
 
-or :: [ConsPDTree] -> Descend [G S] -> (Subst.Subst S) -> State ([[G S]], [[G S]], Env.Env) ConsPDTree
+or :: [ConsPDTree] -> Descend [G S] -> Subst.Subst S -> State ConsPDState ConsPDTree
 or ch d@(Descend gs _) state =
   if null ch || all isFail ch
   then do
-    (seen, failed, env) <- get
-    put (delete gs seen, gs : failed, env)
-    return Fail
-  else return $ Or ch d state
+    modifySeen (Set.delete gs)
+    modifyFailed (Set.insert gs)
+    -- return $ trace "Is Or Fail!" $ Fail
+    return $ Or [Fail] d state 
+  else return $  trace "Is Or!" $ Or ch d state
 
 
-split :: [ConsPDTree] -> [G S] -> (Subst.Subst S) -> State ([[G S]], [[G S]], Env.Env) ConsPDTree
+split :: [ConsPDTree] -> [G S] -> Subst.Subst S -> State ConsPDState ConsPDTree
 split [x] goal state = return x
-split ch goal state = return (Split ch goal state)
+split ch goal state = return $ trace "Is split!" $ Split ch goal state
 
-checkConflicts :: [(Subst.Subst S)] -> Bool
+checkConflicts :: [Subst.Subst S] -> Bool
 checkConflicts sigmas =
     let conflicting = findConflicting sigmas in
     any (\x -> length x /= 1) conflicting
 
-collectSubsts :: ConsPDTree -> [(Subst.Subst S)]
+collectSubsts :: ConsPDTree -> [Subst.Subst S]
 collectSubsts (Or ch _ _) =
     mapMaybe go ch
   where
@@ -384,7 +460,7 @@ collectSubsts (Or ch _ _) =
 collectSubsts (Leaf _ s _ _) = [s]
 collectSubsts x = []
 
-isConflicting :: (Subst.Subst S) -> (Subst.Subst S) -> Bool
+isConflicting :: Subst.Subst S -> Subst.Subst S -> Bool
 isConflicting s1 s2 =
     let m1 = s1 in
     let m2 = s2 in
@@ -395,7 +471,7 @@ isConflicting s1 s2 =
     conflicting (C x xs) (C y ys) = x /= y || length xs /= length ys || any (uncurry conflicting) (zip xs ys)
     conflicting _ _ = False
 
-findConflicting :: [(Subst.Subst S)] -> [[(Subst.Subst S)]]
+findConflicting :: [Subst.Subst S] -> [[Subst.Subst S]]
 findConflicting [] = []
 findConflicting [x] = [[x]]
 findConflicting (x:xs) =

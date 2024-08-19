@@ -106,10 +106,10 @@ topLevel (AnnotatedProgram defs goal) heu =
 --       else
         let subst = Subst.empty in
         -- let newNodes = (delete goal nodes) in
-        let newNodes = filter (not . Embed.isVariant goal) $ traceShow goal 
+        let newNodes = filter (not . Embed.isVariant goal) -- $ traceShow goal 
                         nodes in
 
-        let sldTree = LC.sldResolution (trace ("Global" ++ show d) goal) env subst newNodes heu in
+        let sldTree = LC.sldResolution goal env subst newNodes heu in
         let (substs, bodies) = partition (null . snd3) $ LC.resultants -- $ traceShow d  
                                sldTree in
           

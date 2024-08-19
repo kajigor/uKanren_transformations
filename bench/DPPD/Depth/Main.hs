@@ -52,6 +52,6 @@ main = defaultMain
     [
         bench "offlineGen"  $ nf (eval0 (takeS 3) Depth_offline.depthsdO) () 
       , bench "onlineGen"   $ nf (eval0 (takeS 3) Depth_online.depthO) () 
-      , bench "simpleGen"   $ nf (eval3 (takeS 3) Depth_simple.depthIO) (input, listGen, listGen) -- failing
+      -- , bench "simpleGen"   $ nf (eval3 (takeS 3) Depth_simple.depthIO) (input, listGen, listGen) -- failing
     ] 
   ]

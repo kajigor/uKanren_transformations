@@ -130,7 +130,7 @@ parseAnnInvocation :: Parser (Inv.AnnG Term X)
 parseAnnInvocation = do 
   ann <- parseAnnType
   name <- ident 
-  args <- (try parseArguments <|> roundBr (return []))
+  args <- try parseArguments <|> roundBr (return [])
   return $ Inv.Invoke name args ann 
   <?> "parseInvocation"
 
@@ -155,9 +155,9 @@ parseAnnGoal = sc
 parseTypeAnnDef :: Parser (AnnotatedDef (Inv.AnnG Term) X) 
 parseTypeAnnDef = do 
   symbol "filter"
-  types <- (roundBr parseTypes)
+  types <- roundBr parseTypes
   name <- ident
-  args <- (parseArgs $ length types)
+  args <- parseArgs $ length types
   symbol "="
   goal <- parseAnnGoal
   symbol ";"

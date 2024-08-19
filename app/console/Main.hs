@@ -342,7 +342,7 @@ runAction args = do
     AnnotationsSetting -> 
       AnnotationsSettingApp.runWithParser getAnnotationTypeParser (input action) (output action)
     AllTransformations -> 
-      AllTransformationsApp.runWithParser parser (input action) (output action)
+      AllTransformationsApp.runAll parser getAnnotationActParser (input action) (branching action)
     OfflineDeduction -> 
       OfflineDeductionApp.runWithParser getAnnotationActParser (input action) (output action) (branching action)
     FunTransformer -> 

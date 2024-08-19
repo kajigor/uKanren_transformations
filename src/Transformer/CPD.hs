@@ -60,6 +60,7 @@ transform' outDir filename goal@(Program definitions _) env heuristic = do
     Transformer.MkToProlog.transform (path </> "original.pl") definitions
     printTree (path </> "global.dot") (globalTree result)
     mapM_ (uncurry (renderLocalTree localDir)) (localTrees result)
+    mapM_ graphsToPdf [path, localDir]
     writeFile (cpdFile <.> "before.pur") (prettyMk $ beforePur result)
     let pur@(goal,xs,defs) = purified result
     Transformer.MkToProlog.transform (cpdFile <.> "pl") defs
@@ -68,7 +69,6 @@ transform' outDir filename goal@(Program definitions _) env heuristic = do
     let ocamlCodeFileName = cpdFile <.> "ml"
     OC.topLevel ocamlCodeFileName "topLevel" env pur
 
-    mapM_ graphsToPdf [path, localDir]
     return purified
 
 transform :: FilePath -> Program G X -> Maybe String -> LC.Heuristic -> IO ()

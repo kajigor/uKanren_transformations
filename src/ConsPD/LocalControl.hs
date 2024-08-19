@@ -2,14 +2,17 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE TypeFamilies           #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use lambda-case" #-}
+{-# HLINT ignore "Avoid lambda" #-}
 
-module CPD.LocalControl where
+module ConsPD.LocalControl where
 
 import           Control.Monad.State
-import           CPD.State 
-import           Data.List           (find, intersect, nub, intercalate)
+import           ConsPD.State
+import           Data.List           (find, intersect, nub)
 import           Data.Maybe
-import qualified Data.Set            as Set 
+import qualified Data.Set            as Set
 import           Descend
 import           Embed
 import qualified Environment         as Env
@@ -56,10 +59,10 @@ isSelectable emb goal ancs =
 substituteDescend :: (Subst.ApplySubst a, Ord v) => Subst.Subst v -> [Descend (a v)] -> [Descend (a v)]
 substituteDescend s = map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
 
-sldResolution :: [G S] -> Subst.Subst S -> Heuristic -> State CPDState SldTree
+sldResolution :: [G S] -> Subst.Subst S -> Heuristic -> State ConsPDState SldTree
 sldResolution goal subst = sldResolutionStep (map Descend.init goal) subst True
 
-sldResolutionStep :: [DescendGoal] -> Subst.Subst S -> Bool -> Heuristic -> State CPDState SldTree
+sldResolutionStep :: [DescendGoal] -> Subst.Subst S -> Bool -> Heuristic -> State ConsPDState SldTree
 sldResolutionStep gs s isFirstTime heuristic = do
   env <- gets getEnv
   seen <- gets getSeen
@@ -132,7 +135,7 @@ topLevel :: Program G X -> Heuristic -> SldTree
 topLevel (Program defs goal) heuristic =
   let env = Env.fromDefs defs in
   let ((logicGoal, _), env') = runState (E.preEval goal) env in
-  evalState (sldResolutionStep [Descend.init logicGoal] Subst.empty True heuristic) (CPD.State.init env')
+  evalState (sldResolutionStep [Descend.init logicGoal] Subst.empty True heuristic) (ConsPD.State.init env')
 
 mcs :: (Eq a, Show a) => [G a] -> [[G a]]
 mcs []     = []

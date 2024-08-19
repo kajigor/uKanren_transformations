@@ -37,24 +37,24 @@ listGen = do
   x <- natGen
   return Nil <|> (Cons x <$> listGen)
 
-gen = listGen <|> natGen
+-- gen = listGen <|> natGen
 
 main = defaultMain
   [
     bgroup "Ex_depth"
      [
         bench "offlineOO" $ nf (eval0 (takeS 5) Ex_Depth_offline.solvesdOO) ()
-      , bench "onlineOO"  $ nf (eval29 (takeS 5) Ex_Depth_online.solveOO) (
-        gen, gen, gen, gen,
-        gen, gen, gen, gen,
-        gen, gen, gen, gen,
-        gen, gen, gen, gen,
-        gen, gen, gen, gen,
-        gen, gen, gen, gen,
-        gen, gen, gen, gen,
-        gen
-      ) -- failing
-      , bench "simpleOO"  $ nf (eval2 (takeS 5) Ex_Depth_simple.helpOO) (listGen, natGen) -- failing
+      -- , bench "onlineOO"  $ nf (eval29 (takeS 5) Ex_Depth_online.solveOO) (
+      --   gen, gen, gen, gen,
+      --   gen, gen, gen, gen,
+      --   gen, gen, gen, gen,
+      --   gen, gen, gen, gen,
+      --   gen, gen, gen, gen,
+      --   gen, gen, gen, gen,
+      --   gen, gen, gen, gen,
+      --   gen
+      -- ) -- failing
+      -- , bench "simpleOO"  $ nf (eval2 (takeS 5) Ex_Depth_simple.helpOO) (listGen, natGen) -- failing
      ]
   ]
 

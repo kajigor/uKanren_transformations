@@ -102,7 +102,6 @@ transform outDir env function ground inputFile prg = do
       Right t' -> writeFile (path </> "Translated.hs") $ haskellPreamble "Translated" ++ pprint t'
       Left e -> print $ "Translation error: " ++ e
 
-
 haskellPreamble :: String -> String
 haskellPreamble uBaseName =
   "module " ++ uBaseName ++ " where\n\n\
