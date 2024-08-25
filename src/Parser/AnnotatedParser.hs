@@ -172,7 +172,7 @@ parseAnnQuery = do
 
 parseAnnotatedProg :: Parser (AnnotatedProgram (Inv.AnnG Term) X) 
 parseAnnotatedProg = do 
-    AnnotatedProgram <$> (many parseTypeAnnDef) <*> parseAnnGoal
+    AnnotatedProgram <$> many parseTypeAnnDef <*> parseAnnGoal
 
 
 parseAnnProgramWithImports :: Parser ([String], AnnotatedProgram (Inv.AnnG Term) X)

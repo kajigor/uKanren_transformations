@@ -2,6 +2,8 @@
 
 module Util.ListZipper where
 
+import Data.List (partition)
+
 newtype Zipper a = Zipper { getZipper :: ([a], a, [a]) }
                  deriving (Show, Eq, Functor)
 
@@ -35,6 +37,10 @@ goRight :: Zipper a -> Maybe (Zipper a)
 goRight z | isRightmost z = Nothing
 goRight (Zipper (ls, x, h:rs)) = Just $ Zipper (x:ls, h, rs)
 
+allRights :: Zipper a -> [Zipper a]
+allRights zipper = 
+  zipper : maybe [] allRights (goRight zipper)  
+
 replaceCursor :: a -> Zipper a -> Zipper a
 replaceCursor x (Zipper (ls, _, rs)) = Zipper (ls, x, rs)
 
@@ -45,3 +51,31 @@ goRightUntil p z = goRight z >>= goRightUntil p
 
 goRightWhile :: (a -> Bool) -> Zipper a -> Maybe (Zipper a)
 goRightWhile p = goRightUntil (not . p)
+
+
+prioritizeRightsByPred :: [a -> Bool] -> Zipper a -> [Zipper a]
+prioritizeRightsByPred ps xs =
+  let zippers = allRights xs
+   in go ps zippers
+  where
+    go [] zippers = zippers
+    go (p : ps) zippers =
+      let (yes, no) = partition (p . cursor) zippers
+       in yes ++ go ps no
+
+prioritizeByPred :: [a -> Bool] -> [a] -> [Zipper a]
+prioritizeByPred ps xs = 
+    let zippers = allZippers xs in 
+    go ps zippers 
+  where 
+    go [] zippers = zippers 
+    go (p:ps) zippers = 
+      let (yes, no) = partition (p . cursor) zippers in 
+      yes ++ go ps no 
+    
+allZippers :: [a] -> [Zipper a] 
+allZippers = 
+    maybe [] go . toZipper 
+  where 
+    go :: Zipper a -> [Zipper a]
+    go z = z : maybe [] go (goRight z)

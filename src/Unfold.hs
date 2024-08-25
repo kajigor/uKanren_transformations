@@ -2,9 +2,12 @@ module Unfold where
 
 import           Control.Applicative
 import           Control.Monad.State
-import           Data.Maybe          (mapMaybe)
+import           Data.Function       (on)
+import           Data.List           (sortBy)
+import           Data.Maybe          (mapMaybe, maybeToList, listToMaybe )
 import qualified Data.Set            as Set
 import           Def
+import           Descend 
 import           Embed               (variantCheck)
 import qualified Environment         as Env
 import qualified Eval                as E
@@ -107,9 +110,9 @@ notMaximumBranches _ _ _ = False
 data Complexity = Complexity { maxBranches :: Int, curBranches :: Int, substs :: Int }
                 deriving (Eq, Show)
 
-instance Ord Complexity where
-  (Complexity max cur subst) <= (Complexity max' cur' subst') =
-    cur < max || cur - subst >= cur' - subst' || cur <= cur'
+-- instance Ord Complexity where
+--   (Complexity max cur subst) <= (Complexity max' cur' subst') =
+--     cur < max || cur - subst >= cur' - subst' || cur <= cur'
 
 findTupling :: Env.Env -> Subst.Subst Int -> [G S] -> [[G S]] -> Maybe (([([G S], Subst.Subst Int)], Env.Env))
 findTupling env subst goal ancs =
@@ -124,26 +127,60 @@ findTupling env subst goal ancs =
     cross [] = [([],Subst.empty)]
     cross (x:xs) = [ (y ++ z, Subst.union s' s'') | (y, s') <- x, (z, s'') <- cross xs ]
 
-findBestByComplexity :: Env.Env -> Subst.Subst Int -> [G S] -> Maybe (Zipper (G S))
-findBestByComplexity env sigma goals =
-    let estimated = map (\g -> (g, unfoldComplexity env sigma g)) goals in
-    pinpoint (\(Invoke name _) -> static env name) goals
-    <|> throwAwayComplexity (onlySubsts estimated
-                            <|> deterministic estimated
-                            <|> maxBranch estimated
-                            <|> partialSubst estimated)
-  where
-    onlySubsts = pinpoint (\(g, compl) -> curBranches compl == substs compl) 
-    deterministic = pinpoint (\(g, compl) -> curBranches compl == 1)
-    maxBranch = pinpoint (\(g, compl) -> maxBranches compl > curBranches compl)
-    partialSubst = pinpoint (\(g, compl) -> substs compl > 0) 
-    throwAwayComplexity z = (fst <$>) <$> z
+findStatic :: Env.Env -> Zipper (Descend (G S)) -> Maybe (Zipper (Descend (G S))) 
+findStatic env = 
+  goRightUntil (isGoalStatic env . getCurr)
+
+data ComplexityType 
+  = Static 
+  | Deterministic 
+  | Restricting -- less branches than maximally possible 
+  | SomeSubsts
+  | Complex -- default option for when nothing is really simplified
+  deriving (Eq, Ord)
+
+unfoldComplexityType :: Env.Env -> Subst.Subst Int -> G S -> ComplexityType
+unfoldComplexityType env state goal =
+  let annotated = (goal, unfoldComplexity env state goal) in 
+  if goalStatic env annotated then Static else 
+  if deterministic annotated then Deterministic else 
+  if maxBranch annotated then Restricting else 
+  if partialSubst annotated then SomeSubsts else 
+  Complex
+
+findBestByComplexityDescend :: Env.Env -> Subst.Subst S -> Zipper (Descend (G S)) -> Maybe (Zipper (Descend (G S)))
+findBestByComplexityDescend env state zipper = 
+    let zippers = allRights zipper in 
+    let annotated = map (\x -> (x, unfoldComplexityType env state $ getCurr $ cursor x)) zippers in 
+    let sorted = sortBy (compare `on` snd) annotated in 
+    case sorted of 
+      (_, Complex) : _ -> Nothing 
+      (g, _) : _ -> Just g 
+      [] -> Nothing 
+  
+sortByComplexity :: Env.Env -> Subst.Subst S -> [G S] -> [Zipper (G S)]
+sortByComplexity env state goals = 
+  let estimated = map (\g -> (g, unfoldComplexity env state g)) goals in
+  let priorities = [goalStatic env, onlySubsts, deterministic, maxBranch, partialSubst] in 
+  throwAwayComplexity $ prioritizeByPred priorities estimated 
+
+goalStatic env (g, _) = isGoalStatic env g 
+onlySubsts (_, compl) = curBranches compl == substs compl
+deterministic (_, compl) = curBranches compl == 1
+maxBranch (_, compl) = maxBranches compl > curBranches compl
+partialSubst (_, compl) =  substs compl > 0
+throwAwayComplexity z = (fst <$>) <$> z
+
+findBestByComplexity :: Env.Env -> Subst.Subst S -> [G S] -> Maybe (Zipper (G S))
+findBestByComplexity env subst gs = 
+  listToMaybe $ sortByComplexity env subst gs 
 
 unfoldComplexity :: Env.Env -> Subst.Subst Int -> G S -> Complexity
 unfoldComplexity env sigma goal@(Invoke name _) =
   let unfolded = evalState (oneStep goal sigma) env in
   let max = maximumBranches (Env.getDef env name) in
   Complexity max (length unfolded) (length $ filter (null . fst) unfolded)
+unfoldComplexity _ _ goal = error $ printf "Called unfoldComplexity on a non-call goal: %s" $ show goal 
 
 static :: Env.Env -> String -> Bool
 static env name =

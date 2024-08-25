@@ -8,6 +8,7 @@
 
 module ConsPD.LocalControl where
 
+import           Control.Applicative ((<|>))
 import           Control.Monad.State
 import           ConsPD.State
 import           Data.List           (find, intersect, nub)
@@ -24,7 +25,7 @@ import           Program
 import qualified Subst
 import           Syntax
 import           Text.Printf
-import           Unfold              (getMaximumBranches, normalize, oneStepUnfold, unifyStuff)
+import Unfold (findBestByComplexity, findBestByComplexityDescend, findStatic, getMaximumBranches, isGoalStatic, normalize, oneStepUnfold, sortByComplexity, unifyStuff)
 import           Util.ListZipper
 import qualified Util.Miscellaneous  as Util
 import           Debug.Trace
@@ -43,18 +44,16 @@ data SldTree = Fail
 select :: [DescendGoal] -> Maybe DescendGoal
 select = find (\x -> isSelectable embed (getCurr x) (getAncs x))
 
-selecter :: Zipper DescendGoal -> Maybe (Zipper DescendGoal)
-selecter =
-  goRightWhile (\x -> not $ isSelectable (\x y -> embed x y || isInst x y) (getCurr x) (getAncs x))
+selecter :: Env.Env -> Subst.Subst S -> Zipper DescendGoal -> Maybe (Zipper DescendGoal)
+selecter env state zipper =
+    findBestByComplexityDescend env state zipper <|> 
+    goRightWhile (\x -> not $ isSelectable selectable (getCurr x) (getAncs x)) zipper
+  where 
+    selectable x y = embed x y || isInst x y
 
--- TODO reconsider hardcoded list of basic function names
 isSelectable :: Show a => (G a -> G a -> Bool) -> G a -> [G a] -> Bool
 isSelectable emb goal ancs =
-  (not (any (`emb` goal) ancs) || null ancs) && fineToUnfold goal
-  where
-    fineToUnfold (Invoke f _) = f `notElem` basics
-    fineToUnfold _            = False
-    basics = [] -- ["leo", "gto"]-- [] -- ["eqNat", "eqPair"] -- ["leo", "gto"]
+  not (any (`emb` goal) ancs) || null ancs
 
 substituteDescend :: (Subst.ApplySubst a, Ord v) => Subst.Subst v -> [Descend (a v)] -> [Descend (a v)]
 substituteDescend s = map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
@@ -69,7 +68,7 @@ sldResolutionStep gs s isFirstTime heuristic = do
   let currs = map getCurr gs
   if instanceCheck currs seen
   then return $  Leaf gs s env
-  else
+  else do 
       unfoldNext (toZipper gs) isFirstTime gs s
     where
       go g' zipper isFirstTime = do
@@ -105,15 +104,19 @@ sldResolutionStep gs s isFirstTime heuristic = do
 
       unfoldNext zipper isFirstTime gs s = do
         env <- gets getEnv
-        case zipper >>= selecter of
+        case zipper >>= selecter env s of
           Nothing -> return $ Leaf gs s env
           Just z -> do
             let (g', env') = runState (oneStepUnfold (getCurr $ cursor z)) env
             modifyEnv (const env')
             go g' z isFirstTime
 
-      needsUnfolding Branching env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
-      needsUnfolding Deterministic _ _ ns isFirstTime = length ns == 1 || isFirstTime
+      needsUnfolding heu env g ns isFirstTime = 
+          isGoalStatic env g || go heu env g ns isFirstTime 
+        where 
+          go Branching env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
+          go Deterministic _ _ ns isFirstTime = length ns == 1 || isFirstTime
+
 
 bodies :: SldTree -> [[G S]]
 bodies = leaves
