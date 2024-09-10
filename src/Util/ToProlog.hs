@@ -73,6 +73,7 @@ defsToProlog defs =
 {-------------------------------------------}
 
 replaceChars '\'' = "_0"
+replaceChars '_' = "a"
 replaceChars c   = [c]
 
 toConstrName :: String -> String

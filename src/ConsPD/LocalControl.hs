@@ -29,26 +29,26 @@ import Unfold (findBestByComplexity, findBestByComplexityDescend, findStatic, ge
 import           Util.ListZipper
 import qualified Util.Miscellaneous  as Util
 import           Debug.Trace
+import FreshNames
 
 data Heuristic = Deterministic | Branching deriving (Show, Read)
-
-type DescendGoal = Descend (G S)
 
 data SldTree = Fail
              | Success (Subst.Subst Int)
              | Or [SldTree] (Maybe (G S)) (Subst.Subst Int)
-             | Conj SldTree [DescendGoal] (Subst.Subst Int)
-             | Leaf [DescendGoal] (Subst.Subst Int) Env.Env
+             | Conj SldTree [Descend (G S)] (Subst.Subst Int)
+             | Leaf [Descend (G S)] (Subst.Subst Int) Env.Env
              deriving (Show)
 
-select :: [DescendGoal] -> Maybe DescendGoal
+select :: [Descend (G S)] -> Maybe (Descend (G S))
 select = find (\x -> isSelectable embed (getCurr x) (getAncs x))
 
-selecter :: Env.Env -> Subst.Subst S -> Zipper DescendGoal -> Maybe (Zipper DescendGoal)
+selecter :: Env.Env -> Subst.Subst S -> Zipper (Descend (G S)) -> Maybe (Zipper (Descend (G S)))
 selecter env state zipper =
-    findBestByComplexityDescend env state zipper <|> 
-    goRightWhile (\x -> not $ isSelectable selectable (getCurr x) (getAncs x)) zipper
-  where 
+    findBestByComplexityDescend env state zipper selecter' <|>
+    goRightWhile (not.selecter') zipper
+  where
+    selecter' x = isSelectable selectable (getCurr x) (getAncs x)
     selectable x y = embed x y || isInst x y
 
 isSelectable :: Show a => (G a -> G a -> Bool) -> G a -> [G a] -> Bool
@@ -59,63 +59,70 @@ substituteDescend :: (Subst.ApplySubst a, Ord v) => Subst.Subst v -> [Descend (a
 substituteDescend s = map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
 
 sldResolution :: [G S] -> Subst.Subst S -> Heuristic -> State ConsPDState SldTree
-sldResolution goal subst = sldResolutionStep (map Descend.init goal) subst True
+sldResolution goal subst =
+  trace "SLD" $ traceShow goal $ 
+  sldResolutionStep (map Descend.init goal) subst True
 
-sldResolutionStep :: [DescendGoal] -> Subst.Subst S -> Bool -> Heuristic -> State ConsPDState SldTree
+sldResolutionStep :: [Descend (G S)] -> Subst.Subst S -> Bool -> Heuristic -> State ConsPDState SldTree
 sldResolutionStep gs s isFirstTime heuristic = do
   env <- gets getEnv
-  seen <- gets getSeen
-  let currs = map getCurr gs
-  if instanceCheck currs seen
-  then return $  Leaf gs s env
-  else do 
-      unfoldNext (toZipper gs) isFirstTime gs s
-    where
-      go g' zipper isFirstTime = do
-        env' <- gets getEnv
-        let d@(Descend g _) = cursor zipper
-        let normalized = normalize g'
-        let unified = mapMaybe (unifyStuff s) normalized
-        let addDescends xs s =
-              substituteDescend s
-                              ( left zipper ++
-                                map (`Descend.add` d) xs ++
-                                right zipper
-                              )
-        case unified of
-          [] -> return Fail
-          ns | needsUnfolding heuristic env' g ns isFirstTime -> do
-              ch <- mapM step ns
-              return $ Or ch (Just g) s
-            where
-              step (xs, s') =
-                if null xs && isLeftmost zipper && isRightmost zipper
-                then return $ Success s'
-                else do
-                  let newDescends = addDescends xs s'
-                  modifyEnv (const env')
-                  modifySeen (Set.insert (map getCurr gs))
-                  ch <- sldResolutionStep newDescends s' (isFirstTime && length ns == 1) heuristic
-                  return $ Conj ch newDescends s'
-          ns | not $ isRightmost zipper ->
-            unfoldNext (goRight zipper) False gs s
-          ns ->
-            return $ Leaf gs s env'
+  -- if fst (getFreshName $ Env.getFreshNames env) > 150 then return Fail else 
+  do
+    seen <- gets getSeen
+    let currs = map getCurr gs
+    if instanceCheck currs seen
+    then return $ --  trace "~~~~~~~~~~~~~~~~~~~~~" $ trace "Instance check passed" $ traceShow currs $ trace "Seen" $ traceShow seen $ trace "Instance" $ traceShow (findInstance currs seen) $ trace "~~~~~~~~~~~~~~~~~~~~~" $ 
+         Leaf gs s env
+    else do
+        unfoldNext (toZipper gs) isFirstTime gs s
+      where
+        go g' zipper isFirstTime = do
+          env' <- gets getEnv
+          let d@(Descend g _) = cursor zipper
+          let normalized = normalize g'
+          let unified = mapMaybe (unifyStuff s) normalized
+          let addDescends xs s =
+                substituteDescend s
+                                ( left zipper ++
+                                  map (`Descend.add` d) xs ++
+                                  right zipper
+                                )
+          case unified of
+            [] -> return Fail
+            ns | needsUnfolding heuristic env' g ns isFirstTime -> do
+                ch <- mapM step ns
+                return $ Or ch (Just g) s
+              where
+                step (xs, s') =
+                  if null xs && isLeftmost zipper && isRightmost zipper
+                  then return $ Success s'
+                  else do
+                    let newDescends = addDescends xs s'
+                    modifyEnv (const env')
+                    modifySeen (Set.insert (map getCurr gs))
+                    ch <- sldResolutionStep newDescends s' (isFirstTime && length ns == 1) heuristic
+                    return $ Conj ch newDescends s'
+            ns | not $ isRightmost zipper ->
+              unfoldNext (goRight zipper) False gs s
+            ns ->
+              return $ {- trace "Here" $ -} Leaf gs s env'
 
-      unfoldNext zipper isFirstTime gs s = do
-        env <- gets getEnv
-        case zipper >>= selecter env s of
-          Nothing -> return $ Leaf gs s env
-          Just z -> do
-            let (g', env') = runState (oneStepUnfold (getCurr $ cursor z)) env
-            modifyEnv (const env')
-            go g' z isFirstTime
-
-      needsUnfolding heu env g ns isFirstTime = 
-          isGoalStatic env g || go heu env g ns isFirstTime 
-        where 
-          go Branching env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
-          go Deterministic _ _ ns isFirstTime = length ns == 1 || isFirstTime
+        unfoldNext zipper isFirstTime gs s = do
+          env <- gets getEnv
+          case zipper >>= selecter env s of
+            Nothing -> return $ {- trace "There" $ -} Leaf gs s env
+            Just z -> do
+              let (g', env') = runState (oneStepUnfold (getCurr $ cursor z)) env
+              modifyEnv (const env')
+              go g' z isFirstTime
+ 
+          
+        needsUnfolding _ _ _ [g] True = True 
+        needsUnfolding heu env g ns isFirstTime =
+            isGoalStatic env g || go heu env g ns isFirstTime
+          where
+            go Branching env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
+            go Deterministic _ _ ns isFirstTime = length ns == 1 || isFirstTime
 
 
 bodies :: SldTree -> [[G S]]
@@ -166,8 +173,8 @@ msgExists _ _ = False
 -- works for ordered subconjunctions
 complementSubconjs :: (Instance a (Term a), Eq a, Ord a, Show a) => [G a] -> [G a] -> [G a]
 complementSubconjs xs ys =
-  go xs ys
-   where
+    go xs ys
+  where
     go [] xs = xs
     go (x:xs) (y:ys) | x == y         = go xs ys
     go (x:xs) (y:ys) | isRenaming x y = go xs ys
@@ -177,25 +184,25 @@ complementSubconjs xs ys =
 
 minimallyGeneral :: (Show a, Ord a) => [([G a], Generalizer)] -> ([G a], Generalizer)
 minimallyGeneral xs =
-  go xs xs
+    go xs xs
   where
     go [x] _     = x
     go (x:xs) ys | any (\g -> isStrictInst (fst x) (fst g)) ys = go xs ys
     go (x:xs) _  = x
     go [] _      = error "Empty list of best matching conjunctions"
 
-bmc :: FN.FreshNames -> [G S] -> [[G S]] -> ([([G S], Generalizer)], FN.FreshNames)
-bmc d q [] = ([], d)
-bmc d q (q':qCurly) | msgExists q q' =
-  let (generalized, _, gen, delta) = generalizeGoals d q q' in
-  let (gss, delta') = bmc delta q qCurly in
-  ((generalized, gen) : gss, delta')
-bmc d q (q':qCurly) = bmc d q qCurly
+bmc :: [G S] -> [[G S]] -> State FN.FreshNames [([G S], Generalizer)]
+bmc q [] = return []
+bmc q (q':qCurly) | msgExists q q' = do
+  (generalized, _, gen) <- generalizeGoalsState q q' 
+  gss <- bmc q qCurly
+  return ((generalized, gen) : gss)
+bmc q (q':qCurly) = bmc q qCurly
 
-split :: FN.FreshNames -> [G S] -> [G S] -> (([G S], [G S]), Generalizer, FN.FreshNames)
-split d q q' = -- q <= q'
-  let n = length q in
-  let qCurly = filter (\q'' -> and $ zipWith embed q q'') $ subconjs q' n in
-  let (bestMC, delta) = bmc d q qCurly in
-  let (b, gen) = minimallyGeneral bestMC in
-  ((b, if length q' > n then complementSubconjs b q' else []), gen, delta)
+split :: [G S] -> [G S] -> State FN.FreshNames (([G S], [G S]), Generalizer)
+split q q' = do -- q <= q'
+  let n = length q 
+  let qCurly = filter (\q'' -> and $ zipWith embed q q'') $ subconjs q' n 
+  bestMC <- bmc q qCurly
+  let (b, gen) = minimallyGeneral bestMC 
+  return ((b, if length q' > n then complementSubconjs b q' else []), gen)

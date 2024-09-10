@@ -1,6 +1,5 @@
 rev x acc y =
-  x == Nil &
-  acc == y |
+  x == Nil & acc == y |
   (
     fresh h, t in
       rev t (h :: acc) y &

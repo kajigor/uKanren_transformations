@@ -32,8 +32,8 @@ import Util.System (graphsToPdf)
 data TransformResult = Result { original   :: [Def G X]
                               , globalTree :: GC.GlobalTree
                               , localTrees :: [([G S], LC.SldTree)]
-                              , beforePur  :: Program G X
-                              , purified   :: (G X, [X], [Def G X])
+                              , beforePur  :: Either String (Program G X)
+                              , purified   :: Either String (G X, [X], [Def G X])
                               }
 
 runTransformation :: Program G X -> LC.Heuristic -> TransformResult
@@ -41,8 +41,11 @@ runTransformation goal@(Program original _) heuristic =
   let (globalTree, logicGoal, names) = GC.topLevel goal heuristic in
   let localTrees = GC.getNodes globalTree in
   let beforePur = residualizationTopLevel globalTree in
-  let purified = purification (beforePur, vident <$> reverse names) in
-  Result original globalTree localTrees beforePur purified
+  case beforePur of 
+    Left err -> Result original globalTree localTrees (Left err) (Left "")
+    Right before -> 
+      let purified = purification (before, vident <$> reverse names) in
+      Result original globalTree localTrees beforePur (Right purified)
 
 renderLocalTree :: FilePath -> [G S] -> LC.SldTree -> IO ()
 renderLocalTree localDir goal =
@@ -60,16 +63,23 @@ transform' outDir filename goal@(Program definitions _) env heuristic = do
     Transformer.MkToProlog.transform (path </> "original.pl") definitions
     printTree (path </> "global.dot") (globalTree result)
     mapM_ (uncurry (renderLocalTree localDir)) (localTrees result)
-    writeFile (cpdFile <.> "before.pur") (prettyMk $ beforePur result)
-    let pur@(goal,xs,defs) = purified result
-    Transformer.MkToProlog.transform (cpdFile <.> "pl") defs
-    let purified = Program defs goal
-    writeFile (cpdFile <.> "pur") (prettyMk purified)
-    let ocamlCodeFileName = cpdFile <.> "ml"
-    OC.topLevel ocamlCodeFileName "topLevel" env pur
-
     mapM_ graphsToPdf [path, localDir]
-    return purified
+    case beforePur result of 
+      Left err -> do putStrLn err; return failProgram 
+      Right before -> do 
+        writeFile (cpdFile <.> "before.pur") (prettyMk before)
+        case purified result of 
+          Left err -> do putStrLn err; return failProgram 
+          Right pur@(goal,xs,defs) -> do 
+            Transformer.MkToProlog.transform (cpdFile <.> "pl") defs
+            let purified = Program defs goal
+            writeFile (cpdFile <.> "pur") (prettyMk purified)
+            let ocamlCodeFileName = cpdFile <.> "ml"
+            OC.topLevel ocamlCodeFileName "topLevel" env pur
+
+            return purified
+
+failProgram = Program [] (C "" [] === C "a" [])
 
 transform :: FilePath -> Program G X -> Maybe String -> LC.Heuristic -> IO ()
 transform filePath pr str heu = do  

@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Eval where
 
@@ -7,6 +8,7 @@ import           Control.Monad
 import           Control.Monad.State
 import           Data.List
 import qualified Data.Map.Strict     as Map
+import qualified Data.Set            as Set
 import           Def
 import qualified Environment         as Env
 import qualified FreshNames          as FN
@@ -101,6 +103,33 @@ preEval goal = do
     getInterp = do
       Env.Env _ i _ <- gets snd
       return i
+
+bindFresh :: (FreeVariables G a, Ord a) => [a] -> G a -> G a
+bindFresh bound = go (Set.fromList bound)
+  where
+    go bound (Disjunction x y gs) =
+      Disjunction (go bound x)
+                  (go bound y)
+                  (map (go bound) gs)
+    go bound g@(Conjunction x y gs) =
+      fresh (fv g \\ Set.toList bound) g
+    go bound (Fresh x g) = 
+      Fresh x (go (Set.insert x bound) g)
+    go bound (Delay g) = 
+      Delay (go bound g)
+    go bound t@(_ :=: _) = 
+      fresh (fv t \\ Set.toList bound) t 
+
+
+
+-- data G a
+--   = Term a :=: Term a
+--   | Conjunction (G a) (G a) [G a] -- a list of conjuncts: at least 2 conjuncts should be present
+--   | Disjunction (G a) (G a) [G a] -- a list of disjuncts: at least 2 disjuncts should be present
+--   | Fresh a (G a)
+--   | Invoke Name [Term a]
+--   | Delay (G a)
+--   deriving (Eq, Ord, Functor)
 
 postEval :: [X] -> G X -> G X
 postEval as goal =

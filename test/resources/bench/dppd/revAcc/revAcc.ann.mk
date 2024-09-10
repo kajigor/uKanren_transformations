@@ -4,7 +4,7 @@ rev x acc y =
   acc == y |
   (
     fresh h, t in
-      Unfold rev t (h :: acc) y &
+      Memo rev t (h :: acc) y &
       x == (h :: t)
   );
 

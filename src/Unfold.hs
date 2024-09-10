@@ -3,7 +3,7 @@ module Unfold where
 import           Control.Applicative
 import           Control.Monad.State
 import           Data.Function       (on)
-import           Data.List           (sortBy)
+import           Data.List           (sortBy, find)
 import           Data.Maybe          (mapMaybe, maybeToList, listToMaybe )
 import qualified Data.Set            as Set
 import           Def
@@ -137,7 +137,7 @@ data ComplexityType
   | Restricting -- less branches than maximally possible 
   | SomeSubsts
   | Complex -- default option for when nothing is really simplified
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Show)
 
 unfoldComplexityType :: Env.Env -> Subst.Subst Int -> G S -> ComplexityType
 unfoldComplexityType env state goal =
@@ -148,15 +148,16 @@ unfoldComplexityType env state goal =
   if partialSubst annotated then SomeSubsts else 
   Complex
 
-findBestByComplexityDescend :: Env.Env -> Subst.Subst S -> Zipper (Descend (G S)) -> Maybe (Zipper (Descend (G S)))
-findBestByComplexityDescend env state zipper = 
+findBestByComplexityDescend :: Env.Env -> Subst.Subst S -> Zipper (Descend (G S)) -> (Descend (G S) -> Bool) -> Maybe (Zipper (Descend (G S)))
+findBestByComplexityDescend env state zipper selecter = 
     let zippers = allRights zipper in 
     let annotated = map (\x -> (x, unfoldComplexityType env state $ getCurr $ cursor x)) zippers in 
     let sorted = sortBy (compare `on` snd) annotated in 
-    case sorted of 
-      (_, Complex) : _ -> Nothing 
-      (g, _) : _ -> Just g 
-      [] -> Nothing 
+    fst <$> find (selecter . cursor . fst) sorted 
+    -- case sorted of 
+    --   (_, Complex) : _ -> Nothing 
+    --   (g, _) : _ -> Just g 
+    --   [] -> Nothing 
   
 sortByComplexity :: Env.Env -> Subst.Subst S -> [G S] -> [Zipper (G S)]
 sortByComplexity env state goals = 

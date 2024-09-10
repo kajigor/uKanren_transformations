@@ -18,6 +18,7 @@ import qualified Subst
 import           Syntax
 import           Text.Printf
 import           Util.Miscellaneous
+import Debug.Trace 
 
 type Set = Set.Set
 
@@ -27,7 +28,7 @@ residualizationTopLevel :: GlobalTree -> Program G X
 residualizationTopLevel test =
   case residualizeGlobalTree test of
     defs@(Def name args _ : t) -> Program defs (Invoke name $ V <$> args)
-    _ -> error "Residualiation failed: no defs generated"
+    _ -> trace "residualization failed" $ Program [] (C "" [] === C "a" []) -- error "Residualiation failed: no defs generated"
 
 residualizeGlobalTree :: GlobalTree -> [Def G X]
 residualizeGlobalTree tree =

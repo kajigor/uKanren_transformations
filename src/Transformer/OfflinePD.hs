@@ -14,7 +14,7 @@ import qualified Subst
 import           Printer.AnnSldTree
 import           Printer.Dot
 import qualified GHC.IO.Exception
-import           System.FilePath        ((<.>), (</>))
+import           System.FilePath        ((<.>), (</>), takeBaseName)
 import           System.Process         (system)
 import           Text.Printf
 import           Util.File              (createDirRemoveExisting, shortenFileName)
@@ -86,7 +86,8 @@ renderLocalTree localDir goal =
 
 transform' :: FilePath -> FilePath -> AnnotatedProgram (AnnG Term) X -> Maybe String -> LCcpd.Heuristic -> IO (Program G X)
 transform' outDir filename program@(AnnotatedProgram defs goal) env heu = do
-    let path = outDir </> filename
+    let offlineName = "offline"
+    let path = outDir </> takeBaseName (takeBaseName filename) </> offlineName 
     let localDir = path </> "local"
     let cpdFile = path </> "cpd"
     mapM_ createDirRemoveExisting [path, localDir]

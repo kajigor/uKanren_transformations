@@ -50,6 +50,16 @@ instance Generalization S (f S) => Generalization S [f S] where
           ([], gen1, gen2)
           (zip ns ms)
 
+
+generalizeGoalsState :: [G S] -> [G S] -> State FN.FreshNames ([G S], Generalizer, Generalizer)
+generalizeGoalsState as bs | as `isRenaming` bs =
+  let (Just subst) = inst as bs Map.empty in
+  return (bs, Subst.Subst subst, Subst.empty)
+generalizeGoalsState as bs | length as == length bs = 
+   refine' <$> generalize Subst.empty Subst.empty as bs 
+generalizeGoalsState as bs = error $ printf "Cannot generalize: different lengths of\nas: %s\nbs: %s\n" (show as) (show bs)
+
+
 generalizeGoals :: FN.FreshNames -> [G S] -> [G S] -> ([G S], Generalizer, Generalizer, FN.FreshNames)
 generalizeGoals s as bs | as `isRenaming` bs =
   let (Just subst) = inst as bs Map.empty in
@@ -73,6 +83,25 @@ generalizeSplit s gs hs =
       let (ok, notOk) = go (g : gs) hs in
       (ok, h : notOk)
     go [] hs = ([], hs)
+
+refine' :: ([G S], Generalizer, Generalizer) ->  ([G S], Generalizer, Generalizer)
+refine' msg@(g, Subst.Subst s1, Subst.Subst s2) =
+    let similar1 = filter ((>1) . length) $ groupBy group (Map.toList s1) [] in
+    let similar2 = filter ((>1) . length) $ groupBy group (Map.toList s2) [] in
+    let sim1 = map (map fst) similar1 in
+    let sim2 = map (map fst) similar2 in
+    let toSwap = concatMap (\(x:xs) -> map (, V x) xs) (sim1 `intersect` sim2) in
+    let newGoal = Subst.substituteList (Subst.Subst $ Map.fromList toSwap) g in
+    let s2' = filter (\(x,_) -> x `notElem` map fst toSwap) (Map.toList s2) in
+    let s1' = filter (\(x,_) -> x `notElem` map fst toSwap) (Map.toList s1) in
+    (newGoal, Subst.Subst $ Map.fromList s1', Subst.Subst $ Map.fromList s2')
+  where
+    groupBy _ [] acc = acc
+    groupBy p xs acc =
+      let (similar, rest) = partition (p (head xs)) xs in
+      assert (similar /= []) $ groupBy p rest (similar : acc)
+    group x y = snd x == snd y
+
 
 refine :: ([G S], Generalizer, Generalizer, FN.FreshNames) ->  ([G S], Generalizer, Generalizer, FN.FreshNames)
 refine msg@(g, Subst.Subst s1, Subst.Subst s2, d) =

@@ -84,9 +84,11 @@ topLevel (Program defs goal) heuristic =
       sldTree <- LC.sldResolution goal subst heuristic
       modifySeen (const $ Set.insert goal seen)
       let (substs, bodies) = partition (null . snd3) $ LC.resultants sldTree 
+      let substLeaves = map leafOutOfBody $ forgetEnv substs
 
       if null bodies 
-      then return (Node d Subst.empty sldTree [])
+      -- then return (Node d generalizer sldTree [])
+      then return (Node d generalizer sldTree substLeaves)
       else do 
         nodes <- gets getSeen
         let ancs' = goal : ancs 
@@ -99,9 +101,12 @@ topLevel (Program defs goal) heuristic =
                     ([], [], nodes)
                     abstracted
 
-        trees <- mapM (\(subst, g, gen, env) -> go (Descend.add g d) subst gen) toUnfold
-        let forgetEnv = map (\(x, y, _) -> (x, y, Subst.empty))
-        let forgetStuff = map (\(x, y, gen, _) -> (x, y, gen))
-        let substLeaves = forgetEnv substs
+        trees <- mapM (\(subst, g, gen, env) -> do modifyEnv (const env); go (Descend.add g d) subst gen) toUnfold
+
         let leaves = forgetStuff toNotUnfold
-        return (Node d generalizer sldTree (map (\(subst, g, gen) -> Leaf (Descend.init g) Subst.empty subst) (substLeaves ++ leaves) ++ trees))
+        return (Node d generalizer sldTree (substLeaves ++ map (\(subst, g, gen) -> Leaf (Descend.init g) Subst.empty subst) leaves ++ trees))
+
+    leafOutOfBody (subst, g, gen) = Leaf (Descend.init g) Subst.empty subst 
+
+    forgetEnv = map (\(x, y, _) -> (x, y, Subst.empty))
+    forgetStuff = map (\(x, y, gen, _) -> (x, y, gen))

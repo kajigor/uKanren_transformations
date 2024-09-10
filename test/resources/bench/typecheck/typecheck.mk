@@ -13,7 +13,7 @@ type_ term gamma ttype =
     (term == Mult_ m n & type_ m gamma (Some Integer) & type_ n gamma (Some Integer) & ttype == Some Integer) | 
     (term == Eq_ l r & type_ l gamma t & type_ r gamma t & ttype == Some Boolean & t == Some t1) | 
     (term == Lt_ l r & type_ l gamma (Some Integer) & type_ r gamma (Some Integer) & ttype == Some Boolean) |  
-    (term == Let_ bound body & type_ bound gamma btype & btype == Some btype1 & type_ body (btype :: gamma) ttype) | 
+    (term == Let_ bound body & type_ bound gamma btype & btype == Some btype1 & type_ body (btype1 :: gamma) ttype) | 
     (term == If_ cond thn els & type_ cond gamma (Some Boolean) & type_ thn gamma ttype & type_ els gamma ttype); 
  
 ? type_ q [] (Some Integer)

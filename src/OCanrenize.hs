@@ -48,8 +48,8 @@ instance OCanren v => OCanren (Term v) where
         Just $ printf "(%s %% %s)" (parenthesize $ ocanren h) (parenthesize $ ocanren t)
       getList _ _ = Nothing
 
-      getSucc name [] | name == "o" || name == "z" = Just "Nat.zero"
-      getSucc name [x] | name == "s" = Just $ printf "(Nat.succ %s)" (parenthesize $ ocanren x)
+      getSucc name [] | name == "o" || name == "z" || name == "zero" = Just "Nat.zero"
+      getSucc name [x] | name == "s" || name == "succ" = Just $ printf "(Nat.succ %s)" (parenthesize $ ocanren x)
       getSucc _ _ = Nothing
 
       getBool name [] | name == "true" || name == "trueo" = Just "!!true"
@@ -66,14 +66,25 @@ instance OCanren v => OCanren (Term v) where
       getSome _ _ = Nothing
 
 instance OCanren (G X) where
-  ocanren (t1 :=:  t2) = printf "(%s === %s)" (ocanren t1) (ocanren t2)
+  ocanren (t1 :=: t2) = printf "(%s === %s)" (ocanren t1) (ocanren t2)
   ocanren (Conjunction x y gs) = printf "(%s)" $ intercalate " &&& " $ ocanren <$> (x : y : gs)
-  ocanren (Disjunction x y gs) = printf "(%s)" $ intercalate " ||| " $ ocanren <$> (x : y : gs)
-  ocanren (Fresh x g ) = let (names, goal) = freshVars [x] g in printf "(fresh (%s) (%s))" (printArgs names) (ocanren goal)
+  ocanren (Disjunction x y gs) = printf "conde [%s]" $ intercalate "; " $ ocanren <$> (x : y : gs)
+  ocanren (Fresh x g) = let (names, goal) = freshVars [x] g in printf "(fresh (%s) (%s))" (printArgs names) (ocanren goal)
   ocanren (Invoke "success" []) = "success"
   ocanren (Invoke "fail" []) = "fail"
   ocanren (Invoke f ts) = printf "(%s %s)" f (printArgs $ map ocanren ts)
   ocanren (Delay g) = ocanren g -- TODO fix
+
+
+-- instance OCanren (G X) where
+--   ocanren (t1 :=:  t2) = printf "(%s === %s)" (ocanren t1) (ocanren t2)
+--   ocanren (Conjunction x y gs) = printf "(%s)" $ intercalate " &&& " $ ocanren <$> (x : y : gs)
+--   ocanren (Disjunction x y gs) = printf "(%s)" $ intercalate " ||| " $ ocanren <$> (x : y : gs)
+--   ocanren (Fresh x g ) = let (names, goal) = freshVars [x] g in printf "(fresh (%s) (%s))" (printArgs names) (ocanren goal)
+--   ocanren (Invoke "success" []) = "success"
+--   ocanren (Invoke "fail" []) = "fail"
+--   ocanren (Invoke f ts) = printf "(%s %s)" f (printArgs $ map ocanren ts)
+--   ocanren (Delay g) = ocanren g -- TODO fix
 
 printArgs [] = "()"
 printArgs args = unwords $ map parenthesize args

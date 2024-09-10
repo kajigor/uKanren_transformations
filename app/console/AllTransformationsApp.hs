@@ -35,16 +35,16 @@ runWithParser mkParser annParser inputFile annInputFile outputDir heu = do
       Left err -> 
         putStrLn err 
       Right program@(Program defs goal) -> do 
-        pd program
-        cpd program Branching
-        cpd program Deterministic
+        -- pd program
+        -- cpd program Branching
+        -- cpd program Deterministic
         conspdGlobal program ConsLC.Branching
-        conspdGlobal program ConsLC.Deterministic
-        conspd program
-        ann <- annParser annInputFile 
-        case ann of 
-          Left err -> putStrLn err 
-          Right program -> offline program 
+        -- conspdGlobal program ConsLC.Deterministic
+        -- conspd program
+        -- ann <- annParser annInputFile 
+        -- case ann of 
+        --   Left err -> putStrLn err 
+        --   Right program -> offline program 
   where 
     pd program = do 
       informed "Partial deduction" $ PD.transform inputFile outputDir program 

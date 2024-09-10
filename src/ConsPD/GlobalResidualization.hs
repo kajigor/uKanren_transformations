@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE TupleSections #-}
 
 module ConsPD.GlobalResidualization where
 
@@ -8,31 +9,96 @@ import           ConsPD.GlobalControl
 import qualified ConsPD.LocalControl   as LC
 import           Data.Char
 import           Data.List
-import           Data.Maybe   
+import           Data.Maybe
 import qualified Data.Set              as Set
 import           Def
+import           Descend
 import           Eval
 import           Program
 import qualified Residualization       as Res
-import qualified Subst 
+import qualified Subst
 import           Syntax
 import           Text.Printf
 import           Util.Miscellaneous
+import Control.Monad.State
+
+import Debug.Trace
 
 type Set = Set.Set
 
-type Definitions = [([G S], Name, [S])]
+type Definition = ([G S], Name, [S])
+type Definitions = [Definition]
 
-residualizationTopLevel :: GlobalTree -> Program G X
-residualizationTopLevel test =
-  case residualizeGlobalTree test of
-    defs@(Def name args _ : t) -> Program defs (Invoke name $ V <$> args)
-    _ -> error "Residualiation failed: no defs generated"
+maybeToEither err Nothing = Left err
+maybeToEither _ (Just x) = Right x
+
+residualizationTopLevel :: GlobalTree -> Either String (Program G X)
+residualizationTopLevel tree =
+  case residualizeTreeTree $ restrictSubsts tree of
+    Right (name, args, defs) -> Right $ Program defs (Invoke name $ V <$> args)
+    Left err -> Left err
+
+residualizeTreeTree tree =
+    let nodes = collectNodes tree in
+    case nodes of
+      [] -> Left "Failed to residualize the empty global control tree"
+      (rootGoal:_) -> do
+        -- let renamed = foldl (\defs gs -> renameGoals gs defs ) [] $ map fst nodes 
+        definitions <- evalStateT (mapM (\node -> (node,) <$> renameGoalsState (fst node)) nodes) []
+        defs <- mapM (makeDef $ map snd definitions) definitions
+        case defs of 
+          [] -> Left "Zero definitions generated"
+          (Def name args _):_ -> Right (name, args, defs)
+        -- case definitions of
+        --   [] -> Left "Zero definitions found"
+        --   ((node, (_, name, args)):_) -> do
+        --     defs <- mapM (\(gs, node) -> nodeToBody (map snd definitions) node >>= makeDef gs) nodes
+        --     return (name, Res.vident <$> args, defs)
+  where
+    makeDef :: Definitions -> (([G S], GlobalTree), Definition) -> Either String (Def G X) 
+    makeDef defs (node, (_, name, args)) = do 
+      b <- go defs (snd node)  
+      let as = Res.vident <$> args
+      let body = Eval.bindFresh as b 
+      return $ Def name as body 
+
+    go definitions node@(Node descend gen _ _ ch) = do
+      disjs <- mapM (nodeToBody definitions) ch
+      maybeToEither
+        (printf "Failed to generate a disjunction from an inner node\n  %s" (show node))
+        (disj disjs)
+    go _ node = 
+      Left $ printf "Failed to residualize an inner node\n  %s" (show node)
+
+    nodeToBody _ (Success subst) =
+      Right $ residualizeSubst subst
+    nodeToBody definitions leaf@(Leaf descend gen subst) =
+      maybeToEither
+        (printf "Failed to generate a conjunction from a leaf\n  %s" (show leaf))
+        (conj $ residualizeSubstConj subst ++ residualizeSubstConj gen ++ [generateInvocation (Descend.getCurr descend) definitions])
+    nodeToBody definitions split@(Split _ ch subst) = do
+      conjs <- mapM (nodeToBody definitions) ch
+      maybeToEither
+        (printf "Failed to generate a conjunction from a split node\n  %s" (show split))
+        (conj $ residualizeSubstConj subst ++ conjs)
+    nodeToBody definitions node@(Node descend gen subst _ ch) = 
+      maybeToEither
+        (printf "Failed to generate a conjunction from an inner node\n  %s" (show node))
+        (conj $ residualizeSubstConj subst ++ residualizeSubstConj gen ++ [generateInvocation (Descend.getCurr descend) definitions])
+    nodeToBody _ prune =
+      Left (printf "Failed to generate a disjunction from a prune node\n %s" (show prune))
+
+-- residualizationTopLevel :: GlobalTree -> Program G X
+-- residualizationTopLevel tree =
+--   case residualizeGlobalTree tree of
+--     defs@(Def name args _ : _) -> Program defs (Invoke name $ V <$> args)
+--     _ -> error "Residualiation failed: no defs generated"
 
 residualizeGlobalTree :: GlobalTree -> [Def G X]
 residualizeGlobalTree tree =
   let nodes = getNodes tree in
   let definitions = foldl (\defs gs -> fst3 (renameGoals gs defs) ) [] $ map fst nodes  in
+  -- trace "Residualize Global Tree" $ trace (intercalate "\n\n" $ map show definitions) $ 
   mapMaybe (\(gs, sld) -> residualizeSldTree gs sld definitions) nodes
 
 unifyInvocationLists :: [G S] -> [G S] -> Maybe (Subst.Subst S) -> Maybe (Subst.Subst S)
@@ -63,10 +129,10 @@ unifyInvocationLists xs@(Invoke name args : gs) ys@(Invoke name' args' : gs') su
 unifyInvocationLists _ _ _ = Nothing
 
 generateInvocation :: [G S] -> Definitions -> G X
-generateInvocation goals defs = do
-  fromMaybe
-    (error "Residualization failed: invocation of the undefined relation.")
-    (conj =<< conjInvocation goals defs)
+generateInvocation goals defs =
+    fromMaybe
+      (error $ printf "Residualization failed: invocation of the undefined relation. %s" (show goals))
+      (conj =<< conjInvocation goals defs)
   where
     generate args subst = map (\a -> Res.toX $ fromMaybe (V a) (Subst.lookup a subst)) args
     findDef goals defs =
@@ -84,7 +150,7 @@ generateInvocation goals defs = do
             concatMap (generateSplits goals) $
             reverse [1 .. length goals] in
       case representable of
-        (x : _) -> x
+        (x:_) -> x
         _ -> Nothing
 
     divideInvocations defs (cur, rest) =
@@ -92,6 +158,19 @@ generateInvocation goals defs = do
         Just x -> (x :) <$> conjInvocation rest defs
         Nothing -> Nothing
 
+renameGoalsState :: [G S] -> StateT Definitions (Either String) Definition
+renameGoalsState gs = do
+    definitions <- get
+    ns <- lift $ mapM stripInvokation gs
+    let actualName = newName (map fst ns) definitions
+    let args = uniqueArgs $ map snd ns
+    let def = (gs, actualName, args)
+    modify (def :)
+    return def
+  where
+    stripInvokation :: G S -> Either String (Name, [Term S])
+    stripInvokation (Invoke name args) = return (name, args)
+    stripInvokation x = Left $ printf "Only invokations can be renamed, and you tried to rename %s" (show x)
 
 renameGoals :: [G S] -> Definitions -> (Definitions, Name, [S])
 renameGoals gs definitions =
@@ -139,19 +218,29 @@ residualizeSldTree rootGoals tree definitions = do
 
   let resultants = LC.resultants tree
 
-  let goals = foldl (\gs (subst, goals, _) ->
+  let goals =
+        -- trace "Residualize SLD, RootGoals" $ 
+        -- traceShow rootGoals  $ 
+        -- trace "resultants" $ 
+        -- trace (intercalate "\n" $ map show resultants)  $ 
+        -- trace "=========================" $  
+        foldl (\gs (subst, goals, _) ->
                        let g = go subst goals definitions
                        in  g : gs
                     )
                     []
                     resultants
   let defArgs = Res.vident <$> rootVars
-  let body = Eval.postEval defArgs $
+  let body = Eval.bindFresh defArgs $
                 unsafeDisj (reverse goals)
 
   if null goals
   then fail (printf "No resultants in the sld tree for %s" (show rootGoals))
-  else return $ Def defName defArgs body
+  else return $
+    -- trace  "Residualization done" $ 
+    let res = Def defName defArgs body in
+    -- traceShow res
+    res
   where
     go subst [] defs | Subst.null subst = success
     go subst gs defs | Subst.null subst = residualizeGoals gs defs
@@ -162,6 +251,10 @@ residualizeSldTree rootGoals tree definitions = do
 
 residualizeGoals :: [G S] -> Definitions -> G X
 residualizeGoals = generateInvocation
+
+residualizeSubstConj :: Subst.Subst S -> [G X]
+residualizeSubstConj subst =
+  map (\(s, ts) -> Res.toX (V s) === Res.toX ts) $ Subst.toList subst
 
 residualizeSubst :: Subst.Subst S -> G X
 residualizeSubst subst =
