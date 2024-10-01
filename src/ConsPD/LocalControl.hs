@@ -11,7 +11,7 @@ module ConsPD.LocalControl where
 import           Control.Applicative ((<|>))
 import           Control.Monad.State
 import           ConsPD.State
-import           Data.List           (find, intersect, nub)
+import           Data.List           (find, intersect, nub, intercalate)
 import           Data.Maybe
 import qualified Data.Set            as Set
 import           Descend
@@ -40,6 +40,16 @@ data SldTree = Fail
              | Leaf [Descend (G S)] (Subst.Subst Int) Env.Env
              deriving (Show)
 
+restrictSubsts :: SldTree -> SldTree 
+restrictSubsts = 
+    go Subst.empty 
+  where 
+    go subst (Conj ch gs s) = Conj (go s ch) gs (Subst.difference s subst)
+    go subst (Or ch gs s) = Or (map (go s) ch) gs (Subst.difference s subst)
+    go subst (Leaf gs s env) = Leaf gs (Subst.difference s subst) env 
+    go subst (Success s) = Success $ Subst.difference s subst 
+    go _ Fail = Fail 
+
 select :: [Descend (G S)] -> Maybe (Descend (G S))
 select = find (\x -> isSelectable embed (getCurr x) (getAncs x))
 
@@ -59,9 +69,8 @@ substituteDescend :: (Subst.ApplySubst a, Ord v) => Subst.Subst v -> [Descend (a
 substituteDescend s = map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
 
 sldResolution :: [G S] -> Subst.Subst S -> Heuristic -> State ConsPDState SldTree
-sldResolution goal subst =
-  trace "SLD" $ traceShow goal $ 
-  sldResolutionStep (map Descend.init goal) subst True
+sldResolution goal subst = do 
+  sldResolutionStep (map Descend.init goal) subst True 
 
 sldResolutionStep :: [Descend (G S)] -> Subst.Subst S -> Bool -> Heuristic -> State ConsPDState SldTree
 sldResolutionStep gs s isFirstTime heuristic = do
@@ -71,8 +80,7 @@ sldResolutionStep gs s isFirstTime heuristic = do
     seen <- gets getSeen
     let currs = map getCurr gs
     if instanceCheck currs seen
-    then return $ --  trace "~~~~~~~~~~~~~~~~~~~~~" $ trace "Instance check passed" $ traceShow currs $ trace "Seen" $ traceShow seen $ trace "Instance" $ traceShow (findInstance currs seen) $ trace "~~~~~~~~~~~~~~~~~~~~~" $ 
-         Leaf gs s env
+    then return $ Leaf gs s env
     else do
         unfoldNext (toZipper gs) isFirstTime gs s
       where
@@ -98,19 +106,19 @@ sldResolutionStep gs s isFirstTime heuristic = do
                   then return $ Success s'
                   else do
                     let newDescends = addDescends xs s'
-                    modifyEnv (const env')
+                    -- modifyEnv (const env')
                     modifySeen (Set.insert (map getCurr gs))
                     ch <- sldResolutionStep newDescends s' (isFirstTime && length ns == 1) heuristic
                     return $ Conj ch newDescends s'
             ns | not $ isRightmost zipper ->
               unfoldNext (goRight zipper) False gs s
             ns ->
-              return $ {- trace "Here" $ -} Leaf gs s env'
+              return $ Leaf gs s env'
 
         unfoldNext zipper isFirstTime gs s = do
           env <- gets getEnv
           case zipper >>= selecter env s of
-            Nothing -> return $ {- trace "There" $ -} Leaf gs s env
+            Nothing -> return $ Leaf gs s env
             Just z -> do
               let (g', env') = runState (oneStepUnfold (getCurr $ cursor z)) env
               modifyEnv (const env')

@@ -48,8 +48,9 @@ runTransformation goal@(Program original _) heuristic =
       Result original globalTree localTrees beforePur (Right purified)
 
 renderLocalTree :: FilePath -> [G S] -> LC.SldTree -> IO ()
-renderLocalTree localDir goal =
-    printTree (localDir </> shortenFileName (show goal) <.> "dot")
+renderLocalTree localDir goal tree = do 
+  printTree (localDir </> shortenFileName (show goal) <.> "dot") tree 
+  printTree (localDir </> shortenFileName (show goal) <.> "restricted" <.> "dot") (LC.restrictSubsts tree)
 
 transform' :: FilePath -> FilePath -> Program G X -> Maybe String -> LC.Heuristic -> IO (Program G X)
 transform' outDir filename goal@(Program definitions _) env heuristic = do
@@ -60,14 +61,15 @@ transform' outDir filename goal@(Program definitions _) env heuristic = do
     mapM_ createDirRemoveExisting [path, localDir]
 
     let result = runTransformation goal heuristic
-    Transformer.MkToProlog.transform (path </> "original.pl") definitions
-    printTree (path </> "global.dot") (globalTree result)
+    Transformer.MkToProlog.transform (path </> "original" <.> "pl") definitions
+    printTree (path </> "global" <.> "dot") (globalTree result)
+    printTree (path </> "global" <.> "restricted" <.> "dot") (GC.restrictSubsts $ globalTree result)
     mapM_ (uncurry (renderLocalTree localDir)) (localTrees result)
     mapM_ graphsToPdf [path, localDir]
     case beforePur result of 
       Left err -> do putStrLn err; return failProgram 
       Right before -> do 
-        writeFile (cpdFile <.> "before.pur") (prettyMk before)
+        writeFile (cpdFile <.> "before" <.> "pur") (prettyMk before)
         case purified result of 
           Left err -> do putStrLn err; return failProgram 
           Right pur@(goal,xs,defs) -> do 

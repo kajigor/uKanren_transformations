@@ -66,15 +66,19 @@ instance OCanren v => OCanren (Term v) where
       getSome _ _ = Nothing
 
 instance OCanren (G X) where
-  ocanren (t1 :=: t2) = printf "(%s === %s)" (ocanren t1) (ocanren t2)
-  ocanren (Conjunction x y gs) = printf "(%s)" $ intercalate " &&& " $ ocanren <$> (x : y : gs)
-  ocanren (Disjunction x y gs) = printf "conde [%s]" $ intercalate "; " $ ocanren <$> (x : y : gs)
-  ocanren (Fresh x g) = let (names, goal) = freshVars [x] g in printf "(fresh (%s) (%s))" (printArgs names) (ocanren goal)
-  ocanren (Invoke "success" []) = "success"
-  ocanren (Invoke "fail" []) = "fail"
-  ocanren (Invoke f ts) = printf "(%s %s)" f (printArgs $ map ocanren ts)
-  ocanren (Delay g) = ocanren g -- TODO fix
-
+  ocanren = 
+      go [] 
+    where 
+      go fs (Fresh x g) = go (x:fs) g 
+      go fs (t1 :=: t2) = addFresh fs $ printf "(%s === %s)" (ocanren t1) (ocanren t2)
+      go _ (Invoke "success" []) = "success"
+      go _ (Invoke "fail" []) = "fail"
+      go fs (Invoke f ts) = addFresh fs $ printf "(%s %s)" f (printArgs $ map ocanren ts)
+      go fs (Disjunction x y gs) = printf "conde [%s]" $ intercalate "; " $ go fs <$> (x : y : gs)
+      go fs (Conjunction x y gs) = addFresh' fs $ unwords $ go [] <$> (x : y : gs)
+      go fs (Delay g) = printf "(fun () -> %s)" $ ocanren g
+      addFresh fs = if null fs then id else printf "(fresh (%s) %s)" (unwords fs)
+      addFresh' fs = printf "(fresh (%s) %s)" (unwords fs)
 
 -- instance OCanren (G X) where
 --   ocanren (t1 :=:  t2) = printf "(%s === %s)" (ocanren t1) (ocanren t2)
@@ -105,7 +109,7 @@ ocanrenize' topLevelName input@(g, args, defs) =
       printf "\n  and %s %s = %s %s " n (printArgs as) (ocanren g) $ printLastDefs ds
 
     printDefs []     = ""
-    printDefs (d:ds) = (printFstDef d) ++ " " ++ (printLastDefs ds)
+    printDefs (d:ds) = printFstDef d ++ " " ++ printLastDefs ds
 
 toOCanren = toOCanren' ocanrenize
 

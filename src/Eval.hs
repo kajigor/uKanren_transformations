@@ -104,8 +104,14 @@ preEval goal = do
       Env.Env _ i _ <- gets snd
       return i
 
-bindFresh :: (FreeVariables G a, Ord a) => [a] -> G a -> G a
-bindFresh bound = go (Set.fromList bound)
+
+closeByFresh :: [X] -> G X -> G X
+closeByFresh a g = fresh (fv g \\ a) g
+
+bindFresh bound = 
+    closeByFresh bound 
+bindFresh1 bound = 
+    go (Set.fromList bound)
   where
     go bound (Disjunction x y gs) =
       Disjunction (go bound x)
@@ -119,17 +125,10 @@ bindFresh bound = go (Set.fromList bound)
       Delay (go bound g)
     go bound t@(_ :=: _) = 
       fresh (fv t \\ Set.toList bound) t 
+    go bound t@(Invoke name ts) = 
+      fresh (fv t \\ Set.toList bound) t 
 
 
-
--- data G a
---   = Term a :=: Term a
---   | Conjunction (G a) (G a) [G a] -- a list of conjuncts: at least 2 conjuncts should be present
---   | Disjunction (G a) (G a) [G a] -- a list of disjuncts: at least 2 disjuncts should be present
---   | Fresh a (G a)
---   | Invoke Name [Term a]
---   | Delay (G a)
---   deriving (Eq, Ord, Functor)
 
 postEval :: [X] -> G X -> G X
 postEval as goal =

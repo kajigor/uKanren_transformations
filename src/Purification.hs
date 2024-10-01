@@ -10,6 +10,7 @@ import           Def
 import           Program
 import           Syntax
 import           Text.Printf         (printf)
+import qualified Eval 
 
 type Set = Set.Set
 type Map = Map.Map
@@ -306,7 +307,8 @@ defToRules (Def n a g) = map (\(s, f) -> (applyInFunc s (n, ta), map (applyInFun
 {-------------------------------------------}
 
 closeByFresh :: [X] -> G X -> G X
-closeByFresh a g = fresh (fv g \\ a) g
+-- closeByFresh a g = fresh (fv g \\ a) g
+closeByFresh = Eval.bindFresh1
 
 renameGoal :: G X -> Map X X -> G X
 renameGoal goal mapping =

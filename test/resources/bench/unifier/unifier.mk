@@ -60,4 +60,6 @@ check_uni subst t1 t2 r =
           (( fresh q28 in q27 == Some q28 & r == Falso) | 
            ( q27 == None & eq_nat v1 v2 r))))); 
 
-? check_uni q (Constr Zero [Var_ Zero, Constr (Succ Zero) []]) (Constr Zero [ Constr (Succ (Succ Zero)) [], Var_ Zero]) Trueo
+? check_uni q t1 t2 Trueo
+
+-- ? check_uni q (Constr Zero [Var_ Zero, Constr (Succ Zero) []]) (Constr Zero [ Constr (Succ (Succ Zero)) [], Var_ Zero]) Trueo

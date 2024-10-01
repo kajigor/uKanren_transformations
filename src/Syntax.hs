@@ -62,6 +62,7 @@ goalFromList f (x : y : xs) = f x y xs
 goalFromList _ [x] = x
 goalFromList _ [] = error "Empty list"
 
+
 flatConj :: G a -> G a -> G a
 flatConj g1 g2 =
     case (getFirstNonConj g1, getFirstNonConj g2) of
@@ -282,11 +283,11 @@ isCons :: [Char] -> Bool
 isCons s = map toLower s == "cons" || s == "%"
 
 isZero :: Term v -> Bool
-isZero (C o []) = let l = map toLower o in l == "o" || l == "z"
+isZero (C o []) = let l = map toLower o in l == "o" || l == "z" || l == "zero"
 isZero _ = False
 
 isSucc :: Term v -> Bool
-isSucc (C s [n]) = map toLower s == "s"
+isSucc (C s [n]) = let l = map toLower s in l == "s" || l == "succ"
 isSucc _ = False
 
 isPair :: [Char] -> Bool
