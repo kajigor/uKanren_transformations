@@ -42,7 +42,13 @@ topLevel (Program defs goal) =
     (treeResult, logicGoal, names)
   where
     go :: Descend.Descend (G S) -> Subst.Subst S -> State PDState PDTree 
-    go d@(Descend.Descend goal ancs) subst = do 
+    go (Descend.Descend goal0 ancs) subst = do
+      -- Goals are compared (variant check, embedding, folding) *after*
+      -- applying the accumulated substitution: comparing the raw goals folded
+      -- e.g. eval a env v with a = Var 0 onto eval a env v with a = Mul ..,
+      -- which produced wrong residual programs.
+      let goal = Subst.substitute subst goal0
+          d = Descend.Descend goal ancs
       (PDState seen env) <- get
       case find (isVariant goal) (Set.toList seen) of 
         Just g ->
@@ -94,8 +100,11 @@ simplify =
       else f simplified
 
 restrictSubsts :: PDTree -> PDTree
-restrictSubsts =
-  go Subst.empty
+restrictSubsts = restrictSubstsFrom Subst.empty
+
+restrictSubstsFrom :: Subst.Subst S -> PDTree -> PDTree
+restrictSubstsFrom s0 =
+  go s0
   where
     go subst (Conj ch gs s) = Conj (map (go s) ch) gs (Subst.difference s subst)
     go subst (Or ch gs s) = Or (map (go s) ch) gs (Subst.difference s subst)

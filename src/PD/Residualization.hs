@@ -62,7 +62,9 @@ findNode :: [G S] -> PDTree -> ([G S], PDTree)
 findNode v tree =
   let nodes = go tree in
   case find nontrivial nodes of
-    Just n -> (v, restrictSubsts $ simplify $ renameAmbigousVars n)
+    -- the root's own substitution only binds ancestors' variables (goals are
+    -- stored with the substitution applied), so it is not residualized
+    Just n -> (v, restrictSubstsFrom (rootSubst n) $ simplify $ renameAmbigousVars n)
     Nothing -> error $ printf "Residualization error: no node for\n%s" (show v)
   where
     go node@(Or _ (Descend goal _) _) | [goal] == v {-|| [goal] `isVariant` v -}= return node
@@ -73,6 +75,12 @@ findNode v tree =
     go (Conj ch _ _) = concatMap go ch
     go (Gen ch _ _) = go ch
     go _ = []
+
+rootSubst :: PDTree -> Subst.Subst S
+rootSubst (Or _ _ s)   = s
+rootSubst (Conj _ _ s) = s
+rootSubst (Leaf _ s _) = s
+rootSubst _            = Subst.empty
 
 nontrivial :: PDTree -> Bool
 -- nontrivial (Leaf _ _ _) = False

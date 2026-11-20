@@ -1,6 +1,7 @@
 module Purification where
 
 import           Control.Monad.State
+import           Control.Monad       (foldM)
 import           Data.List
 import           Data.Maybe
 import qualified Data.Map.Strict     as Map
@@ -286,16 +287,45 @@ removeElems rs es = remove 1 rs es where
 
 {-------------------------------------------}
 defToRules :: Def G X -> Rules
-defToRules (Def n a g) = map (\(s, f) -> (applyInFunc s (n, ta), map (applyInFunc s) f)) $ gToRules g where
+-- Every clause (disjunct) becomes a rule whose head and calls are
+-- instantiated with the *most general unifier* of the clause's equations.
+-- (Previously the equations were used as a list of bindings, so a second
+-- binding of the same variable, e.g. x = 4 :: y & x = h :: t, was ignored:
+-- h and t then looked unconstrained and arguments carrying them were
+-- erased, which made residual programs produce wrong answers.)
+-- Clauses whose equations are not unifiable are dropped.
+defToRules (Def n a g) =
+    [ (applyInFunc s (n, ta), map (applyInFunc s) f)
+    | (eqs, f) <- gToRules g
+    , Just m <- [mgu eqs]
+    , let s = Map.toList m ] where
   ta = map V a
 
-  gToRules :: G X -> [(Subst, Funcs)]
-  gToRules ((V v) :=: t) = [([(v, t)], [])]
+  gToRules :: G X -> [([(Term X, Term X)], Funcs)]
+  gToRules (t1 :=: t2) = [([(t1, t2)], [])]
   gToRules (Invoke n a)  = [([], [(n, a)])]
   gToRules (Fresh _ g) = gToRules g
+  gToRules (Delay g) = gToRules g
   gToRules (Disjunction x y gs) = concatMap gToRules (x : y : gs)
   gToRules (Conjunction g1 g2 gs) =
     [(s1 ++ s2, f1 ++ f2) | (s1, f1) <- gToRules g1, (s2, f2) <- gToRules (unsafeConj (g2 : gs))]
+
+  mgu :: [(Term X, Term X)] -> Maybe (Map.Map X (Term X))
+  mgu = foldM (\m (x, y) -> unify m x y) Map.empty
+
+  walk m t@(V v) = maybe t (walk m) (Map.lookup v m)
+  walk _ t = t
+
+  occurs m v t = case walk m t of
+    V w -> v == w
+    C _ ts -> any (occurs m v) ts
+
+  unify m x y = case (walk m x, walk m y) of
+    (V v, V w) | v == w -> Just m
+    (V v, t) -> if occurs m v t then Nothing else Just (Map.insert v t m)
+    (t, V w) -> if occurs m w t then Nothing else Just (Map.insert w t m)
+    (C f as, C h bs) | f == h && length as == length bs -> foldM (\m' (p, q) -> unify m' p q) m (zip as bs)
+    _ -> Nothing
 
   applySubst :: Subst -> Term X -> Term X
   applySubst s t@(V v) = case lookup v s of

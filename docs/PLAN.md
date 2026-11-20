@@ -28,3 +28,27 @@ file what changed and what was measured.
 * Raw residualizer outputs are available as bases for linting: `pd/raw`, `cpd-*/raw`, `conspd-det/raw`.
 * Check: the `std` sweep reproduces all 1080 rows of `results/final` exactly (steps, answers, outcome,
   check). With `--jobs 8` a full sweep takes 11.5 min.
+
+### Step 2: CPD residualizer totality (done; diagnosed remainder)
+* `CPD.Residualization`: a global node whose SLD tree has no resultants was dropped, but its name stayed
+  callable. It is now residualized as an explicit `name(args) = fail`. Raw lint: 0 errors on every
+  benchmark (it was 1–39 errors on matchSimple, path and relSort).
+* `CPD.LocalControl`: intermediate conjunctions of a *local* tree were added to the `seen` set, so
+  later goals were folded onto conjunctions that never get a definition. Now only global-tree goals
+  are in `seen`. Effect on `cpd-*` (purified): steps ×0.96–0.99, no regressions (`depth`, `exDepth`,
+  `regexp`, `rotatePrune` smaller and faster).
+* Remaining (diagnosed, not fixed): `sortGeneral` still crashes. Abstraction generalizes a piece of a
+  resultant in a way that breaks variable sharing, and the residualizer re-derives the partition by
+  matching against definitions, which cannot express it. A proper fix is for the residualizer to use
+  the partition and generalizer recorded by abstraction (DESIGN.md §3, "total residualizer").
+
+### Step 3: PD and purification soundness (done)
+* `PD.PartialDeduction`: goals are compared (variant check, embedding, folding) *after* applying the
+  accumulated substitution. Comparing raw goals folded `eval a env v` with `a = Var 0` onto the same
+  goal with `a = Mul ..`. Definition roots no longer residualize their ancestors' bindings.
+* `Purification.defToRules`: clause equations are solved with a real unifier. A second binding of the
+  same variable used to be ignored, so constrained arguments looked free and were erased (wrong
+  answers on uptoSum, sort and queens5 once PD was fixed). Unsatisfiable clauses are dropped.
+* Result (`results/step3`, `vs-step1.md`): PD wrong 9 → 0, unverified 10 → 1 (`flip`, original
+  diverges; the answer was checked by hand). Several fast PD "wins" were wrong answers, so PD steps go
+  up. CPD/ConsPD unchanged or slightly better.
