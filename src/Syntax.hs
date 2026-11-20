@@ -126,7 +126,7 @@ success :: G a
 success = Invoke successName []
 
 isSuccess :: G a -> Bool
-isSuccess (Invoke successName []) = True
+isSuccess (Invoke name []) = name == successName
 isSuccess _ = False
 
 failureName :: String
@@ -136,7 +136,7 @@ failure :: G a
 failure = Invoke failureName []
 
 isFailure :: G a -> Bool
-isFailure (Invoke failureName []) = True
+isFailure (Invoke name []) = name == failureName
 isFailure _ = False
 
 class Eq a => FreeVariables t a where
