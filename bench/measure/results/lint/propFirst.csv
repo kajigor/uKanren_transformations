@@ -1,0 +1,9 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+propFirst,spec,original,0.76,7,67,13,5,0.018,3,GotEnough,ok~,ok
+propFirst,spec,pd,2.22,4,101,6,1,0.010,3,GotEnough,ok~,ok
+propFirst,spec,cpd-det,1.50,7,47,8,5,0.009,3,GotEnough,ok~,ok
+propFirst,spec,cpd-det+opt+sched,3.89,5,44,5,1,0.013,3,GotEnough,ok~,ok
+propFirst,spec,cpd-branch,1.37,4,50,8,5,0.014,3,GotEnough,ok~,ok
+propFirst,spec,conspd-det,3.01,8,53,6,3,0.013,3,GotEnough,ok~,ok
+propFirst,spec,conspd-branch,1.30,8,53,6,3,0.009,3,GotEnough,ok~,ok
+propFirst,spec,conspd-branch+opt+sched,2.15,2,47,5,1,0.007,3,GotEnough,ok~,ok

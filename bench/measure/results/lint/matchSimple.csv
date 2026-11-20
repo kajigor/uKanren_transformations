@@ -1,0 +1,9 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+matchSimple,spec,original,0.52,4,19,18,8,0.038,3,GotEnough,ok~,ok
+matchSimple,spec,pd,1.91,4,27,12,5,0.017,2,Finished,unverified-complete,ok
+matchSimple,spec,cpd-det,1.00,6,17,8,5,0.014,3,GotEnough,ok~,ok
+matchSimple,spec,cpd-det+opt+sched,2.66,0,10,6,0,0.010,3,GotEnough,ok~,ok
+matchSimple,spec,cpd-branch,0.88,4,14,7,4,0.012,3,GotEnough,ok~,ok
+matchSimple,spec,conspd-det,1.51,9,20,8,5,0.016,3,GotEnough,ok~,ok
+matchSimple,spec,conspd-branch,0.77,7,17,7,4,0.012,3,GotEnough,ok~,ok
+matchSimple,spec,conspd-branch+opt+sched,1.58,0,10,6,0,0.009,3,GotEnough,ok~,ok

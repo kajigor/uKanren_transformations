@@ -1,0 +1,9 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+arith,q1,original,0.21,3,13,158,53,0.104,3,GotEnough,ok~,ok
+arith,q1,pd,1.06,3,25,18,5,0.014,0,Finished,unverified-complete,ok
+arith,q1,cpd-det,0.65,7,23,37,14,0.022,3,GotEnough,ok~,ok
+arith,q1,cpd-det+opt+sched,1.75,2,26,12,2,0.013,3,GotEnough,ok~,ok
+arith,q1,cpd-branch,1.01,7,23,37,14,0.020,3,GotEnough,ok~,ok
+arith,q1,conspd-det,0.66,14,27,17,6,0.017,3,GotEnough,ok~,ok
+arith,q1,conspd-branch,0.90,14,27,17,6,0.017,3,GotEnough,ok~,ok
+arith,q1,conspd-branch+opt+sched,1.42,2,26,12,2,0.015,3,GotEnough,ok~,ok

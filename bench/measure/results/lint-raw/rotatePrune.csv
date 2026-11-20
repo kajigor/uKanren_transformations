@@ -1,0 +1,4 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+rotatePrune,spec,cpd-det/raw,1.18,3,84,98,4,0.062,3,GotEnough,ok~,ok
+rotatePrune,spec,cpd-branch/raw,1.83,3,96,79,3,0.059,3,GotEnough,ok~,ok
+rotatePrune,spec,conspd-det/raw,0.40,4,41,37,3,0.028,3,GotEnough,ok~,ok

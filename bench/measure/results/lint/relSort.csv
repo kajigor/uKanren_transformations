@@ -1,0 +1,9 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+relSort,spec,original,0.41,6,36,16077,3923,17.515,0,OutOfFuel,ok~,ok
+relSort,spec,pd,2.31,6,87,16762,3238,18.332,0,OutOfFuel,ok~,ok
+relSort,spec,cpd-det,756.47,73,319,15837,4163,7.339,1,OutOfFuel,ok~,ok
+relSort,spec,cpd-det+opt+sched,84528.21,11,689,444,85,0.225,1,Finished,ok~,ok
+relSort,spec,cpd-branch,1748.48,91,607,16234,3766,5.839,1,OutOfFuel,ok~,ok
+relSort,spec,conspd-det,5.07,31,33,2,1,0.015,1,Finished,ok~,ok
+relSort,spec,conspd-branch,4.57,31,33,2,1,0.013,1,Finished,ok~,ok
+relSort,spec,conspd-branch+opt+sched,4.64,0,2,2,0,0.004,1,Finished,ok~,ok

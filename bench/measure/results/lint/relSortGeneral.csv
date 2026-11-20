@@ -1,0 +1,17 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+relSortGeneral,q1,original,0.33,6,36,16077,3923,16.547,0,OutOfFuel,ok~,ok
+relSortGeneral,q2,original,0.34,6,36,451,117,0.259,3,GotEnough,ok~,ok
+relSortGeneral,q1,pd,1.71,5,65,17250,2750,24.416,0,OutOfFuel,ok~,ok
+relSortGeneral,q2,pd,1.74,5,65,355,60,0.250,3,GotEnough,ok~,ok
+relSortGeneral,q1,cpd-det,0.76,5,28,16296,3704,12.943,0,OutOfFuel,ok~,ok
+relSortGeneral,q2,cpd-det,0.80,5,28,351,117,0.260,3,GotEnough,ok~,ok
+relSortGeneral,q1,cpd-det+opt+sched,3.78,8,52,15956,4044,25.010,0,OutOfFuel,ok~,ok
+relSortGeneral,q2,cpd-det+opt+sched,3.88,7,47,345,100,0.277,3,GotEnough,ok~,ok
+relSortGeneral,q1,cpd-branch,1.26,5,39,16361,3639,17.700,0,OutOfFuel,ok~,ok
+relSortGeneral,q2,cpd-branch,1.28,5,39,396,83,0.275,3,GotEnough,ok~,ok
+relSortGeneral,q1,conspd-det,1.20,9,32,15431,4569,30.814,0,OutOfFuel,ok~,ok
+relSortGeneral,q2,conspd-det,0.96,9,32,289,101,0.224,3,GotEnough,ok~,ok
+relSortGeneral,q1,conspd-branch,1.41,9,43,15832,4168,23.399,0,OutOfFuel,ok~,ok
+relSortGeneral,q2,conspd-branch,1.02,9,43,313,67,0.161,3,GotEnough,ok~,ok
+relSortGeneral,q1,conspd-branch+opt+sched,5.54,8,74,17599,2401,20.944,0,OutOfFuel,ok~,ok
+relSortGeneral,q2,conspd-branch+opt+sched,4.97,7,69,386,66,0.562,3,GotEnough,ok~,ok

@@ -1,0 +1,9 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+rotatePrune,spec,original,0.37,4,25,680,109,0.478,3,GotEnough,ok~,0E/2W (rotate: binder n shadows an outer variable)
+rotatePrune,spec,pd,0.51,2,10,3,2,0.011,0,Finished,unverified-complete,ok
+rotatePrune,spec,cpd-det,1.66,3,10,7,4,0.020,3,GotEnough,ok~,ok
+rotatePrune,spec,cpd-det+opt+sched,2.13,0,7,6,0,0.016,3,GotEnough,ok~,ok
+rotatePrune,spec,cpd-branch,1.29,3,10,6,3,0.019,3,GotEnough,ok~,ok
+rotatePrune,spec,conspd-det,0.48,4,10,6,3,0.016,3,GotEnough,ok~,ok
+rotatePrune,spec,conspd-branch,0.92,3,9,5,2,0.019,3,GotEnough,ok~,ok
+rotatePrune,spec,conspd-branch+opt+sched,0.82,0,6,5,0,0.015,3,GotEnough,ok~,ok

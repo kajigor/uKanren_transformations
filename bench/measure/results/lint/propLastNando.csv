@@ -1,0 +1,9 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+propLastNando,spec,original,0.98,8,47,13,5,0.020,3,GotEnough,ok~,ok
+propLastNando,spec,pd,3.46,8,106,6,1,0.012,3,GotEnough,ok~,ok
+propLastNando,spec,cpd-det,14.16,23,168,10,5,0.027,3,GotEnough,ok~,ok
+propLastNando,spec,cpd-det+opt+sched,35.82,3,298,5,0,0.014,3,GotEnough,ok~,ok
+propLastNando,spec,cpd-branch,12.65,23,200,10,5,0.026,3,GotEnough,ok~,ok
+propLastNando,spec,conspd-det,2.71,10,55,6,3,0.015,3,GotEnough,ok~,ok
+propLastNando,spec,conspd-branch,2.36,10,55,6,3,0.014,3,GotEnough,ok~,ok
+propLastNando,spec,conspd-branch+opt+sched,4.25,2,47,5,1,0.010,3,GotEnough,ok~,ok

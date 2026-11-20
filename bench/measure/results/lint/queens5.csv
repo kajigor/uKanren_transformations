@@ -1,0 +1,12 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+queens5,q1,original,0.39,9,39,14767,5233,8.547,0,OutOfFuel,ok~,ok
+queens5,q2,original,0.37,9,39,15546,4454,9.407,1,OutOfFuel,ok~,ok
+queens5,q1,pd,3.87,11,71,111,26,0.096,0,Finished,ok~,ok
+queens5,q2,pd,3.73,11,71,27,6,0.028,0,Finished,unverified-complete,ok
+queens5,*,cpd-det,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-,-
+queens5,*,cpd-det+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-,-
+queens5,q1,cpd-branch,1169.37,159,1872,6656,1988,4.023,3,GotEnough,ok~,ok
+queens5,q2,cpd-branch,1174.11,159,1872,15953,4047,7.730,2,OutOfFuel,ok~,ok
+queens5,*,conspd-det,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-,-
+queens5,*,conspd-branch,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-,-
+queens5,*,conspd-branch+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-,-

@@ -1,0 +1,4 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+relSort,spec,cpd-det/raw,324.07,88,9698,19660,340,76.667,0,OutOfFuel,ok~,4E/0W (leoSmallestoMinmaxoSmallestoMinmaxoSmallestoMinmaxoSmallestoMinmaxoSmallesto: call to undefined relation smallestoSmallestoSmallestoSmallestoSmallesto)
+relSort,spec,cpd-branch/raw,754.65,117,26236,0,0,0.000,0,eval-crash: Measure.Interp: undefined relation minmaxoMinmaxoM,-,39E/0W (minmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxoMinmaxo: call to undefined relation minmaxoMinmaxo)
+relSort,spec,conspd-det/raw,11.07,31,1039,80,1,0.108,1,Finished,ok~,ok

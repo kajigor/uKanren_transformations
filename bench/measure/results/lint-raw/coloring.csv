@@ -1,0 +1,7 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+coloring,q1,cpd-det/raw,320.96,26,9616,19897,103,57.017,0,OutOfFuel,ok~,ok
+coloring,q2,cpd-det/raw,307.67,26,9616,7251,34,17.943,2,Finished,ok,ok
+coloring,q1,cpd-branch/raw,198.28,1,3494,583,1,1.231,3,GotEnough,ok~,ok
+coloring,q2,cpd-branch/raw,197.00,1,3494,3445,1,4.491,2,Finished,ok,ok
+coloring,q1,conspd-det/raw,1031.10,43,3602,583,1,2.487,3,GotEnough,ok~,ok
+coloring,q2,conspd-det/raw,967.74,43,3602,606,1,3.187,2,Finished,ok,ok

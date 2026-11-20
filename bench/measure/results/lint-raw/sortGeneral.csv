@@ -1,0 +1,5 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+sortGeneral,*,cpd-det/raw,0.00,0,0,0,0,0.000,0,spec-fail: Residualization failed: invocation of an undefined relation.,-,-
+sortGeneral,*,cpd-branch/raw,0.00,0,0,0,0,0.000,0,spec-fail: Residualization failed: invocation of an undefined relation.,-,-
+sortGeneral,q1,conspd-det/raw,0.84,8,37,16046,3954,17.894,0,OutOfFuel,unverified-complete,ok
+sortGeneral,q2,conspd-det/raw,0.85,8,37,15338,4662,12.102,0,OutOfFuel,unverified-complete,ok

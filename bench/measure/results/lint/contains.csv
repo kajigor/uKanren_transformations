@@ -1,0 +1,9 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+contains,spec,original,1.03,6,25,701,264,0.385,3,GotEnough,ok~,ok
+contains,spec,pd,2.70,6,63,475,118,0.365,3,GotEnough,ok~,ok
+contains,spec,cpd-det,4.26,10,33,71,68,0.076,3,GotEnough,ok~,ok
+contains,spec,cpd-det+opt+sched,4.91,6,27,43,33,0.039,3,GotEnough,ok~,ok
+contains,spec,cpd-branch,6.69,10,33,71,68,0.076,3,GotEnough,ok~,ok
+contains,spec,conspd-det,4.40,24,46,38,34,0.039,3,GotEnough,ok~,ok
+contains,spec,conspd-branch,3.73,24,46,38,34,0.040,3,GotEnough,ok~,ok
+contains,spec,conspd-branch+opt+sched,4.77,6,27,43,33,0.038,3,GotEnough,ok~,ok

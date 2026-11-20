@@ -1,0 +1,4 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+unifier,spec,cpd-det/raw,1.94,5,97,200,37,0.123,3,GotEnough,ok~,ok
+unifier,*,cpd-branch/raw,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-,-
+unifier,spec,conspd-det/raw,1.16,10,74,141,37,0.107,3,GotEnough,ok~,ok

@@ -1,0 +1,6 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+typecheck,q1,cpd-det/raw,8.63,10,454,105,14,0.123,3,GotEnough,ok~,ok
+typecheck,q2,cpd-det/raw,10.16,10,454,237,16,0.178,1,Finished,ok,ok
+typecheck,*,cpd-branch/raw,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-,-
+typecheck,q1,conspd-det/raw,1.31,9,87,20,14,0.032,3,GotEnough,ok~,ok
+typecheck,q2,conspd-det/raw,1.60,9,87,106,16,0.056,1,Finished,ok,ok

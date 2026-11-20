@@ -1,0 +1,4 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+uptoSum,spec,cpd-det/raw,8.99,1,181,180,1,0.181,1,Finished,ok,ok
+uptoSum,spec,cpd-branch/raw,8.03,1,181,180,1,0.168,1,Finished,ok,ok
+uptoSum,spec,conspd-det/raw,9.29,1,181,180,1,0.176,1,Finished,ok,ok

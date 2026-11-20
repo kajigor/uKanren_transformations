@@ -1,0 +1,4 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+appLast,spec,cpd-det/raw,0.61,3,24,35,7,0.034,3,GotEnough,ok~,ok
+appLast,spec,cpd-branch/raw,0.88,3,24,35,7,0.020,3,GotEnough,ok~,ok
+appLast,spec,conspd-det/raw,0.27,7,21,22,6,0.018,3,GotEnough,ok~,ok

@@ -1,0 +1,7 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+exprEvalGeneral,q1,cpd-det/raw,1.82,8,96,16698,3302,16.876,0,OutOfFuel,ok~,ok
+exprEvalGeneral,q2,cpd-det/raw,1.97,8,96,16808,3192,15.904,2,OutOfFuel,ok~,ok
+exprEvalGeneral,q1,cpd-branch/raw,1.43,8,96,16698,3302,14.430,0,OutOfFuel,ok~,ok
+exprEvalGeneral,q2,cpd-branch/raw,1.59,8,96,16808,3192,17.279,2,OutOfFuel,ok~,ok
+exprEvalGeneral,q1,conspd-det/raw,0.54,7,31,150,46,0.116,1,Finished,ok,ok
+exprEvalGeneral,q2,conspd-det/raw,0.54,7,31,15073,4927,12.260,2,OutOfFuel,ok~,ok

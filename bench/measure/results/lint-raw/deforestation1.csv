@@ -1,0 +1,4 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+deforestation1,spec,cpd-det/raw,0.52,3,25,22,3,0.037,1,Finished,ok,ok
+deforestation1,spec,cpd-branch/raw,0.37,1,13,12,1,0.010,1,Finished,ok,ok
+deforestation1,spec,conspd-det/raw,0.32,5,37,12,1,0.010,1,Finished,ok,ok

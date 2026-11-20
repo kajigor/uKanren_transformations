@@ -1,0 +1,4 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+maxLength,spec,cpd-det/raw,0.75,2,30,35,3,0.030,3,GotEnough,ok~,ok
+maxLength,spec,cpd-branch/raw,0.31,2,30,35,3,0.030,3,GotEnough,ok~,ok
+maxLength,spec,conspd-det/raw,0.37,4,22,20,3,0.021,3,GotEnough,ok~,ok

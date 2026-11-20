@@ -1,0 +1,4 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+matchSimple,spec,cpd-det/raw,2.22,6,116,40,5,0.039,3,GotEnough,ok~,1E/0W (___match1: call to undefined relation ____match1)
+matchSimple,spec,cpd-branch/raw,1.17,4,84,42,4,0.030,3,GotEnough,ok~,ok
+matchSimple,spec,conspd-det/raw,0.95,11,58,23,5,0.022,3,GotEnough,ok~,ok

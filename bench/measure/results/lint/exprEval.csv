@@ -1,0 +1,17 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+exprEval,q1,original,0.33,5,29,141,46,0.102,1,Finished,ok,ok
+exprEval,q2,original,0.33,5,29,15025,4975,10.837,2,OutOfFuel,ok~,ok
+exprEval,q1,pd,1.14,4,41,2,2,0.015,0,Finished,MISMATCH,ok
+exprEval,q2,pd,0.94,4,41,2,2,0.010,0,Finished,unverified-complete,ok
+exprEval,q1,cpd-det,5.12,8,38,15990,4010,21.088,1,OutOfFuel,ok~,ok
+exprEval,q2,cpd-det,5.18,8,38,15984,4016,24.761,2,OutOfFuel,ok~,ok
+exprEval,q1,cpd-det+opt+sched,8.72,5,40,89,20,0.085,1,Finished,ok,ok
+exprEval,q2,cpd-det+opt+sched,9.21,5,40,15898,4102,23.540,2,OutOfFuel,ok~,ok
+exprEval,q1,cpd-branch,3.81,8,38,15990,4010,13.829,1,OutOfFuel,ok~,ok
+exprEval,q2,cpd-branch,3.86,8,38,15984,4016,17.089,2,OutOfFuel,ok~,ok
+exprEval,q1,conspd-det,3.06,21,65,15554,4446,8.685,1,OutOfFuel,ok~,ok
+exprEval,q2,conspd-det,3.10,21,65,15825,4175,21.573,2,OutOfFuel,ok~,ok
+exprEval,q1,conspd-branch,4.66,21,65,15554,4446,14.803,1,OutOfFuel,ok~,ok
+exprEval,q2,conspd-branch,4.61,21,65,15825,4175,17.372,2,OutOfFuel,ok~,ok
+exprEval,q1,conspd-branch+opt+sched,11.92,7,59,98,25,0.098,1,Finished,ok,ok
+exprEval,q2,conspd-branch+opt+sched,13.77,8,64,15830,4170,18.978,2,OutOfFuel,ok~,ok

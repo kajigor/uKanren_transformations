@@ -1,0 +1,4 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+arith,q1,cpd-det/raw,1.87,7,112,137,14,0.084,3,GotEnough,ok~,ok
+arith,q1,cpd-branch/raw,1.16,7,112,137,14,0.071,3,GotEnough,ok~,ok
+arith,q1,conspd-det/raw,1.06,14,63,47,6,0.037,3,GotEnough,ok~,ok

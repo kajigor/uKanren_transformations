@@ -1,0 +1,4 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+flip,spec,cpd-det/raw,1.53,3,140,137,3,0.122,1,Finished,unverified-sound,ok
+flip,spec,cpd-branch/raw,2.23,3,140,137,3,0.118,1,Finished,unverified-sound,ok
+flip,spec,conspd-det/raw,1.42,1,66,65,1,0.064,1,Finished,unverified-sound,ok

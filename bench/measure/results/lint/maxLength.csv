@@ -1,0 +1,9 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+maxLength,spec,original,0.77,7,35,56,18,0.079,3,GotEnough,ok~,ok
+maxLength,spec,pd,1.67,6,37,24,6,0.027,3,GotEnough,unverified-sound,ok
+maxLength,spec,cpd-det,0.37,2,14,14,3,0.016,3,GotEnough,ok~,ok
+maxLength,spec,cpd-det+opt+sched,1.81,1,13,14,2,0.018,3,GotEnough,ok~,ok
+maxLength,spec,cpd-branch,0.40,2,14,14,3,0.016,3,GotEnough,ok~,ok
+maxLength,spec,conspd-det,0.45,4,16,14,3,0.016,3,GotEnough,ok~,ok
+maxLength,spec,conspd-branch,1.12,4,16,14,3,0.016,3,GotEnough,ok~,ok
+maxLength,spec,conspd-branch+opt+sched,1.36,1,13,14,2,0.016,3,GotEnough,ok~,ok

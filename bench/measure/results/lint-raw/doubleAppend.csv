@@ -1,0 +1,10 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+doubleAppend,q1,cpd-det/raw,1.02,3,39,130,14,0.087,1,Finished,ok,ok
+doubleAppend,q2,cpd-det/raw,0.75,3,39,45,7,0.034,3,GotEnough,ok~,ok
+doubleAppend,q3,cpd-det/raw,0.75,3,39,53,6,0.035,3,GotEnough,ok~,ok
+doubleAppend,q1,cpd-branch/raw,1.36,3,39,130,14,0.091,1,Finished,ok,ok
+doubleAppend,q2,cpd-branch/raw,1.35,3,39,45,7,0.032,3,GotEnough,ok~,ok
+doubleAppend,q3,cpd-branch/raw,1.99,3,39,53,6,0.041,3,GotEnough,ok~,ok
+doubleAppend,q1,conspd-det/raw,0.41,8,30,75,14,0.060,1,Finished,ok,ok
+doubleAppend,q2,conspd-det/raw,0.40,8,30,25,7,0.026,3,GotEnough,ok~,ok
+doubleAppend,q3,conspd-det/raw,0.91,8,30,27,6,0.028,3,GotEnough,ok~,ok

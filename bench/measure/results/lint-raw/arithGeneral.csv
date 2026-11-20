@@ -1,0 +1,10 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+arithGeneral,q1,cpd-det/raw,0.18,2,14,112,21,0.043,1,Finished,ok,ok
+arithGeneral,q2,cpd-det/raw,0.17,2,14,794,187,0.383,3,GotEnough,ok~,ok
+arithGeneral,q3,cpd-det/raw,0.18,2,14,155,35,0.045,1,Finished,ok,ok
+arithGeneral,q1,cpd-branch/raw,0.14,2,14,112,21,0.054,1,Finished,ok,ok
+arithGeneral,q2,cpd-branch/raw,0.14,2,14,794,187,0.378,3,GotEnough,ok~,ok
+arithGeneral,q3,cpd-branch/raw,0.16,2,14,155,35,0.075,1,Finished,ok,ok
+arithGeneral,q1,conspd-det/raw,0.52,3,13,76,21,0.050,1,Finished,ok,ok
+arithGeneral,q2,conspd-det/raw,0.52,3,13,1288,424,0.833,3,GotEnough,ok~,ok
+arithGeneral,q3,conspd-det/raw,0.52,3,13,15149,4851,20.817,1,OutOfFuel,ok~,ok

@@ -1,0 +1,4 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+revAcc,spec,cpd-det/raw,0.22,2,10,15000,5000,12.023,1,OutOfFuel,ok~,ok
+revAcc,spec,cpd-branch/raw,0.18,2,10,15000,5000,11.849,1,OutOfFuel,ok~,ok
+revAcc,spec,conspd-det/raw,0.23,4,18,16000,4000,653.065,1,OutOfFuel,ok~,ok

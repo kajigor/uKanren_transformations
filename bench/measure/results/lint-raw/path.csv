@@ -1,0 +1,4 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+path,spec,cpd-det/raw,11.15,19,707,30,4,0.058,3,GotEnough,ok~,9E/0W (_eq_pairElem: call to undefined relation ___elem)
+path,spec,cpd-branch/raw,2.11,4,172,44,3,0.047,3,GotEnough,ok~,ok
+path,spec,conspd-det/raw,4.32,27,266,26,4,0.034,3,GotEnough,ok~,ok

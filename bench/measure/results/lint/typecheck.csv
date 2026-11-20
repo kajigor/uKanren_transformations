@@ -1,0 +1,16 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+typecheck,q1,original,1.33,3,43,50,15,0.066,3,GotEnough,ok~,ok
+typecheck,q2,original,0.62,3,43,140,16,0.092,1,Finished,ok,ok
+typecheck,q1,pd,11.34,15,262,20,14,0.031,3,GotEnough,ok~,ok
+typecheck,q2,pd,13.12,15,262,87,11,0.073,1,Finished,ok,ok
+typecheck,q1,cpd-det,7.60,10,123,33,14,0.039,3,GotEnough,ok~,ok
+typecheck,q2,cpd-det,8.49,10,123,15146,4854,45.350,1,OutOfFuel,ok~,ok
+typecheck,q1,cpd-det+opt+sched,27.20,8,194,35,13,0.056,3,GotEnough,ok~,ok
+typecheck,q2,cpd-det+opt+sched,32.92,16,376,134,15,0.100,1,Finished,ok,ok
+typecheck,*,cpd-branch,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-,-
+typecheck,q1,conspd-det,1.69,9,75,17,14,0.026,3,GotEnough,ok~,ok
+typecheck,q2,conspd-det,2.05,9,75,99,16,0.046,1,Finished,ok,ok
+typecheck,q1,conspd-branch,3.29,9,130,17,14,0.020,3,GotEnough,ok~,ok
+typecheck,q2,conspd-branch,3.07,9,130,149,11,0.054,1,Finished,ok,ok
+typecheck,q1,conspd-branch+opt+sched,9.59,13,290,18,14,0.028,3,GotEnough,ok~,ok
+typecheck,q2,conspd-branch+opt+sched,27.85,13,290,151,11,0.082,1,Finished,ok,ok

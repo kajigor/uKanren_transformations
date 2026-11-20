@@ -1,0 +1,4 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+exDepth,spec,cpd-det/raw,137.50,14,3138,19802,198,49.336,0,OutOfFuel,unverified-complete,ok
+exDepth,spec,cpd-branch/raw,64.60,3,1398,428,1,0.976,3,GotEnough,ok~,ok
+exDepth,spec,conspd-det/raw,79.25,5,1466,428,1,0.908,3,GotEnough,ok~,ok

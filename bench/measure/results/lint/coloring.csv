@@ -1,0 +1,17 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+coloring,q1,original,0.44,7,35,15349,4651,9.998,2,OutOfFuel,ok~,ok
+coloring,q2,original,0.58,7,35,5680,1655,4.543,2,Finished,ok,ok
+coloring,q1,pd,1.50,6,49,7,4,0.030,0,Finished,unverified-complete,ok
+coloring,q2,pd,1.89,6,49,5,2,0.021,0,Finished,MISMATCH,ok
+coloring,q1,cpd-det,339.96,26,103,196,139,0.151,3,GotEnough,ok~,ok
+coloring,q2,cpd-det,339.67,26,103,70,34,0.056,2,Finished,ok,ok
+coloring,q1,cpd-det+opt+sched,347.14,0,187,77,0,0.056,3,GotEnough,ok~,ok
+coloring,q2,cpd-det+opt+sched,347.90,0,187,70,0,0.052,2,Finished,ok,ok
+coloring,q1,cpd-branch,175.61,1,110,19,1,0.029,3,GotEnough,ok~,ok
+coloring,q2,cpd-branch,175.56,1,110,61,1,0.023,2,Finished,ok,ok
+coloring,q1,conspd-det,1284.48,43,164,19,1,0.037,3,GotEnough,ok~,ok
+coloring,q2,conspd-det,1284.68,43,164,42,1,0.030,2,Finished,ok,ok
+coloring,q1,conspd-branch,1266.29,43,164,19,1,0.039,3,GotEnough,ok~,ok
+coloring,q2,conspd-branch,1266.14,43,164,42,1,0.037,2,Finished,ok,ok
+coloring,q1,conspd-branch+opt+sched,1266.92,0,109,19,0,0.018,3,GotEnough,ok~,ok
+coloring,q2,conspd-branch+opt+sched,1267.18,0,109,42,0,0.019,2,Finished,ok,ok

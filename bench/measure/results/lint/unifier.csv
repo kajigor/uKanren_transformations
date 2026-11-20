@@ -1,0 +1,9 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+unifier,spec,original,1.54,5,66,250,62,0.209,3,GotEnough,ok~,ok
+unifier,spec,pd,9.03,7,164,53,14,0.076,3,GotEnough,unverified-complete,ok
+unifier,spec,cpd-det,3.21,5,46,75,37,0.078,3,GotEnough,ok~,ok
+unifier,spec,cpd-det+opt+sched,4.90,5,46,78,37,0.084,3,GotEnough,ok~,ok
+unifier,*,cpd-branch,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-,-
+unifier,spec,conspd-det,1.26,10,51,91,37,0.066,3,GotEnough,ok~,ok
+unifier,spec,conspd-branch,4.58,19,156,31,12,0.037,3,GotEnough,ok~,ok
+unifier,spec,conspd-branch+opt+sched,21.58,24,625,31,12,0.053,3,GotEnough,ok~,ok

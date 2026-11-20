@@ -42,6 +42,7 @@ import qualified Transformer.CPD          as CPD
 import qualified Transformer.ConsPDGlobal as ConsPDGlobal
 import qualified Transformer.PD           as PD
 import qualified PostOpt
+import qualified Core.Lint                as Lint
 import qualified Schedule
 import qualified Data.Set                 as S
 
@@ -87,6 +88,7 @@ data Row = Row
   , rOutcome :: String
   , rCheck   :: String
   , rProg    :: String   -- ^ pretty-printed residual program (for --dump)
+  , rLint    :: String   -- ^ Core.Lint summary of the residual program
   }
 
 -- | Split the specialization goal @fresh vs. p(ts)@.
@@ -126,6 +128,17 @@ specializers =
       ConsPDGlobal.purified (ConsPDGlobal.runTransformation p ConsLC.Deterministic) >>= fromPurified p (topNames p)
   , sp "conspd-branch" $ \p ->
       ConsPDGlobal.purified (ConsPDGlobal.runTransformation p ConsLC.Branching) >>= fromPurified p (topNames p)
+    -- raw residualization output (before purification): only meant for
+    -- linting pass boundaries, see docs/DESIGN.md
+  , sp "cpd-det/raw" $ \p ->
+      let Program ds g = CPD.beforePur (CPD.runTransformation p CPDLC.Deterministic)
+      in fromPurified p (topNames p) (g, [], ds)
+  , sp "cpd-branch/raw" $ \p ->
+      let Program ds g = CPD.beforePur (CPD.runTransformation p CPDLC.Branching)
+      in fromPurified p (topNames p) (g, [], ds)
+  , sp "conspd-det/raw" $ \p ->
+      ConsPDGlobal.beforePur (ConsPDGlobal.runTransformation p ConsLC.Deterministic) >>= \(Program ds g) ->
+      fromPurified p (topNames p) (g, [], ds)
   ]
   where sp n f = Specializer n n f id Nothing
 
@@ -229,10 +242,10 @@ measureBench sps b = do
         Nothing -> return [failedRow sp "spec-timeout"]
         Just (Left err, _) -> return [failedRow sp ("spec-fail: " ++ take 60 err)]
         Just (Right r, specMs) -> mapM (runOne sp r specMs) refs
-    failedRow sp why = Row (bName b) "*" (spName sp) 0 0 0 0 0 0 0 why "-" ""
+    failedRow sp why = Row (bName b) "*" (spName sp) 0 0 0 0 0 0 0 why "-" "" "-"
     runOne sp r specMs (qn, ws, origBody, ref) =
       case runAgainst r (fresh ws origBody) of
-        Left err -> return $ Row (bName b) qn (spName sp) specMs 0 0 0 0 0 0 err "-" ""
+        Left err -> return $ Row (bName b) qn (spName sp) specMs 0 0 0 0 0 0 err "-" "" "-"
         Right (qvs, goal0) -> do
           let (rdefs, goal) = case spPerQuery sp of
                 Nothing -> (resDefs r, goal0)
@@ -240,16 +253,18 @@ measureBench sps b = do
               r' = r { resDefs = rdefs }
               (nd, sz) = programSize rdefs goal
               progTxt = unlines (map show rdefs) ++ "?? " ++ show goal
+          let lintTxt = Lint.lintSummary (Lint.lintProgram qvs rdefs goal)
           (_, qMs) <- timed (evaluate (length progTxt))
           er <- try $ timed (evaluate (forceStats (runGoal rdefs qvs goal (bAnswers b) (bFuel b))))
           case er of
             Left (ex :: SomeException) ->
-              return $ Row (bName b) qn (spName sp) (specMs + qMs) nd sz 0 0 0 0 ("eval-crash: " ++ take 50 (show ex)) "-" progTxt
+              return $ Row (bName b) qn (spName sp) (specMs + qMs) nd sz 0 0 0 0 ("eval-crash: " ++ take 50 (show ex)) "-" progTxt lintTxt
             Right (st, evalMs) -> do
               let chk = check r' qvs goal ws origBody ref st
               return $ Row (bName b) qn (spName sp) (specMs + qMs) nd sz (rsUnifs st) (rsCalls st) evalMs
                            (length (rsAnswers st)) (show (rsOutcome st)) chk
                            (progTxt ++ "\n-- answers: " ++ show (rsAnswers st) ++ "\n-- reference: " ++ show (rsAnswers ref))
+                           lintTxt
     -- cross validation
     check r qvs goal ws origBody ref st
       | rsOutcome ref == Finished && rsOutcome st == Finished =
@@ -303,14 +318,14 @@ loadBench mkFile name n fuel = do
 
 renderMarkdown :: [Row] -> String
 renderMarkdown rows = unlines $
-  [ "| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |"
-  , "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|" ] ++
-  [ printf "| %s | %s | %s | %.1f | %d | %d | %d | %d | %.2f | %d | %s | %s |"
-      (rBench r) (rQuery r) (rSpec r) (rSpecMs r) (rDefs r) (rSize r) (rUnifs r) (rCalls r) (rEvalMs r) (rNAns r) (rOutcome r) (rCheck r)
+  [ "| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check | lint |"
+  , "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|" ] ++
+  [ printf "| %s | %s | %s | %.1f | %d | %d | %d | %d | %.2f | %d | %s | %s | %s |"
+      (rBench r) (rQuery r) (rSpec r) (rSpecMs r) (rDefs r) (rSize r) (rUnifs r) (rCalls r) (rEvalMs r) (rNAns r) (rOutcome r) (rCheck r) (rLint r)
   | r <- rows ]
 
 renderCsv :: [Row] -> String
 renderCsv rows = unlines $
-  "bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check" :
-  [ intercalate "," [rBench r, rQuery r, rSpec r, printf "%.2f" (rSpecMs r), show (rDefs r), show (rSize r), show (rUnifs r), show (rCalls r), printf "%.3f" (rEvalMs r), show (rNAns r), rOutcome r, rCheck r]
+  "bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint" :
+  [ intercalate "," [rBench r, rQuery r, rSpec r, printf "%.2f" (rSpecMs r), show (rDefs r), show (rSize r), show (rUnifs r), show (rCalls r), printf "%.3f" (rEvalMs r), show (rNAns r), rOutcome r, rCheck r, rLint r]
   | r <- rows ]

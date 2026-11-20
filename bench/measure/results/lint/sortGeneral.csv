@@ -1,0 +1,14 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check,lint
+sortGeneral,q1,original,0.42,6,34,191,63,0.152,1,Finished,ok,ok
+sortGeneral,q2,original,0.40,6,34,15096,4764,16.107,3,GotEnough,ok~,ok
+sortGeneral,q1,pd,4.98,6,83,247,35,0.738,1,Finished,ok,ok
+sortGeneral,q2,pd,4.98,6,83,14877,2538,17.872,3,GotEnough,ok~,ok
+sortGeneral,*,cpd-det,0.00,0,0,0,0,0.000,0,spec-fail: Residualization failed: invocation of an undefined relation.,-,-
+sortGeneral,*,cpd-det+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: Residualization failed: invocation of an undefined relation.,-,-
+sortGeneral,*,cpd-branch,0.00,0,0,0,0,0.000,0,spec-fail: Residualization failed: invocation of an undefined relation.,-,-
+sortGeneral,q1,conspd-det,1.02,8,37,16046,3954,18.033,0,OutOfFuel,unverified-complete,ok
+sortGeneral,q2,conspd-det,1.04,8,37,15338,4662,14.399,0,OutOfFuel,unverified-complete,ok
+sortGeneral,q1,conspd-branch,1.13,8,37,16046,3954,16.869,0,OutOfFuel,unverified-complete,ok
+sortGeneral,q2,conspd-branch,1.15,8,37,15338,4662,11.788,0,OutOfFuel,unverified-complete,ok
+sortGeneral,q1,conspd-branch+opt+sched,4.26,10,66,15817,4183,21.869,0,OutOfFuel,ok~,ok
+sortGeneral,q2,conspd-branch+opt+sched,4.12,10,66,15391,4609,17.593,0,OutOfFuel,unverified-complete,ok
