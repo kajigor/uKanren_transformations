@@ -1,0 +1,45 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check
+typecheck,q1,original,1.46,3,43,332,110,0.308,10,GotEnough,ok~
+typecheck,q2,original,1.47,3,43,140,16,1.241,1,Finished,ok
+typecheck,q1,original+opt,2.69,2,40,335,110,0.284,10,GotEnough,ok~
+typecheck,q2,original+opt,1.73,2,40,139,16,0.085,1,Finished,ok
+typecheck,q1,original+sched,6.75,8,162,273,71,0.251,10,GotEnough,ok~
+typecheck,q2,original+sched,14.96,8,162,140,16,0.134,1,Finished,ok
+typecheck,q1,original+opt+sched,4.94,4,78,267,71,1.177,10,GotEnough,ok~
+typecheck,q2,original+opt+sched,8.91,4,78,139,16,0.107,1,Finished,ok
+typecheck,q1,pd,20.53,15,262,109,74,0.152,10,GotEnough,ok~
+typecheck,q2,pd,21.46,15,262,87,11,0.981,1,Finished,ok
+typecheck,q1,pd+opt,42.82,12,223,93,59,0.195,10,GotEnough,ok~
+typecheck,q2,pd+opt,36.89,12,223,87,10,0.104,1,Finished,ok
+typecheck,q1,pd+sched,41.10,14,225,109,74,0.163,10,GotEnough,ok~
+typecheck,q2,pd+sched,81.36,14,225,87,11,0.134,1,Finished,ok
+typecheck,q1,pd+opt+sched,64.54,12,223,93,59,0.135,10,GotEnough,ok~
+typecheck,q2,pd+opt+sched,111.51,12,223,87,10,0.122,1,Finished,ok
+typecheck,q1,cpd-det,28.30,10,123,200,70,0.122,10,GotEnough,ok~
+typecheck,q2,cpd-det,29.47,10,123,227101,72899,1029.174,1,OutOfFuel,ok~
+typecheck,q1,cpd-det+opt,53.68,3,72,200,69,0.164,10,GotEnough,ok~
+typecheck,q2,cpd-det+opt,55.09,3,72,227101,72899,937.387,1,OutOfFuel,ok~
+typecheck,q1,cpd-det+sched,39.85,9,195,205,70,0.136,10,GotEnough,ok~
+typecheck,q2,cpd-det+sched,42.80,17,377,134,16,0.154,1,Finished,ok
+typecheck,q1,cpd-det+opt+sched,40.05,8,194,205,69,0.140,10,GotEnough,ok~
+typecheck,q2,cpd-det+opt+sched,42.38,16,376,134,15,0.110,1,Finished,ok
+typecheck,*,cpd-branch,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+typecheck,*,cpd-branch+opt,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+typecheck,*,cpd-branch+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+typecheck,*,cpd-branch+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+typecheck,q1,conspd-det,2.45,9,75,83,62,0.065,10,GotEnough,ok~
+typecheck,q2,conspd-det,2.77,9,75,99,16,0.047,1,Finished,ok
+typecheck,q1,conspd-det+opt,3.76,5,71,83,62,0.054,10,GotEnough,ok~
+typecheck,q2,conspd-det+opt,3.98,5,71,99,16,0.042,1,Finished,ok
+typecheck,q1,conspd-det+sched,5.37,13,194,84,62,0.063,10,GotEnough,ok~
+typecheck,q2,conspd-det+sched,8.28,13,194,101,16,0.053,1,Finished,ok
+typecheck,q1,conspd-det+opt+sched,6.75,13,194,84,62,0.063,10,GotEnough,ok~
+typecheck,q2,conspd-det+opt+sched,10.45,13,194,101,16,0.053,1,Finished,ok
+typecheck,q1,conspd-branch,3.15,9,130,85,59,0.061,10,GotEnough,ok~
+typecheck,q2,conspd-branch,3.47,9,130,149,11,0.065,1,Finished,ok
+typecheck,q1,conspd-branch+opt,6.04,5,126,85,59,0.056,10,GotEnough,ok~
+typecheck,q2,conspd-branch+opt,6.35,5,126,149,11,0.068,1,Finished,ok
+typecheck,q1,conspd-branch+sched,7.38,13,290,81,59,0.072,10,GotEnough,ok~
+typecheck,q2,conspd-branch+sched,28.25,13,290,151,11,0.073,1,Finished,ok
+typecheck,q1,conspd-branch+opt+sched,9.55,13,290,81,59,0.063,10,GotEnough,ok~
+typecheck,q2,conspd-branch+opt+sched,31.59,13,290,151,11,0.073,1,Finished,ok

@@ -1,0 +1,25 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check
+unifier,spec,original,1.56,5,66,557,124,0.372,10,GotEnough,ok~
+unifier,spec,original+opt,3.41,4,65,557,124,0.378,10,GotEnough,ok~
+unifier,spec,original+sched,10.54,4,65,419,76,0.697,10,GotEnough,ok~
+unifier,spec,original+opt+sched,9.55,4,65,419,76,0.231,10,GotEnough,ok~
+unifier,spec,pd,4.52,7,164,246,68,0.192,10,GotEnough,unverified-complete
+unifier,spec,pd+opt,17.40,6,134,246,68,0.178,10,GotEnough,unverified-complete
+unifier,spec,pd+sched,24.64,7,140,247,68,2.086,10,GotEnough,unverified-complete
+unifier,spec,pd+opt+sched,46.46,7,140,247,68,0.210,10,GotEnough,unverified-complete
+unifier,spec,cpd-det,1.62,5,46,211,96,0.157,10,GotEnough,ok~
+unifier,spec,cpd-det+opt,2.28,5,46,211,96,0.150,10,GotEnough,ok~
+unifier,spec,cpd-det+sched,3.30,5,46,227,96,0.178,10,GotEnough,ok~
+unifier,spec,cpd-det+opt+sched,3.77,5,46,227,96,0.160,10,GotEnough,ok~
+unifier,*,cpd-branch,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+unifier,*,cpd-branch+opt,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+unifier,*,cpd-branch+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+unifier,*,cpd-branch+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+unifier,spec,conspd-det,1.72,10,51,174,67,0.165,10,GotEnough,ok~
+unifier,spec,conspd-det+opt,3.13,5,46,174,67,0.423,10,GotEnough,ok~
+unifier,spec,conspd-det+sched,2.90,5,46,174,67,0.130,10,GotEnough,ok~
+unifier,spec,conspd-det+opt+sched,3.95,5,46,174,67,0.129,10,GotEnough,ok~
+unifier,spec,conspd-branch,5.84,19,156,149,60,0.120,10,GotEnough,ok~
+unifier,spec,conspd-branch+opt,10.33,6,143,149,60,0.564,10,GotEnough,ok~
+unifier,spec,conspd-branch+sched,21.00,24,625,149,60,0.164,10,GotEnough,ok~
+unifier,spec,conspd-branch+opt+sched,26.74,24,625,149,60,0.152,10,GotEnough,ok~

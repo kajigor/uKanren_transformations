@@ -1,0 +1,41 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check
+sortGeneral,q1,original,0.70,6,34,191,63,0.176,1,Finished,ok
+sortGeneral,q2,original,0.47,6,34,228914,71086,1367.694,6,OutOfFuel,ok~
+sortGeneral,q1,original+opt,1.67,5,33,191,63,0.193,1,Finished,ok
+sortGeneral,q2,original+opt,2.00,5,33,228914,71086,1422.045,6,OutOfFuel,ok~
+sortGeneral,q1,original+sched,3.32,9,59,199,63,0.193,1,Finished,ok
+sortGeneral,q2,original+sched,3.09,10,64,49757,15128,50.171,10,GotEnough,ok~
+sortGeneral,q1,original+opt+sched,4.41,9,59,199,63,0.186,1,Finished,ok
+sortGeneral,q2,original+opt+sched,4.05,10,64,49757,15128,56.377,10,GotEnough,ok~
+sortGeneral,q1,pd,2.31,6,83,247,35,0.827,1,Finished,ok
+sortGeneral,q2,pd,2.32,6,83,256998,43002,1023.431,6,OutOfFuel,ok~
+sortGeneral,q1,pd+opt,4.86,5,62,247,35,0.156,1,Finished,ok
+sortGeneral,q2,pd+opt,4.60,5,62,256998,43002,724.156,6,OutOfFuel,ok~
+sortGeneral,q1,pd+sched,5.30,10,122,228611,71389,287.546,1,OutOfFuel,ok~
+sortGeneral,q2,pd+sched,4.64,7,95,252628,47372,154.512,6,OutOfFuel,ok~
+sortGeneral,q1,pd+opt+sched,7.81,10,122,228611,71389,242.919,1,OutOfFuel,ok~
+sortGeneral,q2,pd+opt+sched,7.89,7,95,252628,47372,188.073,6,OutOfFuel,ok~
+sortGeneral,*,cpd-det,0.00,0,0,0,0,0.000,0,spec-fail: Residualization failed: invocation of an undefined relation.,-
+sortGeneral,*,cpd-det+opt,0.00,0,0,0,0,0.000,0,spec-fail: Residualization failed: invocation of an undefined relation.,-
+sortGeneral,*,cpd-det+sched,0.00,0,0,0,0,0.000,0,spec-fail: Residualization failed: invocation of an undefined relation.,-
+sortGeneral,*,cpd-det+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: Residualization failed: invocation of an undefined relation.,-
+sortGeneral,*,cpd-branch,0.00,0,0,0,0,0.000,0,spec-fail: Residualization failed: invocation of an undefined relation.,-
+sortGeneral,*,cpd-branch+opt,0.00,0,0,0,0,0.000,0,spec-fail: Residualization failed: invocation of an undefined relation.,-
+sortGeneral,*,cpd-branch+sched,0.00,0,0,0,0,0.000,0,spec-fail: Residualization failed: invocation of an undefined relation.,-
+sortGeneral,*,cpd-branch+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: Residualization failed: invocation of an undefined relation.,-
+sortGeneral,q1,conspd-det,0.83,8,37,241487,58513,1503.347,0,OutOfFuel,unverified-complete
+sortGeneral,q2,conspd-det,1.01,8,37,229993,70007,197.858,0,OutOfFuel,unverified-complete
+sortGeneral,q1,conspd-det+opt,1.60,5,34,241487,58513,2219.666,0,OutOfFuel,unverified-complete
+sortGeneral,q2,conspd-det+opt,1.57,5,34,229993,70007,211.555,0,OutOfFuel,unverified-complete
+sortGeneral,q1,conspd-det+sched,2.67,10,66,240912,59088,603.149,1,OutOfFuel,ok~
+sortGeneral,q2,conspd-det+sched,2.32,10,66,233675,66325,908.479,0,OutOfFuel,unverified-complete
+sortGeneral,q1,conspd-det+opt+sched,3.35,10,66,240912,59088,677.824,1,OutOfFuel,ok~
+sortGeneral,q2,conspd-det+opt+sched,4.46,10,66,233675,66325,1307.053,0,OutOfFuel,unverified-complete
+sortGeneral,q1,conspd-branch,1.17,8,37,241487,58513,1568.544,0,OutOfFuel,unverified-complete
+sortGeneral,q2,conspd-branch,1.19,8,37,229993,70007,213.383,0,OutOfFuel,unverified-complete
+sortGeneral,q1,conspd-branch+opt,1.73,5,34,241487,58513,2443.513,0,OutOfFuel,unverified-complete
+sortGeneral,q2,conspd-branch+opt,1.76,5,34,229993,70007,349.212,0,OutOfFuel,unverified-complete
+sortGeneral,q1,conspd-branch+sched,2.83,10,66,240912,59088,844.285,1,OutOfFuel,ok~
+sortGeneral,q2,conspd-branch+sched,3.67,10,66,233675,66325,1103.542,0,OutOfFuel,unverified-complete
+sortGeneral,q1,conspd-branch+opt+sched,3.41,10,66,240912,59088,848.503,1,OutOfFuel,ok~
+sortGeneral,q2,conspd-branch+opt+sched,3.19,10,66,233675,66325,1063.619,0,OutOfFuel,unverified-complete
