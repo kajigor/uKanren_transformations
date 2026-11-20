@@ -43,29 +43,34 @@ clearPrg (g, defs) =
   let g' = clearGoal defs g in
   let defs' = mapMaybe (clearDef defs) defs in
   case g' of
-    Nothing -> error "Residualiation failed: no defs generated"
+    Nothing -> (failure, defs')
     Just g'' -> (g'', defs')
 
 clearDef :: [Def G X] -> Def G X -> Maybe (Def G X)
 clearDef defs (Def n a g) = do
    Def n a <$> clearGoal defs g
 
+-- | Remove calls to relations that have no (residual) definition.  Such a
+--   call can never succeed, so 'Nothing' stands for failure: it makes the
+--   enclosing conjunction fail and is dropped from an enclosing disjunction.
+--   (Previously failing conjuncts were silently dropped, which made residual
+--   programs produce extra, unsound answers.)
 clearGoal :: [Def G X] -> G X -> Maybe (G X)
-clearGoal defs g@(Disjunction g1 g2 lstG) = do
-  gs <- mapM (clearGoal defs) (g1 : g2 : lstG)
-  return $ unsafeDisj gs
-clearGoal defs g@(Conjunction g1 g2 lstG) =
-  let gs = mapMaybe (clearGoal defs) (g1 : g2 : lstG) in
-  case gs of
+clearGoal defs g@(Disjunction g1 g2 lstG) =
+  case mapMaybe (clearGoal defs) (g1 : g2 : lstG) of
     [] -> Nothing
     [x] -> Just x
-    (x1 : x2 : xs) -> Just $ Conjunction x1 x2 xs
+    (x1 : x2 : xs) -> Just $ Disjunction x1 x2 xs
+clearGoal defs g@(Conjunction g1 g2 lstG) = do
+  gs <- mapM (clearGoal defs) (g1 : g2 : lstG)
+  return $ unsafeConj gs
 clearGoal defs (Delay g) = do
   g' <- clearGoal defs g
   return $ Delay g'
 clearGoal defs (Fresh x g) = do
   g' <- clearGoal defs g
   return $ Fresh x g'
+clearGoal defs g | isSuccess g = Just g
 clearGoal defs g@(Invoke name _) | any (\(Def n a g) -> n == name) defs =
   Just g
 clearGoal defs g@(Invoke name _) = Nothing
@@ -155,7 +160,6 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
     goalAfterPurification  = snd $ purify "main" args goalWithoutLets
     defsAfterPurification  =
       let purified = map (\(Def n a g) -> let (a', g') = purify n a g in Def n a' g') defs in
-      filter (\(Def _ a _) -> not $ null a) $
       map (\(Def n a g) -> let (a', g') = purify n a g in Def n a' g') defs
 
     -- defsAfterPurification  = {- filter (not . null . snd3) $ -} map (\(Def n a g) -> let (a', g') = purify n a g in (Def n a' g')) defs
