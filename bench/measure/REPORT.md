@@ -86,16 +86,13 @@ The harness's cross-check found residual programs with **extra answers**. Two ca
   pattern variable, so *every* nullary call counted as both success and failure, and
   purification erased it. Nullary residual definitions were also filtered out.
 
-Effect on the earlier sweep, which ran before the fix:
+Effect, measured against a sweep run before the fix:
 
-| specializer | answer-set mismatches before → after |
-|---|---|
-| cpd-det | 3 → 0 |
-| cpd-branch | 1 → 0 |
-| conspd-det | 3 → 0 |
-| conspd-branch | 1 → 0 |
-
-The affected benchmarks were `matchSimple` and `path`.
+* `matchSimple`: an exact answer-set mismatch under cpd-det and conspd-det. Both produced an
+  extra, wrong answer, e.g. `x = 0 :: S _ :: _`. Both are now `ok`.
+* `path`: unverified-sound answers under cpd-det and conspd-det. Both now pass the cross-check,
+  and lint confirms the raw residual had the same defect.
+* No regressions anywhere in the suite.
 
 The root cause is upstream. Linting the raw residualization output (branch `design-proposals`,
 `Core.Lint`) shows that CPD's residualizer emits calls to definitions it never generates, on
@@ -176,8 +173,8 @@ Column meanings:
 
 **Findings.**
 
-* **PostOpt never changes which queries are solved.** It cuts steps by 20–36 % over CPD and
-  ConsPD, and by 57 % over PD.
+* **PostOpt never reduces the number of solved queries** (PD+opt solves one more). It cuts steps
+  by 20–36 % over CPD and ConsPD, and by 57 % over PD.
   * Most of the saving is in calls. For example, depth/cpd-det goes from 8 calls to 0, and
     coloring/cpd-det from 193 calls to 0.
   * ConsPD residuals also shrink, e.g. conspd-det from 1187 to 821 goal nodes.
