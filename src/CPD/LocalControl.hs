@@ -92,7 +92,10 @@ sldResolutionStep gs s isFirstTime heuristic = do
                 else do
                   let newDescends = addDescends xs s'
                   modifyEnv (const env')
-                  modifySeen (Set.insert (map getCurr gs))
+                  -- Intermediate conjunctions of a local tree are NOT added to
+                  -- the seen set: only global-tree nodes get residual
+                  -- definitions, so folding a goal onto an intermediate
+                  -- conjunction produced calls to undefined relations.
                   ch <- sldResolutionStep newDescends s' (isFirstTime && length ns == 1) heuristic
                   return $ Conj ch newDescends s'
           ns | not $ isRightmost zipper ->

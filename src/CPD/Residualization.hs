@@ -150,8 +150,11 @@ residualizeSldTree rootGoals tree definitions = do
   let body = Eval.postEval defArgs $
                 unsafeDisj (reverse goals)
 
+  -- A node without resultants is a goal that fails: residualize it as an
+  -- explicit failing definition, so that the residual program stays closed
+  -- (every called relation is defined).
   if null goals
-  then fail (printf "No resultants in the sld tree for %s" (show rootGoals))
+  then return $ Def defName defArgs failure
   else return $ Def defName defArgs body
   where
     go subst [] defs | Subst.null subst = success
