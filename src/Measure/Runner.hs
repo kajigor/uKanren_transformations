@@ -8,6 +8,10 @@ module Measure.Runner
   , Bench (..)
   , Row (..)
   , specializers
+  , baseNames
+  , mkSpecializer
+  , passTokens
+  , expandPasses
   , withPostOpt
   , withSchedule
   , measureBench
@@ -72,6 +76,7 @@ data Bench = Bench
   , bRuns    :: [(String, G X)]  -- ^ run-time queries (closed by fresh)
   , bAnswers :: Int              -- ^ how many answers to ask for
   , bFuel    :: Int
+  , bTimeout :: Int              -- ^ specialization timeout, seconds
   }
 
 data Row = Row
@@ -128,6 +133,10 @@ specializers =
       ConsPDGlobal.purified (ConsPDGlobal.runTransformation p ConsLC.Deterministic) >>= fromPurified p (topNames p)
   , sp "conspd-branch" $ \p ->
       ConsPDGlobal.purified (ConsPDGlobal.runTransformation p ConsLC.Branching) >>= fromPurified p (topNames p)
+  , sp "pd/raw" $ \p ->
+      case PD.beforePurification (PD.runTransformation p) of
+        Nothing  -> Left "pd failed"
+        Just pur -> fromPurified p (topNames p) pur
     -- raw residualization output (before purification): only meant for
     -- linting pass boundaries, see docs/DESIGN.md
   , sp "cpd-det/raw" $ \p ->
@@ -142,17 +151,69 @@ specializers =
   ]
   where sp n f = Specializer n n f id Nothing
 
--- | Add the post-specialization optimizer on top of a specializer.
-withPostOpt :: Specializer -> Specializer
-withPostOpt sp = sp { spName = spName sp ++ "+opt", spPost = opt . spPost sp }
-  where opt r = let (ds, g) = PostOpt.optimize (resVars r) (resDefs r, resGoal r)
-                in r { resDefs = ds, resGoal = g }
+------------------------------------------------------------------------------
+-- Modular pipeline.  A specializer name is  BASE(+TOKEN)*  where BASE is one
+-- of 'baseNames' and every TOKEN switches on one post-specialization
+-- component (or a preset of several).  Components are applied in a fixed
+-- order (the order of 'passTokens'), independently of the order in the name,
+-- so that e.g. cpd-det+sched+ue and cpd-det+ue+sched are the same pipeline.
 
--- | Add mode-directed conjunct scheduling, performed per run-time query (the
---   query determines which arguments are ground).
+-- | Atomic components, in pipeline order, with a description.
+passTokens :: [(String, String)]
+passTokens =
+  [ ("ue",    "existential unification elimination + constructor decomposition")
+  , ("fail",  "may-succeed failure analysis")
+  , ("inl",   "post-unfolding of non-recursive definitions")
+  , ("merge", "duplicate-definition merging (bisimulation)")
+  , ("dead",  "unreachable-definition removal")
+  , ("sched", "per-query mode-directed conjunct scheduling")
+  ]
+
+-- | Presets expand to several atomic components.
+presets :: [(String, [String])]
+presets =
+  [ ("opt", ["ue", "fail", "inl", "merge", "dead"]) ]
+
+expandPasses :: [String] -> Either String [String]
+expandPasses ts = do
+  xs <- concat <$> mapM one ts
+  return [ t | (t, _) <- passTokens, t `elem` xs ]
+  where
+    one t | Just ps <- lookup t presets = Right ps
+          | t `elem` map fst passTokens = Right [t]
+          | otherwise = Left ("unknown pipeline component: " ++ t)
+
+baseNames :: [String]
+baseNames = map spName specializers
+
+-- | Build a specializer from its name, e.g. @cpd-det+ue+fail+sched@.
+mkSpecializer :: String -> Either String Specializer
+mkSpecializer name = do
+  let (b : ts) = splitPlus name
+  base <- maybe (Left ("unknown base specializer: " ++ b)) Right
+                (lookup b [ (spName s, s) | s <- specializers ])
+  ps <- expandPasses ts
+  let postPasses = [ p | (t, p) <- postOptPasses, t `elem` ps ]
+      post r | null postPasses = r
+             | otherwise =
+                 let (ds, g) = PostOpt.optimizeWith (PostOpt.PNormalize : postPasses) (resVars r) (resDefs r, resGoal r)
+                 in r { resDefs = ds, resGoal = g }
+      perQ | "sched" `elem` ps = Just $ \ds _qvs g -> Schedule.schedule S.empty (ds, g)
+           | otherwise = Nothing
+  return base { spName = name, spPost = post, spPerQuery = perQ }
+  where
+    postOptPasses = [ ("ue", PostOpt.PUnifElim), ("fail", PostOpt.PFailure), ("inl", PostOpt.PInline)
+                    , ("merge", PostOpt.PMerge), ("dead", PostOpt.PUnreachable) ]
+    splitPlus str = case break (== '+') str of
+      (a, [])      -> [a]
+      (a, _ : rest) -> a : splitPlus rest
+
+-- | Backwards-compatible helpers.
+withPostOpt :: Specializer -> Specializer
+withPostOpt sp = either error id (mkSpecializer (spName sp ++ "+opt"))
+
 withSchedule :: Specializer -> Specializer
-withSchedule sp = sp { spName = spName sp ++ "+sched"
-                     , spPerQuery = Just $ \ds _qvs g -> Schedule.schedule S.empty (ds, g) }
+withSchedule sp = either error id (mkSpecializer (spName sp ++ "+sched"))
 
 -- | Number of definitions and number of goal nodes (unifications + calls).
 programSize :: [Def G X] -> G X -> (Int, Int)
@@ -199,9 +260,6 @@ timed act = do
   t1 <- getCurrentTime
   return (x, realToFrac (diffUTCTime t1 t0) * 1000)
 
-specTimeoutUs :: Int
-specTimeoutUs = 60 * 1000000
-
 measureBench :: [Specializer] -> Bench -> IO [Row]
 measureBench sps b = do
   let Program odefs _ = bProgram b
@@ -214,7 +272,7 @@ measureBench sps b = do
   concat <$> mapM (one cache refs) sps
   where
     base sp = do
-      res <- timeout specTimeoutUs $ timed $ do
+      res <- timeout (bTimeout b * 1000000) $ timed $ do
         e <- try (evaluate (forceRes (spRun sp (bProgram b))))
         return $ case e of
           Left (ex :: SomeException) -> Left (takeWhile (/= '\n') (show ex))
@@ -293,8 +351,8 @@ forceRes e@(Right r) = length (show (resDefs r)) `seq` length (show (resGoal r))
 -- specialization query; <dir>/<name>.runs holds run-time queries, one per
 -- line, in the form  @? goal@  (lines starting with -- are comments).
 
-loadBench :: FilePath -> String -> Int -> Int -> IO (Either String Bench)
-loadBench mkFile name n fuel = do
+loadBench :: FilePath -> String -> Int -> Int -> Int -> IO (Either String Bench)
+loadBench mkFile name n fuel tmo = do
   parsed <- Parser.importsParser Parser.Simple mkFile
   case parsed of
     Left err -> return $ Left (show err)
@@ -307,7 +365,7 @@ loadBench mkFile name n fuel = do
           let ls = [ l | l <- lines txt, not (null (dropWhile (== ' ') l)), take 2 (dropWhile (== ' ') l) /= "--" ]
           return $ mapM parseRun (zip [1 :: Int ..] ls)
         else return $ Right [("spec", getGoal prog)]
-      return $ (\rs -> Bench name prog rs n fuel) <$> runs
+      return $ (\rs -> Bench name prog rs n fuel tmo) <$> runs
   where
     parseRun (i, l) =
       case runParser (Lexer.sc *> SP.parseQuery <* eof) "runs" l of

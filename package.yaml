@@ -69,7 +69,7 @@ executables:
     source-dirs:
     - app/measure/
     dependencies: uKanren-transformation
-    ghc-options: "-O2 -rtsopts"
+    ghc-options: "-O2 -rtsopts -threaded \"-with-rtsopts=-N8 -A64m\""
 
 # executables:
 #   exe:
