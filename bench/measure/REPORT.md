@@ -269,5 +269,7 @@ The suite already includes three new examples that stress the specializers in di
 producing badly ordered residuals. `coloring` compiles an interpreted edge list away: 37k steps
 originally, 61 for ConsPD+opt+sched.
 
+All cited works, with links and provenance, are collected in `docs/RELATED_WORK.md`.
+
 The design-level proposals (one core IR with linting, one analysis engine, a strategy-based
 specializer driver, DSL changes) are in `docs/DESIGN.md` on branch `design-proposals`.
