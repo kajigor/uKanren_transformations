@@ -17,7 +17,7 @@ import           System.FilePath    ((</>), (<.>))
 import           System.IO
 
 data Opts = Opts { oN :: Int, oFuel :: Int, oOnly :: [String], oCsv :: Maybe FilePath
-                 , oMd :: Maybe FilePath, oSpecs :: Maybe [String], oDirs :: [FilePath] }
+                 , oMd :: Maybe FilePath, oSpecs :: Maybe [String], oDirs :: [FilePath], oDump :: Bool }
 
 parse :: [String] -> Opts -> Opts
 parse ("--answers" : n : r) o = parse r o { oN = read n }
@@ -25,6 +25,7 @@ parse ("--fuel" : n : r)    o = parse r o { oFuel = read n }
 parse ("--only" : n : r)    o = parse r o { oOnly = splitOn "," n }
 parse ("--csv" : f : r)     o = parse r o { oCsv = Just f }
 parse ("--md" : f : r)      o = parse r o { oMd = Just f }
+parse ("--dump" : r)        o = parse r o { oDump = True }
 parse ("--spec" : s : r)    o = parse r o { oSpecs = Just (splitOn "," s) }
 parse (d : r)               o = parse r o { oDirs = oDirs o ++ [d] }
 parse []                    o = o
@@ -32,10 +33,11 @@ parse []                    o = o
 main :: IO ()
 main = do
   hSetBuffering stdout LineBuffering
-  o <- flip parse (Opts 10 2000000 [] Nothing Nothing Nothing []) <$> getArgs
+  o <- flip parse (Opts 10 2000000 [] Nothing Nothing Nothing [] False) <$> getArgs
   benches <- concat <$> mapM findBenches (oDirs o)
   let selected = [ b | b@(n, _) <- benches, null (oOnly o) || n `elem` oOnly o ]
-      sps = maybe specializers (\ns -> filter ((`elem` ns) . spName) specializers) (oSpecs o)
+      allSps = concatMap (\s -> [s, withPostOpt s, withSchedule s, withSchedule (withPostOpt s)]) specializers
+      sps = maybe allSps (\ns -> filter ((`elem` ns) . spName) allSps) (oSpecs o)
   rows <- concat <$> forM selected (\(name, mk) -> do
     hPutStrLn stderr ("== " ++ name)
     eb <- loadBench mk name (oN o) (oFuel o)
@@ -44,6 +46,7 @@ main = do
       Right b -> do
         rs <- measureBench sps b
         putStr (renderMarkdown rs)
+        if oDump o then mapM_ (\r -> putStrLn ("--- " ++ rSpec r ++ " " ++ rQuery r ++ "\n" ++ rProg r)) rs else return ()
         return rs)
   maybe (return ()) (\f -> writeFile f (renderCsv rows)) (oCsv o)
   maybe (return ()) (\f -> writeFile f (renderMarkdown rows)) (oMd o)

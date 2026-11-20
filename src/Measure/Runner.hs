@@ -8,6 +8,8 @@ module Measure.Runner
   , Bench (..)
   , Row (..)
   , specializers
+  , withPostOpt
+  , withSchedule
   , measureBench
   , programSize
   , renderMarkdown
@@ -16,6 +18,7 @@ module Measure.Runner
   ) where
 
 import           Control.Exception    (SomeException, evaluate, try)
+import           Data.IORef
 import           Data.List            (intercalate, nub)
 import qualified Data.Map.Strict      as M
 import           Data.Maybe           (fromMaybe)
@@ -38,6 +41,9 @@ import qualified ConsPD.LocalControl      as ConsLC
 import qualified Transformer.CPD          as CPD
 import qualified Transformer.ConsPDGlobal as ConsPDGlobal
 import qualified Transformer.PD           as PD
+import qualified PostOpt
+import qualified Schedule
+import qualified Data.Set                 as S
 
 -- | Result of a specializer: residual definitions plus a residual goal whose
 --   free variables are @resVars@; @resArgs@ are the terms of the original
@@ -51,8 +57,12 @@ data Residual = Residual
   }
 
 data Specializer = Specializer
-  { spName :: String
-  , spRun  :: Program G X -> Either String Residual
+  { spName     :: String
+  , spBase     :: String   -- ^ name of the base specializer (results are shared)
+  , spRun      :: Program G X -> Either String Residual
+  , spPost     :: Residual -> Residual
+  , spPerQuery :: Maybe ([Def G X] -> [X] -> G X -> ([Def G X], G X))
+    -- ^ optional query-directed post-processing (defs, query vars, run goal)
   }
 
 data Bench = Bench
@@ -76,6 +86,7 @@ data Row = Row
   , rNAns    :: Int
   , rOutcome :: String
   , rCheck   :: String
+  , rProg    :: String   -- ^ pretty-printed residual program (for --dump)
   }
 
 -- | Split the specialization goal @fresh vs. p(ts)@.
@@ -99,23 +110,36 @@ topNames (Program _ goal) = [ 'x' : show i | (i, _) <- zip [0 :: Int ..] (fst $ 
 
 specializers :: [Specializer]
 specializers =
-  [ Specializer "original" $ \p@(Program defs goal) ->
+  [ sp "original" $ \p@(Program defs goal) ->
       case specCall goal of
         Nothing -> Left "goal is not a single call"
         Just (vs, f, ts) -> Right $ Residual defs (Invoke f ts) vs ts
-  , Specializer "pd" $ \p ->
+  , sp "pd" $ \p ->
       case PD.purified (PD.runTransformation p) of
         Nothing  -> Left "pd failed"
         Just pur -> fromPurified p (topNames p) pur
-  , Specializer "cpd-det" $ \p ->
+  , sp "cpd-det" $ \p ->
       fromPurified p (topNames p) (CPD.purified (CPD.runTransformation p CPDLC.Deterministic))
-  , Specializer "cpd-branch" $ \p ->
+  , sp "cpd-branch" $ \p ->
       fromPurified p (topNames p) (CPD.purified (CPD.runTransformation p CPDLC.Branching))
-  , Specializer "conspd-det" $ \p ->
+  , sp "conspd-det" $ \p ->
       ConsPDGlobal.purified (ConsPDGlobal.runTransformation p ConsLC.Deterministic) >>= fromPurified p (topNames p)
-  , Specializer "conspd-branch" $ \p ->
+  , sp "conspd-branch" $ \p ->
       ConsPDGlobal.purified (ConsPDGlobal.runTransformation p ConsLC.Branching) >>= fromPurified p (topNames p)
   ]
+  where sp n f = Specializer n n f id Nothing
+
+-- | Add the post-specialization optimizer on top of a specializer.
+withPostOpt :: Specializer -> Specializer
+withPostOpt sp = sp { spName = spName sp ++ "+opt", spPost = opt . spPost sp }
+  where opt r = let (ds, g) = PostOpt.optimize (resVars r) (resDefs r, resGoal r)
+                in r { resDefs = ds, resGoal = g }
+
+-- | Add mode-directed conjunct scheduling, performed per run-time query (the
+--   query determines which arguments are ground).
+withSchedule :: Specializer -> Specializer
+withSchedule sp = sp { spName = spName sp ++ "+sched"
+                     , spPerQuery = Just $ \ds _qvs g -> Schedule.schedule S.empty (ds, g) }
 
 -- | Number of definitions and number of goal nodes (unifications + calls).
 programSize :: [Def G X] -> G X -> (Int, Int)
@@ -173,32 +197,59 @@ measureBench sps b = do
                   let (ws, body) = topLevelFreshVars q
                   st <- evaluate (runGoal odefs ws body (bAnswers b) (bFuel b))
                   return (qn, ws, body, st)) (bRuns b)
-  concat <$> mapM (one refs) sps
+  cache <- newIORef M.empty
+  concat <$> mapM (one cache refs) sps
   where
-    one refs sp = do
+    base sp = do
       res <- timeout specTimeoutUs $ timed $ do
         e <- try (evaluate (forceRes (spRun sp (bProgram b))))
         return $ case e of
           Left (ex :: SomeException) -> Left (takeWhile (/= '\n') (show ex))
           Right x -> x
+      return res
+    post sp res = case res of
+      Just (Right r, ms) -> do
+        (r', ms') <- timed $ do
+          e <- try (evaluate (forceRes (Right (spPost sp r))))
+          return $ case e of
+            Left (ex :: SomeException) -> Left ("post: " ++ takeWhile (/= '\n') (show ex))
+            Right x -> x
+        return (Just (r', ms + ms'))
+      _ -> return res
+    one cache refs sp = do
+      c <- readIORef cache
+      res0 <- case M.lookup (spBase sp) c of
+        Just r -> return r
+        Nothing -> do
+          r <- base sp
+          modifyIORef cache (M.insert (spBase sp) r)
+          return r
+      res <- post sp res0
       case res of
         Nothing -> return [failedRow sp "spec-timeout"]
         Just (Left err, _) -> return [failedRow sp ("spec-fail: " ++ take 60 err)]
         Just (Right r, specMs) -> mapM (runOne sp r specMs) refs
-    failedRow sp why = Row (bName b) "*" (spName sp) 0 0 0 0 0 0 0 why "-"
+    failedRow sp why = Row (bName b) "*" (spName sp) 0 0 0 0 0 0 0 why "-" ""
     runOne sp r specMs (qn, ws, origBody, ref) =
       case runAgainst r (fresh ws origBody) of
-        Left err -> return $ Row (bName b) qn (spName sp) specMs 0 0 0 0 0 0 err "-"
-        Right (qvs, goal) -> do
-          let (nd, sz) = programSize (resDefs r) (resGoal r)
-          er <- try $ timed (evaluate (forceStats (runGoal (resDefs r) qvs goal (bAnswers b) (bFuel b))))
+        Left err -> return $ Row (bName b) qn (spName sp) specMs 0 0 0 0 0 0 err "-" ""
+        Right (qvs, goal0) -> do
+          let (rdefs, goal) = case spPerQuery sp of
+                Nothing -> (resDefs r, goal0)
+                Just f  -> f (resDefs r) qvs goal0
+              r' = r { resDefs = rdefs }
+              (nd, sz) = programSize rdefs goal
+              progTxt = unlines (map show rdefs) ++ "?? " ++ show goal
+          (_, qMs) <- timed (evaluate (length progTxt))
+          er <- try $ timed (evaluate (forceStats (runGoal rdefs qvs goal (bAnswers b) (bFuel b))))
           case er of
             Left (ex :: SomeException) ->
-              return $ Row (bName b) qn (spName sp) specMs nd sz 0 0 0 0 ("eval-crash: " ++ take 50 (show ex)) "-"
+              return $ Row (bName b) qn (spName sp) (specMs + qMs) nd sz 0 0 0 0 ("eval-crash: " ++ take 50 (show ex)) "-" progTxt
             Right (st, evalMs) -> do
-              let chk = check r qvs goal ws origBody ref st
-              return $ Row (bName b) qn (spName sp) specMs nd sz (rsUnifs st) (rsCalls st) evalMs
+              let chk = check r' qvs goal ws origBody ref st
+              return $ Row (bName b) qn (spName sp) (specMs + qMs) nd sz (rsUnifs st) (rsCalls st) evalMs
                            (length (rsAnswers st)) (show (rsOutcome st)) chk
+                           (progTxt ++ "\n-- answers: " ++ show (rsAnswers st) ++ "\n-- reference: " ++ show (rsAnswers ref))
     -- cross validation
     check r qvs goal ws origBody ref st
       | rsOutcome ref == Finished && rsOutcome st == Finished =
@@ -211,8 +262,8 @@ measureBench sps b = do
               complete = all (admits fuel (resDefs r) qvs goal) (take 20 (rsAnswers ref))
           in  case (sound, complete) of
                 (True, True)  -> "ok~"
-                (False, _)    -> "UNSOUND?"
-                (_, False)    -> "INCOMPLETE?"
+                (False, _)    -> "unverified-sound"
+                (_, False)    -> "unverified-complete"
     sameSet xs ys = all (`elem` ys) xs && all (`elem` xs) ys
 
 forceStats :: RunStats -> RunStats
