@@ -1,0 +1,6 @@
+-- forward: concatenate three ground lists
+? double_appendo [A, B, C, D, E, F, G, H] [I, J, K, L] [M, N, O, P] res
+-- backward: all ways to split a 6-element list into three parts (28 answers)
+? double_appendo x y z [A, B, C, D, E, F]
+-- partially backward: x is known
+? double_appendo [A, B] y z [A, B, C, D, E, F]

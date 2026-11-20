@@ -1,0 +1,2 @@
+? type_ q [] (Some Integer)
+? type_ (Let_ (IConst_ O) (If_ (Lt_ (Var_ Zero) (IConst_ O)) (Plus_ (Var_ Zero) (Var_ Zero)) (Mult_ (Var_ Zero) (IConst_ O)))) [] (Some Integer)

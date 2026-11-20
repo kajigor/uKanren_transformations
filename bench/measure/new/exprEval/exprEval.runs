@@ -1,0 +1,4 @@
+-- forward: x = 3, y = 2  ==> 13
+? eval (Add (Mul (Var O) (Var O)) (Mul (Num (S (S O))) (Var (S O)))) [S (S (S O)), S (S O)] v
+-- backward: x*x + 2*y = 9
+? eval (Add (Mul (Var O) (Var O)) (Mul (Num (S (S O))) (Var (S O)))) [x, y] (S (S (S (S (S (S (S (S (S O)))))))))

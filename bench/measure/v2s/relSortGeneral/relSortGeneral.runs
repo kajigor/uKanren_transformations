@@ -1,0 +1,2 @@
+? sorto [Succ Zero, Zero, Succ (Succ Zero), Succ Zero, Zero, Succ (Succ (Succ Zero))] y
+? sorto x [Zero, Succ Zero, Succ (Succ Zero), Succ (Succ (Succ Zero))]

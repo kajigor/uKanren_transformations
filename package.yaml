@@ -49,6 +49,7 @@ dependencies:
 - template-haskell >= 2.19.0.0
 - split
 - groups >= 0.5.3
+- time
 
 ghc-options:
   - -fwarn-unused-imports
@@ -63,6 +64,12 @@ executables:
     source-dirs:
     - app/console/
     dependencies: uKanren-transformation
+  measure:
+    main: Main.hs
+    source-dirs:
+    - app/measure/
+    dependencies: uKanren-transformation
+    ghc-options: "-O2 -rtsopts"
 
 # executables:
 #   exe:

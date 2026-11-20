@@ -1,0 +1,2 @@
+? coloring [Pair O (S O), Pair O (S (S O)), Pair (S O) (S (S O)), Pair (S O) (S (S (S O))), Pair (S (S O)) (S (S (S (S O)))), Pair (S (S (S O))) (S (S (S (S O)))), Pair (S (S (S O))) (S (S (S (S (S O))))), Pair (S (S (S (S O)))) (S (S (S (S (S O)))))] [c0, c1, c2, c3, c4, c5]
+? coloring [Pair O (S O), Pair O (S (S O)), Pair (S O) (S (S O)), Pair (S O) (S (S (S O))), Pair (S (S O)) (S (S (S (S O)))), Pair (S (S (S O))) (S (S (S (S O)))), Pair (S (S (S O))) (S (S (S (S (S O))))), Pair (S (S (S (S O)))) (S (S (S (S (S O)))))] [R, c1, c2, c3, G, c5]

@@ -1,0 +1,3 @@
+? multiply (S (S (S O))) (S (S (S (S O)))) z
+? multiply x y (S (S (S (S (S (S (S (S (S (S (S (S O))))))))))))
+? multiply x (S (S O)) (S (S (S (S (S (S O))))))
