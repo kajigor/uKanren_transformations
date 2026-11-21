@@ -147,7 +147,12 @@ topLevel (Program defs goal) heuristic =
           let d' = Descend.add goal d
           let resultants = LC.resultants sldTree
           if null resultants 
-          then 
+          then do
+            -- A conjunction that fails outright gets no definition, so it must not be
+            -- remembered: a later instance of it would be folded into a call to a
+            -- relation that the residualizer never generates.  Instances of a failing
+            -- conjunction fail too, so unfolding them again is sound and immediate.
+            modifySeen (const seen)
             return Fail 
           else do 
             children <- mapM (split d') (LC.resultants sldTree)
@@ -179,7 +184,9 @@ topLevel (Program defs goal) heuristic =
               then return $ Leaf (Descend.add goals descend) generalizer subst'
               else do
                 tree <- do go (Descend.add goals descend) subst' generalizer -- Check if descend is correct
-                modifySeen (Set.insert goals)
+                case tree of
+                  Fail -> return ()   -- see 'go': failing conjunctions are not remembered
+                  _    -> modifySeen (Set.insert goals)
                 return tree
 
 
