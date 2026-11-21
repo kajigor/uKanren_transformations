@@ -7,7 +7,7 @@ module CPD.LocalControl where
 
 import           Control.Monad.State
 import           CPD.State 
-import           Data.List           (find, intersect, nub, intercalate)
+import           Data.List           (find, intersect, nub, intercalate, subsequences)
 import           Data.Maybe
 import qualified Data.Set            as Set 
 import           Descend
@@ -57,14 +57,21 @@ substituteDescend :: (Subst.ApplySubst a, Ord v) => Subst.Subst v -> [Descend (a
 substituteDescend s = map $ \(Descend g ancs) -> Descend (Subst.substitute s g) ancs
 
 sldResolution :: [G S] -> Subst.Subst S -> Heuristic -> State CPDState SldTree
-sldResolution goal subst = sldResolutionStep (map Descend.init goal) subst True
+sldResolution goal subst heuristic = do
+  modify (\st -> st { getLocalSteps = 0 })
+  sldResolutionStep (map Descend.init goal) subst True heuristic
 
 sldResolutionStep :: [DescendGoal] -> Subst.Subst S -> Bool -> Heuristic -> State CPDState SldTree
 sldResolutionStep gs s isFirstTime heuristic = do
   env <- gets getEnv
   seen <- gets getSeen
   let currs = map getCurr gs
-  if instanceCheck currs seen
+  steps <- gets getLocalSteps
+  budget <- gets getLocalBudget
+  modify (\st -> st { getLocalSteps = steps + 1 })
+  -- local budget exhausted: stop unfolding (the leaf is handed to global
+  -- control, which abstracts it like any other leaf)
+  if instanceCheck currs seen || maybe False (steps >=) budget
   then return $  Leaf gs s env
   else
       unfoldNext (toZipper gs) isFirstTime gs s
@@ -191,8 +198,30 @@ bmc d q (q':qCurly) = bmc d q qCurly
 
 split :: FN.FreshNames -> [G S] -> [G S] -> (([G S], [G S]), Generalizer, FN.FreshNames)
 split d q q' = -- q <= q'
+  -- Candidate subconjunctions are tracked by their positions in q', and the
+  -- complement is taken by position.  (Previously the complement was
+  -- recomputed by instance matching, which could remove a different but
+  -- matching goal: one goal was then covered twice and another dropped,
+  -- e.g. on the general quicksort, making residualization fail.)
   let n = length q in
-  let qCurly = filter (\q'' -> and $ zipWith embed q q'') $ subconjs q' n in
-  let (bestMC, delta) = bmc d q qCurly in
-  let (b, gen) = minimallyGeneral bestMC in
-  ((b, if length q' > n then complementSubconjs b q' else []), gen, delta)
+  let cands = [ (ix, sub) | ix <- subsequences [0 .. length q' - 1], length ix == n
+                          , let sub = map (q' !!) ix, and (zipWith embed q sub) ] in
+  let (bestMC, delta) = bmcIx d q cands in
+  let (ix, b, gen) = minimallyGeneralIx bestMC in
+  ((b, [ g | (i, g) <- zip [0 ..] q', i `notElem` ix ]), gen, delta)
+
+bmcIx :: FN.FreshNames -> [G S] -> [([Int], [G S])] -> ([([Int], [G S], Generalizer)], FN.FreshNames)
+bmcIx d _ [] = ([], d)
+bmcIx d q ((ix, q') : rest) | msgExists q q' =
+  let (generalized, _, gen, delta) = generalizeGoals d q q' in
+  let (gss, delta') = bmcIx delta q rest in
+  ((ix, generalized, gen) : gss, delta')
+bmcIx d q (_ : rest) = bmcIx d q rest
+
+minimallyGeneralIx :: [([Int], [G S], Generalizer)] -> ([Int], [G S], Generalizer)
+minimallyGeneralIx xs = go xs
+  where
+    go [x] = x
+    go (x@(_, g, _) : rest) | any (\(_, h, _) -> isStrictInst g h) xs = go rest
+    go (x : _) = x
+    go [] = error "Empty list of best matching conjunctions"

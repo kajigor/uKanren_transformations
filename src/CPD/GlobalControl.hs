@@ -7,6 +7,7 @@ import qualified CPD.LocalControl    as LC
 import           CPD.State 
 import           Data.List           (find, partition)
 import qualified Data.Set            as Set 
+import qualified Data.Map.Strict     as Map
 import           Descend
 import           Embed
 import qualified Environment         as Env
@@ -72,11 +73,40 @@ abstractChild ancs (subst, g, Just env) =
   map (\(g, gen) -> (subst, g, gen, Env.updateNames env d')) abstracted
 
 topLevel :: Program G X -> LC.Heuristic -> (GlobalTree, G S, [S])
-topLevel (Program defs goal) heuristic =
+topLevel = topLevelWithBudget Nothing Nothing
+
+-- | Generalize every atom of a conjunction to its most general form
+--   p(X1, .., Xn).  There are finitely many such goals (one per relation), so
+--   once the budget is exhausted global control terminates quickly: the
+--   residual program then calls (copies of) the original relations.
+mostGeneral :: (Subst.Subst S, [G S], Maybe Env.Env) -> [(Subst.Subst S, [G S], Generalizer, Env.Env)]
+mostGeneral (_, _, Nothing) = []
+mostGeneral (subst, gs, Just env) =
+  let go fn [] = ([], fn)
+      go fn (Invoke f ts : rest) =
+        let (vs, fn') = FN.getNames (length ts) fn
+            (more, fn'') = go fn' rest
+        in ([Invoke f (map V vs)] : more, fn'')
+      go fn (_ : rest) = go fn rest
+      (pieces, fn1) = go (Env.getFreshNames env) gs
+  in [ (subst, p, Subst.empty, Env.updateNames env fn1) | p <- pieces ]
+
+-- | Global control with an optional budget on the number of global nodes.
+--   Budget exhausted: no further specialization, every new leaf is
+--   generalized to most general atoms ("anytime" specialization).
+topLevelWithBudget :: Maybe Int -> Maybe Int -> Program G X -> LC.Heuristic -> (GlobalTree, G S, [S])
+topLevelWithBudget budget localBudget prog heuristic =
+    let (tree, logicGoal, names, _) = topLevelAbstr budget localBudget prog heuristic in
+    (tree, logicGoal, names)
+
+-- | Like 'topLevelWithBudget', also returning how resultants were abstracted.
+topLevelAbstr :: Maybe Int -> Maybe Int -> Program G X -> LC.Heuristic
+              -> (GlobalTree, G S, [S], Map.Map ([G S], [G S]) [([G S], Generalizer)])
+topLevelAbstr budget localBudget (Program defs goal) heuristic =
     let env = Env.fromDefs defs in
     let ((logicGoal, names), env') = runState (E.preEval goal) env in
-    let tree = evalState (go (Descend.init [logicGoal]) Subst.empty Subst.empty) (CPD.State.init env') in 
-    (tree, logicGoal, names) 
+    let (tree, st) = runState (go (Descend.init [logicGoal]) Subst.empty Subst.empty) (CPD.State.initWithBudget localBudget env') in
+    (tree, logicGoal, names, getAbstr st)
   where
     go :: Descend.Descend [G S] -> Subst.Subst S -> Generalizer -> State CPDState GlobalTree
     go d@(Descend.Descend goal ancs) subst generalizer = do 
@@ -92,7 +122,14 @@ topLevel (Program defs goal) heuristic =
       else do 
         nodes <- gets getSeen
         let ancs' = goal : ancs 
-        let abstracted = map (abstractChild ancs') bodies -- prolly need to make it stateful (env in bodies) 
+        let exhausted = maybe False (Set.size nodes >=) budget
+        let abstracted = if exhausted
+                         then map mostGeneral bodies
+                         else map (abstractChild ancs') bodies -- prolly need to make it stateful (env in bodies) 
+        -- record how every resultant was split, for the residualizer
+        modify (\st -> st { getAbstr = foldl (\m ((_, bgs, _), pcs) ->
+                                Map.insert (goal, bgs) [ (g, gen) | (_, g, gen, _) <- pcs ] m)
+                              (getAbstr st) (zip bodies abstracted) })
         let (toUnfold, toNotUnfold, newNodes) =
               foldl (\ (yes, no, seen) gs ->
                           let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (Embed.isVariant g) seen) gs in

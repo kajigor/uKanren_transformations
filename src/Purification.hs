@@ -212,10 +212,13 @@ conservativePurificationWithErasure program@(Program defs goal) arguments =
 {-------------------------------------------}
 
 removeRedundantArgs :: Rules -> Erasure -> Erasure
+-- Greatest fixpoint: an element that is bad stays bad when other elements are
+-- removed (fewer erased arguments only add occurrences), so every bad element
+-- of a round is removed at once (previously one element per full rescan).
 removeRedundantArgs r e =
-  case find (isBadErasureElem r e) $ erasureToList e of
-    Nothing     -> e
-    Just (f, i) -> removeRedundantArgs r $ Map.insert f (delete i $ e Map.! f) e
+  case filter (isBadErasureElem r e) $ erasureToList e of
+    []  -> e
+    bad -> removeRedundantArgs r $ foldl' (\m (f, i) -> Map.adjust (delete i) f m) e bad
   where
 
     {-------------------------------------------}

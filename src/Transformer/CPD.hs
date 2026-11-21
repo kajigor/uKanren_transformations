@@ -28,6 +28,7 @@ import           Util.File              (createDirRemoveExisting, shortenFileNam
 import           Util.System            (graphsToPdf)
 import           Debug.Trace (traceShow)
 import Util.System (graphsToPdf)
+import Data.Maybe (isJust)
 
 data TransformResult = Result { original   :: [Def G X]
                               , globalTree :: GC.GlobalTree
@@ -37,10 +38,17 @@ data TransformResult = Result { original   :: [Def G X]
                               }
 
 runTransformation :: Program G X -> LC.Heuristic -> TransformResult
-runTransformation goal@(Program original _) heuristic =
-  let (globalTree, logicGoal, names) = GC.topLevel goal heuristic in
+runTransformation = runTransformationWithBudget Nothing Nothing
+
+-- | Budgets: maximal number of global nodes, maximal unfolding steps per
+--   local tree.
+runTransformationWithBudget :: Maybe Int -> Maybe Int -> Program G X -> LC.Heuristic -> TransformResult
+runTransformationWithBudget budget localBudget goal@(Program original _) heuristic =
+  let (globalTree, logicGoal, names, abstr) = GC.topLevelAbstr budget localBudget goal heuristic in
   let localTrees = GC.getNodes globalTree in
-  let beforePur = residualizationTopLevel globalTree in
+  let beforePur = (if isJust budget || isJust localBudget
+                    then residualizationTopLevelWithOrig original
+                    else residualizationTopLevelWith) abstr globalTree in
   let purified = purification (beforePur, vident <$> reverse names) in
   Result original globalTree localTrees beforePur purified
 
