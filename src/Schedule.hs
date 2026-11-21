@@ -20,6 +20,8 @@
 --   changes the cost and termination behaviour of the search.
 module Schedule
   ( schedule
+  , successTable
+  , sccs
   ) where
 
 import           Data.List       (foldl', nub, sortOn)
@@ -66,7 +68,14 @@ propagate tbl gr g = case g of
         let m = callMode gr ts
             out = M.findWithDefault (S.fromList [0 .. length ts - 1]) (f, m) tbl
         in foldr S.insert gr (concat [ varsT t | (i, t) <- zip [0 ..] ts, i `S.member` out ])
-  Conjunction {} -> foldl' (propagate tbl) gr (conjs g)
+  Conjunction {} ->
+    -- calls see the groundness at their position; unifications are order
+    -- independent, so they are re-propagated until nothing changes (x == C y z
+    -- placed first grounds x once y and z are ground later)
+    let cs = conjs g
+        us = [ (a, b) | a :=: b <- cs ]
+        fixU x = let x' = foldl' (\acc (a, b) -> propU acc a b) x us in if x' == x then x else fixU x'
+    in fixU (foldl' (\acc c -> fixU (propagate tbl acc c)) gr cs)
   Disjunction {} -> foldr1 S.intersection (map (propagate tbl gr) (disjs g))
   Fresh _ h -> propagate tbl gr h
   Delay h -> propagate tbl gr h
@@ -102,7 +111,9 @@ smallerVars inputs cs = go S.empty
 
 ------------------------------------------------------------------------------
 
-data Ctx = Ctx { cDefs :: Defs, cScc :: M.Map Name Int, cTbl :: Succ }
+data Ctx = Ctx { cDefs :: Defs, cScc :: M.Map Name Int, cTbl :: Succ
+               , cRename :: Bool  -- ^ rename calls to their mode copies (False: analysis only)
+               }
 
 -- | Schedule one goal; returns the reordered goal and the (relation, mode)
 --   pairs it calls.
@@ -127,7 +138,7 @@ schedG ctx self inputs gr g = case g of
                 (bi, bc) = best
                 rest' = [ c | (i, c) <- indexed, i /= bi ]
                 (bc', calls) = case bc of
-                  Invoke f ts | not (isSpecial f ts) && M.member f (cDefs ctx) ->
+                  Invoke f ts | cRename ctx && not (isSpecial f ts) && M.member f (cDefs ctx) ->
                     let m = callMode grd ts in (Invoke (modeName f m) ts, [(f, m)])
                   Disjunction {} -> schedG ctx self inputs grd bc
                   _ -> (bc, [])
@@ -146,9 +157,9 @@ schedG ctx self inputs gr g = case g of
     collect (Fresh x h) = let (vs, b) = collect h in (x : vs, b)
     collect h = ([], h)
     score grd small i c = case c of
-      _ :=: _ -> (0 :: Int, 0 :: Int, i)
+      _ :=: _ -> (0 :: Int, 0 :: Int, 0 :: Int, i)
       Invoke f ts
-        | isSpecial f ts -> (0, 0, i)
+        | isSpecial f ts -> (0, 0, 0, i)
         | otherwise ->
             let m = callMode grd ts
                 nGround = S.size m
@@ -157,10 +168,13 @@ schedG ctx self inputs gr g = case g of
                          then any (\(j, t) -> j `S.member` m && case t of V v -> v `S.member` small; _ -> False) (zip [0 ..] ts)
                               && terminates ctx f m
                          else terminates ctx f m
-                -- non-terminating calls are delayed; ground-heavy calls first
-            in (if term then 1 else 3, negate nGround, i)
-      Disjunction {} -> (2, 0, i)
-      _ -> (2, 0, i)
+                -- variables this call grounds (by its success pattern): among the
+                -- terminating calls, run the producers of other calls' inputs first
+                gain = S.size (propagate (cTbl ctx) grd c) - S.size grd
+                -- non-terminating calls are delayed; producers, then ground-heavy calls first
+            in (if term then 1 else 3, negate gain, negate nGround, i)
+      Disjunction {} -> (2, 0, 0, i)
+      _ -> (2, 0, 0, i)
 
 -- | Is relation f terminating in mode m?  For every conjunctive path of the
 --   body there must be an order (unifications first, then greedily any call
@@ -213,18 +227,29 @@ modeName f m = f ++ "__" ++ concatMap show (S.toList m)
 
 -- | Success-pattern table for all (relation, mode) pairs reachable from the
 --   goal, computed as a decreasing fixpoint.
-successTable :: Defs -> [(Name, Mode)] -> S.Set X -> G X -> Succ
-successTable defs seeds gr0 goal = iter M.empty
+successTable :: M.Map Name Int -> Defs -> [(Name, Mode)] -> S.Set X -> G X -> Succ
+successTable sccIx defs seeds gr0 goal = iter (50 :: Int) M.empty
   where
-    iter tbl =
+    -- the success pattern of a mode copy is computed on its *scheduled* body, so
+    -- the analysis and the scheduler agree (on the source order, a producer placed
+    -- after its consumer makes the outputs look non-ground); reordering can make
+    -- the iteration non-monotone, hence the bound
+    iter k tbl =
       let pairs = reachable tbl
-          tbl' = M.fromList [ (k, out tbl k) | k <- pairs ]
-      in if tbl' == tbl then tbl else iter tbl'
+          -- intersecting keeps the iteration decreasing from "all ground", so it
+          -- finds the greatest fixpoint: assume a mode copy grounds everything and
+          -- refute it (otherwise it can settle in a pessimistic self-consistent
+          -- table: a recursive producer that "grounds nothing" is never run first)
+          tbl' = M.fromList [ (p, S.intersection (out tbl p) (M.findWithDefault (allPos p) p tbl)) | p <- pairs ]
+      in if tbl' == tbl || k == 0 then tbl' else iter (k - 1) tbl'
+    allPos (f, _) = maybe S.empty (\(Def _ as _) -> S.fromList [0 .. length as - 1]) (M.lookup f defs)
     out tbl (f, m) = case M.lookup f defs of
       Nothing -> S.empty
       Just (Def _ as body) ->
         let gr = S.fromList [ a | (i, a) <- zip [0 ..] as, i `S.member` m ]
-            gr' = propagate tbl gr body
+            ctx = Ctx defs sccIx tbl False
+            body' = fst (schedG ctx f gr gr body)
+            gr' = propagate tbl gr body'
         in S.fromList [ i | (i, a) <- zip [0 ..] as, a `S.member` gr' ]
     -- reachable call patterns under the current table (non-reordered order
     -- is an under-approximation of groundness; we explore both the plain and
@@ -264,8 +289,8 @@ schedule ground (ds, goal) =
   let defs = M.fromList [ (getName d, d) | d <- ds ]
       sccIx = M.fromList [ (n, i) | (i, ns) <- zip [0 ..] (sccs ds), n <- ns ]
       run seeds =
-        let tbl = successTable defs seeds ground goal
-            ctx = Ctx defs sccIx tbl
+        let tbl = successTable sccIx defs seeds ground goal
+            ctx = Ctx defs sccIx tbl True
             (goal', calls0) = schedG ctx "" S.empty ground goal
             build _ [] = ([], [])
             build seen (k@(f, m) : ks)
