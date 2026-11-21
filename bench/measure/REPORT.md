@@ -586,7 +586,28 @@ Each analysis is a separate pass and variant, measured against its baseline from
 | 3 | **size invariants as guards** (`src/SizeGuard.hs`): infer `\|p_i\| ≤ \|p_j\|` and `\|p_i\| ≤ K` (list length, Peano value) as the greatest inductive set (difference constraints); check them before recursive calls whose bound is ground | `+guard` | +2 (`revAcc`, `fclMult` q3), −0 | 1.000× | `revAcc`: out of fuel → about 100 steps |
 | 4 | **barriers at calls of unknown termination**: a call that terminates in no order keeps its source position; only producers of its inputs may overtake it | `+sched` | cpd-la+opt+sched 106 → 104 (+`binFactor@vanilla` q3; −`exprEvalGeneral` q2, `fclMult@vanilla` q1, `relSort@vanilla`) | 1.010×; original+sched 1.066× | **negative, not adopted** (`results/futamura/barrier`, `barrier.patch`): `coloring` q1 24.7× worse; source order blocks too many good reorderings |
 
-All together, `cpd-lap+opt+sched+guard+idx` against the unspecialized program
+Experiments 5–7 target the specializer's cost and the interpreter layer:
+
+| # | change | where | result |
+|---|---|---|---|
+| 5 | greedy ordered-subconjunction embedding in the whistle (exact, O(n·m) instead of C(n, k)) | `Embed.subseqMatch` | residuals identical; specialization 0.82–0.91×; timeouts unchanged (`results/futamura/embed`) |
+| 5b | instance check stops at the first mismatch (profiling: 65% of ConsPD's time on `contains@vanilla` was `length` inside it) | `Embed.instList` | residuals identical; ConsPD 10× more nodes per second (`results/futamura/inst`) |
+| 6 | budget for global control (ConsPD 200, CPD 2000 processed conjunctions; then most general calls), plus `subsequencesOfLength` (residualization no longer 2ⁿ in the conjunction length) and a range-restricted instance check | `CPD/ConsPD.GlobalControl`, `Util.Miscellaneous` | residuals identical wherever both finish; conspd-det timeouts 26 → 20, `contains@vanilla` and `uptoSum@vanilla` now solved (`results/futamura/budget`) |
+| 7 | **constructor specialization** (`+spc`, `src/SpecConstr.hs`): a call `f … (C us) …` at a dispatch position of `f` becomes `f_C … us …`; with `PostOpt` and one unfolding per round of single-clause specializations, this unrolls `jo_solve` over the literal goal lists and calls the object relations' clauses directly | `+spc` | steps **0.528×** (cpd-la+opt), **0.612×** with scheduling (solved 106 → 114); `unifier@vanilla` 42129 → 453, `binFactor@vanilla` 14648 → 160, `typecheck@vanilla` 11164 → 284 (the direct program: 273); no mismatch (`results/futamura/spc`) |
+
+**Jones optimality after experiment 7** (`results/futamura/spc/summary-full.md`; compare §6.2):
+
+| specializer | twin queries solved | vs direct | vs S(p) (overhead left) | optimal |
+|---|---:|---:|---:|---:|
+| cpd-la+opt | 42/63 | 1.04× | 6.65× | 11 |
+| cpd-la+opt+spc | 43/63 | 0.27× | **1.90×** | 15 |
+| cpd-lap+opt+sched+guard+idx | 48/60 | 0.73× | 5.00× | 10 |
+| cpd-lap+opt+spc+sched+guard+idx | **55/60** | **0.26×** | **1.88×** | **22** |
+
+All together, `cpd-lap+opt+spc+sched+guard+idx` against the unspecialized program
+(`results/futamura/spc`): it solves **115 of 136** queries (original: 90) with **0.039×** the
+steps on the 86 both solve, and loses 4 (`exDepth`, `power` q1, `sortGeneral` q1,
+`tmInterp@vanilla` q1). Before experiment 7, `cpd-lap+opt+sched+guard+idx`
 (`results/futamura/guard`):
 
 * it solves **108 of 136** queries, against 90 for the original;
@@ -610,10 +631,10 @@ All together, `cpd-lap+opt+sched+guard+idx` against the unspecialized program
 
 | # | idea | why | prio |
 |---|---|---|---|
-| 24 | **Dispatch inside the specializer**: use the constructor analysis during global control, so a goal with a known constructor is specialized against only the matching clauses, instead of indexing the residual afterwards. Then generalization no longer turns an object program into a run-time clause table. | experiment 1 removes at most the head tests (≤ 2.4×); keeping the dispatch static removes the interpreter layer (P5) | **A** |
+| 24 | (partly done by experiment 7, as a residual pass) **Dispatch inside the specializer**: use the constructor analysis during global control, so a goal with a known constructor is specialized against only the matching clauses, instead of indexing the residual afterwards. Then generalization no longer turns an object program into a run-time clause table. | experiment 1 removes at most the head tests (≤ 2.4×); keeping the dispatch static removes the interpreter layer (P5) | **A** |
 | 25 | **Abstract multiple specialization** (CiaoPP): one abstract-interpretation engine (constructor sets, groundness, size relations, determinism) driving the creation of polyvariant versions and the removal of tests, as the shared basis of `Schedule`, `Index` and `SizeGuard` | the three passes each recompute part of the same information | **A** |
 | 26 | Cardinality / number-of-solutions analysis (Debray–Lin) in the scheduler, beyond switch determinism | `power` q2 under ConsPD: no input is ground at the top-level call, so determinism cannot decide | B |
-| 27 | Ordered-subconjunction embedding in O(n·m) instead of enumerating subsequences; record the fold of every leaf in the global tree, so the residualizer does not search for it | ConsPD/CPD time on long conjunctions (§7.3); residualization becomes total by construction | **A** |
+| 27 | (done: experiments 5, 5b, 6) Ordered-subconjunction embedding in O(n·m) instead of enumerating subsequences; record the fold of every leaf in the global tree, so the residualizer does not search for it | ConsPD/CPD time on long conjunctions (§7.3); residualization becomes total by construction | **A** |
 | 28 | Size invariants beyond pairs (polyhedra, Benoy–King) and conditional invariants (`mul x y z` with `y > 0`), for `power` q3 and `fclMult` q2 | experiment 3 covers only pairwise bounds | B |
 | 29 | Check that every run-time query is an instance of the specialization query; flag it in the harness and the visualizer | user-entered queries in the visualizer silently produced no answers | C |
 
