@@ -12,6 +12,7 @@ module Measure.Runner
   , withSchedule
   , withIndex
   , withGuard
+  , withSpecConstr
   , allVariants
   , measureBench
   , programSize
@@ -52,6 +53,7 @@ import qualified Transformer.PD           as PD
 import qualified PostOpt
 import qualified Index
 import qualified SizeGuard
+import qualified SpecConstr
 import qualified Schedule
 import qualified Data.Set                 as S
 
@@ -177,12 +179,20 @@ withGuard sp = case spPerQuery sp of
   Nothing -> sp { spName = spName sp ++ "+guard"
                 , spPerQuery = Just $ \ds _ g -> SizeGuard.guardProgram (ds, g) }
 
+-- | Add constructor specialization ('SpecConstr') to the residual program.
+withSpecConstr :: Specializer -> Specializer
+withSpecConstr sp = sp { spName = spName sp ++ "+spc", spPost = spc . spPost sp }
+  where spc r = let (ds, g) = SpecConstr.specConstr (resVars r) (resDefs r, resGoal r)
+                in r { resDefs = ds, resGoal = g }
+
 -- | Every specializer with its post-processing variants.
 allVariants :: [Specializer]
 allVariants = concatMap (\s -> [ s, withPostOpt s, withSchedule s, withSchedule (withPostOpt s)
                                , withIndex (withPostOpt s), withIndex (withSchedule (withPostOpt s))
                                , withGuard (withSchedule s), withGuard (withPostOpt s), withGuard (withSchedule (withPostOpt s))
-                               , withIndex (withGuard (withSchedule (withPostOpt s))) ]) specializers
+                               , withIndex (withGuard (withSchedule (withPostOpt s)))
+                               , withSpecConstr (withPostOpt s), withSchedule (withSpecConstr (withPostOpt s))
+                               , withIndex (withGuard (withSchedule (withSpecConstr (withPostOpt s)))) ]) specializers
 
 -- | Number of definitions and number of goal nodes (unifications + calls).
 programSize :: [Def G X] -> G X -> (Int, Int)
