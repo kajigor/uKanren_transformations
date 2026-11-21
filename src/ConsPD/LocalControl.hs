@@ -191,11 +191,15 @@ complementSubconjs xs ys =
     go xs ys = error (printf "complementing %s by %s" (show xs) (show ys))
 
 minimallyGeneral :: (Show a, Ord a) => [([G a], Generalizer)] -> ([G a], Generalizer)
-minimallyGeneral xs =
-    go xs xs
+minimallyGeneral = minimallyGeneralOn fst
+
+-- | 'minimallyGeneral' on candidates that carry extra data (their positions).
+minimallyGeneralOn :: (Show a, Ord a) => (x -> [G a]) -> [x] -> x
+minimallyGeneralOn key xs =
+  go xs xs
   where
     go [x] _     = x
-    go (x:xs) ys | any (\g -> isStrictInst (fst x) (fst g)) ys = go xs ys
+    go (x:xs) ys | any (\g -> isStrictInst (key x) (key g)) ys = go xs ys
     go (x:xs) _  = x
     go [] _      = error "Empty list of best matching conjunctions"
 
@@ -209,8 +213,9 @@ bmc q (q':qCurly) = bmc q qCurly
 
 split :: [G S] -> [G S] -> State FN.FreshNames (([G S], [G S]), Generalizer)
 split q q' = do -- q <= q'
-  let n = length q 
-  let qCurly = filter (\q'' -> and $ zipWith embed q q'') $ subconjs q' n 
-  bestMC <- bmc q qCurly
-  let (b, gen) = minimallyGeneral bestMC 
-  return ((b, if length q' > n then complementSubconjs b q' else []), gen)
+  let n = length q
+  let cands = [ (map fst s, map snd s) | s <- subconjs (zip [0 :: Int ..] q') n
+                                        , and (zipWith embed q (map snd s)), msgExists q (map snd s) ]
+  bestMC <- bmc q (map snd cands)
+  let ((b, gen), is) = minimallyGeneralOn (fst . fst) (zip bestMC (map fst cands))
+  return ((b, if length q' > n then [ g | (i, g) <- zip [0 :: Int ..] q', i `notElem` is ] else []), gen)

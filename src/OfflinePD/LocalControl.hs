@@ -167,11 +167,15 @@ complementSubconjs xs ys =
 -- elem q is minimally general of Q iff there doesn't exist another elem q' \in Q which is a strict instance (q' = q \Theta)
 -- isStrictInst q t iff q = t \Theta
 minimallyGeneral :: (Show a, Ord a) => [([AnnG Term a], Generalizer)] -> ([AnnG Term a], Generalizer)
-minimallyGeneral xs =
+minimallyGeneral = minimallyGeneralOn fst
+
+-- | 'minimallyGeneral' on candidates that carry extra data (their positions).
+minimallyGeneralOn :: (Show a, Ord a) => (x -> [AnnG Term a]) -> [x] -> x
+minimallyGeneralOn key xs =
   go xs xs
   where
     go [x] _     = x
-    go (x:xs) ys | any (\g -> isStrictInst (fst x) (fst g)) ys = go xs ys
+    go (x:xs) ys | any (\g -> isStrictInst (key x) (key g)) ys = go xs ys
     go (x:xs) _  = x
     go [] _      = error "Empty list of best matching conjunctions"
 
@@ -186,8 +190,9 @@ bmc d q (q':qCurly) = bmc d q qCurly
 split :: FN.FreshNames -> [AnnG Term S] -> [AnnG Term S] -> (([AnnG Term S], [AnnG Term S]), Generalizer, FN.FreshNames)
 split d q q' = -- q <= q'
   let n = length q in
-  let qCurly = filter (\q'' -> and $ zipWith embed q q'') $ subconjs q' n in
-  let (bestMC, delta) = bmc d q qCurly in
-  let (b, gen) = minimallyGeneral bestMC in
-  ((b, if length q' > n then complementSubconjs b q' else []), gen, delta)
+  let cands = [ (map fst s, map snd s) | s <- subconjs (zip [0 :: Int ..] q') n
+                                        , and (zipWith embed q (map snd s)), msgExists q (map snd s) ] in
+  let (bestMC, delta) = bmc d q (map snd cands) in
+  let ((b, gen), is) = minimallyGeneralOn (fst . fst) (zip bestMC (map fst cands)) in
+  ((b, if length q' > n then [ g | (i, g) <- zip [0 :: Int ..] q', i `notElem` is ] else []), gen, delta)
 
