@@ -10,6 +10,7 @@ import           CPD.State
 import           Data.List           (find, intersect, nub, intercalate)
 import           Data.Maybe
 import qualified Data.Set            as Set 
+import qualified Data.Map            as Map
 import           Descend
 import           Embed
 import qualified Environment         as Env
@@ -28,7 +29,13 @@ import           Debug.Trace
 
 -- | @DeterministicLA k@: deterministic unfolding where resultants that fail
 --   within @k@ steps are pruned before counting (see 'Unfold.pruneByLookahead').
-data Heuristic = Deterministic | Branching | DeterministicLA Int deriving (Show, Read)
+--
+--   @DeterministicLAP k@: as @DeterministicLA k@, and a conjunction that is an
+--   instance of an already processed one only by binding variables to ground
+--   terms is specialized on its own instead of being folded into the more
+--   general definition (which would discard the static data: @multiply 0 y 4@
+--   folded into @multiply x y 4@ keeps a branch that loops without answers).
+data Heuristic = Deterministic | Branching | DeterministicLA Int | DeterministicLAP Int deriving (Show, Read)
 
 type DescendGoal = Descend (G S)
 
@@ -66,7 +73,7 @@ sldResolutionStep gs s isFirstTime heuristic = do
   env <- gets getEnv
   seen <- gets getSeen
   let currs = map getCurr gs
-  if instanceCheck currs seen
+  if foldable heuristic currs seen
   then return $  Leaf gs s env
   else
       unfoldNext (toZipper gs) isFirstTime gs s
@@ -114,6 +121,7 @@ sldResolutionStep gs s isFirstTime heuristic = do
       needsUnfolding Branching env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
       needsUnfolding Deterministic _ _ ns isFirstTime = length ns == 1 || isFirstTime
       needsUnfolding (DeterministicLA _) _ _ ns isFirstTime = length ns == 1 || isFirstTime
+      needsUnfolding (DeterministicLAP _) _ _ ns isFirstTime = length ns == 1 || isFirstTime
 
 bodies :: SldTree -> [[G S]]
 bodies = leaves
@@ -204,5 +212,26 @@ split d q q' = -- q <= q'
 
 lookahead :: Heuristic -> Env.Env -> [([G S], Subst.Subst Int)] -> [([G S], Subst.Subst Int)]
 lookahead (DeterministicLA k) env = pruneByLookahead k env
+lookahead (DeterministicLAP k) env = pruneByLookahead k env
 lookahead _ _ = id
 
+
+-- | Should the conjunction be folded into an already processed one (and not
+--   be unfolded)?  'DeterministicLAP' refuses to fold when every binding of the
+--   instantiating substitution is a renaming or a ground term and at least one
+--   is ground: such a conjunction has strictly fewer variables, and an infinite
+--   chain of ground instances along a branch is still stopped by the whistle.
+foldable :: Heuristic -> [G S] -> Set.Set [G S] -> Bool
+foldable (DeterministicLAP _) currs seen =
+  any (\g -> case inst g currs Map.empty of
+                Just m  -> not (groundSpecializing (Map.elems m))
+                Nothing -> False) seen
+  where
+    groundSpecializing ts = any isGroundC ts && all (\t -> isVarT t || isGroundC t) ts
+    isVarT (V _) = True
+    isVarT _     = False
+    isGroundC (C _ as) = all isGroundT as
+    isGroundC _        = False
+    isGroundT (V _)    = False
+    isGroundT (C _ as) = all isGroundT as
+foldable _ currs seen = instanceCheck currs seen
