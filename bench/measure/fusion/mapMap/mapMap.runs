@@ -1,0 +1,6 @@
+-- forward
+? mapMap [O, S O, S (S O), O, S O, S (S O)] zs
+-- backward
+? mapMap xs [S (S O), S (S (S O)), S (S (S (S O))), S (S O), S (S (S O)), S (S (S (S O)))]
+-- backward with a wrong element (must fail)
+? mapMap xs [S (S O), S O, S (S (S O))]

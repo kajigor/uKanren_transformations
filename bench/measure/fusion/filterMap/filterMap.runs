@@ -1,0 +1,6 @@
+-- forward
+? filterMap [O, S O, S (S O), S (S (S O)), S (S (S (S O)))] ys
+-- backward: 3-element inputs whose incremented evens are [2]
+? filterMap [a, b, c] [S (S O)]
+-- backward, length unknown
+? filterMap xs [S (S O), S (S (S (S O)))]

@@ -1,0 +1,6 @@
+-- forward: [1,2,3,1] -> 14
+? mapSum [S O, S (S O), S (S (S O)), S O] s
+-- backward: all lists whose doubled sum is 6
+? mapSum xs (S (S (S (S (S (S O))))))
+-- partial: a 3-element list with doubled sum 4
+? mapSum [a, b, c] (S (S (S (S O))))

@@ -1,0 +1,6 @@
+-- forward
+? zipMaps [O, S O, S (S O)] [S O, O, S O] zs
+-- backward: all pairs of 2-element lists with pointwise (x+1)+(y+1) = [3, 2]
+? zipMaps xs ys [S (S (S O)), S (S O)]
+-- one input known
+? zipMaps [S O, O] ys [S (S (S (S O))), S (S (S O))]

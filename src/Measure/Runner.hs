@@ -21,6 +21,7 @@ module Measure.Runner
   , loadBench
   ) where
 
+import           Control.Concurrent   (forkIO, newEmptyMVar, putMVar, takeMVar)
 import           Control.Exception    (SomeException, evaluate, try)
 import           Data.IORef
 import           Data.List            (intercalate, nub)
@@ -102,6 +103,14 @@ specCall g = case topLevelFreshVars g of
   (vs, Invoke p ts) -> Just (vs, p, ts)
   _                 -> Nothing
 
+-- | Global-node budget of the budgeted CPD variants.
+cpdBudget :: Int
+cpdBudget = 40
+
+-- | Unfolding-step budget per local tree of the budgeted CPD variants.
+cpdLocalBudget :: Int
+cpdLocalBudget = 200
+
 -- | Wrap the triple produced by the purification step.
 fromPurified :: Program G X -> [X] -> (G X, [X], [Def G X]) -> Either String Residual
 fromPurified (Program _ goal) names (g, _xs, defs) =
@@ -129,6 +138,11 @@ specializers =
       fromPurified p (topNames p) (CPD.purified (CPD.runTransformation p CPDLC.Deterministic))
   , sp "cpd-branch" $ \p ->
       fromPurified p (topNames p) (CPD.purified (CPD.runTransformation p CPDLC.Branching))
+    -- global-control budget (number of global nodes), then generalize
+  , sp "cpd-det-b" $ \p ->
+      fromPurified p (topNames p) (CPD.purified (CPD.runTransformationWithBudget (Just cpdBudget) (Just cpdLocalBudget) p CPDLC.Deterministic))
+  , sp "cpd-branch-b" $ \p ->
+      fromPurified p (topNames p) (CPD.purified (CPD.runTransformationWithBudget (Just cpdBudget) (Just cpdLocalBudget) p CPDLC.Branching))
   , sp "conspd-det" $ \p ->
       ConsPDGlobal.purified (ConsPDGlobal.runTransformation p ConsLC.Deterministic) >>= fromPurified p (topNames p)
   , sp "conspd-branch" $ \p ->
@@ -165,8 +179,12 @@ passTokens =
   , ("fail",  "may-succeed failure analysis")
   , ("inl",   "post-unfolding of non-recursive definitions")
   , ("merge", "duplicate-definition merging (bisimulation)")
+  , ("raf",   "redundant argument filtering: unused inputs (Leuschel-Sorensen)")
+  , ("far",   "reverse redundant argument filtering: unused outputs")
   , ("dead",  "unreachable-definition removal")
+  , ("uf",    "unifications first in every conjunction (stable)")
   , ("sched", "per-query mode-directed conjunct scheduling")
+  , ("det",   "determinism-aware scheduling: semidet tests early (non-recursive first), generators that ground nothing are not hoisted (needs sched)")
   ]
 
 -- | Presets expand to several atomic components.
@@ -198,12 +216,13 @@ mkSpecializer name = do
              | otherwise =
                  let (ds, g) = PostOpt.optimizeWith (PostOpt.PNormalize : postPasses) (resVars r) (resDefs r, resGoal r)
                  in r { resDefs = ds, resGoal = g }
-      perQ | "sched" `elem` ps = Just $ \ds _qvs g -> Schedule.schedule S.empty (ds, g)
+      perQ | "sched" `elem` ps = Just $ \ds _qvs g -> Schedule.scheduleWith ("det" `elem` ps) S.empty (ds, g)
            | otherwise = Nothing
   return base { spName = name, spPost = post, spPerQuery = perQ }
   where
     postOptPasses = [ ("ue", PostOpt.PUnifElim), ("fail", PostOpt.PFailure), ("inl", PostOpt.PInline)
-                    , ("merge", PostOpt.PMerge), ("dead", PostOpt.PUnreachable) ]
+                    , ("merge", PostOpt.PMerge), ("raf", PostOpt.PRaf), ("far", PostOpt.PFar)
+                    , ("dead", PostOpt.PUnreachable), ("uf", PostOpt.PUnifFirst) ]
     splitPlus str = case break (== '+') str of
       (a, [])      -> [a]
       (a, _ : rest) -> a : splitPlus rest
@@ -268,8 +287,18 @@ measureBench sps b = do
                   let (ws, body) = topLevelFreshVars q
                   st <- evaluate (runGoal odefs ws body (bAnswers b) (bFuel b))
                   return (qn, ws, body, st)) (bRuns b)
-  cache <- newIORef M.empty
-  concat <$> mapM (one cache refs) sps
+  -- run the distinct base specializations of this benchmark concurrently
+  -- (one slow or timing-out specializer no longer serializes the others)
+  let baseSps = M.elems (M.fromList [ (spBase sp, sp) | sp <- sps ])
+  vars <- mapM (\sp -> do v <- newEmptyMVar
+                          _ <- forkIO (base sp >>= putMVar v)
+                          return (spBase sp, v)) baseSps
+  done <- mapM (\(n, v) -> (,) n <$> takeMVar v) vars
+  cache <- newIORef (M.fromList done)
+  -- "is this answer admitted by the original program" is independent of the
+  -- specializer: cache it per (query, answer) across all specializers
+  soundCache <- newIORef M.empty
+  concat <$> mapM (one soundCache cache refs) sps
   where
     base sp = do
       res <- timeout (bTimeout b * 1000000) $ timed $ do
@@ -287,7 +316,7 @@ measureBench sps b = do
             Right x -> x
         return (Just (r', ms + ms'))
       _ -> return res
-    one cache refs sp = do
+    one sc cache refs sp = do
       c <- readIORef cache
       res0 <- case M.lookup (spBase sp) c of
         Just r -> return r
@@ -299,9 +328,9 @@ measureBench sps b = do
       case res of
         Nothing -> return [failedRow sp "spec-timeout"]
         Just (Left err, _) -> return [failedRow sp ("spec-fail: " ++ take 60 err)]
-        Just (Right r, specMs) -> mapM (runOne sp r specMs) refs
+        Just (Right r, specMs) -> mapM (runOne sc sp r specMs) refs
     failedRow sp why = Row (bName b) "*" (spName sp) 0 0 0 0 0 0 0 why "-" "" "-"
-    runOne sp r specMs (qn, ws, origBody, ref) =
+    runOne sc sp r specMs (qn, ws, origBody, ref) =
       case runAgainst r (fresh ws origBody) of
         Left err -> return $ Row (bName b) qn (spName sp) specMs 0 0 0 0 0 0 err "-" "" "-"
         Right (qvs, goal0) -> do
@@ -318,22 +347,32 @@ measureBench sps b = do
             Left (ex :: SomeException) ->
               return $ Row (bName b) qn (spName sp) (specMs + qMs) nd sz 0 0 0 0 ("eval-crash: " ++ take 50 (show ex)) "-" progTxt lintTxt
             Right (st, evalMs) -> do
-              let chk = check r' qvs goal ws origBody ref st
+              chk <- check sc qn r' qvs goal ws origBody ref st
               return $ Row (bName b) qn (spName sp) (specMs + qMs) nd sz (rsUnifs st) (rsCalls st) evalMs
                            (length (rsAnswers st)) (show (rsOutcome st)) chk
                            (progTxt ++ "\n-- answers: " ++ show (rsAnswers st) ++ "\n-- reference: " ++ show (rsAnswers ref))
                            lintTxt
     -- cross validation
-    check r qvs goal ws origBody ref st
+    check sc qn r qvs goal ws origBody ref st
       | rsOutcome ref == Finished && rsOutcome st == Finished =
-          if sameSet (rsAnswers ref) (rsAnswers st) then "ok" else "MISMATCH"
-      | otherwise =
+          return $ if sameSet (rsAnswers ref) (rsAnswers st) then "ok" else "MISMATCH"
+      | otherwise = do
           let Program odefs _ = bProgram b
               fuel = bFuel b
-              sound = all (admits fuel odefs ws origBody) (take 20 (rsAnswers st))
-              -- answer variables are named r_<w> in the residual run
-              complete = all (admits fuel (resDefs r) qvs goal) (take 20 (rsAnswers ref))
-          in  case (sound, complete) of
+              admitted a = do
+                m <- readIORef sc
+                case M.lookup (qn, a) m of
+                  Just v -> return v
+                  Nothing -> do
+                    v <- evaluate (admits fuel odefs ws origBody a)
+                    modifyIORef' sc (M.insert (qn, a) v)
+                    return v
+              allM _ [] = return True
+              allM f (x : xs) = f x >>= \ok -> if ok then allM f xs else return False
+          sound <- allM admitted (take 20 (rsAnswers st))
+          -- answer variables are named r_<w> in the residual run
+          let complete = all (admits fuel (resDefs r) qvs goal) (take 20 (rsAnswers ref))
+          return $ case (sound, complete) of
                 (True, True)  -> "ok~"
                 (False, _)    -> "unverified-sound"
                 (_, False)    -> "unverified-complete"

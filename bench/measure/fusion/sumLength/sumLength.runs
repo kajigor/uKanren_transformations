@@ -1,0 +1,6 @@
+-- forward
+? sumLength [S O, S (S O), O, S (S (S O))] s n
+-- backward: lists of length 3 with sum 2
+? sumLength xs (S (S O)) (S (S (S O)))
+-- backward, length unknown: lists with sum 2
+? sumLength xs (S (S O)) n

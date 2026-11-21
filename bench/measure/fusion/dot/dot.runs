@@ -1,0 +1,6 @@
+-- forward: [1,2,3].[2,0,1] = 5
+? dot [S O, S (S O), S (S (S O))] [S (S O), O, S O] d
+-- backward in ys: [1,2] . ys = 3
+? dot [S O, S (S O)] ys (S (S (S O)))
+-- fully backward: 2-element vectors with dot product 2
+? dot [a, b] [c, e] (S (S O))

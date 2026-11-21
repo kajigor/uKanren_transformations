@@ -13,7 +13,7 @@
 --     --jobs J          benchmarks measured in parallel (default 1)
 --     --only A,B        only these benchmarks
 --     --bases A,B       base specializers (default: all non-raw ones)
---     --variants V      base | std | full | ablation   (default std)
+--     --variants V      base | std | v2 | full | ablation   (default std)
 --     --spec S1,S2      explicit specializer names, e.g. cpd-det+ue+fail+sched
 --                       (overrides --bases/--variants)
 --     --csv FILE / --md FILE / --dump
@@ -69,6 +69,7 @@ variantSets :: String -> Either String [[String]]
 variantSets "base"     = Right [[]]
 variantSets "std"      = Right [[], ["opt"], ["sched"], ["opt", "sched"]]
 variantSets "full"     = Right [[], fullPipe]
+variantSets "v2"       = Right [[], ["opt"], ["sched"], ["opt", "sched"], ["opt", "sched", "det"], fullPipe]
 variantSets "ablation" = Right ([[], fullPipe] ++ [ filter (/= c) fullPipe | c <- fullPipe ])
 variantSets v          = Left ("unknown --variants " ++ v)
 
@@ -89,7 +90,7 @@ main = do
     putStrLn "components (pipeline order):"
     mapM_ (\(t, d) -> putStrLn ("  " ++ t ++ "\t" ++ d)) passTokens
     putStrLn "presets: opt = ue+fail+inl+merge+dead"
-    putStrLn "variants: base | std | full | ablation"
+    putStrLn "variants: base | std | v2 | full | ablation"
   sps <- case specNames o >>= mapM mkSpecializer of
     Left err -> do hPutStrLn stderr err; exitFailure
     Right s  -> return s
