@@ -81,7 +81,7 @@ sldResolutionStep gs s isFirstTime heuristic = do
   do
     seen <- gets getSeen
     let currs = map getCurr gs
-    if instanceCheck currs seen
+    if instanceCheckSet currs seen
     then return $ Leaf gs s env
     else do
         unfoldNext (toZipper gs) isFirstTime gs s

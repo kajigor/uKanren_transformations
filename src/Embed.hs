@@ -6,15 +6,17 @@
 
 module Embed where
 
-import           Data.List       (find, subsequences)
+import           Data.List       (find)
+import           Util.Miscellaneous (subsequencesOfLength)
 import qualified Data.Map.Strict as Map
+import qualified Data.Set        as Set
 import           Data.Maybe      (isJust)
 import           Syntax
 import           Debug.Trace
 
 -- ordered subconjunctions of the proper length
 subconjs :: [a] -> Int -> [[a]]
-subconjs gs n = filter (\x -> n == length x) $ subsequences gs
+subconjs gs n = subsequencesOfLength n gs
 
 -- | Is there an order-preserving injection of @gs@ into @hs@ whose pairs all
 --   satisfy @p@?  Equivalent to @any (and . zipWith p gs) (subconjs hs (length gs))@,
@@ -169,3 +171,17 @@ class (Homeo b, Instance a b, Eq b, Show a) => Embed a b | b -> a where
 instance (Ord a, Eq a, Show a) => Embed a (G a)
 instance (Ord a, Eq a, Show a) => Embed a [G a] where
   embed gs hs = subseqMatch embed gs hs
+
+-- | @instanceCheckSet g seen == instanceCheck g seen@ for a set of
+--   conjunctions.  An instance has the same relations in the same order, and
+--   the derived order of @[G a]@ puts all conjunctions that start with a call of
+--   @f@ into one contiguous range of the set, so only that range is scanned.
+--   (Scanning all of @seen@ at every unfolding step was 56% of ConsPD's time
+--   on contains@vanilla, quadratic in the number of processed conjunctions.)
+instanceCheckSet :: (Ord a, Show a) => [G a] -> Set.Set [G a] -> Bool
+instanceCheckSet g@(Invoke f _ : _) seen =
+  let probe = Invoke f []          -- the least call of f in the derived order
+      from = Set.dropWhileAntitone (\x -> case x of { [] -> True; (h : _) -> h < probe }) seen
+      range = Set.takeWhileAntitone (\x -> case x of { (Invoke f' _ : _) -> f' == f; _ -> False }) from
+  in any (`isInst` g) range
+instanceCheckSet g seen = instanceCheck g seen

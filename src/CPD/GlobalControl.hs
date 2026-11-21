@@ -92,7 +92,9 @@ topLevel (Program defs goal) heuristic =
       else do 
         nodes <- gets getSeen
         let ancs' = goal : ancs 
-        let abstracted = map (abstractChild ancs') bodies -- prolly need to make it stateful (env in bodies) 
+        let abstracted = if Set.size nodes >= nodeBudget
+                         then [ mostGeneralChildren s g env | (s, g, Just env) <- bodies ]
+                         else map (abstractChild ancs') bodies -- prolly need to make it stateful (env in bodies) 
         let (toUnfold, toNotUnfold, newNodes) =
               foldl (\ (yes, no, seen) gs ->
                           let (variants, brandNew) = partition (\(_, g, _, _) -> null g || any (Embed.isVariant g) seen) gs in
@@ -110,3 +112,22 @@ topLevel (Program defs goal) heuristic =
 
     forgetEnv = map (\(x, y, _) -> (x, y, Subst.empty))
     forgetStuff = map (\(x, y, gen, _) -> (x, y, gen))
+
+-- | Size budget of the global tree: once this many conjunctions have been
+--   processed, children are no longer specialized against their context.
+--   Every atom @f ts@ of a child becomes the most general call @f vs@ with
+--   the generalizer @vs |-> ts@; there is one such call per relation, so the
+--   tree closes after at most one more node per relation, and a specialization
+--   that would not terminate yields a (partially specialized) program.
+nodeBudget :: Int
+nodeBudget = 2000
+
+mostGeneralChildren :: Subst.Subst S -> [G S] -> Env.Env -> [(Subst.Subst S, [G S], Generalizer, Env.Env)]
+mostGeneralChildren subst gs env =
+  let step (fn, acc) g = case g of
+        Invoke f ts -> let (vs, fn') = FN.getNames (length ts) fn
+                       in (fn', acc ++ [([Invoke f (map V vs)], Subst.fromList (zip vs ts))])
+        _           -> (fn, acc ++ [([g], Subst.empty)])
+      (fnEnd, parts) = foldl step (Env.getFreshNames env, []) gs
+      env' = Env.updateNames env fnEnd
+  in [ (subst, g, gen, env') | (g, gen) <- parts ]

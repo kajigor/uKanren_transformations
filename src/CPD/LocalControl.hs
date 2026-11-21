@@ -234,4 +234,4 @@ foldable (DeterministicLAP _) currs seen =
     isGroundC _        = False
     isGroundT (V _)    = False
     isGroundT (C _ as) = all isGroundT as
-foldable _ currs seen = instanceCheck currs seen
+foldable _ currs seen = instanceCheckSet currs seen

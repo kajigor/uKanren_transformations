@@ -1,0 +1,16 @@
+# Experiment 6 (global-control budget + exact speed-ups) vs inst/ (base specializers) and v3/ (+opt+sched)
+
+## cpd-det: timeouts 5 -> 5; spec time 1.169x (geometric mean, 77 benchmarks); steps identical 72, different 0
+## cpd-la: timeouts 4 -> 4; spec time 1.110x (geometric mean, 78 benchmarks); steps identical 85, different 0
+## cpd-lap: timeouts 5 -> 5; spec time 1.133x (geometric mean, 77 benchmarks); steps identical 85, different 0
+## conspd-det: timeouts 26 -> 20; spec time 1.084x (geometric mean, 56 benchmarks); steps identical 49, different 0
+  gained: contains@vanilla (no longer times out), contains@vanilla/spec, deforestation1@vanilla (no longer times out), exprEval@vanilla (no longer times out), power@vanilla (no longer times out), relSort@vanilla (no longer times out), uptoSum@vanilla (no longer times out), uptoSum@vanilla/spec
+## conspd-la: timeouts 20 -> 21; spec time 1.121x (geometric mean, 61 benchmarks); steps identical 63, different 0
+  lost: propFirst@vanilla (now times out)
+
+## cpd-la+opt+sched: timeouts 4 -> 4; spec time 1.006x (geometric mean, 78 benchmarks); steps identical 103, different 3
+  different: doubleAppend@vanilla/q3 58->42, exprEvalGeneral/q2 1972->1927, sortGeneral/q2 55290->35252
+## conspd-la+opt+sched: timeouts 19 -> 21; spec time 1.075x (geometric mean, 61 benchmarks); steps identical 71, different 2
+  gained: exprEvalGeneral/q2
+  lost: exprEval@vanilla (now times out), propFirst@vanilla (now times out)
+  different: sortGeneral/q1 1089->300, sortGeneral/q2 15499->9986

@@ -170,7 +170,11 @@ topLevel (Program defs goal) heuristic =
             seen <- gets getSeen
             let ancs = getAncs descend
             -- let (abstracted, freshNames) = runState (Split.abstractChild (Set.toList seen) (subst, gs, env)) (Env.getFreshNames env)
-            let (abstracted, freshNames) = runState (Split.abstractChild ancs (subst, gs, env)) (Env.getFreshNames env)
+            let (abstracted, freshNames) =
+                  if Set.size seen >= nodeBudget
+                  then let cs = mostGeneralChildren subst gs env
+                       in (cs, case cs of { ((_, _, _, e) : _) -> Env.getFreshNames e; [] -> Env.getFreshNames env })
+                  else runState (Split.abstractChild ancs (subst, gs, env)) (Env.getFreshNames env)
             modifyEnv (`Env.updateNames` freshNames)
             children <- mapM processChild abstracted
             case children of
@@ -180,7 +184,7 @@ topLevel (Program defs goal) heuristic =
             processChild abstracted@(subst', goals, generalizer, env) = do
               seen <- gets getSeen
               -- modifyEnv (const env) -- make sure environment is updated at every abstractChild call
-              if null goals || any (`Embed.isInst` goals) seen
+              if null goals || Embed.instanceCheckSet goals seen
               then return $ Leaf (Descend.add goals descend) generalizer subst'
               else do
                 tree <- do go (Descend.add goals descend) subst' generalizer -- Check if descend is correct
@@ -192,3 +196,22 @@ topLevel (Program defs goal) heuristic =
 
     forgetEnv = map (\(x, y, _) -> (x, y, Subst.empty))
     forgetStuff = map (\(x, y, gen, _) -> (x, y, gen))
+
+-- | Size budget of the global tree: once this many conjunctions have been
+--   processed, children are no longer specialized against their context.
+--   Every atom @f ts@ of a child becomes the most general call @f vs@ with
+--   the generalizer @vs |-> ts@; there is one such call per relation, so the
+--   tree closes after at most one more node per relation, and a specialization
+--   that would not terminate yields a (partially specialized) program.
+nodeBudget :: Int
+nodeBudget = 200
+
+mostGeneralChildren :: Subst.Subst S -> [G S] -> Env.Env -> [(Subst.Subst S, [G S], Generalizer, Env.Env)]
+mostGeneralChildren subst gs env =
+  let step (fn, acc) g = case g of
+        Invoke f ts -> let (vs, fn') = FN.getNames (length ts) fn
+                       in (fn', acc ++ [([Invoke f (map V vs)], Subst.fromList (zip vs ts))])
+        _           -> (fn, acc ++ [([g], Subst.empty)])
+      (fnEnd, parts) = foldl step (Env.getFreshNames env, []) gs
+      env' = Env.updateNames env fnEnd
+  in [ (subst, g, gen, env') | (g, gen) <- parts ]

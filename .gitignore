@@ -114,6 +114,7 @@ test/resources/out/
 
 .DS_Store
 .stack-work-viz/
+.stack-work-prof/
 .viz-dev/
 
 # visualizer: generated data and logs (regenerate with viz-export, see viz/README.md)

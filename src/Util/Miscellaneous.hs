@@ -54,8 +54,31 @@ mapLeft f = either (Left . f) Right
 
 generateSplits :: Eq a => [a] -> Int -> [([a], [a])]
 generateSplits xs n =
-  let sub = filter (\x -> n == length x) $ subsequences xs in
+  let sub = subsequencesOfLength n xs in
   [ (x, xs \\ x) | x <- sub ]
+
+-- | @subsequencesOfLength k xs == filter ((== k) . length) (subsequences xs)@,
+--   in the same order, but without enumerating all 2^n subsequences: the
+--   traversal of 'subsequences' is followed and pruned to the lengths that
+--   can still become @k@.  (Filtering made residualization exponential in the
+--   length of a conjunction even when the full-length candidate, which is
+--   tried first, succeeds.)
+subsequencesOfLength :: Int -> [a] -> [[a]]
+subsequencesOfLength k xs
+  | k == 0    = [[]]
+  | k < 0     = []
+  | otherwise = map snd (nes k k xs)
+  where
+    -- non-empty subsequences in the order of Data.List.subsequences, restricted
+    -- to lengths in [lo, hi], with their lengths
+    nes :: Int -> Int -> [a] -> [(Int, [a])]
+    nes _ _ [] = []
+    nes lo hi (y : ys)
+      | hi < 1 = []
+      | otherwise =
+          [ (1, [y]) | lo <= 1 ] ++
+          concat [ [ (l, zs) | lo <= l ] ++ [ (l + 1, y : zs) | lo <= l + 1, l + 1 <= hi ]
+                 | (l, zs) <- nes (lo - 1) hi ys, l <= hi ]
 
 pinpoint :: (a -> Bool) -> [a] -> Maybe (Zipper a)
 pinpoint p l = do
