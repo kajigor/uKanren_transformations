@@ -141,6 +141,13 @@ specializers =
     -- global-control budget (number of global nodes), then generalize
   , sp "cpd-det-b" $ \p ->
       fromPurified p (topNames p) (CPD.purified (CPD.runTransformationWithBudget (Just cpdBudget) (Just cpdLocalBudget) p CPDLC.Deterministic))
+  , sp "cpd-det-bg" $ \p ->
+      fromPurified p (topNames p) (CPD.purified (CPD.runTransformationWithBudget (Just cpdBudget) Nothing p CPDLC.Deterministic))
+  , sp "cpd-det-bl" $ \p ->
+      fromPurified p (topNames p) (CPD.purified (CPD.runTransformationWithBudget Nothing (Just cpdLocalBudget) p CPDLC.Deterministic))
+  , sp "cpd-det-bg/raw" $ \p ->
+      let Program ds g = CPD.beforePur (CPD.runTransformationWithBudget (Just cpdBudget) Nothing p CPDLC.Deterministic)
+      in fromPurified p (topNames p) (g, [], ds)
   , sp "cpd-branch-b" $ \p ->
       fromPurified p (topNames p) (CPD.purified (CPD.runTransformationWithBudget (Just cpdBudget) (Just cpdLocalBudget) p CPDLC.Branching))
   , sp "conspd-det" $ \p ->
@@ -356,6 +363,11 @@ measureBench sps b = do
     check sc qn r qvs goal ws origBody ref st
       | rsOutcome ref == Finished && rsOutcome st == Finished =
           return $ if sameSet (rsAnswers ref) (rsAnswers st) then "ok" else "MISMATCH"
+      -- the reference answer set is complete: an answer that is not an
+      -- instance of a reference answer is certainly wrong
+      | rsOutcome ref == Finished
+      , not (all (\a -> any (`subsumes` a) (rsAnswers ref)) (rsAnswers st)) =
+          return "MISMATCH"
       | otherwise = do
           let Program odefs _ = bProgram b
               fuel = bFuel b
@@ -377,6 +389,19 @@ measureBench sps b = do
                 (False, _)    -> "unverified-sound"
                 (_, False)    -> "unverified-complete"
     sameSet xs ys = all (`elem` ys) xs && all (`elem` xs) ys
+
+-- | @subsumes r a@: answer @a@ is an instance of answer @r@.
+subsumes :: Answer -> Answer -> Bool
+subsumes r a = length r == length a && go M.empty (zip r a) /= Nothing
+  where
+    go m [] = Just m
+    go m ((V x, t) : rest) = case M.lookup x m of
+      Just t' | t' == t -> go m rest
+              | otherwise -> Nothing
+      Nothing -> go (M.insert x t m) rest
+    go m ((C f as, C g bs) : rest)
+      | f == g && length as == length bs = go m (zip as bs ++ rest)
+    go _ _ = Nothing
 
 forceStats :: RunStats -> RunStats
 forceStats st = length (rsAnswers st) `seq` rsUnifs st `seq` st

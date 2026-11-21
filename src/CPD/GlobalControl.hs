@@ -123,8 +123,13 @@ topLevelAbstr budget localBudget (Program defs goal) heuristic =
         nodes <- gets getSeen
         let ancs' = goal : ancs 
         let exhausted = maybe False (Set.size nodes >=) budget
+        -- budget exhausted: no new global nodes; every atom becomes a leaf
+        -- (the residualizer calls an existing definition covering it, or a
+        -- copy of the original relation)
         let abstracted = if exhausted
-                         then map mostGeneral bodies
+                         then map (\(subst, gs, menv) -> case menv of
+                                     Just env -> [ (subst, [a], Subst.empty, env) | a <- gs ]
+                                     Nothing  -> []) bodies
                          else map (abstractChild ancs') bodies -- prolly need to make it stateful (env in bodies) 
         -- record how every resultant was split, for the residualizer
         modify (\st -> st { getAbstr = foldl (\m ((_, bgs, _), pcs) ->
@@ -138,9 +143,10 @@ topLevelAbstr budget localBudget (Program defs goal) heuristic =
                     ([], [], nodes)
                     abstracted
 
-        trees <- mapM (\(subst, g, gen, env) -> do modifyEnv (const env); go (Descend.add g d) subst gen) toUnfold
+        let (toUnfold', toNotUnfold') = if exhausted then ([], toUnfold ++ toNotUnfold) else (toUnfold, toNotUnfold)
+        trees <- mapM (\(subst, g, gen, env) -> do modifyEnv (const env); go (Descend.add g d) subst gen) toUnfold'
 
-        let leaves = forgetStuff toNotUnfold
+        let leaves = forgetStuff toNotUnfold'
         return (Node d generalizer sldTree (substLeaves ++ map (\(subst, g, gen) -> Leaf (Descend.init g) Subst.empty subst) leaves ++ trees))
 
     leafOutOfBody (subst, g, gen) = Leaf (Descend.init g) Subst.empty subst 
