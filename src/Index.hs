@@ -33,6 +33,10 @@ module Index
   ( indexProgram
   , eliminateImpossible
   , dispatch
+  , analyse
+  , paths
+  , CSet
+  , Table
   ) where
 
 import           Data.List       (foldl', nub)

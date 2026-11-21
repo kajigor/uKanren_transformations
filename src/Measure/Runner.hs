@@ -11,6 +11,7 @@ module Measure.Runner
   , withPostOpt
   , withSchedule
   , withIndex
+  , withGuard
   , allVariants
   , measureBench
   , programSize
@@ -50,6 +51,7 @@ import qualified Transformer.ConsPDGlobal as ConsPDGlobal
 import qualified Transformer.PD           as PD
 import qualified PostOpt
 import qualified Index
+import qualified SizeGuard
 import qualified Schedule
 import qualified Data.Set                 as S
 
@@ -165,10 +167,22 @@ withIndex sp = case spPerQuery sp of
   Nothing -> sp { spName = spName sp ++ "+idx"
                 , spPerQuery = Just $ \ds _ g -> Index.indexProgram (ds, g) }
 
+-- | Add size invariants and guards ('SizeGuard'), applied after the
+--   per-query scheduling when there is one (its mode copies say which
+--   arguments are ground), otherwise to the residual program.
+withGuard :: Specializer -> Specializer
+withGuard sp = case spPerQuery sp of
+  Just f  -> sp { spName = spName sp ++ "+guard"
+                , spPerQuery = Just $ \ds qvs g -> SizeGuard.guardProgram (f ds qvs g) }
+  Nothing -> sp { spName = spName sp ++ "+guard"
+                , spPerQuery = Just $ \ds _ g -> SizeGuard.guardProgram (ds, g) }
+
 -- | Every specializer with its post-processing variants.
 allVariants :: [Specializer]
 allVariants = concatMap (\s -> [ s, withPostOpt s, withSchedule s, withSchedule (withPostOpt s)
-                               , withIndex (withPostOpt s), withIndex (withSchedule (withPostOpt s)) ]) specializers
+                               , withIndex (withPostOpt s), withIndex (withSchedule (withPostOpt s))
+                               , withGuard (withSchedule s), withGuard (withPostOpt s), withGuard (withSchedule (withPostOpt s))
+                               , withIndex (withGuard (withSchedule (withPostOpt s))) ]) specializers
 
 -- | Number of definitions and number of goal nodes (unifications + calls).
 programSize :: [Def G X] -> G X -> (Int, Int)
