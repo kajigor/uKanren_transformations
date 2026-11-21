@@ -57,7 +57,8 @@ optimizeWith ps top p0 = go (6 :: Int) (prep p0)
       let p' = step p in if size p' == size p && p' == p then p else go (k - 1) p'
     size (ds, g) = (length ds, sum (map (gsize . getBody) ds) + gsize g)
     step p = foldl' (\acc f -> f acc) p
-      [ when' PNormalize  normalizeP
+      [ when' PUnreachable removeUnreachable   -- cheap; avoids inlining into dead code
+      , when' PNormalize  normalizeP
       , when' PUnifElim   unifElimP
       , when' PNormalize  normalizeP
       , when' PFailure    failureAnalysis
@@ -168,18 +169,30 @@ closeExistentials bound g =
   let g' = evalState (stripFresh g) 0 in place (S.fromList bound) (normalizeG g')
 
 place :: S.Set X -> G X -> G X
+-- Set-based (the list version with nub / (\\) / per-variable occurrence
+-- counts was cubic on large residual bodies).
 place bound g = case g of
     Disjunction {} -> mkDisj (map (place bound) (disjs g))
     Conjunction {} ->
       let cs = conjs g
-          free = nub (fv g) \\ S.toList bound
-          occ v = length (filter (\c -> v `elem` fv c) cs)
           isDisj Disjunction {} = True
           isDisj _ = False
-          here = [ v | v <- free, occ v > 1 || any (\c -> not (isDisj c) && v `elem` fv c) cs ]
+          fvss = map (ordNub . fv) cs
+          cnt = M.fromListWith (+) [ (v, 1 :: Int) | vs <- fvss, v <- vs ]
+          inNonDisj = S.fromList (concat [ vs | (c, vs) <- zip cs fvss, not (isDisj c) ])
+          free = [ v | v <- ordNub (concat fvss), not (v `S.member` bound) ]
+          here = [ v | v <- free, M.findWithDefault 0 v cnt > 1 || v `S.member` inNonDisj ]
           bound' = foldr S.insert bound here
       in fresh here (mkConj (map (\c -> if isDisj c then place bound' c else c) cs))
-    _ -> fresh (nub (fv g) \\ S.toList bound) g
+    _ -> fresh [ v | v <- ordNub (fv g), not (v `S.member` bound) ] g
+
+-- | nub preserving first occurrences, O(n log n).
+ordNub :: Ord a => [a] -> [a]
+ordNub = go S.empty
+  where
+    go _ [] = []
+    go seen (x : xs) | x `S.member` seen = go seen xs
+                     | otherwise = x : go (S.insert x seen) xs
 
 ------------------------------------------------------------------------------
 -- Existential unification elimination.
@@ -326,7 +339,7 @@ inlineNonRec :: Prog -> Prog
 -- goal nodes and took minutes.)
 inlineNonRec (ds, g) =
     let done = foldl' step M.empty sccs
-        ds' = [ Def n as (M.findWithDefault b n done) | Def n as b <- ds ]
+        ds' = [ Def n as (maybe b fst (M.lookup n done)) | Def n as b <- ds ]
         g'  = evalState (inl done g) 0
     in (ds', g')
   where
@@ -337,18 +350,19 @@ inlineNonRec (ds, g) =
     step done scc =
       let ns = case scc of AcyclicSCC n -> [n]; CyclicSCC xs -> xs
       in foldl' (\acc n -> case M.lookup n dm of
-                              Just (Def _ _ b) -> M.insert n (evalState (inl acc b) 0) acc
+                              Just (Def _ _ b) -> let b' = evalState (inl acc b) 0
+                                                  in M.insert n (b', gsize b') acc
                               Nothing -> acc) done ns
     inlinable done f =
       not (f `S.member` recursive) &&
       case M.lookup f done of
-        Just b  -> gsize b <= inlineThreshold || M.findWithDefault 0 f useCount <= 1
+        Just (_, sz) -> sz <= inlineThreshold || M.findWithDefault 0 f useCount <= 1
         Nothing -> False
-    inl :: M.Map Name (G X) -> G X -> State Int (G X)
+    inl :: M.Map Name (G X, Int) -> G X -> State Int (G X)
     inl done h = case h of
       Invoke f ts | inlinable done f -> do
         let Def _ ps _ = dm M.! f
-        body' <- renameBinders (done M.! f)
+        body' <- renameBinders (fst (done M.! f))
         return (substG (M.fromList (zip ps ts)) body')
       Conjunction a b cs -> unsafeConj <$> mapM (inl done) (a : b : cs)
       Disjunction a b cs -> unsafeDisj <$> mapM (inl done) (a : b : cs)
