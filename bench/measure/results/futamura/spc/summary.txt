@@ -1,0 +1,25 @@
+## cpd-la+opt+spc vs cpd-la+opt
+solved 89 vs 88; gained 1, lost 0; mismatches 0; geometric mean steps ratio 0.528 on 88 common queries
+  gained: arith@vanilla/q1
+  best:  unifier@vanilla/spec 0.01 (42129->453), binFactor@vanilla/q1 0.01 (14648->160), binFactor@vanilla/q2 0.01 (10379->118), binFactor@vanilla/q3 0.01 (5970->70), uptoSum@vanilla/spec 0.01 (157->2), typecheck@vanilla/q1 0.03 (11164->284), regexp@vanilla/spec 0.03 (8030->275), relSortGeneral@vanilla/q2 0.05 (17964->876)
+  worst: vanilla@vanilla/spec 1.00 (98->98), vanilla/spec 1.00 (31->31), uptoSum/spec 1.00 (2->2), typecheck/q2 1.00 (138->138), typecheck/q1 1.00 (273->273), tmInterp/q3 1.00 (174->174), tmInterp/q1 1.00 (79->79), sort/spec 1.00 (2->2)
+
+## cpd-la+opt+spc+sched vs cpd-la+opt+sched
+solved 114 vs 106; gained 8, lost 0; mismatches 0; geometric mean steps ratio 0.612 on 106 common queries
+  gained: arith@vanilla/q1, binFactor@vanilla/q3, exprEvalGeneral@vanilla/q2, power@vanilla/q2, power@vanilla/q3, relSortGeneral@vanilla/q1, revGeneral@vanilla/q1, sortGeneral@vanilla/q2
+  best:  unifier@vanilla/spec 0.01 (42128->308), binFactor@vanilla/q1 0.01 (14651->175), binFactor@vanilla/q2 0.01 (10382->126), uptoSum@vanilla/spec 0.01 (157->2), typecheck@vanilla/q1 0.03 (11164->319), relSortGeneral@vanilla/q2 0.05 (17964->876), typecheck@vanilla/q2 0.05 (2901->150), regexp@vanilla/spec 0.05 (8030->416)
+  worst: binMul/q3 1.01 (177->178), vanilla@vanilla/spec 1.00 (84->84), vanilla/spec 1.00 (31->31), uptoSum/spec 1.00 (2->2), typecheck/q2 1.00 (138->138), typecheck/q1 1.00 (291->291), tmInterp/q3 1.00 (174->174), tmInterp/q1 1.00 (79->79)
+
+## cpd-lap+opt+spc+sched+guard+idx vs cpd-lap+opt+sched+guard+idx
+solved 115 vs 108; gained 7, lost 0; mismatches 0; geometric mean steps ratio 0.638 on 108 common queries
+  gained: binFactor@vanilla/q3, exprEvalGeneral@vanilla/q2, power@vanilla/q2, power@vanilla/q3, relSortGeneral@vanilla/q1, revGeneral@vanilla/q1, sortGeneral@vanilla/q2
+  best:  uptoSum@vanilla/spec 0.01 (157->2), unifier@vanilla/spec 0.01 (19051->271), binFactor@vanilla/q1 0.02 (5888->131), binFactor@vanilla/q2 0.02 (4172->104), typecheck@vanilla/q1 0.05 (5722->274), flip@vanilla/spec 0.05 (38->2), relSortGeneral@vanilla/q2 0.07 (10671->718), sortGeneral@vanilla/q1 0.08 (3068->249)
+  worst: vanilla@vanilla/spec 1.00 (84->84), vanilla/spec 1.00 (31->31), uptoSum/spec 1.00 (2->2), typecheck/q2 1.00 (113->113), typecheck/q1 1.00 (195->195), tmInterp/q3 1.00 (168->168), tmInterp/q1 1.00 (78->78), sortGeneral/q2 1.00 (32211->32211)
+
+## cpd-lap+opt+spc+sched+guard+idx vs original
+solved 115 vs 90; gained 29, lost 4; mismatches 0; geometric mean steps ratio 0.039 on 86 common queries
+  gained: arith/q1, arith@vanilla/q1, doubleAppend/q3, doubleAppend@vanilla/q3, exprEval/q2, exprEval@vanilla/q2, exprEvalGeneral/q2, exprEvalGeneral@vanilla/q2, fclMult/q3, flip/spec, flip@vanilla/spec, path@vanilla/spec, power/q2, power/q3, power@vanilla/q2, power@vanilla/q3, relSort/spec, relSort@vanilla/spec, relSortGeneral/q1, relSortGeneral@vanilla/q1, revAcc/spec, revGeneral/q1, revGeneral@vanilla/q1, rotatePrune/spec, rotatePrune@vanilla/spec, sortGeneral/q2, sortGeneral@vanilla/q2, tmInterp/q3, unifier@vanilla/spec
+  lost:   exDepth/spec, power/q1, sortGeneral/q1, tmInterp@vanilla/q1
+  best:  uptoSum@vanilla/spec 0.00 (9726->2), exDepth@vanilla/spec 0.00 (39748->17), binMul@vanilla/q3 0.00 (201702->269), rev@vanilla/spec 0.00 (1209->2), binFactor@vanilla/q1 0.00 (66471->131), deforestation1@vanilla/spec 0.00 (929->2), depth@vanilla/spec 0.00 (3467->8), matchSimple@vanilla/spec 0.00 (3306->10)
+  worst: arithGeneral/q1 1.25 (81->101), arithGeneral/q3 1.06 (140->148), exprEvalGeneral/q1 1.00 (187->187), revGeneral/q2 0.97 (262->254), relSortGeneral/q2 0.73 (886->645), typecheck/q2 0.72 (156->113), doubleAppend/q1 0.62 (90->56), exprEval/q1 0.58 (187->109)
+
