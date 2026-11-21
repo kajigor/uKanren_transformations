@@ -15,6 +15,11 @@ module Measure.Runner
   , renderMarkdown
   , renderCsv
   , loadBench
+  , runAgainst
+  , specCall
+  , crossCheck
+  , specTimeoutUs
+  , forceRes
   ) where
 
 import           Control.Exception    (SomeException, evaluate, try)
@@ -250,21 +255,45 @@ measureBench sps b = do
               return $ Row (bName b) qn (spName sp) (specMs + qMs) nd sz (rsUnifs st) (rsCalls st) evalMs
                            (length (rsAnswers st)) (show (rsOutcome st)) chk
                            (progTxt ++ "\n-- answers: " ++ show (rsAnswers st) ++ "\n-- reference: " ++ show (rsAnswers ref))
-    -- cross validation
-    check r qvs goal ws origBody ref st
-      | rsOutcome ref == Finished && rsOutcome st == Finished =
-          if sameSet (rsAnswers ref) (rsAnswers st) then "ok" else "MISMATCH"
-      | otherwise =
-          let Program odefs _ = bProgram b
-              fuel = bFuel b
-              sound = all (admits fuel odefs ws origBody) (take 20 (rsAnswers st))
-              -- answer variables are named r_<w> in the residual run
-              complete = all (admits fuel (resDefs r) qvs goal) (take 20 (rsAnswers ref))
-          in  case (sound, complete) of
-                (True, True)  -> "ok~"
-                (False, _)    -> "unverified-sound"
-                (_, False)    -> "unverified-complete"
-    sameSet xs ys = all (`elem` ys) xs && all (`elem` xs) ys
+    check = crossCheck b
+
+-- | @subsumes p a@: answer @a@ is an instance of answer @p@.
+subsumes :: Answer -> Answer -> Bool
+subsumes p a = length p == length a && go M.empty (zip p a) /= Nothing
+  where
+    go m [] = Just m
+    go m ((V x, t) : rest) = case M.lookup x m of
+      Nothing -> go (M.insert x t m) rest
+      Just t' | t' == t   -> go m rest
+              | otherwise -> Nothing
+    go m ((C f ps, C g ts) : rest)
+      | f == g && length ps == length ts = go m (zip ps ts ++ rest)
+    go _ _ = Nothing
+
+-- | Cross-check the run of a residual program against the reference run of
+--   the original program on the same query.
+crossCheck :: Bench -> Residual -> [X] -> G X -> [X] -> G X -> RunStats -> RunStats -> String
+crossCheck b r qvs goal ws origBody ref st
+    | rsOutcome ref == Finished && rsOutcome st == Finished =
+        if sameSet (rsAnswers ref) (rsAnswers st) then "ok" else "MISMATCH"
+    | otherwise =
+        let Program odefs _ = bProgram b
+            fuel = bFuel b
+            -- when one side's answer set is complete, every answer of the
+            -- other side must be an instance of one of its answers (this
+            -- catches over-general answers such as  S v  for  12, which the
+            -- replay check below would accept)
+            coveredBy full xs = all (\a -> any (`subsumes` a) full) xs
+            sound = (rsOutcome ref /= Finished || coveredBy (rsAnswers ref) (take 20 (rsAnswers st)))
+                    && all (admits fuel odefs ws origBody) (take 20 (rsAnswers st))
+            -- answer variables are named r_<w> in the residual run
+            complete = (rsOutcome st /= Finished || coveredBy (rsAnswers st) (take 20 (rsAnswers ref)))
+                       && all (admits fuel (resDefs r) qvs goal) (take 20 (rsAnswers ref))
+        in  case (sound, complete) of
+              (True, True)  -> "ok~"
+              (False, _)    -> "unverified-sound"
+              (_, False)    -> "unverified-complete"
+  where sameSet xs ys = all (`elem` ys) xs && all (`elem` xs) ys
 
 forceStats :: RunStats -> RunStats
 forceStats st = length (rsAnswers st) `seq` rsUnifs st `seq` st

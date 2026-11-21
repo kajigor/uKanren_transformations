@@ -14,6 +14,9 @@ module Measure.Interp
   , Outcome (..)
   , RunStats (..)
   , runGoal
+  , Profile (..)
+  , RelProfile (..)
+  , runGoalProfiled
   , runProgram
   , reifyCanonical
   ) where
@@ -34,20 +37,21 @@ data St = St !Subst !Int
 data CS a
   = Nil
   | Cons a (CS a)
-  | Unif (CS a)      -- ^ one unification performed (no interleaving)
-  | Call (CS a)      -- ^ one relation call performed; interleaving point
+  | Unif Name Bool (CS a)  -- ^ one unification performed in the body of the
+                           --   named relation, successful or not (no interleaving)
+  | Call Name (CS a)       -- ^ one call of the named relation; interleaving point
 
 mplusC :: CS a -> CS a -> CS a
 mplusC Nil y          = y
 mplusC (Cons h t) y   = Cons h (mplusC t y)
-mplusC (Unif s) y     = Unif (mplusC s y)
-mplusC (Call s) y     = Call (mplusC y s)
+mplusC (Unif r b s) y = Unif r b (mplusC s y)
+mplusC (Call r s) y   = Call r (mplusC y s)
 
 bindC :: CS a -> (a -> CS b) -> CS b
 bindC Nil _          = Nil
 bindC (Cons h t) f   = mplusC (f h) (bindC t f)
-bindC (Unif s) f     = Unif (bindC s f)
-bindC (Call s) f     = Call (bindC s f)
+bindC (Unif r b s) f = Unif r b (bindC s f)
+bindC (Call r s) f   = Call r (bindC s f)
 
 walk :: Subst -> T -> T
 walk s t@(V v) = maybe t (walk s) (M.lookup v s)
@@ -77,25 +81,26 @@ inst :: M.Map X T -> Term X -> T
 inst env (V x)    = M.findWithDefault (error $ "Measure.Interp: unbound variable " ++ x) x env
 inst env (C f ts) = C f (map (inst env) ts)
 
-eval :: Defs -> M.Map X T -> G X -> St -> CS St
-eval _ env (a :=: b) (St s n) =
-  Unif $ case unify s (inst env a) (inst env b) of
-    Nothing -> Nil
-    Just s' -> Cons (St s' n) Nil
-eval defs env (Conjunction g h gs) st =
-  foldl' (\acc g' -> bindC acc (eval defs env g')) (eval defs env g st) (h : gs)
-eval defs env (Disjunction g h gs) st =
-  foldr1 mplusC (map (\g' -> eval defs env g' st) (g : h : gs))
-eval defs env (Fresh x g) (St s n) =
-  eval defs (M.insert x (V n) env) g (St s (n + 1))
-eval defs env (Delay g) st = eval defs env g st
-eval defs env (Invoke f args) st =
+-- | @cur@ is the relation whose body is being evaluated (for profiling).
+eval :: Defs -> Name -> M.Map X T -> G X -> St -> CS St
+eval _ cur env (a :=: b) (St s n) =
+  case unify s (inst env a) (inst env b) of
+    Nothing -> Unif cur False Nil
+    Just s' -> Unif cur True (Cons (St s' n) Nil)
+eval defs cur env (Conjunction g h gs) st =
+  foldl' (\acc g' -> bindC acc (eval defs cur env g')) (eval defs cur env g st) (h : gs)
+eval defs cur env (Disjunction g h gs) st =
+  foldr1 mplusC (map (\g' -> eval defs cur env g' st) (g : h : gs))
+eval defs cur env (Fresh x g) (St s n) =
+  eval defs cur (M.insert x (V n) env) g (St s (n + 1))
+eval defs cur env (Delay g) st = eval defs cur env g st
+eval defs _ env (Invoke f args) st =
   case M.lookup f defs of
     _ | f == successName && null args -> Cons st Nil
     _ | f == failureName && null args -> Nil
     Just (Def _ params body) ->
       let env' = M.fromList (zip params (map (inst env) args)) in
-      Call (eval defs env' body st)
+      Call f (eval defs f env' body st)
     Nothing -> error $ "Measure.Interp: undefined relation " ++ f
 
 -- | A reified answer: one term per query variable, free variables renamed
@@ -125,8 +130,8 @@ drive n fuel rd = go [] 0 0 0
       | otherwise = case s of
           Nil       -> RunStats (reverse acc) u c Finished
           Cons a t  -> let r = rd a in r `seq` go (r : acc) (k + 1) u c t
-          Unif t    -> go acc k (u + 1) c t
-          Call t    -> go acc k u (c + 1) t
+          Unif _ _ t -> go acc k (u + 1) c t
+          Call _ t   -> go acc k u (c + 1) t
 
 -- | Fully apply a substitution.
 walkStar :: Subst -> T -> T
@@ -163,7 +168,48 @@ runGoal defs qvars goal n fuel =
       env  = M.fromList (zip qvars (map V [0 ..]))
       st0  = St M.empty (length qvars)
       rd (St s _) = reifyCanonical s (map V [0 .. length qvars - 1])
-  in  drive n fuel rd (eval dm env goal st0)
+  in  drive n fuel rd (eval dm topName env goal st0)
+
+topName :: Name
+topName = "<query>"
+
+data RelProfile = RelProfile { rpCalls :: !Int, rpUnifOk :: !Int, rpUnifFail :: !Int }
+  deriving Show
+
+-- | A run with a per-relation cost profile, the step count at which every
+--   answer appeared, and the first @traceLen@ events of the search.
+data Profile = Profile
+  { pStats       :: RunStats
+  , pRels        :: M.Map Name RelProfile
+  , pAnswerSteps :: [Int]
+  , pTrace       :: [(String, String)]   -- ^ (event, relation or answer number)
+  , pTraceCut    :: Bool
+  }
+
+runGoalProfiled :: Int -> [Def G X] -> [X] -> G X -> Int -> Int -> Profile
+runGoalProfiled traceLen defs qvars goal n fuel =
+  let dm   = M.fromList [ (getName d, d) | d <- defs ]
+      env  = M.fromList (zip qvars (map V [0 ..]))
+      st0  = St M.empty (length qvars)
+      rd (St s _) = reifyCanonical s (map V [0 .. length qvars - 1])
+  in  goP rd [] [] M.empty [] 0 0 0 0 (eval dm topName env goal st0)
+  where
+    upd f r m = M.alter (Just . f . maybe (RelProfile 0 0 0) id) r m
+    ev e tr k = if k < traceLen then e : tr else tr
+    done acc steps rels tr k u c o =
+      Profile (RunStats (reverse acc) u c o) rels (reverse steps) (reverse tr) (k > traceLen)
+    goP rd acc steps !rels tr !ne !k !u !c s
+      | ne >= n        = done acc steps rels tr k u c GotEnough
+      | u + c >= fuel  = done acc steps rels tr k u c OutOfFuel
+      | otherwise = case s of
+          Nil -> done acc steps rels tr k u c Finished
+          Cons a t -> let r = rd a in r `seq`
+            goP rd (r : acc) (u + c : steps) rels (ev ("answer", show (ne + 1)) tr k) (ne + 1) (k + 1) u c t
+          Unif r b t ->
+            let rels' = upd (\p -> if b then p { rpUnifOk = rpUnifOk p + 1 } else p { rpUnifFail = rpUnifFail p + 1 }) r rels
+            in  goP rd acc steps rels' (ev (if b then "unif+" else "unif-", r) tr k) ne (k + 1) (u + 1) c t
+          Call r t ->
+            goP rd acc steps (upd (\p -> p { rpCalls = rpCalls p + 1 }) r rels) (ev ("call", r) tr k) ne (k + 1) u (c + 1) t
 
 -- | Run a program whose goal is @fresh x1 .. xk in g@: the top-level fresh
 --   variables are the query variables.

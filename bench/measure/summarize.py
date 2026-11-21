@@ -10,7 +10,7 @@ that ran out of fuel are censored at the fuel limit.
 import csv, math, sys
 from collections import defaultdict
 
-BASES = ["original", "pd", "cpd-det", "cpd-branch", "conspd-det", "conspd-branch"]
+BASES = ["original", "pd", "cpd-det", "cpd-branch", "cpd-la", "conspd-det", "conspd-branch", "conspd-la"]
 VARIANTS = ["", "+opt", "+sched", "+opt+sched"]
 
 def load(paths):
@@ -94,12 +94,60 @@ def main(out, paths):
                 cells.append(s)
         w(f"| {bn} | {q} | " + " | ".join(cells) + " |")
 
+    jones(rows, by, w)
+
     w("\n## Wrong results and specialization failures\n")
     for r in rows:
         if bad(r) or r["query"] == "*" or r["outcome"].startswith("eval-crash"):
             w(f"- {r['bench']} {r['query']} **{r['specializer']}**: {r['outcome']} {r['check']}")
     open(out, "w").write("\n".join(lines) + "\n")
     print("\n".join(lines))
+
+def jones(rows, by, w):
+    """Jones-optimality table for benchmarks measured with --vanilla.
+
+    For every specializer S and query q of a benchmark p that has a twin
+    p@vanilla (p run by the vanilla self-interpreter):
+      overhead  = steps(original(p@vanilla)) / steps(original(p))
+      vs direct = steps(S(p@vanilla)) / steps(original(p))   (Jones-optimal: <= 1)
+      vs S(p)   = steps(S(p@vanilla)) / steps(S(p))          (interpretive overhead S leaves)
+    """
+    twins = sorted({r["bench"][:-len("@vanilla")] for r in rows if r["bench"].endswith("@vanilla")})
+    if not twins:
+        return
+    specs = []
+    for r in rows:
+        if r["specializer"] not in specs:
+            specs.append(r["specializer"])
+    w("\n## Jones optimality (vanilla self-interpreter)\n")
+    w("For each benchmark p, `p@vanilla` runs p through the vanilla self-interpreter "
+      "(`src/Measure/Vanilla.hs`). `solved`: queries of p@vanilla solved. `vs direct`: geometric mean of "
+      "steps(S(p@vanilla))/steps(original p) (a Jones-optimal S gives <= 1). `vs S(p)`: "
+      "steps(S(p@vanilla))/steps(S(p)), the interpretive overhead S fails to remove (1 = none left). "
+      "`optimal`: queries with steps(S(p@vanilla)) <= steps(S(p)). Ratios over queries both sides solve.\n")
+    w("| specializer | solved | wrong | spec fail | vs direct | vs S(p) | optimal |")
+    w("|---|---:|---:|---:|---:|---:|---:|")
+    for sp in specs:
+        solvedn = wrong = fails = opt = total = 0
+        r1, r2 = [], []
+        for p in twins:
+            vs = [r for r in rows if r["bench"] == p + "@vanilla" and r["specializer"] == sp]
+            if any(r["query"] == "*" for r in vs):
+                fails += 1
+            for r in vs:
+                if r["query"] == "*":
+                    continue
+                total += 1
+                solvedn += solved(r)
+                wrong += bad(r)
+                o = by.get((p, r["query"], "original"))
+                d = by.get((p, r["query"], sp))
+                if solved(r) and o and solved(o):
+                    r1.append(steps(r) / max(1, steps(o)))
+                if solved(r) and d and solved(d):
+                    r2.append(steps(r) / max(1, steps(d)))
+                    opt += steps(r) <= steps(d)
+        w(f"| {sp} | {solvedn}/{total} | {wrong} | {fails} | {gmean(r1):.3f} | {gmean(r2):.3f} | {opt} |")
 
 if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2:])
