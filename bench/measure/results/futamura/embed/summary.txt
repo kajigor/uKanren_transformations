@@ -1,0 +1,22 @@
+# Experiment 5 (greedy subconjunction embedding) vs v3
+
+cpd-det     timeouts  5 ->  5 | spec time ratio (geo mean, both succeed) 0.909 on 77 | steps identical 72, different 0
+   gained: []
+   lost: []
+   diffs: []
+cpd-la      timeouts  4 ->  4 | spec time ratio (geo mean, both succeed) 0.913 on 78 | steps identical 85, different 0
+   gained: []
+   lost: []
+   diffs: []
+cpd-lap     timeouts  5 ->  5 | spec time ratio (geo mean, both succeed) 0.823 on 77 | steps identical 85, different 0
+   gained: []
+   lost: []
+   diffs: []
+conspd-det  timeouts 26 -> 26 | spec time ratio (geo mean, both succeed) 0.861 on 56 | steps identical 49, different 0
+   gained: []
+   lost: []
+   diffs: []
+conspd-la   timeouts 19 -> 19 | spec time ratio (geo mean, both succeed) 0.911 on 63 | steps identical 64, different 0
+   gained: []
+   lost: []
+   diffs: []

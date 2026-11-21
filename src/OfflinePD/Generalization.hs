@@ -39,8 +39,7 @@ instance Show a => Homeo [AnnG Term a] where
   couple = undefined
   diving = undefined
 
-  homeo gs hs =
-    any (all (uncurry homeo) . zip gs) (subconjs hs (length gs))
+  homeo gs hs = subseqMatch homeo gs hs
 
 instance (Eq a, Ord a, Show a) => Instance a (AnnG Term a) where
   inst (Invoke f as _) (Invoke g bs _) subst | f == g && length as == length bs =
@@ -63,10 +62,7 @@ instance AlwaysEmbeddable [AnnG Term a] where
   
 instance (Ord a, Eq a, Show a) => Embed a (AnnG Term a)
 instance (Ord a, Eq a, Show a) => Embed a [AnnG Term a] where
-  embed gs hs =
-    let subs = subconjs hs (length gs) in
-    any (and . zipWith embed gs)  -- $ trace (show gs ++ show hs ++ show (any (and . zipWith embed gs) subs))
-                                  subs -- $ trace (show gs ++ show hs ++ show (any (and . zipWith embed gs) subs))
+  embed gs hs = subseqMatch embed gs hs
     
 instance Generalization S (AnnG Term S) where
   generalize gen1 gen2 (Invoke f as ann) (Invoke g bs _) | f == g =

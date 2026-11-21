@@ -16,6 +16,18 @@ import           Debug.Trace
 subconjs :: [a] -> Int -> [[a]]
 subconjs gs n = filter (\x -> n == length x) $ subsequences gs
 
+-- | Is there an order-preserving injection of @gs@ into @hs@ whose pairs all
+--   satisfy @p@?  Equivalent to @any (and . zipWith p gs) (subconjs hs (length gs))@,
+--   but greedy and O(|gs| * |hs|) instead of enumerating C(|hs|, |gs|)
+--   subsequences: matching each element to the earliest admissible one is
+--   optimal, since it leaves the longest suffix for the rest.
+subseqMatch :: (a -> b -> Bool) -> [a] -> [b] -> Bool
+subseqMatch _ [] _ = True
+subseqMatch _ _ [] = False
+subseqMatch p gs@(g : gs') (h : hs)
+  | p g h     = subseqMatch p gs' hs
+  | otherwise = subseqMatch p gs hs
+
 class Ground a where
   isGround :: a -> Bool
 
@@ -69,7 +81,7 @@ instance Show a => Homeo [G a] where
   diving = undefined
 
   homeo gs hs =
-    any (all (uncurry homeo) . zip gs) (subconjs hs (length gs))
+    subseqMatch homeo gs hs
   -- couple gs hs | length gs == length hs =
   --   all (uncurry homeo) $ zip gs hs
   -- couple _ _ = False
@@ -150,6 +162,4 @@ class (Homeo b, Instance a b, Eq b, Show a) => Embed a b | b -> a where
 
 instance (Ord a, Eq a, Show a) => Embed a (G a)
 instance (Ord a, Eq a, Show a) => Embed a [G a] where
-  embed gs hs =
-    let subs = subconjs hs (length gs) in
-    any (and . zipWith embed gs) subs
+  embed gs hs = subseqMatch embed gs hs
