@@ -107,6 +107,7 @@ sldResolutionStep gs isFirstTime env s seen heu =
     needsUnfolding _ _ (Invoke _ _ Unfold) _ _ = True
     needsUnfolding LCcpd.Branching env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
     needsUnfolding LCcpd.Deterministic _ _ ns isFirstTime = length ns == 1 || isFirstTime
+    needsUnfolding (LCcpd.DeterministicLA _) _ _ ns isFirstTime = length ns == 1 || isFirstTime
 
 bodies :: SldTree -> [[AnnG Term S]]
 bodies = leaves

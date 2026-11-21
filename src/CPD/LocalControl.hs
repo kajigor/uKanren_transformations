@@ -21,12 +21,14 @@ import           Program
 import qualified Subst
 import           Syntax
 import           Text.Printf
-import           Unfold              (getMaximumBranches, normalize, oneStepUnfold, unifyStuff)
+import           Unfold              (getMaximumBranches, normalize, oneStepUnfold, unifyStuff, pruneByLookahead)
 import           Util.ListZipper
 import qualified Util.Miscellaneous  as Util
 import           Debug.Trace
 
-data Heuristic = Deterministic | Branching deriving (Show, Read)
+-- | @DeterministicLA k@: deterministic unfolding where resultants that fail
+--   within @k@ steps are pruned before counting (see 'Unfold.pruneByLookahead').
+data Heuristic = Deterministic | Branching | DeterministicLA Int deriving (Show, Read)
 
 type DescendGoal = Descend (G S)
 
@@ -73,7 +75,7 @@ sldResolutionStep gs s isFirstTime heuristic = do
         env' <- gets getEnv
         let d@(Descend g _) = cursor zipper
         let normalized = normalize g'
-        let unified = mapMaybe (unifyStuff s) normalized
+        let unified = lookahead heuristic env' (mapMaybe (unifyStuff s) normalized)
         let addDescends xs s =
               substituteDescend s
                               ( left zipper ++
@@ -111,6 +113,7 @@ sldResolutionStep gs s isFirstTime heuristic = do
 
       needsUnfolding Branching env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
       needsUnfolding Deterministic _ _ ns isFirstTime = length ns == 1 || isFirstTime
+      needsUnfolding (DeterministicLA _) _ _ ns isFirstTime = length ns == 1 || isFirstTime
 
 bodies :: SldTree -> [[G S]]
 bodies = leaves
@@ -198,3 +201,8 @@ split d q q' = -- q <= q'
   let (bestMC, delta) = bmc d q (map snd cands) in
   let ((b, gen), is) = minimallyGeneralOn (fst . fst) (zip bestMC (map fst cands)) in
   ((b, if length q' > n then [ g | (i, g) <- zip [0 :: Int ..] q', i `notElem` is ] else []), gen, delta)
+
+lookahead :: Heuristic -> Env.Env -> [([G S], Subst.Subst Int)] -> [([G S], Subst.Subst Int)]
+lookahead (DeterministicLA k) env = pruneByLookahead k env
+lookahead _ _ = id
+

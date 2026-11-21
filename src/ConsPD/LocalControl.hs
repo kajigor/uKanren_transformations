@@ -25,13 +25,15 @@ import           Program
 import qualified Subst
 import           Syntax
 import           Text.Printf
-import Unfold (findBestByComplexity, findBestByComplexityDescend, findStatic, getMaximumBranches, isGoalStatic, normalize, oneStepUnfold, sortByComplexity, unifyStuff)
+import Unfold (pruneByLookahead, findBestByComplexity, findBestByComplexityDescend, findStatic, getMaximumBranches, isGoalStatic, normalize, oneStepUnfold, sortByComplexity, unifyStuff)
 import           Util.ListZipper
 import qualified Util.Miscellaneous  as Util
 import           Debug.Trace
 import FreshNames
 
-data Heuristic = Deterministic | Branching deriving (Show, Read)
+-- | @DeterministicLA k@: deterministic unfolding where resultants that fail
+--   within @k@ steps are pruned before counting (see 'Unfold.pruneByLookahead').
+data Heuristic = Deterministic | Branching | DeterministicLA Int deriving (Show, Read)
 
 data SldTree = Fail
              | Success (Subst.Subst Int)
@@ -88,7 +90,7 @@ sldResolutionStep gs s isFirstTime heuristic = do
           env' <- gets getEnv
           let d@(Descend g _) = cursor zipper
           let normalized = normalize g'
-          let unified = mapMaybe (unifyStuff s) normalized
+          let unified = lookahead heuristic env' (mapMaybe (unifyStuff s) normalized)
           let addDescends xs s =
                 substituteDescend s
                                 ( left zipper ++
@@ -131,6 +133,7 @@ sldResolutionStep gs s isFirstTime heuristic = do
           where
             go Branching env' g ns isFirstTime = getMaximumBranches env' g > length ns || isFirstTime
             go Deterministic _ _ ns isFirstTime = length ns == 1 || isFirstTime
+            go (DeterministicLA _) _ _ ns isFirstTime = length ns == 1 || isFirstTime
 
 
 bodies :: SldTree -> [[G S]]
@@ -219,3 +222,8 @@ split q q' = do -- q <= q'
   bestMC <- bmc q (map snd cands)
   let ((b, gen), is) = minimallyGeneralOn (fst . fst) (zip bestMC (map fst cands))
   return ((b, if length q' > n then [ g | (i, g) <- zip [0 :: Int ..] q', i `notElem` is ] else []), gen)
+
+
+lookahead :: Heuristic -> Env.Env -> [([G S], Subst.Subst Int)] -> [([G S], Subst.Subst Int)]
+lookahead (DeterministicLA k) env = pruneByLookahead k env
+lookahead _ _ = id

@@ -41,6 +41,31 @@ oneStep goal state = do
     let unified = mapMaybe (unifyStuff state) normalized
     return unified
 
+-- | Failure lookahead for determinate unfolding (Gallagher 1991; Leuschel's
+--   ECCE).  A resultant of a one-step unfolding is dropped when one of its
+--   calls fails within @k@ further unfolding steps, i.e. when none of the
+--   call's clauses unify (k = 1), or every surviving clause again contains a
+--   call failing within @k - 1@ steps.  This makes a selection deterministic
+--   when all but one clause fail just below the head, e.g. a meta-interpreter
+--   dispatching on a static goal constructor.  Only finitely failing branches
+--   are removed, so the answer set is unchanged.
+pruneByLookahead :: Int -> Env.Env -> [([G S], Subst.Subst Int)] -> [([G S], Subst.Subst Int)]
+pruneByLookahead k env rs
+  | k <= 0    = rs
+  | otherwise = filter (\(xs, s) -> not (evalState (anyM (failsWithin k s) xs) env)) rs
+  where
+    -- the name supply is threaded so that nested unfoldings get fresh names
+    failsWithin :: Int -> Subst.Subst Int -> G S -> State Env.Env Bool
+    failsWithin 0 _ _ = return False
+    failsWithin d s g@(Invoke _ _) = do
+      rs' <- oneStep g s
+      if null rs' then return True
+      else if d <= 1 then return False
+      else allM (\(ys, s') -> anyM (failsWithin (d - 1) s') ys) rs'
+    failsWithin _ _ _ = return False
+    anyM p = foldr (\x acc -> do b <- p x; if b then return True else acc) (return False)
+    allM p = foldr (\x acc -> do b <- p x; if b then acc else return False) (return True)
+
 unfoldConjunction :: [G S] -> Subst.Subst Int -> State Env.Env [([G S], Subst.Subst Int)]
 unfoldConjunction (x:xs) state = do
   unified <- oneStep x state

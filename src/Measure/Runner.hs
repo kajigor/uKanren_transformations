@@ -127,6 +127,10 @@ specializers =
       fromPurified p (topNames p) (CPD.purified (CPD.runTransformation p CPDLC.Deterministic))
   , sp "cpd-branch" $ \p ->
       fromPurified p (topNames p) (CPD.purified (CPD.runTransformation p CPDLC.Branching))
+  , sp "cpd-la" $ \p ->
+      fromPurified p (topNames p) (CPD.purified (CPD.runTransformation p (CPDLC.DeterministicLA 2)))
+  , sp "conspd-la" $ \p ->
+      ConsPDGlobal.purified (ConsPDGlobal.runTransformation p (ConsLC.DeterministicLA 2)) >>= fromPurified p (topNames p)
   , sp "conspd-det" $ \p ->
       ConsPDGlobal.purified (ConsPDGlobal.runTransformation p ConsLC.Deterministic) >>= fromPurified p (topNames p)
   , sp "conspd-branch" $ \p ->
