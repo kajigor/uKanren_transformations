@@ -1,0 +1,140 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check
+coloring,q1,original,0.34,7,35,28884,8525,12.138,10,GotEnough,ok~
+coloring,q2,original,0.34,7,35,5680,1655,2.813,2,Finished,ok
+coloring,q1,original+sched,2.09,6,34,1230,282,0.518,10,GotEnough,ok~
+coloring,q2,original+sched,2.09,6,34,523,122,0.382,2,Finished,ok
+coloring,q1,original+sched+guard,2.08,6,34,1230,282,0.509,10,GotEnough,ok~
+coloring,q2,original+sched+guard,3.04,6,34,523,122,0.377,2,Finished,ok
+coloring,q1,cpd-la+opt,174.53,0,187,250,0,0.053,10,GotEnough,ok~
+coloring,q2,cpd-la+opt,174.70,0,187,70,0,0.021,2,Finished,ok
+coloring,q1,cpd-la+opt+sched,175.91,0,187,250,0,0.049,10,GotEnough,ok~
+coloring,q2,cpd-la+opt+sched,176.29,0,187,70,0,0.020,2,Finished,ok
+coloring,q1,cpd-la+opt+guard,174.65,0,187,250,0,0.054,10,GotEnough,ok~
+coloring,q2,cpd-la+opt+guard,174.84,0,187,70,0,0.021,2,Finished,ok
+coloring,q1,cpd-la+opt+sched+guard,179.03,0,187,250,0,0.059,10,GotEnough,ok~
+coloring,q2,cpd-la+opt+sched+guard,179.37,0,187,70,0,0.021,2,Finished,ok
+coloring,q1,cpd-lap+opt+sched,143.47,0,187,250,0,0.301,10,GotEnough,ok~
+coloring,q2,cpd-lap+opt+sched,143.56,0,187,70,0,0.021,2,Finished,ok
+coloring,q1,cpd-lap+opt+sched+guard,143.61,0,187,250,0,0.052,10,GotEnough,ok~
+coloring,q2,cpd-lap+opt+sched+guard,143.78,0,187,70,0,0.021,2,Finished,ok
+coloring,q1,cpd-lap+opt+sched+guard+idx,148.40,0,187,250,0,0.060,10,GotEnough,ok~
+coloring,q2,cpd-lap+opt+sched+guard+idx,148.38,0,187,70,0,0.021,2,Finished,ok
+coloring@vanilla,q1,original,1.50,3,44,260082,39918,127.829,0,OutOfFuel,ok~
+coloring@vanilla,q2,original,1.36,3,44,160357,23878,60.552,2,Finished,ok
+coloring@vanilla,q1,original+sched,1.91,3,44,260082,39918,121.493,0,OutOfFuel,ok~
+coloring@vanilla,q2,original+sched,1.97,3,44,160357,23878,67.568,2,Finished,ok
+coloring@vanilla,q1,original+sched+guard,2.04,3,44,260082,39918,120.366,0,OutOfFuel,ok~
+coloring@vanilla,q2,original+sched+guard,2.18,3,44,160357,23878,61.257,2,Finished,ok
+coloring@vanilla,*,cpd-la+opt,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+coloring@vanilla,*,cpd-la+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+coloring@vanilla,*,cpd-la+opt+guard,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+coloring@vanilla,*,cpd-la+opt+sched+guard,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+coloring@vanilla,*,cpd-lap+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+coloring@vanilla,*,cpd-lap+opt+sched+guard,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+coloring@vanilla,*,cpd-lap+opt+sched+guard+idx,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+exprEval,q1,original,0.23,5,29,141,46,0.065,1,Finished,ok
+exprEval,q2,original,0.36,5,29,225175,74825,148.632,2,OutOfFuel,ok~
+exprEval,q1,original+sched,2.90,4,28,141,46,0.066,1,Finished,ok
+exprEval,q2,original+sched,3.84,11,69,1412,453,0.489,2,Finished,ok~
+exprEval,q1,original+sched+guard,2.96,4,28,141,46,0.063,1,Finished,ok
+exprEval,q2,original+sched+guard,4.09,11,69,1412,453,0.493,2,Finished,ok~
+exprEval,q1,cpd-la+opt,3.46,3,30,239989,60011,859.314,1,OutOfFuel,ok~
+exprEval,q2,cpd-la+opt,3.49,3,30,239969,60031,1573.526,2,OutOfFuel,ok~
+exprEval,q1,cpd-la+opt+sched,5.47,4,35,89,20,0.047,1,Finished,ok
+exprEval,q2,cpd-la+opt+sched,5.90,6,45,1177,335,0.538,2,Finished,ok~
+exprEval,q1,cpd-la+opt+guard,3.59,3,30,239989,60011,793.504,1,OutOfFuel,ok~
+exprEval,q2,cpd-la+opt+guard,3.69,3,30,239969,60031,1417.373,2,OutOfFuel,ok~
+exprEval,q1,cpd-la+opt+sched+guard,5.56,4,35,89,20,0.049,1,Finished,ok
+exprEval,q2,cpd-la+opt+sched+guard,6.17,6,45,1177,335,0.428,2,Finished,ok~
+exprEval,q1,cpd-lap+opt+sched,5.09,4,35,89,20,0.045,1,Finished,ok
+exprEval,q2,cpd-lap+opt+sched,5.73,6,45,1177,335,0.532,2,Finished,ok~
+exprEval,q1,cpd-lap+opt+sched+guard,5.24,4,35,89,20,0.043,1,Finished,ok
+exprEval,q2,cpd-lap+opt+sched+guard,5.88,6,45,1177,335,0.424,2,Finished,ok~
+exprEval,q1,cpd-lap+opt+sched+guard+idx,5.49,4,35,89,20,0.044,1,Finished,ok
+exprEval,q2,cpd-lap+opt+sched+guard+idx,6.11,6,45,1177,335,0.414,2,Finished,ok~
+exprEval@vanilla,q1,original,1.03,3,32,2945,605,1.411,1,Finished,ok
+exprEval@vanilla,q2,original,0.91,3,32,247108,52892,243.333,2,OutOfFuel,ok~
+exprEval@vanilla,q1,original+sched,1.68,3,32,2945,605,1.490,1,Finished,ok
+exprEval@vanilla,q2,original+sched,1.61,3,32,247108,52892,232.806,2,OutOfFuel,ok~
+exprEval@vanilla,q1,original+sched+guard,13.95,3,32,2945,605,1.708,1,Finished,ok
+exprEval@vanilla,q2,original+sched+guard,1.66,3,32,247108,52892,229.916,2,OutOfFuel,ok~
+exprEval@vanilla,q1,cpd-la+opt,144.03,2,27,234939,65061,569.289,1,OutOfFuel,ok~
+exprEval@vanilla,q2,cpd-la+opt,143.98,2,27,236392,63608,240.359,2,OutOfFuel,ok~
+exprEval@vanilla,q1,cpd-la+opt+sched,146.13,2,27,118,29,0.053,1,Finished,ok
+exprEval@vanilla,q2,cpd-la+opt+sched,145.72,7,52,2525,707,1.167,2,Finished,ok~
+exprEval@vanilla,q1,cpd-la+opt+guard,144.03,2,27,234939,65061,574.492,1,OutOfFuel,ok~
+exprEval@vanilla,q2,cpd-la+opt+guard,144.08,2,27,236392,63608,232.593,2,OutOfFuel,ok~
+exprEval@vanilla,q1,cpd-la+opt+sched+guard,146.47,2,27,118,29,0.054,1,Finished,ok
+exprEval@vanilla,q2,cpd-la+opt+sched+guard,146.24,7,52,2525,707,1.225,2,Finished,ok~
+exprEval@vanilla,q1,cpd-lap+opt+sched,154.54,2,27,118,29,0.058,1,Finished,ok
+exprEval@vanilla,q2,cpd-lap+opt+sched,154.18,7,52,2525,707,1.104,2,Finished,ok~
+exprEval@vanilla,q1,cpd-lap+opt+sched+guard,154.67,2,27,118,29,0.050,1,Finished,ok
+exprEval@vanilla,q2,cpd-lap+opt+sched+guard,154.43,7,52,2525,707,1.098,2,Finished,ok~
+exprEval@vanilla,q1,cpd-lap+opt+sched+guard+idx,154.63,2,27,118,29,0.050,1,Finished,ok
+exprEval@vanilla,q2,cpd-lap+opt+sched+guard+idx,154.59,7,52,2525,707,1.106,2,Finished,ok~
+exprEvalGeneral,q1,original,0.20,5,29,141,46,0.154,1,Finished,ok
+exprEvalGeneral,q2,original,0.20,5,29,225175,74825,148.497,2,OutOfFuel,ok~
+exprEvalGeneral,q1,original+sched,2.95,4,28,141,46,0.066,1,Finished,ok
+exprEvalGeneral,q2,original+sched,3.90,11,69,1412,453,0.544,2,Finished,ok~
+exprEvalGeneral,q1,original+sched+guard,2.95,4,28,141,46,0.057,1,Finished,ok
+exprEvalGeneral,q2,original+sched+guard,3.78,11,69,1412,453,0.615,2,Finished,ok~
+exprEvalGeneral,q1,cpd-la+opt,2.36,8,62,224949,75051,231.709,1,OutOfFuel,ok~
+exprEvalGeneral,q2,cpd-la+opt,2.41,8,62,227247,72753,1617.386,2,OutOfFuel,ok~
+exprEvalGeneral,q1,cpd-la+opt+sched,29.20,11,77,141,46,0.071,1,Finished,ok
+exprEvalGeneral,q2,cpd-la+opt+sched,16.82,22,152,1453,474,0.550,2,Finished,ok~
+exprEvalGeneral,q1,cpd-la+opt+guard,2.65,8,62,224949,75051,228.983,1,OutOfFuel,ok~
+exprEvalGeneral,q2,cpd-la+opt+guard,2.48,8,62,227247,72753,1450.218,2,OutOfFuel,ok~
+exprEvalGeneral,q1,cpd-la+opt+sched+guard,25.97,11,77,141,46,0.072,1,Finished,ok
+exprEvalGeneral,q2,cpd-la+opt+sched+guard,17.72,22,152,1453,474,0.703,2,Finished,ok~
+exprEvalGeneral,q1,cpd-lap+opt+sched,24.69,11,77,141,46,0.080,1,Finished,ok
+exprEvalGeneral,q2,cpd-lap+opt+sched,16.46,22,152,1453,474,0.766,2,Finished,ok~
+exprEvalGeneral,q1,cpd-lap+opt+sched+guard,24.67,11,77,141,46,0.071,1,Finished,ok
+exprEvalGeneral,q2,cpd-lap+opt+sched+guard,17.15,22,152,1453,474,0.559,2,Finished,ok~
+exprEvalGeneral,q1,cpd-lap+opt+sched+guard+idx,23.65,11,75,141,46,0.071,1,Finished,ok
+exprEvalGeneral,q2,cpd-lap+opt+sched+guard+idx,17.01,22,148,1453,474,0.700,2,Finished,ok~
+exprEvalGeneral@vanilla,q1,original,0.87,3,32,2945,605,1.458,1,Finished,ok
+exprEvalGeneral@vanilla,q2,original,0.96,3,32,247108,52892,236.018,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,original+sched,1.54,3,32,2945,605,1.468,1,Finished,ok
+exprEvalGeneral@vanilla,q2,original+sched,1.49,3,32,247108,52892,260.274,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,original+sched+guard,1.66,3,32,2945,605,1.569,1,Finished,ok
+exprEvalGeneral@vanilla,q2,original+sched+guard,1.75,3,32,247108,52892,239.749,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,cpd-la+opt,4.78,3,34,2657,595,1.274,1,Finished,ok
+exprEvalGeneral@vanilla,q2,cpd-la+opt,4.77,3,34,243494,56506,250.673,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,cpd-la+opt+sched,7.00,6,62,2657,595,1.793,1,Finished,ok
+exprEvalGeneral@vanilla,q2,cpd-la+opt+sched,6.58,6,62,243494,56506,238.459,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,cpd-la+opt+guard,4.85,3,34,2657,595,1.462,1,Finished,ok
+exprEvalGeneral@vanilla,q2,cpd-la+opt+guard,4.84,3,34,243494,56506,230.471,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,cpd-la+opt+sched+guard,7.44,6,62,2657,595,1.652,1,Finished,ok
+exprEvalGeneral@vanilla,q2,cpd-la+opt+sched+guard,7.05,6,62,243494,56506,252.896,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,cpd-lap+opt+sched,6.03,3,32,2474,595,1.297,1,Finished,ok
+exprEvalGeneral@vanilla,q2,cpd-lap+opt+sched,5.80,3,32,240243,59757,239.014,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,cpd-lap+opt+sched+guard,5.98,3,32,2474,595,1.324,1,Finished,ok
+exprEvalGeneral@vanilla,q2,cpd-lap+opt+sched+guard,5.95,3,32,240243,59757,257.817,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,cpd-lap+opt+sched+guard+idx,6.25,3,26,1376,595,0.993,1,Finished,ok
+exprEvalGeneral@vanilla,q2,cpd-lap+opt+sched+guard+idx,6.05,3,26,208726,91274,310.362,2,OutOfFuel,ok~
+queens5,q1,original,0.21,9,39,202439,57112,55.727,10,GotEnough,ok~
+queens5,q2,original,0.30,9,39,47771,13236,13.154,2,Finished,ok
+queens5,q1,original+sched,4.20,8,38,217738,60674,64.659,10,GotEnough,ok~
+queens5,q2,original+sched,4.21,8,38,50942,14054,14.459,2,Finished,ok
+queens5,q1,original+sched+guard,4.35,8,38,217738,60674,64.466,10,GotEnough,ok~
+queens5,q2,original+sched+guard,4.50,8,38,50942,14054,38.844,2,Finished,ok
+queens5,*,cpd-la+opt,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5,*,cpd-la+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5,*,cpd-la+opt+guard,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5,*,cpd-la+opt+sched+guard,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5,*,cpd-lap+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5,*,cpd-lap+opt+sched+guard,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5,*,cpd-lap+opt+sched+guard+idx,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,q1,original,1.54,3,50,263944,36056,148.257,0,OutOfFuel,ok~
+queens5@vanilla,q2,original,1.83,3,50,265230,34770,99.488,0,OutOfFuel,ok~
+queens5@vanilla,q1,original+sched,1.95,3,50,263944,36056,143.953,0,OutOfFuel,ok~
+queens5@vanilla,q2,original+sched,2.28,3,50,265230,34770,99.080,0,OutOfFuel,ok~
+queens5@vanilla,q1,original+sched+guard,2.11,3,50,263944,36056,151.827,0,OutOfFuel,ok~
+queens5@vanilla,q2,original+sched+guard,2.30,3,50,265230,34770,98.740,0,OutOfFuel,ok~
+queens5@vanilla,*,cpd-la+opt,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,*,cpd-la+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,*,cpd-la+opt+guard,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,*,cpd-la+opt+sched+guard,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,*,cpd-lap+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,*,cpd-lap+opt+sched+guard,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,*,cpd-lap+opt+sched+guard+idx,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-

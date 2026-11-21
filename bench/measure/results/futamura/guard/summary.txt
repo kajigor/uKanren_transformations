@@ -1,0 +1,37 @@
+## original+sched+guard vs original+sched
+solved 102 vs 101; gained 1, lost 0; mismatches 0; geometric mean steps ratio 1.000 on 101 common queries
+  gained: revAcc/spec
+  best:  appLast/spec 1.00 (271->271), appLast@vanilla/spec 1.00 (4131->4131), arithGeneral/q1 1.00 (81->81), arithGeneral/q3 1.00 (140->140), arithGeneral@vanilla/q1 1.00 (1048->1048), arithGeneral@vanilla/q3 1.00 (1830->1830)
+  worst: vanilla@vanilla/spec 1.00 (6646->6646), vanilla/spec 1.00 (405->405), uptoSum@vanilla/spec 1.00 (9726->9726), uptoSum/spec 1.00 (405->405), unifier/spec 1.00 (495->495), typecheck@vanilla/q2 1.00 (3256->3256)
+
+## cpd-la+opt+guard vs cpd-la+opt
+solved 89 vs 88; gained 1, lost 0; mismatches 0; geometric mean steps ratio 1.002 on 88 common queries
+  gained: revAcc/spec
+  best:  appLast/spec 1.00 (29->29), appLast@vanilla/spec 1.00 (245->245), arithGeneral/q1 1.00 (101->101), arithGeneral/q3 1.00 (149->149), arithGeneral@vanilla/q1 1.00 (924->924), arithGeneral@vanilla/q3 1.00 (1632->1632)
+  worst: path@vanilla/spec 1.17 (391->457), vanilla@vanilla/spec 1.00 (98->98), vanilla/spec 1.00 (31->31), uptoSum@vanilla/spec 1.00 (157->157), uptoSum/spec 1.00 (2->2), unifier@vanilla/spec 1.00 (42129->42129)
+
+## cpd-la+opt+sched+guard vs cpd-la+opt+sched
+solved 108 vs 106; gained 2, lost 0; mismatches 0; geometric mean steps ratio 1.000 on 106 common queries
+  gained: fclMult/q3, revAcc/spec
+  best:  appLast/spec 1.00 (29->29), appLast@vanilla/spec 1.00 (245->245), arithGeneral/q1 1.00 (101->101), arithGeneral/q3 1.00 (149->149), arithGeneral@vanilla/q1 1.00 (924->924), arithGeneral@vanilla/q3 1.00 (1632->1632)
+  worst: path@vanilla/spec 1.03 (426->437), vanilla@vanilla/spec 1.00 (84->84), vanilla/spec 1.00 (31->31), uptoSum@vanilla/spec 1.00 (157->157), uptoSum/spec 1.00 (2->2), unifier@vanilla/spec 1.00 (42128->42128)
+
+## cpd-lap+opt+sched+guard vs cpd-lap+opt+sched
+solved 108 vs 106; gained 2, lost 0; mismatches 0; geometric mean steps ratio 1.000 on 106 common queries
+  gained: fclMult/q3, revAcc/spec
+  best:  appLast/spec 1.00 (29->29), appLast@vanilla/spec 1.00 (245->245), arith/q1 1.00 (10->10), arith@vanilla/q1 1.00 (35->35), arithGeneral/q1 1.00 (101->101), arithGeneral/q3 1.00 (149->149)
+  worst: path@vanilla/spec 1.02 (1064->1080), vanilla@vanilla/spec 1.00 (84->84), vanilla/spec 1.00 (31->31), uptoSum@vanilla/spec 1.00 (157->157), uptoSum/spec 1.00 (2->2), unifier@vanilla/spec 1.00 (40622->40622)
+
+## cpd-lap+opt+sched+guard+idx vs cpd-lap+opt+sched
+solved 108 vs 106; gained 2, lost 0; mismatches 0; geometric mean steps ratio 0.913 on 106 common queries
+  gained: fclMult/q3, revAcc/spec
+  best:  binFactor@vanilla/q2 0.41 (10112->4172), binFactor@vanilla/q1 0.41 (14270->5888), typecheck@vanilla/q2 0.45 (2751->1251), unifier@vanilla/spec 0.47 (40622->19051), typecheck@vanilla/q1 0.54 (10627->5722), regexp@vanilla/spec 0.57 (7487->4283)
+  worst: path@vanilla/spec 1.02 (1064->1080), vanilla@vanilla/spec 1.00 (84->84), vanilla/spec 1.00 (31->31), uptoSum@vanilla/spec 1.00 (157->157), uptoSum/spec 1.00 (2->2), tmInterp/q3 1.00 (168->168)
+
+## cpd-lap+opt+sched+guard+idx vs original
+solved 108 vs 90; gained 23, lost 5; mismatches 0; geometric mean steps ratio 0.064 on 85 common queries
+  gained: arith/q1, arith@vanilla/q1, doubleAppend/q3, doubleAppend@vanilla/q3, exprEval/q2, exprEval@vanilla/q2, exprEvalGeneral/q2, fclMult/q3, flip/spec, flip@vanilla/spec, path@vanilla/spec, power/q2, power/q3, relSort/spec, relSort@vanilla/spec, relSortGeneral/q1, revAcc/spec, revGeneral/q1, rotatePrune/spec, rotatePrune@vanilla/spec, sortGeneral/q2, tmInterp/q3, unifier@vanilla/spec
+  lost:   binFactor@vanilla/q3, exDepth/spec, power/q1, sortGeneral/q1, tmInterp@vanilla/q1
+  best:  exDepth@vanilla/spec 0.00 (39748->17), rev@vanilla/spec 0.00 (1209->2), binMul@vanilla/q3 0.00 (201702->398), deforestation1@vanilla/spec 0.00 (929->2), depth@vanilla/spec 0.00 (3467->8), matchSimple@vanilla/spec 0.00 (3306->10)
+  worst: arithGeneral/q1 1.25 (81->101), arithGeneral/q3 1.06 (140->148), exprEvalGeneral/q1 1.00 (187->187), revGeneral/q2 0.97 (262->254), relSortGeneral/q2 0.73 (886->645), typecheck/q2 0.72 (156->113)
+
