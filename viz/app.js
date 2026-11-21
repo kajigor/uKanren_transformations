@@ -575,8 +575,11 @@ const SPEC_CHOICES = [
   ['conspd-det', 'ConsPD, deterministic unfolding'], ['conspd-la', 'ConsPD with failure lookahead'],
   ['cpd-la+opt+sched', 'cpd-la, post-optimizer, scheduling'], ['cpd-lap+opt+sched', 'cpd-lap, post-optimizer, scheduling'],
   ['cpd-det+opt+sched', 'cpd-det, post-optimizer, scheduling'], ['conspd-la+opt+sched', 'conspd-la, post-optimizer, scheduling'],
+  ['cpd-la+opt+idx', 'cpd-la, post-optimizer, constructor dispatch (Index)'],
+  ['cpd-lap+opt+sched+guard', 'cpd-lap+opt+sched with size guards (SizeGuard)'],
+  ['cpd-lap+opt+sched+guard+idx', 'all passes: scheduling, size guards, constructor dispatch'],
 ];
-const DEFAULT_SPECS = ['original', 'cpd-la', 'cpd-lap', 'conspd-la', 'cpd-la+opt+sched', 'cpd-lap+opt+sched'];
+const DEFAULT_SPECS = ['original', 'cpd-la', 'cpd-lap', 'conspd-la', 'cpd-la+opt+sched', 'cpd-lap+opt+sched', 'cpd-lap+opt+sched+guard+idx'];
 const DRAFT_KEY = 'viz:draft';
 const EXAMPLE_DRAFT = {
   name: 'myAppend',

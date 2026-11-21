@@ -250,7 +250,8 @@ data Opts = Opts { oOut :: FilePath, oN :: Int, oFuel :: Int, oOnly :: [String]
 defaultSpecs :: [String]
 defaultSpecs = [ "original", "cpd-det", "cpd-la", "cpd-branch", "conspd-det", "conspd-la"
                , "cpd-det+opt", "cpd-det+opt+sched", "conspd-det+opt", "conspd-det+opt+sched"
-               , "cpd-la+opt+sched", "conspd-la+opt+sched", "cpd-lap", "cpd-lap+opt+sched" ]
+               , "cpd-la+opt+sched", "conspd-la+opt+sched", "cpd-lap", "cpd-lap+opt+sched"
+               , "cpd-la+opt+idx", "cpd-lap+opt+sched+guard", "cpd-lap+opt+sched+guard+idx" ]
 
 parse :: [String] -> Opts -> Opts
 parse ("--out" : d : r)     o = parse r o { oOut = d }
