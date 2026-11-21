@@ -1,0 +1,8 @@
+-- forward: long text, the pattern occurs only at the end (many partial matches)
+? match [A, A, B, A, B] [A, A, A, B, A, A, A, B, A, A, B, A, A, B, A, A, A, B, A, A, B, A, A, A, B, A, A, B, A, B]
+-- forward, no occurrence (finite failure)
+? match [A, A, B, A, B] [A, A, B, A, A, B, A, A, B, A, A, B, A, A, B, A, A, B, A, A]
+-- backward: generate texts of length 7 containing the pattern
+? match [A, A, B, A, B] [x1, x2, x3, x4, x5, x6, x7]
+-- partially known text
+? match [A, A, B, A, B] [A, A, x1, A, A, x2, A, x3]

@@ -1,0 +1,6 @@
+-- forward: append [A, B, C] [D, E]
+? eval (App (App (App (Lam (Lam (Lam (Case (Var (S O)) (Var O) (ConsE (Var O) (App (App (App (Var (S (S (S (S O))))) (Var (S (S (S (S O)))))) (Var (S O))) (Var (S (S O))))))))) (Lam (Lam (Lam (Case (Var (S O)) (Var O) (ConsE (Var O) (App (App (App (Var (S (S (S (S O))))) (Var (S (S (S (S O)))))) (Var (S O))) (Var (S (S O)))))))))) (Var O)) (Var (S O))) [[A, B, C], [D, E]] v
+-- backward: all splits of [A, B, C, D] (5 answers)
+? eval (App (App (App (Lam (Lam (Lam (Case (Var (S O)) (Var O) (ConsE (Var O) (App (App (App (Var (S (S (S (S O))))) (Var (S (S (S (S O)))))) (Var (S O))) (Var (S (S O))))))))) (Lam (Lam (Lam (Case (Var (S O)) (Var O) (ConsE (Var O) (App (App (App (Var (S (S (S (S O))))) (Var (S (S (S (S O)))))) (Var (S O))) (Var (S (S O)))))))))) (Var O)) (Var (S O))) [x, y] [A, B, C, D]
+-- mixed: x ++ [D] = [A, B, C, D]
+? eval (App (App (App (Lam (Lam (Lam (Case (Var (S O)) (Var O) (ConsE (Var O) (App (App (App (Var (S (S (S (S O))))) (Var (S (S (S (S O)))))) (Var (S O))) (Var (S (S O))))))))) (Lam (Lam (Lam (Case (Var (S O)) (Var O) (ConsE (Var O) (App (App (App (Var (S (S (S (S O))))) (Var (S (S (S (S O)))))) (Var (S O))) (Var (S (S O)))))))))) (Var O)) (Var (S O))) [x, [D]] [A, B, C, D]

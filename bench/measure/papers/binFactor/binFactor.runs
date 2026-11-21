@@ -1,0 +1,6 @@
+-- backward: all factorizations of 15 (finite: 4 answers)
+? multo n m [B1, B1, B1, B1]
+-- one factor known (division): 3 * m = 15
+? multo [B1, B1] m [B1, B1, B1, B1]
+-- check: 3 * 5 = 15
+? multo [B1, B1] [B1, B0, B1] [B1, B1, B1, B1]

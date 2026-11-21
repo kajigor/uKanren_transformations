@@ -1,0 +1,6 @@
+-- forward: 2^3 = 8
+? power (S (S (S O))) (S (S O)) r
+-- backward (cube root): x^3 = 27  ==> x = 3
+? power (S (S (S O))) x (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S (S O)))))))))))))))))))))))))))
+-- backward, no solution: x^3 = 9
+? power (S (S (S O))) x (S (S (S (S (S (S (S (S (S O)))))))))

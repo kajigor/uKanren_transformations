@@ -1,0 +1,6 @@
+-- forward: 1111111011 ==> 1111111111
+? tm [If Zr (S (S (S O))), Right, Goto O, Write On] [On, On, On, On, On, On, On, Zr, On, On] res
+-- backward: which inputs give 111? (3 answers; then the search diverges on inputs without a '0')
+? tm [If Zr (S (S (S O))), Right, Goto O, Write On] right [On, On, On]
+-- partially known input
+? tm [If Zr (S (S (S O))), Right, Goto O, Write On] [x, y, z, On] res
