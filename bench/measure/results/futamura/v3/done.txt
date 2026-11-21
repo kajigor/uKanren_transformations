@@ -1,0 +1,12 @@
+measure new exit=0
+viz new exit=0
+measure v2s exit=0
+measure papers exit=0
+lap v2s exit=0
+lap new exit=0
+lap papers exit=0
+viz v2s exit=0
+viz papers exit=0
+lap dppd exit=0
+measure dppd exit=0
+viz dppd exit=0

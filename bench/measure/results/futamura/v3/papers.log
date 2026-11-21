@@ -1,0 +1,419 @@
+== binFactor
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| binFactor | q1 | original | 1.3 | 10 | 118 | 1158 | 410 | 0.73 | 4 | Finished | ok |
+| binFactor | q2 | original | 1.5 | 10 | 118 | 306 | 89 | 0.15 | 1 | Finished | ok |
+| binFactor | q3 | original | 1.1 | 10 | 118 | 214 | 65 | 0.10 | 1 | Finished | ok |
+| binFactor | q1 | original+sched | 45.5 | 39 | 610 | 2172 | 487 | 3.95 | 4 | Finished | ok |
+| binFactor | q2 | original+sched | 42.0 | 36 | 571 | 882 | 189 | 0.40 | 1 | Finished | ok |
+| binFactor | q3 | original+sched | 19.8 | 19 | 272 | 225 | 48 | 0.11 | 1 | Finished | ok |
+| binFactor | q1 | cpd-det | 23.2 | 14 | 37 | 26 | 15 | 0.03 | 4 | Finished | ok |
+| binFactor | q2 | cpd-det | 23.2 | 14 | 37 | 20 | 9 | 0.02 | 1 | Finished | ok |
+| binFactor | q3 | cpd-det | 23.4 | 14 | 37 | 12 | 8 | 0.01 | 1 | Finished | ok |
+| binFactor | q1 | cpd-det+opt+sched | 23.7 | 1 | 19 | 23 | 2 | 0.02 | 4 | Finished | ok |
+| binFactor | q2 | cpd-det+opt+sched | 24.1 | 2 | 36 | 19 | 2 | 0.01 | 1 | Finished | ok |
+| binFactor | q3 | cpd-det+opt+sched | 23.7 | 1 | 19 | 11 | 1 | 0.01 | 1 | Finished | ok |
+| binFactor | q1 | cpd-la | 6.2 | 5 | 22 | 17 | 5 | 0.02 | 4 | Finished | ok |
+| binFactor | q2 | cpd-la | 6.2 | 5 | 22 | 12 | 3 | 0.01 | 1 | Finished | ok |
+| binFactor | q3 | cpd-la | 6.2 | 5 | 22 | 10 | 3 | 0.01 | 1 | Finished | ok |
+| binFactor | q1 | cpd-la+opt+sched | 6.5 | 0 | 15 | 15 | 0 | 0.01 | 4 | Finished | ok |
+| binFactor | q2 | cpd-la+opt+sched | 6.5 | 0 | 15 | 12 | 0 | 0.01 | 1 | Finished | ok |
+| binFactor | q3 | cpd-la+opt+sched | 6.5 | 0 | 15 | 10 | 0 | 0.01 | 1 | Finished | ok |
+| binFactor | q1 | conspd-la | 12.2 | 13 | 28 | 15 | 2 | 0.02 | 4 | Finished | ok |
+| binFactor | q2 | conspd-la | 12.3 | 13 | 28 | 14 | 2 | 0.01 | 1 | Finished | ok |
+| binFactor | q3 | conspd-la | 12.2 | 13 | 28 | 10 | 2 | 0.01 | 1 | Finished | ok |
+| binFactor | q1 | conspd-la+opt+sched | 12.5 | 0 | 15 | 15 | 0 | 0.01 | 4 | Finished | ok |
+| binFactor | q2 | conspd-la+opt+sched | 12.4 | 0 | 15 | 14 | 0 | 0.01 | 1 | Finished | ok |
+| binFactor | q3 | conspd-la+opt+sched | 12.4 | 0 | 15 | 10 | 0 | 0.01 | 1 | Finished | ok |
+| binFactor | q1 | conspd-det | 14.9 | 24 | 46 | 26 | 7 | 0.04 | 4 | Finished | ok |
+| binFactor | q2 | conspd-det | 14.9 | 24 | 46 | 22 | 6 | 0.02 | 1 | Finished | ok |
+| binFactor | q3 | conspd-det | 15.2 | 24 | 46 | 14 | 4 | 0.01 | 1 | Finished | ok |
+| binFactor | q1 | conspd-det+opt+sched | 16.4 | 1 | 19 | 22 | 2 | 0.02 | 4 | Finished | ok |
+| binFactor | q2 | conspd-det+opt+sched | 15.6 | 2 | 36 | 20 | 2 | 0.01 | 1 | Finished | ok |
+| binFactor | q3 | conspd-det+opt+sched | 15.5 | 1 | 19 | 12 | 1 | 0.01 | 1 | Finished | ok |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| binFactor@vanilla | q1 | original | 13.4 | 3 | 74 | 61155 | 5316 | 28.16 | 4 | Finished | ok |
+| binFactor@vanilla | q2 | original | 5.6 | 3 | 74 | 14812 | 1277 | 6.06 | 1 | Finished | ok |
+| binFactor@vanilla | q3 | original | 16.8 | 3 | 74 | 10567 | 915 | 5.09 | 1 | Finished | ok |
+| binFactor@vanilla | q1 | original+sched | 5.6 | 3 | 74 | 61155 | 5316 | 30.98 | 4 | Finished | ok |
+| binFactor@vanilla | q2 | original+sched | 5.9 | 3 | 74 | 14812 | 1277 | 6.53 | 1 | Finished | ok |
+| binFactor@vanilla | q3 | original+sched | 7.6 | 6 | 146 | 10567 | 915 | 4.29 | 1 | Finished | ok |
+| binFactor@vanilla | q1 | cpd-det | 894.4 | 93 | 367 | 272614 | 27386 | 309.15 | 2 | OutOfFuel | ok~ |
+| binFactor@vanilla | q2 | cpd-det | 893.4 | 93 | 367 | 275401 | 24599 | 261.99 | 1 | OutOfFuel | ok~ |
+| binFactor@vanilla | q3 | cpd-det | 894.0 | 93 | 367 | 161744 | 138256 | 16037.26 | 1 | OutOfFuel | ok~ |
+| binFactor@vanilla | q1 | cpd-det+opt+sched | 970.9 | 16 | 247 | 272559 | 27441 | 381.20 | 2 | OutOfFuel | ok~ |
+| binFactor@vanilla | q2 | cpd-det+opt+sched | 959.6 | 17 | 258 | 275538 | 24462 | 264.17 | 1 | OutOfFuel | ok~ |
+| binFactor@vanilla | q3 | cpd-det+opt+sched | 957.5 | 17 | 258 | 217833 | 82167 | 33862.02 | 1 | OutOfFuel | ok~ |
+| binFactor@vanilla | q1 | cpd-la | 1274.9 | 17 | 144 | 13457 | 1203 | 5.29 | 4 | Finished | ok |
+| binFactor@vanilla | q2 | cpd-la | 1274.9 | 17 | 144 | 9535 | 851 | 3.79 | 1 | Finished | ok |
+| binFactor@vanilla | q3 | cpd-la | 1274.9 | 17 | 144 | 5483 | 494 | 2.27 | 1 | Finished | ok |
+| binFactor@vanilla | q1 | cpd-la+opt+sched | 1284.5 | 6 | 165 | 13457 | 1194 | 5.29 | 4 | Finished | ok |
+| binFactor@vanilla | q2 | cpd-la+opt+sched | 1310.7 | 6 | 165 | 9537 | 845 | 3.82 | 1 | Finished | ok |
+| binFactor@vanilla | q3 | cpd-la+opt+sched | 1285.0 | 6 | 165 | 260141 | 39859 | 451.03 | 1 | OutOfFuel | ok~ |
+| binFactor@vanilla | * | conspd-la | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| binFactor@vanilla | * | conspd-la+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| binFactor@vanilla | * | conspd-det | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| binFactor@vanilla | * | conspd-det+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+== binMul
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| binMul | q1 | original | 0.5 | 10 | 118 | 465 | 146 | 0.35 | 1 | Finished | ok |
+| binMul | q2 | original | 0.5 | 10 | 118 | 621 | 172 | 0.27 | 1 | Finished | ok |
+| binMul | q3 | original | 0.8 | 10 | 118 | 3355 | 1318 | 2.27 | 0 | Finished | ok |
+| binMul | q1 | original+sched | 18.1 | 11 | 119 | 475 | 106 | 0.23 | 1 | Finished | ok |
+| binMul | q2 | original+sched | 36.8 | 36 | 571 | 6333 | 1321 | 2.37 | 1 | Finished | ok |
+| binMul | q3 | original+sched | 36.8 | 36 | 571 | 1211 | 248 | 0.52 | 0 | Finished | ok |
+| binMul | q1 | cpd-det | 704.7 | 88 | 432 | 131 | 22 | 0.33 | 1 | Finished | ok |
+| binMul | q2 | cpd-det | 704.9 | 88 | 432 | 197 | 30 | 0.32 | 1 | Finished | ok |
+| binMul | q3 | cpd-det | 704.9 | 88 | 432 | 263611 | 36389 | 8737.18 | 0 | OutOfFuel | ok~ |
+| binMul | q1 | cpd-det+opt+sched | 2381.0 | 29 | 686 | 128 | 10 | 0.18 | 1 | Finished | ok |
+| binMul | q2 | cpd-det+opt+sched | 2733.6 | 52 | 1075 | 166 | 17 | 0.35 | 1 | Finished | ok |
+| binMul | q3 | cpd-det+opt+sched | 2761.5 | 52 | 1075 | 148 | 15 | 0.78 | 0 | Finished | ok |
+| binMul | q1 | cpd-la | 106.7 | 40 | 292 | 154 | 17 | 0.12 | 1 | Finished | ok |
+| binMul | q2 | cpd-la | 156.0 | 40 | 292 | 283675 | 16325 | 61.96 | 1 | OutOfFuel | ok~ |
+| binMul | q3 | cpd-la | 106.4 | 40 | 292 | 266670 | 33330 | 13051.32 | 0 | OutOfFuel | ok~ |
+| binMul | q1 | cpd-la+opt+sched | 1889.3 | 14 | 576 | 95 | 6 | 0.07 | 1 | Finished | ok |
+| binMul | q2 | cpd-la+opt+sched | 4880.6 | 13 | 423 | 169 | 12 | 0.08 | 1 | Finished | ok |
+| binMul | q3 | cpd-la+opt+sched | 4883.5 | 13 | 423 | 169 | 8 | 0.09 | 0 | Finished | ok |
+| binMul | q1 | conspd-la | 33.6 | 56 | 258 | 50 | 6 | 0.06 | 1 | Finished | ok |
+| binMul | q2 | conspd-la | 33.6 | 56 | 258 | 71 | 9 | 0.06 | 1 | Finished | ok |
+| binMul | q3 | conspd-la | 33.6 | 56 | 258 | 259321 | 40679 | 271.86 | 0 | OutOfFuel | ok~ |
+| binMul | q1 | conspd-la+opt+sched | 56.4 | 13 | 202 | 50 | 5 | 0.05 | 1 | Finished | ok |
+| binMul | q2 | conspd-la+opt+sched | 59.9 | 16 | 242 | 71 | 8 | 0.06 | 1 | Finished | ok |
+| binMul | q3 | conspd-la+opt+sched | 59.7 | 16 | 242 | 69 | 8 | 0.05 | 0 | Finished | ok |
+| binMul | q1 | conspd-det | 95.0 | 91 | 295 | 47 | 8 | 0.08 | 1 | Finished | ok |
+| binMul | q2 | conspd-det | 94.9 | 91 | 295 | 65 | 10 | 0.08 | 1 | Finished | ok |
+| binMul | q3 | conspd-det | 95.0 | 91 | 295 | 254885 | 45115 | 350.96 | 0 | OutOfFuel | ok~ |
+| binMul | q1 | conspd-det+opt+sched | 133.2 | 15 | 300 | 47 | 6 | 0.05 | 1 | Finished | ok |
+| binMul | q2 | conspd-det+opt+sched | 149.1 | 14 | 245 | 58 | 6 | 0.05 | 1 | Finished | ok |
+| binMul | q3 | conspd-det+opt+sched | 149.6 | 14 | 245 | 140 | 9 | 0.09 | 0 | Finished | ok |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| binMul@vanilla | q1 | original | 5.5 | 3 | 74 | 23014 | 2011 | 9.41 | 1 | Finished | ok |
+| binMul@vanilla | q2 | original | 5.5 | 3 | 74 | 29565 | 2551 | 12.82 | 1 | Finished | ok |
+| binMul@vanilla | q3 | original | 5.6 | 3 | 74 | 185525 | 16177 | 185.28 | 0 | Finished | ok |
+| binMul@vanilla | q1 | original+sched | 5.8 | 3 | 74 | 23014 | 2011 | 9.98 | 1 | Finished | ok |
+| binMul@vanilla | q2 | original+sched | 5.9 | 3 | 74 | 29565 | 2551 | 12.83 | 1 | Finished | ok |
+| binMul@vanilla | q3 | original+sched | 6.0 | 3 | 74 | 185525 | 16177 | 114.43 | 0 | Finished | ok |
+| binMul@vanilla | q1 | cpd-det | 1545.0 | 108 | 411 | 147217 | 152783 | 844.62 | 0 | OutOfFuel | unverified-complete |
+| binMul@vanilla | q2 | cpd-det | 1544.2 | 108 | 411 | 145262 | 154738 | 687.42 | 0 | OutOfFuel | unverified-complete |
+| binMul@vanilla | q3 | cpd-det | 1545.2 | 108 | 411 | 142306 | 157694 | 658.24 | 0 | OutOfFuel | ok~ |
+| binMul@vanilla | q1 | cpd-det+opt+sched | 1641.3 | 66 | 388 | 151 | 50 | 0.25 | 1 | Finished | ok |
+| binMul@vanilla | q2 | cpd-det+opt+sched | 1713.7 | 83 | 501 | 227 | 79 | 0.40 | 1 | Finished | ok |
+| binMul@vanilla | q3 | cpd-det+opt+sched | 1714.1 | 83 | 501 | 304 | 80 | 0.55 | 0 | Finished | ok |
+| binMul@vanilla | q1 | cpd-la | 7131.8 | 127 | 319 | 128 | 34 | 0.31 | 1 | Finished | ok |
+| binMul@vanilla | q2 | cpd-la | 7131.8 | 127 | 319 | 251100 | 48900 | 446.10 | 1 | OutOfFuel | ok~ |
+| binMul@vanilla | q3 | cpd-la | 7132.1 | 127 | 319 | 235153 | 64847 | 5050.26 | 0 | OutOfFuel | ok~ |
+| binMul@vanilla | q1 | cpd-la+opt+sched | 7367.8 | 42 | 419 | 124 | 16 | 0.19 | 1 | Finished | ok |
+| binMul@vanilla | q2 | cpd-la+opt+sched | 7500.3 | 52 | 529 | 214 | 37 | 0.35 | 1 | Finished | ok |
+| binMul@vanilla | q3 | cpd-la+opt+sched | 7504.1 | 52 | 529 | 538 | 86 | 0.57 | 0 | Finished | ok |
+| binMul@vanilla | * | conspd-la | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| binMul@vanilla | * | conspd-la+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| binMul@vanilla | * | conspd-det | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| binMul@vanilla | * | conspd-det+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+== fclMult
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| fclMult | q1 | original | 0.6 | 10 | 53 | 2100 | 747 | 1.59 | 1 | Finished | ok |
+| fclMult | q2 | original | 0.6 | 10 | 53 | 218769 | 81231 | 214.67 | 4 | OutOfFuel | ok~ |
+| fclMult | q3 | original | 0.7 | 10 | 53 | 222150 | 77850 | 309.55 | 1 | OutOfFuel | ok~ |
+| fclMult | q1 | original+sched | 15.2 | 9 | 52 | 2100 | 747 | 1.76 | 1 | Finished | ok |
+| fclMult | q2 | original+sched | 8.9 | 12 | 69 | 218769 | 81231 | 244.16 | 4 | OutOfFuel | ok~ |
+| fclMult | q3 | original+sched | 8.8 | 12 | 69 | 222150 | 77850 | 318.93 | 1 | OutOfFuel | ok~ |
+| fclMult | q1 | cpd-det | 76.0 | 15 | 25 | 40 | 55 | 0.08 | 1 | Finished | ok |
+| fclMult | q2 | cpd-det | 76.2 | 15 | 25 | 132900 | 167100 | 102.32 | 4 | OutOfFuel | ok~ |
+| fclMult | q3 | cpd-det | 76.0 | 15 | 25 | 120336 | 179664 | 164.22 | 1 | OutOfFuel | ok~ |
+| fclMult | q1 | cpd-det+opt+sched | 76.6 | 6 | 14 | 40 | 53 | 0.06 | 1 | Finished | ok |
+| fclMult | q2 | cpd-det+opt+sched | 76.9 | 6 | 14 | 143513 | 156487 | 96.40 | 4 | OutOfFuel | ok~ |
+| fclMult | q3 | cpd-det+opt+sched | 76.7 | 6 | 14 | 120430 | 179570 | 165.74 | 1 | OutOfFuel | ok~ |
+| fclMult | q1 | cpd-la | 70.1 | 11 | 21 | 40 | 42 | 0.06 | 1 | Finished | ok |
+| fclMult | q2 | cpd-la | 70.1 | 11 | 21 | 149990 | 150010 | 100.11 | 4 | OutOfFuel | ok~ |
+| fclMult | q3 | cpd-la | 70.3 | 11 | 21 | 149853 | 150147 | 278.24 | 1 | OutOfFuel | ok~ |
+| fclMult | q1 | cpd-la+opt+sched | 70.3 | 5 | 13 | 40 | 41 | 0.05 | 1 | Finished | ok |
+| fclMult | q2 | cpd-la+opt+sched | 70.2 | 5 | 13 | 149990 | 150010 | 99.59 | 4 | OutOfFuel | ok~ |
+| fclMult | q3 | cpd-la+opt+sched | 70.3 | 5 | 13 | 149853 | 150147 | 184.06 | 1 | OutOfFuel | ok~ |
+| fclMult | * | conspd-la | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| fclMult | * | conspd-la+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| fclMult | * | conspd-det | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| fclMult | * | conspd-det+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| fclMult@vanilla | q1 | original | 3.0 | 3 | 52 | 89631 | 11178 | 59.92 | 1 | Finished | ok |
+| fclMult@vanilla | q2 | original | 3.2 | 3 | 52 | 267000 | 33000 | 208.61 | 0 | OutOfFuel | ok~ |
+| fclMult@vanilla | q3 | original | 3.3 | 3 | 52 | 266857 | 33143 | 201.33 | 1 | OutOfFuel | ok~ |
+| fclMult@vanilla | q1 | original+sched | 3.8 | 3 | 52 | 89631 | 11178 | 66.44 | 1 | Finished | ok |
+| fclMult@vanilla | q2 | original+sched | 4.1 | 3 | 52 | 267000 | 33000 | 232.84 | 0 | OutOfFuel | ok~ |
+| fclMult@vanilla | q3 | original+sched | 4.0 | 3 | 52 | 266857 | 33143 | 225.23 | 1 | OutOfFuel | ok~ |
+| fclMult@vanilla | q1 | cpd-det | 3624.2 | 169 | 430 | 107622 | 192378 | 1000.87 | 0 | OutOfFuel | unverified-complete |
+| fclMult@vanilla | q2 | cpd-det | 3625.7 | 169 | 430 | 108379 | 191621 | 966.25 | 0 | OutOfFuel | ok~ |
+| fclMult@vanilla | q3 | cpd-det | 3625.0 | 169 | 430 | 107485 | 192515 | 1017.74 | 0 | OutOfFuel | unverified-complete |
+| fclMult@vanilla | q1 | cpd-det+opt+sched | 3732.6 | 29 | 266 | 225887 | 74113 | 738.02 | 0 | OutOfFuel | unverified-complete |
+| fclMult@vanilla | q2 | cpd-det+opt+sched | 3727.4 | 25 | 252 | 225883 | 74117 | 481.13 | 0 | OutOfFuel | ok~ |
+| fclMult@vanilla | q3 | cpd-det+opt+sched | 3725.4 | 25 | 252 | 225887 | 74113 | 692.66 | 0 | OutOfFuel | unverified-complete |
+| fclMult@vanilla | q1 | cpd-la | 7424.6 | 105 | 320 | 170737 | 129263 | 729.73 | 0 | OutOfFuel | unverified-complete |
+| fclMult@vanilla | q2 | cpd-la | 7426.3 | 105 | 320 | 172280 | 127720 | 876.99 | 0 | OutOfFuel | ok~ |
+| fclMult@vanilla | q3 | cpd-la | 7428.0 | 105 | 320 | 173156 | 126844 | 757.27 | 0 | OutOfFuel | unverified-complete |
+| fclMult@vanilla | q1 | cpd-la+opt+sched | 8560.5 | 208 | 2434 | 2219 | 461 | 4.20 | 1 | Finished | ok |
+| fclMult@vanilla | q2 | cpd-la+opt+sched | 7878.9 | 52 | 610 | 257715 | 42285 | 183.79 | 4 | OutOfFuel | ok~ |
+| fclMult@vanilla | q3 | cpd-la+opt+sched | 7967.4 | 104 | 1218 | 245976 | 54024 | 200.21 | 1 | OutOfFuel | ok~ |
+| fclMult@vanilla | * | conspd-la | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| fclMult@vanilla | * | conspd-la+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| fclMult@vanilla | * | conspd-det | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| fclMult@vanilla | * | conspd-det+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+== kmp
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| kmp | q1 | original | 0.2 | 5 | 17 | 539 | 173 | 0.28 | 1 | Finished | ok |
+| kmp | q2 | original | 0.2 | 5 | 17 | 372 | 120 | 0.13 | 0 | Finished | ok |
+| kmp | q3 | original | 0.2 | 5 | 17 | 2689 | 935 | 1.27 | 7 | Finished | ok |
+| kmp | q4 | original | 0.3 | 5 | 17 | 391 | 127 | 0.14 | 2 | Finished | ok |
+| kmp | q1 | original+sched | 0.5 | 4 | 16 | 539 | 173 | 0.21 | 1 | Finished | ok |
+| kmp | q2 | original+sched | 0.6 | 4 | 16 | 372 | 120 | 0.15 | 0 | Finished | ok |
+| kmp | q3 | original+sched | 0.9 | 4 | 16 | 2689 | 935 | 1.29 | 7 | Finished | ok |
+| kmp | q4 | original+sched | 0.8 | 4 | 16 | 391 | 127 | 0.15 | 2 | Finished | ok |
+| kmp | q1 | cpd-det | 7.0 | 17 | 54 | 432 | 121 | 0.23 | 1 | Finished | ok |
+| kmp | q2 | cpd-det | 7.3 | 17 | 54 | 290 | 82 | 0.13 | 0 | Finished | ok |
+| kmp | q3 | cpd-det | 6.8 | 17 | 54 | 1933 | 566 | 1.26 | 7 | Finished | ok |
+| kmp | q4 | cpd-det | 7.1 | 17 | 54 | 325 | 89 | 0.14 | 2 | Finished | ok |
+| kmp | q1 | cpd-det+opt+sched | 7.9 | 2 | 20 | 432 | 73 | 0.20 | 1 | Finished | ok |
+| kmp | q2 | cpd-det+opt+sched | 8.0 | 2 | 20 | 290 | 50 | 0.12 | 0 | Finished | ok |
+| kmp | q3 | cpd-det+opt+sched | 7.8 | 2 | 20 | 1841 | 425 | 1.19 | 7 | Finished | ok |
+| kmp | q4 | cpd-det+opt+sched | 7.8 | 2 | 20 | 318 | 57 | 0.14 | 2 | Finished | ok |
+| kmp | q1 | cpd-la | 10.6 | 18 | 57 | 432 | 121 | 0.21 | 1 | Finished | ok |
+| kmp | q2 | cpd-la | 10.8 | 18 | 57 | 290 | 82 | 0.13 | 0 | Finished | ok |
+| kmp | q3 | cpd-la | 10.4 | 18 | 57 | 1933 | 566 | 1.19 | 7 | Finished | ok |
+| kmp | q4 | cpd-la | 10.7 | 18 | 57 | 325 | 89 | 0.14 | 2 | Finished | ok |
+| kmp | q1 | cpd-la+opt+sched | 11.6 | 2 | 20 | 432 | 73 | 0.33 | 1 | Finished | ok |
+| kmp | q2 | cpd-la+opt+sched | 11.5 | 2 | 20 | 290 | 50 | 0.12 | 0 | Finished | ok |
+| kmp | q3 | cpd-la+opt+sched | 11.4 | 2 | 20 | 1841 | 425 | 1.08 | 7 | Finished | ok |
+| kmp | q4 | cpd-la+opt+sched | 11.4 | 2 | 20 | 318 | 57 | 0.13 | 2 | Finished | ok |
+| kmp | q1 | conspd-la | 7.5 | 38 | 90 | 211 | 66 | 0.13 | 1 | Finished | ok |
+| kmp | q2 | conspd-la | 7.8 | 38 | 90 | 103 | 45 | 0.05 | 0 | Finished | ok |
+| kmp | q3 | conspd-la | 8.1 | 38 | 90 | 1015 | 365 | 0.43 | 7 | Finished | ok |
+| kmp | q4 | conspd-la | 7.7 | 38 | 90 | 177 | 54 | 0.09 | 2 | Finished | ok |
+| kmp | q1 | conspd-la+opt+sched | 9.6 | 11 | 63 | 211 | 65 | 0.11 | 1 | Finished | ok |
+| kmp | q2 | conspd-la+opt+sched | 9.4 | 11 | 63 | 103 | 44 | 0.05 | 0 | Finished | ok |
+| kmp | q3 | conspd-la+opt+sched | 9.7 | 11 | 63 | 1015 | 364 | 0.79 | 7 | Finished | ok |
+| kmp | q4 | conspd-la+opt+sched | 9.3 | 11 | 63 | 177 | 53 | 0.10 | 2 | Finished | ok |
+| kmp | q1 | conspd-det | 22.4 | 57 | 134 | 185 | 69 | 0.15 | 1 | Finished | ok |
+| kmp | q2 | conspd-det | 22.6 | 57 | 134 | 115 | 51 | 0.09 | 0 | Finished | ok |
+| kmp | q3 | conspd-det | 22.5 | 57 | 134 | 917 | 390 | 0.92 | 7 | Finished | ok |
+| kmp | q4 | conspd-det | 22.2 | 57 | 134 | 141 | 56 | 0.10 | 2 | Finished | ok |
+| kmp | q1 | conspd-det+opt+sched | 26.2 | 17 | 94 | 185 | 68 | 0.12 | 1 | Finished | ok |
+| kmp | q2 | conspd-det+opt+sched | 26.4 | 17 | 94 | 115 | 50 | 0.07 | 0 | Finished | ok |
+| kmp | q3 | conspd-det+opt+sched | 26.4 | 17 | 94 | 917 | 389 | 0.42 | 7 | Finished | ok |
+| kmp | q4 | conspd-det+opt+sched | 26.3 | 17 | 94 | 141 | 55 | 0.53 | 2 | Finished | ok |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| kmp@vanilla | q1 | original | 0.7 | 3 | 26 | 10770 | 2700 | 9.02 | 1 | Finished | ok |
+| kmp@vanilla | q2 | original | 0.8 | 3 | 26 | 7305 | 1797 | 5.47 | 0 | Finished | ok |
+| kmp@vanilla | q3 | original | 0.7 | 3 | 26 | 55352 | 13694 | 61.30 | 7 | Finished | ok |
+| kmp@vanilla | q4 | original | 0.8 | 3 | 26 | 7853 | 1950 | 5.43 | 2 | Finished | ok |
+| kmp@vanilla | q1 | original+sched | 1.8 | 6 | 50 | 10770 | 2700 | 9.25 | 1 | Finished | ok |
+| kmp@vanilla | q2 | original+sched | 1.7 | 6 | 50 | 7307 | 1798 | 5.54 | 0 | Finished | ok |
+| kmp@vanilla | q3 | original+sched | 1.2 | 3 | 26 | 55352 | 13694 | 56.06 | 7 | Finished | ok |
+| kmp@vanilla | q4 | original+sched | 1.4 | 3 | 26 | 7853 | 1950 | 5.37 | 2 | Finished | ok |
+| kmp@vanilla | q1 | cpd-det | 48.7 | 27 | 77 | 114919 | 185081 | 1501.82 | 0 | OutOfFuel | unverified-complete |
+| kmp@vanilla | q2 | cpd-det | 50.5 | 27 | 77 | 114919 | 185081 | 1226.94 | 0 | OutOfFuel | ok~ |
+| kmp@vanilla | q3 | cpd-det | 49.5 | 27 | 77 | 114914 | 185086 | 1381.88 | 7 | OutOfFuel | ok~ |
+| kmp@vanilla | q4 | cpd-det | 50.1 | 27 | 77 | 114922 | 185078 | 1378.32 | 2 | OutOfFuel | ok~ |
+| kmp@vanilla | q1 | cpd-det+opt+sched | 51.4 | 1 | 17 | 236881 | 63119 | 1063.92 | 0 | OutOfFuel | unverified-complete |
+| kmp@vanilla | q2 | cpd-det+opt+sched | 51.4 | 1 | 17 | 237872 | 62128 | 869.68 | 0 | OutOfFuel | ok~ |
+| kmp@vanilla | q3 | cpd-det+opt+sched | 51.8 | 1 | 17 | 3322 | 425 | 1.57 | 7 | Finished | ok |
+| kmp@vanilla | q4 | cpd-det+opt+sched | 51.3 | 1 | 17 | 480 | 57 | 0.19 | 2 | Finished | ok |
+| kmp@vanilla | q1 | cpd-la | 110.8 | 20 | 66 | 508 | 147 | 0.26 | 1 | Finished | ok |
+| kmp@vanilla | q2 | cpd-la | 111.0 | 20 | 66 | 345 | 101 | 0.16 | 0 | Finished | ok |
+| kmp@vanilla | q3 | cpd-la | 110.9 | 20 | 66 | 2473 | 732 | 1.42 | 7 | Finished | ok |
+| kmp@vanilla | q4 | cpd-la | 110.7 | 20 | 66 | 380 | 108 | 0.17 | 2 | Finished | ok |
+| kmp@vanilla | q1 | cpd-la+opt+sched | 111.7 | 2 | 20 | 432 | 73 | 0.19 | 1 | Finished | ok |
+| kmp@vanilla | q2 | cpd-la+opt+sched | 111.6 | 2 | 20 | 290 | 50 | 0.12 | 0 | Finished | ok |
+| kmp@vanilla | q3 | cpd-la+opt+sched | 111.8 | 2 | 20 | 1841 | 425 | 0.71 | 7 | Finished | ok |
+| kmp@vanilla | q4 | cpd-la+opt+sched | 111.7 | 2 | 20 | 318 | 57 | 0.13 | 2 | Finished | ok |
+| kmp@vanilla | q1 | conspd-la | 528.4 | 85 | 316 | 145 | 62 | 0.13 | 1 | Finished | ok |
+| kmp@vanilla | q2 | conspd-la | 528.5 | 85 | 316 | 105 | 45 | 0.09 | 0 | Finished | ok |
+| kmp@vanilla | q3 | conspd-la | 528.6 | 85 | 316 | 909 | 366 | 0.67 | 7 | Finished | ok |
+| kmp@vanilla | q4 | conspd-la | 528.7 | 85 | 316 | 108 | 44 | 0.10 | 2 | Finished | ok |
+| kmp@vanilla | q1 | conspd-la+opt+sched | 536.6 | 16 | 224 | 137 | 53 | 0.33 | 1 | Finished | ok |
+| kmp@vanilla | q2 | conspd-la+opt+sched | 536.5 | 16 | 224 | 99 | 38 | 0.05 | 0 | Finished | ok |
+| kmp@vanilla | q3 | conspd-la+opt+sched | 536.7 | 16 | 224 | 894 | 350 | 0.53 | 7 | Finished | ok |
+| kmp@vanilla | q4 | conspd-la+opt+sched | 536.4 | 16 | 224 | 105 | 40 | 0.05 | 2 | Finished | ok |
+| kmp@vanilla | q1 | conspd-det | 1085.4 | 102 | 870 | 87726 | 212274 | 2750.46 | 0 | OutOfFuel | unverified-complete |
+| kmp@vanilla | q2 | conspd-det | 1089.2 | 102 | 870 | 87726 | 212274 | 2517.08 | 0 | OutOfFuel | ok~ |
+| kmp@vanilla | q3 | conspd-det | 1087.5 | 102 | 870 | 102921 | 197079 | 2210.62 | 7 | OutOfFuel | ok~ |
+| kmp@vanilla | q4 | conspd-det | 1086.4 | 102 | 870 | 87733 | 212267 | 2708.14 | 1 | OutOfFuel | unverified-complete |
+| kmp@vanilla | q1 | conspd-det+opt+sched | 1132.5 | 9 | 133 | 266571 | 33429 | 204.74 | 0 | OutOfFuel | unverified-complete |
+| kmp@vanilla | q2 | conspd-det+opt+sched | 1132.7 | 9 | 133 | 266598 | 33402 | 204.53 | 0 | OutOfFuel | ok~ |
+| kmp@vanilla | q3 | conspd-det+opt+sched | 1132.8 | 9 | 133 | 266353 | 33647 | 252.67 | 7 | OutOfFuel | ok~ |
+| kmp@vanilla | q4 | conspd-det+opt+sched | 1132.4 | 9 | 133 | 266619 | 33381 | 203.98 | 2 | OutOfFuel | ok~ |
+== lambdaAppend
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| lambdaAppend | q1 | original | 0.5 | 3 | 27 | 508 | 111 | 0.29 | 1 | Finished | ok |
+| lambdaAppend | q2 | original | 0.8 | 3 | 27 | 688 | 151 | 0.47 | 5 | Finished | ok |
+| lambdaAppend | q3 | original | 1.0 | 3 | 27 | 688 | 151 | 0.43 | 1 | Finished | ok |
+| lambdaAppend | q1 | original+sched | 5.3 | 6 | 74 | 240537 | 59463 | 726.36 | 1 | OutOfFuel | ok~ |
+| lambdaAppend | q2 | original+sched | 4.7 | 8 | 98 | 241975 | 58025 | 149.06 | 2 | OutOfFuel | unverified-complete |
+| lambdaAppend | q3 | original+sched | 4.7 | 8 | 98 | 241974 | 58026 | 145.08 | 0 | OutOfFuel | unverified-complete |
+| lambdaAppend | q1 | cpd-det | 25.3 | 3 | 14 | 15 | 4 | 0.05 | 1 | Finished | ok |
+| lambdaAppend | q2 | cpd-det | 24.9 | 3 | 14 | 20 | 5 | 0.03 | 5 | Finished | ok |
+| lambdaAppend | q3 | cpd-det | 24.9 | 3 | 14 | 19 | 5 | 0.02 | 1 | Finished | ok |
+| lambdaAppend | q1 | cpd-det+opt+sched | 25.7 | 1 | 11 | 15 | 3 | 0.02 | 1 | Finished | ok |
+| lambdaAppend | q2 | cpd-det+opt+sched | 25.2 | 1 | 11 | 20 | 4 | 0.03 | 5 | Finished | ok |
+| lambdaAppend | q3 | cpd-det+opt+sched | 25.2 | 1 | 11 | 19 | 4 | 0.02 | 1 | Finished | ok |
+| lambdaAppend | q1 | cpd-la | 26.0 | 3 | 14 | 15 | 4 | 0.05 | 1 | Finished | ok |
+| lambdaAppend | q2 | cpd-la | 25.7 | 3 | 14 | 20 | 5 | 0.03 | 5 | Finished | ok |
+| lambdaAppend | q3 | cpd-la | 25.7 | 3 | 14 | 19 | 5 | 0.03 | 1 | Finished | ok |
+| lambdaAppend | q1 | cpd-la+opt+sched | 26.5 | 1 | 11 | 15 | 3 | 0.02 | 1 | Finished | ok |
+| lambdaAppend | q2 | cpd-la+opt+sched | 26.0 | 1 | 11 | 20 | 4 | 0.04 | 5 | Finished | ok |
+| lambdaAppend | q3 | cpd-la+opt+sched | 26.0 | 1 | 11 | 19 | 4 | 0.02 | 1 | Finished | ok |
+| lambdaAppend | q1 | conspd-la | 12.4 | 6 | 20 | 14 | 4 | 0.03 | 1 | Finished | ok |
+| lambdaAppend | q2 | conspd-la | 12.4 | 6 | 20 | 21 | 5 | 0.03 | 5 | Finished | ok |
+| lambdaAppend | q3 | conspd-la | 12.7 | 6 | 20 | 20 | 5 | 0.02 | 1 | Finished | ok |
+| lambdaAppend | q1 | conspd-la+opt+sched | 13.4 | 1 | 15 | 14 | 2 | 0.03 | 1 | Finished | ok |
+| lambdaAppend | q2 | conspd-la+opt+sched | 12.9 | 1 | 15 | 21 | 3 | 0.03 | 5 | Finished | ok |
+| lambdaAppend | q3 | conspd-la+opt+sched | 12.9 | 1 | 15 | 20 | 3 | 0.02 | 1 | Finished | ok |
+| lambdaAppend | q1 | conspd-det | 11.7 | 6 | 20 | 14 | 4 | 0.04 | 1 | Finished | ok |
+| lambdaAppend | q2 | conspd-det | 11.9 | 6 | 20 | 21 | 5 | 0.03 | 5 | Finished | ok |
+| lambdaAppend | q3 | conspd-det | 11.7 | 6 | 20 | 20 | 5 | 0.02 | 1 | Finished | ok |
+| lambdaAppend | q1 | conspd-det+opt+sched | 12.7 | 1 | 15 | 14 | 2 | 0.03 | 1 | Finished | ok |
+| lambdaAppend | q2 | conspd-det+opt+sched | 12.7 | 1 | 15 | 21 | 3 | 0.03 | 5 | Finished | ok |
+| lambdaAppend | q3 | conspd-det+opt+sched | 13.1 | 1 | 15 | 20 | 3 | 0.02 | 1 | Finished | ok |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| lambdaAppend@vanilla | q1 | original | 1.6 | 3 | 30 | 10909 | 2323 | 8.20 | 1 | Finished | ok |
+| lambdaAppend@vanilla | q2 | original | 1.8 | 3 | 30 | 14747 | 3157 | 13.47 | 5 | Finished | ok |
+| lambdaAppend@vanilla | q3 | original | 1.6 | 3 | 30 | 14665 | 3116 | 13.26 | 1 | Finished | ok |
+| lambdaAppend@vanilla | q1 | original+sched | 2.4 | 3 | 30 | 10909 | 2323 | 8.34 | 1 | Finished | ok |
+| lambdaAppend@vanilla | q2 | original+sched | 2.5 | 3 | 30 | 14747 | 3157 | 13.93 | 5 | Finished | ok |
+| lambdaAppend@vanilla | q3 | original+sched | 2.5 | 3 | 30 | 14665 | 3116 | 13.18 | 1 | Finished | ok |
+| lambdaAppend@vanilla | q1 | cpd-det | 6805.8 | 152 | 305 | 3071 | 3736 | 5.52 | 1 | Finished | ok |
+| lambdaAppend@vanilla | q2 | cpd-det | 6806.9 | 152 | 305 | 134887 | 165113 | 1154.39 | 5 | OutOfFuel | ok~ |
+| lambdaAppend@vanilla | q3 | cpd-det | 6805.9 | 152 | 305 | 134887 | 165113 | 888.74 | 1 | OutOfFuel | ok~ |
+| lambdaAppend@vanilla | q1 | cpd-det+opt+sched | 6969.1 | 57 | 260 | 562 | 371 | 0.89 | 1 | Finished | ok |
+| lambdaAppend@vanilla | q2 | cpd-det+opt+sched | 7001.9 | 164 | 782 | 175470 | 124530 | 706.41 | 2 | OutOfFuel | unverified-complete |
+| lambdaAppend@vanilla | q3 | cpd-det+opt+sched | 7002.6 | 164 | 782 | 176990 | 123010 | 974.66 | 0 | OutOfFuel | unverified-complete |
+| lambdaAppend@vanilla | q1 | cpd-la | 5595.9 | 90 | 118 | 209442 | 90558 | 884.00 | 1 | OutOfFuel | ok~ |
+| lambdaAppend@vanilla | q2 | cpd-la | 5597.6 | 90 | 118 | 191 | 208 | 0.63 | 5 | Finished | ok |
+| lambdaAppend@vanilla | q3 | cpd-la | 5596.8 | 90 | 118 | 187 | 208 | 0.55 | 1 | Finished | ok |
+| lambdaAppend@vanilla | q1 | cpd-la+opt+sched | 5667.8 | 25 | 37 | 55 | 86 | 0.20 | 1 | Finished | ok |
+| lambdaAppend@vanilla | q2 | cpd-la+opt+sched | 5684.0 | 26 | 42 | 88 | 118 | 0.29 | 5 | Finished | ok |
+| lambdaAppend@vanilla | q3 | cpd-la+opt+sched | 5718.8 | 48 | 70 | 84 | 118 | 0.31 | 1 | Finished | ok |
+| lambdaAppend@vanilla | * | conspd-la | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| lambdaAppend@vanilla | * | conspd-la+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| lambdaAppend@vanilla | * | conspd-det | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| lambdaAppend@vanilla | * | conspd-det+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+== power
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| power | q1 | original | 0.2 | 4 | 18 | 91 | 33 | 0.04 | 1 | Finished | ok |
+| power | q2 | original | 0.2 | 4 | 18 | 224802 | 75198 | 433.88 | 1 | OutOfFuel | ok~ |
+| power | q3 | original | 0.2 | 4 | 18 | 224801 | 75199 | 433.06 | 0 | OutOfFuel | ok~ |
+| power | q1 | original+sched | 1.4 | 3 | 17 | 91 | 33 | 0.04 | 1 | Finished | ok |
+| power | q2 | original+sched | 2.0 | 9 | 47 | 222533 | 77467 | 1796.41 | 1 | OutOfFuel | ok~ |
+| power | q3 | original+sched | 2.4 | 9 | 47 | 222533 | 77467 | 1809.43 | 0 | OutOfFuel | ok~ |
+| power | q1 | cpd-det | 3.3 | 6 | 35 | 236908 | 63092 | 15575.67 | 1 | OutOfFuel | ok~ |
+| power | q2 | cpd-det | 3.3 | 6 | 35 | 236819 | 63181 | 22473.82 | 1 | OutOfFuel | ok~ |
+| power | q3 | cpd-det | 3.3 | 6 | 35 | 236818 | 63182 | 21856.19 | 0 | OutOfFuel | ok~ |
+| power | q1 | cpd-det+opt+sched | 5.8 | 3 | 25 | 230771 | 69229 | 46370.77 | 1 | OutOfFuel | ok~ |
+| power | q2 | cpd-det+opt+sched | 6.2 | 5 | 35 | 6107 | 1636 | 6.71 | 1 | Finished | ok~ |
+| power | q3 | cpd-det+opt+sched | 5.9 | 5 | 35 | 710 | 194 | 0.35 | 0 | Finished | ok~ |
+| power | q1 | cpd-la | 2.9 | 6 | 35 | 236908 | 63092 | 14386.27 | 1 | OutOfFuel | ok~ |
+| power | q2 | cpd-la | 2.9 | 6 | 35 | 236819 | 63181 | 13804.02 | 1 | OutOfFuel | ok~ |
+| power | q3 | cpd-la | 3.0 | 6 | 35 | 236818 | 63182 | 13947.01 | 0 | OutOfFuel | ok~ |
+| power | q1 | cpd-la+opt+sched | 5.5 | 3 | 25 | 230771 | 69229 | 34668.88 | 1 | OutOfFuel | ok~ |
+| power | q2 | cpd-la+opt+sched | 5.8 | 5 | 35 | 6107 | 1636 | 6.59 | 1 | Finished | ok~ |
+| power | q3 | cpd-la+opt+sched | 5.4 | 5 | 35 | 710 | 194 | 0.34 | 0 | Finished | ok~ |
+| power | q1 | conspd-la | 1.8 | 8 | 36 | 225001 | 74999 | 76.76 | 1 | OutOfFuel | ok~ |
+| power | q2 | conspd-la | 1.8 | 8 | 36 | 230558 | 69442 | 143.06 | 1 | OutOfFuel | ok~ |
+| power | q3 | conspd-la | 1.9 | 8 | 36 | 230558 | 69442 | 142.75 | 0 | OutOfFuel | ok~ |
+| power | q1 | conspd-la+opt+sched | 4.4 | 5 | 41 | 239789 | 60211 | 327.20 | 1 | OutOfFuel | ok~ |
+| power | q2 | conspd-la+opt+sched | 5.0 | 7 | 55 | 239046 | 60954 | 206.29 | 1 | OutOfFuel | ok~ |
+| power | q3 | conspd-la+opt+sched | 5.3 | 7 | 55 | 632 | 170 | 0.26 | 0 | Finished | ok~ |
+| power | q1 | conspd-det | 1.8 | 8 | 36 | 225001 | 74999 | 77.80 | 1 | OutOfFuel | ok~ |
+| power | q2 | conspd-det | 1.8 | 8 | 36 | 230558 | 69442 | 146.74 | 1 | OutOfFuel | ok~ |
+| power | q3 | conspd-det | 1.8 | 8 | 36 | 230558 | 69442 | 149.53 | 0 | OutOfFuel | ok~ |
+| power | q1 | conspd-det+opt+sched | 4.5 | 5 | 41 | 239789 | 60211 | 348.60 | 1 | OutOfFuel | ok~ |
+| power | q2 | conspd-det+opt+sched | 5.1 | 7 | 55 | 239046 | 60954 | 217.43 | 1 | OutOfFuel | ok~ |
+| power | q3 | conspd-det+opt+sched | 5.3 | 7 | 55 | 632 | 170 | 0.25 | 0 | Finished | ok~ |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| power@vanilla | q1 | original | 0.6 | 3 | 24 | 1455 | 403 | 0.97 | 1 | Finished | ok |
+| power@vanilla | q2 | original | 0.9 | 3 | 24 | 235034 | 64966 | 1503.61 | 1 | OutOfFuel | ok~ |
+| power@vanilla | q3 | original | 0.7 | 3 | 24 | 235011 | 64989 | 1466.69 | 0 | OutOfFuel | ok~ |
+| power@vanilla | q1 | original+sched | 1.3 | 3 | 24 | 1455 | 403 | 0.92 | 1 | Finished | ok |
+| power@vanilla | q2 | original+sched | 1.2 | 3 | 24 | 235034 | 64966 | 1473.44 | 1 | OutOfFuel | ok~ |
+| power@vanilla | q3 | original+sched | 1.5 | 3 | 24 | 235011 | 64989 | 1474.27 | 0 | OutOfFuel | ok~ |
+| power@vanilla | q1 | cpd-det | 23.2 | 26 | 60 | 149131 | 150869 | 800.72 | 0 | OutOfFuel | unverified-complete |
+| power@vanilla | q2 | cpd-det | 23.5 | 26 | 60 | 147793 | 152207 | 702.57 | 0 | OutOfFuel | unverified-complete |
+| power@vanilla | q3 | cpd-det | 23.9 | 26 | 60 | 147793 | 152207 | 658.14 | 0 | OutOfFuel | ok~ |
+| power@vanilla | q1 | cpd-det+opt+sched | 28.1 | 2 | 22 | 82 | 27 | 0.05 | 1 | Finished | ok |
+| power@vanilla | q2 | cpd-det+opt+sched | 28.7 | 10 | 62 | 224984 | 75016 | 1496.44 | 1 | OutOfFuel | ok~ |
+| power@vanilla | q3 | cpd-det+opt+sched | 28.7 | 10 | 62 | 224988 | 75012 | 5076.56 | 0 | OutOfFuel | ok~ |
+| power@vanilla | q1 | cpd-la | 21.0 | 14 | 38 | 239775 | 60225 | 261.24 | 1 | OutOfFuel | ok~ |
+| power@vanilla | q2 | cpd-la | 21.1 | 14 | 38 | 226465 | 73535 | 1139.68 | 1 | OutOfFuel | ok~ |
+| power@vanilla | q3 | cpd-la | 21.1 | 14 | 38 | 228146 | 71854 | 2451.89 | 0 | OutOfFuel | ok~ |
+| power@vanilla | q1 | cpd-la+opt+sched | 23.7 | 2 | 19 | 104 | 27 | 0.06 | 1 | Finished | ok |
+| power@vanilla | q2 | cpd-la+opt+sched | 24.2 | 9 | 54 | 228182 | 71818 | 5556.41 | 1 | OutOfFuel | ok~ |
+| power@vanilla | q3 | cpd-la+opt+sched | 24.7 | 9 | 54 | 228008 | 71992 | 6011.71 | 0 | OutOfFuel | ok~ |
+| power@vanilla | * | conspd-la | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| power@vanilla | * | conspd-la+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| power@vanilla | * | conspd-det | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| power@vanilla | * | conspd-det+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+== tmInterp
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| tmInterp | q1 | original | 0.4 | 8 | 52 | 318 | 91 | 0.14 | 1 | Finished | ok |
+| tmInterp | q2 | original | 0.4 | 8 | 52 | 240818 | 59182 | 101.08 | 3 | OutOfFuel | ok~ |
+| tmInterp | q3 | original | 0.5 | 8 | 52 | 241132 | 58868 | 81.15 | 7 | OutOfFuel | ok~ |
+| tmInterp | q1 | original+sched | 20.8 | 7 | 51 | 318 | 91 | 0.17 | 1 | Finished | ok |
+| tmInterp | q2 | original+sched | 12.2 | 11 | 82 | 240818 | 59182 | 105.52 | 3 | OutOfFuel | ok~ |
+| tmInterp | q3 | original+sched | 15.7 | 11 | 82 | 241132 | 58868 | 84.46 | 7 | OutOfFuel | ok~ |
+| tmInterp | q1 | cpd-det | 5.5 | 14 | 35 | 57 | 31 | 0.04 | 1 | Finished | ok |
+| tmInterp | q2 | cpd-det | 5.6 | 14 | 35 | 179937 | 120063 | 62.74 | 3 | OutOfFuel | ok~ |
+| tmInterp | q3 | cpd-det | 5.6 | 14 | 35 | 180001 | 119999 | 51.35 | 7 | OutOfFuel | ok~ |
+| tmInterp | q1 | cpd-det+opt+sched | 6.1 | 5 | 22 | 57 | 30 | 0.05 | 1 | Finished | ok |
+| tmInterp | q2 | cpd-det+opt+sched | 6.3 | 10 | 40 | 179937 | 120063 | 68.81 | 3 | OutOfFuel | ok~ |
+| tmInterp | q3 | cpd-det+opt+sched | 6.3 | 10 | 40 | 180001 | 119999 | 57.43 | 7 | OutOfFuel | ok~ |
+| tmInterp | q1 | cpd-la | 6.5 | 12 | 33 | 57 | 31 | 0.17 | 1 | Finished | ok |
+| tmInterp | q2 | cpd-la | 6.5 | 12 | 33 | 4163 | 295837 | 37.54 | 3 | OutOfFuel | ok~ |
+| tmInterp | q3 | cpd-la | 6.6 | 12 | 33 | 127 | 299873 | 22.44 | 7 | OutOfFuel | ok~ |
+| tmInterp | q1 | cpd-la+opt+sched | 7.1 | 5 | 20 | 49 | 30 | 0.04 | 1 | Finished | ok |
+| tmInterp | q2 | cpd-la+opt+sched | 7.2 | 5 | 20 | 182252 | 117748 | 502.59 | 3 | OutOfFuel | ok~ |
+| tmInterp | q3 | cpd-la+opt+sched | 7.2 | 5 | 20 | 104 | 70 | 0.09 | 7 | Finished | ok~ |
+| tmInterp | q1 | conspd-la | 2330.4 | 214 | 691 | 199772 | 100228 | 1048.20 | 0 | OutOfFuel | unverified-complete |
+| tmInterp | q2 | conspd-la | 2333.5 | 214 | 691 | 217165 | 82835 | 296.32 | 2 | OutOfFuel | ok~ |
+| tmInterp | q3 | conspd-la | 2331.7 | 214 | 691 | 197724 | 102276 | 740.94 | 7 | OutOfFuel | ok~ |
+| tmInterp | q1 | conspd-la+opt+sched | 2834.5 | 424 | 12481 | 511 | 48 | 2.45 | 1 | Finished | ok |
+| tmInterp | q2 | conspd-la+opt+sched | 2566.2 | 424 | 12481 | 232222 | 67778 | 202.13 | 3 | OutOfFuel | ok~ |
+| tmInterp | q3 | conspd-la+opt+sched | 2563.5 | 424 | 12481 | 260080 | 39920 | 120.49 | 7 | OutOfFuel | ok~ |
+| tmInterp | q1 | conspd-det | 2210.7 | 212 | 691 | 199772 | 100228 | 775.39 | 0 | OutOfFuel | unverified-complete |
+| tmInterp | q2 | conspd-det | 2213.6 | 212 | 691 | 217072 | 82928 | 709.26 | 2 | OutOfFuel | ok~ |
+| tmInterp | q3 | conspd-det | 2210.2 | 212 | 691 | 197627 | 102373 | 707.86 | 7 | OutOfFuel | ok~ |
+| tmInterp | q1 | conspd-det+opt+sched | 2443.3 | 424 | 12481 | 511 | 48 | 2.27 | 1 | Finished | ok |
+| tmInterp | q2 | conspd-det+opt+sched | 2444.4 | 424 | 12481 | 232222 | 67778 | 191.66 | 3 | OutOfFuel | ok~ |
+| tmInterp | q3 | conspd-det+opt+sched | 2436.8 | 424 | 12481 | 260080 | 39920 | 115.01 | 7 | OutOfFuel | ok~ |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| tmInterp@vanilla | q1 | original | 3.4 | 3 | 54 | 12251 | 1464 | 7.31 | 1 | Finished | ok |
+| tmInterp@vanilla | q2 | original | 3.4 | 3 | 54 | 268595 | 31405 | 458.50 | 3 | OutOfFuel | ok~ |
+| tmInterp@vanilla | q3 | original | 3.3 | 3 | 54 | 268693 | 31307 | 263.34 | 7 | OutOfFuel | ok~ |
+| tmInterp@vanilla | q1 | original+sched | 3.6 | 3 | 54 | 12251 | 1464 | 7.33 | 1 | Finished | ok |
+| tmInterp@vanilla | q2 | original+sched | 3.8 | 3 | 54 | 268595 | 31405 | 445.76 | 3 | OutOfFuel | ok~ |
+| tmInterp@vanilla | q3 | original+sched | 3.9 | 3 | 54 | 268693 | 31307 | 265.33 | 7 | OutOfFuel | ok~ |
+| tmInterp@vanilla | q1 | cpd-det | 120.5 | 37 | 117 | 146666 | 153334 | 896.66 | 0 | OutOfFuel | unverified-complete |
+| tmInterp@vanilla | q2 | cpd-det | 121.5 | 37 | 117 | 119310 | 180690 | 9131.66 | 1 | OutOfFuel | unverified-complete |
+| tmInterp@vanilla | q3 | cpd-det | 120.6 | 37 | 117 | 146536 | 153464 | 831.93 | 1 | OutOfFuel | unverified-complete |
+| tmInterp@vanilla | q1 | cpd-det+opt+sched | 146.2 | 6 | 60 | 463 | 156 | 0.53 | 1 | Finished | ok |
+| tmInterp@vanilla | q2 | cpd-det+opt+sched | 132.5 | 10 | 112 | 229306 | 70694 | 136.95 | 3 | OutOfFuel | ok~ |
+| tmInterp@vanilla | q3 | cpd-det+opt+sched | 137.3 | 10 | 112 | 229589 | 70411 | 101.68 | 7 | OutOfFuel | ok~ |
+| tmInterp@vanilla | q1 | cpd-la | 215.9 | 36 | 144 | 355 | 105 | 0.29 | 1 | Finished | ok |
+| tmInterp@vanilla | q2 | cpd-la | 215.7 | 36 | 144 | 223546 | 76454 | 349.45 | 3 | OutOfFuel | ok~ |
+| tmInterp@vanilla | q3 | cpd-la | 216.7 | 36 | 144 | 224493 | 75507 | 298.18 | 7 | OutOfFuel | ok~ |
+| tmInterp@vanilla | q1 | cpd-la+opt+sched | 230.5 | 30 | 665 | 343 | 53 | 0.25 | 1 | Finished | ok |
+| tmInterp@vanilla | q2 | cpd-la+opt+sched | 230.5 | 30 | 665 | 257896 | 42104 | 135.87 | 3 | OutOfFuel | ok~ |
+| tmInterp@vanilla | q3 | cpd-la+opt+sched | 229.8 | 30 | 665 | 258135 | 41865 | 108.88 | 7 | OutOfFuel | ok~ |
+| tmInterp@vanilla | * | conspd-la | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| tmInterp@vanilla | * | conspd-la+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| tmInterp@vanilla | * | conspd-det | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| tmInterp@vanilla | * | conspd-det+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |

@@ -1,0 +1,65 @@
+# v3 sweep (residualization fixes, dataflow scheduling, cpd-lap) vs the lookahead sweep la.csv
+# python3 bench/measure/results/futamura/compare.py <la.csv tagged @old> v3/{dppd,v2s,new,papers}.csv --pair X@old:X
+
+## original vs original@old
+solved 95 vs 95; gained 0, lost 0; mismatches 0; geometric mean steps ratio 1.000 on 95 common queries
+  best:  appLast/spec 1.00 (271->271), appLast@vanilla/spec 1.00 (4131->4131), arithGeneral/q1 1.00 (81->81), arithGeneral/q3 1.00 (140->140)
+  worst: vanilla@vanilla/spec 1.00 (6646->6646), vanilla/spec 1.00 (405->405), uptoSum@vanilla/spec 1.00 (9726->9726), uptoSum/spec 1.00 (405->405)
+
+## cpd-det vs cpd-det@old
+solved 72 vs 70; gained 2, lost 0; mismatches 0; geometric mean steps ratio 1.003 on 70 common queries
+  gained: lambdaAppend@vanilla/q1, typecheck/q2
+  best:  appLast/spec 1.00 (42->42), appLast@vanilla/spec 1.00 (163783->163783), arithGeneral/q1 1.00 (101->101), arithGeneral/q3 1.00 (149->149)
+  worst: unifier@vanilla/spec 1.19 (20073->23827), typecheck/q1 1.01 (270->274), propLastNando@vanilla/spec 1.01 (1111->1120), vanilla@vanilla/spec 1.00 (369->369)
+
+## cpd-la vs cpd-la@old
+solved 85 vs 85; gained 1, lost 1; mismatches 0; geometric mean steps ratio 0.917 on 84 common queries
+  gained: typecheck/q2
+  lost:   lambdaAppend@vanilla/q1
+  best:  lambdaAppend@vanilla/q3 0.03 (14952->395), lambdaAppend@vanilla/q2 0.03 (15051->399), propLastNando@vanilla/spec 0.94 (573->539), appLast/spec 1.00 (30->30)
+  worst: typecheck/q1 1.01 (270->274), vanilla@vanilla/spec 1.00 (191->191), vanilla/spec 1.00 (44->44), uptoSum/spec 1.00 (3->3)
+
+## cpd-det+opt+sched vs cpd-det+opt+sched@old
+solved 97 vs 90; gained 7, lost 0; mismatches 0; geometric mean steps ratio 0.981 on 90 common queries
+  gained: exprEval/q2, exprEval@vanilla/q2, exprEvalGeneral/q2, lambdaAppend@vanilla/q1, relSortGeneral/q1, revGeneral/q1, sortGeneral/q2
+  best:  relSort/spec 0.51 (529->269), binMul@vanilla/q3 0.53 (721->384), relSort@vanilla/spec 0.55 (476->260), unifier/spec 0.71 (323->228)
+  worst: doubleAppend@vanilla/q3 1.44 (43->62), maxLength@vanilla/spec 1.29 (225->290), unifier@vanilla/spec 1.17 (5873->6867), typecheck/q1 1.06 (274->291)
+
+## cpd-la+opt+sched vs cpd-la+opt+sched@old
+solved 106 vs 98; gained 8, lost 0; mismatches 0; geometric mean steps ratio 0.875 on 98 common queries
+  gained: exprEval/q2, exprEval@vanilla/q2, exprEvalGeneral/q2, power@vanilla/q1, relSort@vanilla/spec, relSortGeneral/q1, revGeneral/q1, sortGeneral/q2
+  best:  lambdaAppend@vanilla/q1 0.01 (10786->141), lambdaAppend@vanilla/q3 0.01 (14943->202), lambdaAppend@vanilla/q2 0.01 (15042->206), unifier/spec 0.71 (323->228)
+  worst: maxLength@vanilla/spec 1.67 (209->348), typecheck/q1 1.06 (274->291), vanilla@vanilla/spec 1.00 (84->84), vanilla/spec 1.00 (31->31)
+
+## conspd-det vs conspd-det@old
+solved 49 vs 49; gained 0, lost 0; mismatches 0; geometric mean steps ratio 1.000 on 49 common queries
+  best:  matchSimple@vanilla/spec 1.00 (2063->2054), appLast/spec 1.00 (49->49), arithGeneral/q1 1.00 (97->97), binFactor/q1 1.00 (33->33)
+  worst: vanilla/spec 1.00 (53->53), uptoSum/spec 1.00 (3->3), unifier/spec 1.00 (241->241), typecheck@vanilla/q1 1.00 (10363->10363)
+
+## conspd-la vs conspd-la@old
+solved 64 vs 52; gained 12, lost 0; mismatches 0; geometric mean steps ratio 1.000 on 52 common queries
+  gained: appLast@vanilla/spec, deforestation1@vanilla/spec, depth@vanilla/spec, flip@vanilla/spec, kmp@vanilla/q1, kmp@vanilla/q2, kmp@vanilla/q3, kmp@vanilla/q4, maxLength@vanilla/spec, propFirst@vanilla/spec, rev@vanilla/spec, vanilla@vanilla/spec
+  best:  appLast/spec 1.00 (29->29), arithGeneral/q1 1.00 (97->97), binFactor/q1 1.00 (17->17), binFactor/q2 1.00 (16->16)
+  worst: vanilla/spec 1.00 (53->53), uptoSum/spec 1.00 (3->3), unifier/spec 1.00 (241->241), typecheck@vanilla/q1 1.00 (10363->10363)
+
+## conspd-la+opt+sched vs conspd-la+opt+sched@old
+solved 74 vs 58; gained 17, lost 1; mismatches 0; geometric mean steps ratio 1.017 on 57 common queries
+  gained: appLast@vanilla/spec, deforestation1@vanilla/spec, depth@vanilla/spec, flip@vanilla/spec, kmp@vanilla/q1, kmp@vanilla/q2, kmp@vanilla/q3, kmp@vanilla/q4, maxLength@vanilla/spec, propFirst@vanilla/spec, relSortGeneral/q1, rev@vanilla/spec, revGeneral/q2, sortGeneral/q1, sortGeneral/q2, uptoSum@vanilla/spec, vanilla@vanilla/spec
+  lost:   power/q2
+  best:  appLast/spec 1.00 (28->28), arithGeneral/q1 1.00 (97->97), binFactor/q1 1.00 (15->15), binFactor/q2 1.00 (14->14)
+  worst: power/q3 2.61 (307->802), arithGeneral/q3 1.02 (150->153), vanilla/spec 1.00 (31->31), uptoSum/spec 1.00 (2->2)
+
+
+# cpd-lap vs cpd-la (same sweep)
+## cpd-lap vs cpd-la
+solved 85 vs 85; gained 0, lost 0; mismatches 0; geometric mean steps ratio 0.980 on 85 common queries
+  best:  propLastNando/spec 0.70 (219->154), binMul/q1 0.74 (171->127), propFirstNando@vanilla/spec 0.86 (231->198), propLast@vanilla/spec 0.86 (190->164)
+  worst: path@vanilla/spec 1.00 (3487->3492), contains@vanilla/spec 1.00 (3470->3471), vanilla@vanilla/spec 1.00 (191->191), vanilla/spec 1.00 (44->44)
+
+## cpd-lap+opt+sched vs cpd-la+opt+sched
+solved 106 vs 105; gained 2, lost 1; mismatches 0; geometric mean steps ratio 0.997 on 104 common queries
+  gained: arith/q1, arith@vanilla/q1
+  lost:   tmInterp@vanilla/q1
+  best:  binMul/q1 0.78 (101->79), typecheck/q1 0.85 (291->247), propFirstNando@vanilla/spec 0.90 (120->108), binMul/q2 0.90 (181->163)
+  worst: path@vanilla/spec 2.50 (426->1064), propLastNando@vanilla/spec 1.23 (188->232), relSort@vanilla/spec 1.04 (278->290), vanilla@vanilla/spec 1.00 (84->84)
+
