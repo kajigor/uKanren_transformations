@@ -41,7 +41,7 @@ main = do
   o <- flip parse (Opts 10 2000000 [] Nothing Nothing Nothing [] False False) <$> getArgs
   benches <- concat <$> mapM findBenches (oDirs o)
   let selected = [ b | b@(n, _) <- benches, null (oOnly o) || n `elem` oOnly o ]
-      allSps = concatMap (\s -> [s, withPostOpt s, withSchedule s, withSchedule (withPostOpt s)]) specializers
+      allSps = allVariants
       sps = maybe allSps (\ns -> filter ((`elem` ns) . spName) allSps) (oSpecs o)
   rows <- concat <$> forM selected (\(name, mk) -> do
     hPutStrLn stderr ("== " ++ name)

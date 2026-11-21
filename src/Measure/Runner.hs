@@ -10,6 +10,8 @@ module Measure.Runner
   , specializers
   , withPostOpt
   , withSchedule
+  , withIndex
+  , allVariants
   , measureBench
   , programSize
   , renderMarkdown
@@ -47,6 +49,7 @@ import qualified Transformer.CPD          as CPD
 import qualified Transformer.ConsPDGlobal as ConsPDGlobal
 import qualified Transformer.PD           as PD
 import qualified PostOpt
+import qualified Index
 import qualified Schedule
 import qualified Data.Set                 as S
 
@@ -151,6 +154,21 @@ withPostOpt sp = sp { spName = spName sp ++ "+opt", spPost = opt . spPost sp }
 withSchedule :: Specializer -> Specializer
 withSchedule sp = sp { spName = spName sp ++ "+sched"
                      , spPerQuery = Just $ \ds _qvs g -> Schedule.schedule S.empty (ds, g) }
+
+-- | Add constructor analysis and dispatch ('Index'), applied last: after the
+--   per-query scheduling when there is one (the query's constants then feed
+--   the constructor analysis), otherwise to the residual program.
+withIndex :: Specializer -> Specializer
+withIndex sp = case spPerQuery sp of
+  Just f  -> sp { spName = spName sp ++ "+idx"
+                , spPerQuery = Just $ \ds qvs g -> Index.indexProgram (f ds qvs g) }
+  Nothing -> sp { spName = spName sp ++ "+idx"
+                , spPerQuery = Just $ \ds _ g -> Index.indexProgram (ds, g) }
+
+-- | Every specializer with its post-processing variants.
+allVariants :: [Specializer]
+allVariants = concatMap (\s -> [ s, withPostOpt s, withSchedule s, withSchedule (withPostOpt s)
+                               , withIndex (withPostOpt s), withIndex (withSchedule (withPostOpt s)) ]) specializers
 
 -- | Number of definitions and number of goal nodes (unifications + calls).
 programSize :: [Def G X] -> G X -> (Int, Int)

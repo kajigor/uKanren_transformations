@@ -269,7 +269,7 @@ main = do
   createDirectoryIfMissing True (oOut o)
   benches <- concat <$> mapM findBenches (oDirs o)
   let selected = [ b | b@(n, _, _) <- benches, null (oOnly o) || n `elem` oOnly o ]
-      allSps = concatMap (\s -> [s, withPostOpt s, withSchedule s, withSchedule (withPostOpt s)]) specializers
+      allSps = allVariants
       sps = [ s | n <- oSpecs o, s <- allSps, spName s == n ]
   entries <- fmap concat $ forM selected $ \(name, group, mk) -> do
     hPutStrLn stderr ("== " ++ name)
