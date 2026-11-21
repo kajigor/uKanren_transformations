@@ -157,9 +157,9 @@ schedG ctx self inputs gr g = case g of
     collect (Fresh x h) = let (vs, b) = collect h in (x : vs, b)
     collect h = ([], h)
     score grd small i c = case c of
-      _ :=: _ -> (0 :: Int, 0 :: Int, 0 :: Int, i)
+      _ :=: _ -> (0 :: Int, 0 :: Int, 0 :: Int, 0 :: Int, i)
       Invoke f ts
-        | isSpecial f ts -> (0, 0, 0, i)
+        | isSpecial f ts -> (0, 0, 0, 0, i)
         | otherwise ->
             let m = callMode grd ts
                 nGround = S.size m
@@ -171,10 +171,17 @@ schedG ctx self inputs gr g = case g of
                 -- variables this call grounds (by its success pattern): among the
                 -- terminating calls, run the producers of other calls' inputs first
                 gain = S.size (propagate (cTbl ctx) grd c) - S.size grd
-                -- non-terminating calls are delayed; producers, then ground-heavy calls first
-            in (if term then 1 else 3, negate gain, negate nGround, i)
-      Disjunction {} -> (2, 0, 0, i)
-      _ -> (2, 0, 0, i)
+                -- a call that selects at most one clause in its mode cannot multiply
+                -- the search: it goes before nondeterministic producers (which
+                -- would otherwise be run first and enumerate, e.g., all splits of n)
+                -- a call with all arguments ground is a test (it binds nothing new),
+                -- so it is run early, as Mercury does with semidet tests
+                det = if nGround == length ts || switchDet ctx f m then 0 else 1
+                -- non-terminating calls are delayed; deterministic calls, producers,
+                -- then ground-heavy calls first
+            in (if term then 1 else 3, det, negate gain, negate nGround, i)
+      Disjunction {} -> (2, 0, 0, 0, i)
+      _ -> (2, 0, 0, 0, i)
 
 -- | Is relation f terminating in mode m?  For every conjunctive path of the
 --   body there must be an order (unifications first, then greedily any call
@@ -210,6 +217,27 @@ terminates ctx f m = case M.lookup f (cDefs ctx) of
   where
     isU (_ :=: _) = True
     isU _ = False
+
+-- | Switch determinism (as in Mercury's switch detection): in mode @m@, every
+--   two clauses (conjunctive paths) of @f@ unify some ground input parameter
+--   with different constructors, so at most one clause can match a call.
+switchDet :: Ctx -> Name -> Mode -> Bool
+switchDet ctx f m = case M.lookup f (cDefs ctx) of
+  Nothing -> False
+  Just (Def _ as body) ->
+    let inputs = [ a | (i, a) <- zip [0 ..] as, i `S.member` m ]
+        heads cs = M.fromList [ (x, (c, length ts)) | u <- cs, Just (x, c, ts) <- [sel u], x `elem` inputs ]
+        sel (V x :=: C c ts) = Just (x, c, ts)
+        sel (C c ts :=: V x) = Just (x, c, ts)
+        sel _ = Nothing
+        hs = map heads (branches body)
+        exclusive h1 h2 = or [ k1 /= k2 | (x, k1) <- M.toList h1, Just k2 <- [M.lookup x h2] ]
+        callsIn = any (\g -> case g of Invoke h ts -> not (isSpecial h ts); _ -> False)
+    in case branches body of
+         -- one clause: no choice here, but its calls may still enumerate
+         -- (pluso n m k = addero B0 n m k); count it only without calls
+         [cs] -> not (callsIn cs)
+         _    -> not (null inputs) && and [ exclusive h1 h2 | (i, h1) <- zip [0 :: Int ..] hs, (j, h2) <- zip [0 ..] hs, i < j ]
 
 -- | All conjunctive paths of a goal (disjunctive normal form, fresh erased).
 branches :: G X -> [[G X]]

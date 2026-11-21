@@ -1,0 +1,24 @@
+# Experiment 2 (determinism in the scheduler) vs the v3 sweep (same +sched variants, previous scheduler)
+# compare.py <v3 CSVs with specializers tagged @v3> det/{dppd,v2s,new,papers}.csv --pair X@v3:X
+
+## original+sched vs original+sched@v3
+solved 101 vs 99; gained 2, lost 0; mismatches 0; geometric mean steps ratio 0.955 on 99 common queries
+  gained: exprEval/q2, exprEvalGeneral/q2
+  best:  coloring/q1 0.11 (13283->1512), coloring/q2 0.24 (2698->645), doubleAppend/q3 0.43 (109->47), contains/spec 0.91 (3064->2790), binFactor/q2 0.99 (1071->1055)
+  worst: binMul/q3 1.01 (1459->1479), vanilla@vanilla/spec 1.00 (6646->6646), vanilla/spec 1.00 (405->405), uptoSum@vanilla/spec 1.00 (9726->9726), uptoSum/spec 1.00 (405->405)
+
+## cpd-det+opt+sched vs cpd-det+opt+sched@v3
+solved 97 vs 97; gained 0, lost 0; mismatches 0; geometric mean steps ratio 0.991 on 97 common queries
+  best:  sortGeneral/q2 0.64 (55290->35252), doubleAppend@vanilla/q3 0.69 (62->43), exprEvalGeneral/q2 0.98 (1972->1927), appLast/spec 1.00 (29->29), appLast@vanilla/spec 1.00 (264->264)
+  worst: vanilla@vanilla/spec 1.00 (119->119), vanilla/spec 1.00 (31->31), uptoSum@vanilla/spec 1.00 (195->195), uptoSum/spec 1.00 (2->2), unifier@vanilla/spec 1.00 (6867->6867)
+
+## cpd-la+opt+sched vs cpd-la+opt+sched@v3
+solved 106 vs 106; gained 0, lost 0; mismatches 0; geometric mean steps ratio 0.993 on 106 common queries
+  best:  sortGeneral/q2 0.64 (55290->35252), doubleAppend@vanilla/q3 0.72 (58->42), exprEvalGeneral/q2 0.98 (1972->1927), appLast/spec 1.00 (29->29), appLast@vanilla/spec 1.00 (245->245)
+  worst: vanilla@vanilla/spec 1.00 (84->84), vanilla/spec 1.00 (31->31), uptoSum@vanilla/spec 1.00 (157->157), uptoSum/spec 1.00 (2->2), unifier@vanilla/spec 1.00 (42128->42128)
+
+## cpd-lap+opt+sched vs cpd-lap+opt+sched@v3
+solved 106 vs 106; gained 0, lost 0; mismatches 0; geometric mean steps ratio 0.993 on 106 common queries
+  best:  sortGeneral/q2 0.64 (55290->35252), doubleAppend@vanilla/q3 0.72 (58->42), exprEvalGeneral/q2 0.98 (1972->1927), appLast/spec 1.00 (29->29), appLast@vanilla/spec 1.00 (245->245)
+  worst: vanilla@vanilla/spec 1.00 (84->84), vanilla/spec 1.00 (31->31), uptoSum@vanilla/spec 1.00 (157->157), uptoSum/spec 1.00 (2->2), unifier@vanilla/spec 1.00 (40622->40622)
+
