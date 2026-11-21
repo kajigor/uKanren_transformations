@@ -70,6 +70,12 @@ executables:
     - app/measure/
     dependencies: uKanren-transformation
     ghc-options: "-O2 -rtsopts"
+  viz-export:
+    main: Main.hs
+    source-dirs:
+    - app/viz/
+    dependencies: uKanren-transformation
+    ghc-options: "-O2 -rtsopts"
 
 # executables:
 #   exe:

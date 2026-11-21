@@ -1,0 +1,18 @@
+{
+ "generated": "2026-11-20T21:00:00Z",
+ "fuel": 300000,
+ "answers": 10,
+ "benches": [
+  {
+   "name": "doubleAppend",
+   "group": "dppd",
+   "file": "doubleAppend.json",
+   "queries": 2,
+   "specializers": [
+    "original",
+    "cpd-det",
+    "conspd-det"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,1414 @@
+{
+ "name": "doubleAppend",
+ "group": "dppd",
+ "source": "appendo x y xy =\n  x == [] & y == xy |\n  (fresh h, t, ty in\n    x == (h :: t) &\n    appendo t y ty & \n    xy == (h :: ty));\n\ndouble_appendo x y z res =\n  fresh t in\n    appendo x y t &\n    appendo t z res;\n\n-- ? double_appendo x y z ([S O, S (S O), S (S (S O)), O, O, S O, S (S O)])\n? double_appendo x y z res",
+ "runsSource": "? double_appendo [A, B] [C] [D, E] res\n? double_appendo x y z [A, B]\n",
+ "specQuery": "double_appendo x y z res",
+ "fuel": 300000,
+ "answers": 10,
+ "queries": [
+  {
+   "id": "q1",
+   "goal": "double_appendo [A, B] [C] [D, E] res"
+  },
+  {
+   "id": "q2",
+   "goal": "double_appendo x y z [A, B]"
+  }
+ ],
+ "specializers": [
+  {
+   "name": "original",
+   "base": "original",
+   "specMs": 0.0,
+   "error": null,
+   "residual": "appendo x y xy =\n  x == [] & y == xy |\n  (fresh h, t, ty in\n    x == (h :: t) &\n    appendo t y ty & \n    xy == (h :: ty));\n\ndouble_appendo x y z res =\n  fresh t in\n    appendo x y t &\n    appendo t z res;\n\n-- ? double_appendo x y z ([S O, S (S O), S (S (S O)), O, O, S O, S (S O)])",
+   "residualGoal": "double_appendo x y z res",
+   "defs": 2,
+   "size": 10,
+   "globalTree": null,
+   "treeTruncated": false
+  },
+  {
+   "name": "cpd-det",
+   "base": "cpd-det",
+   "specMs": 0.41,
+   "error": null,
+   "residual": "double_appendo x0 x1 x2 x3 =\n  appendo_appendo x0 x1 x2 x3;\n\nappendo_appendo y0 y1 y2 y3 =\n  y0 == [] & appendo y1 y2 y3 |\n  (fresh h, t, r in\n    y0 == (h :: t) &\n    y3 == (h :: r) &\n    appendo_appendo t y1 y2 r);\n\nappendo y0 y1 y2 =\n  y0 == [] & y1 == y2 |\n  (fresh h, t, r in\n    y0 == (h :: t) &\n    y2 == (h :: r) &\n    appendo t y1 r);",
+   "residualGoal": "double_appendo x0 x1 x2 x3",
+   "defs": 3,
+   "size": 17,
+   "globalTree": {
+    "id": 0,
+    "kind": "node",
+    "goal": "double_appendo v.0 v.1 v.2 v.3",
+    "gen": "",
+    "subst": "",
+    "local": {
+     "kind": "or",
+     "goal": "double_appendo v.0 v.1 v.2 v.3",
+     "subst": "",
+     "children": [
+      {
+       "kind": "leaf",
+       "goal": "appendo v.0 v.1 v.4 & appendo v.4 v.2 v.3",
+       "subst": "",
+       "children": []
+      }
+     ]
+    },
+    "children": [
+     {
+      "id": 1,
+      "kind": "node",
+      "goal": "appendo v.0 v.1 v.4 & appendo v.4 v.2 v.3",
+      "gen": "",
+      "subst": "",
+      "local": {
+       "kind": "or",
+       "goal": "appendo v.0 v.1 v.4",
+       "subst": "",
+       "children": [
+        {
+         "kind": "leaf",
+         "goal": "appendo v.1 v.2 v.3",
+         "subst": "v.0 ↦ [], v.4 ↦ v.1",
+         "children": []
+        },
+        {
+         "kind": "conj",
+         "goal": "appendo v.5 v.1 v.6 & appendo (v.7 :: v.6) v.2 v.3",
+         "subst": "v.0 ↦ v.7 :: v.5, v.4 ↦ v.7 :: v.6",
+         "children": [
+          {
+           "kind": "or",
+           "goal": "appendo (v.7 :: v.6) v.2 v.3",
+           "subst": "",
+           "children": [
+            {
+             "kind": "fail",
+             "goal": "",
+             "subst": "v.7 :: v.6 ≠ []",
+             "children": []
+            },
+            {
+             "kind": "leaf",
+             "goal": "appendo v.5 v.1 v.6 & appendo v.6 v.2 v.8",
+             "subst": "v.3 ↦ v.7 :: v.8",
+             "children": []
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      "children": [
+       {
+        "id": 2,
+        "kind": "node",
+        "goal": "appendo v.1 v.2 v.3",
+        "gen": "",
+        "subst": "v.0 ↦ [], v.4 ↦ v.1",
+        "local": {
+         "kind": "or",
+         "goal": "appendo v.1 v.2 v.3",
+         "subst": "",
+         "children": [
+          {
+           "kind": "success",
+           "goal": "",
+           "subst": "v.1 ↦ [], v.3 ↦ v.2",
+           "children": []
+          },
+          {
+           "kind": "leaf",
+           "goal": "appendo v.9 v.2 v.10",
+           "subst": "v.1 ↦ v.11 :: v.9, v.3 ↦ v.11 :: v.10",
+           "children": []
+          }
+         ]
+        },
+        "children": [
+         {
+          "id": 3,
+          "kind": "leaf",
+          "goal": "appendo v.9 v.2 v.10",
+          "gen": "",
+          "subst": "v.1 ↦ v.11 :: v.9, v.3 ↦ v.11 :: v.10",
+          "local": null,
+          "children": []
+         }
+        ]
+       },
+       {
+        "id": 4,
+        "kind": "leaf",
+        "goal": "appendo v.5 v.1 v.6 & appendo v.6 v.2 v.8",
+        "gen": "",
+        "subst": "v.3 ↦ v.7 :: v.8",
+        "local": null,
+        "children": []
+       },
+       {
+        "id": 5,
+        "kind": "prune",
+        "goal": "appendo v.12 v.13 (v.14 :: v.15)",
+        "gen": "v.17 ↦ v.14 :: v.15",
+        "subst": "v.2 ↦ v.14 :: v.15",
+        "local": {
+         "kind": "or",
+         "goal": "appendo v.12 v.13 (v.14 :: v.15)",
+         "subst": "",
+         "children": [
+          {
+           "kind": "success",
+           "goal": "",
+           "subst": "v.12 ↦ [], v.13 ↦ v.14 :: v.15",
+           "children": []
+          },
+          {
+           "kind": "conj",
+           "goal": "appendo v.16 v.13 v.15",
+           "subst": "v.12 ↦ v.14 :: v.16",
+           "children": [
+            {
+             "kind": "leaf",
+             "goal": "appendo v.16 v.13 v.15",
+             "subst": "",
+             "children": []
+            },
+            {
+             "kind": "truncated",
+             "goal": "",
+             "subst": "",
+             "children": []
+            }
+           ]
+          }
+         ]
+        },
+        "children": [
+         {
+          "id": 6,
+          "kind": "leaf",
+          "goal": "appendo v.12 v.13 v.17",
+          "gen": "",
+          "subst": "",
+          "local": null,
+          "children": []
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "treeTruncated": false
+  },
+  {
+   "name": "conspd-det",
+   "base": "conspd-det",
+   "specMs": 0.63,
+   "error": null,
+   "residual": "double_appendo x0 x1 x2 x3 =\n  conj_1 x0 x1 x2 x3;\n\nconj_1 y0 y1 y2 y3 =\n  y0 == [] & appendo_2 y1 y2 y3 |\n  (fresh h, t, r in\n    y0 == (h :: t) &\n    y3 == (h :: r) &\n    conj_1 t y1 y2 r);\n\nappendo_2 y0 y1 y2 =\n  y0 == [] & y1 == y2 |\n  (fresh h, t, r in\n    y0 == (h :: t) &\n    y2 == (h :: r) &\n    appendo_2 t y1 r);",
+   "residualGoal": "double_appendo x0 x1 x2 x3",
+   "defs": 3,
+   "size": 17,
+   "globalTree": {
+    "id": 0,
+    "kind": "node",
+    "goal": "double_appendo v.0 v.1 v.2 v.3",
+    "gen": "",
+    "subst": "",
+    "local": {
+     "kind": "or",
+     "goal": "double_appendo v.0 v.1 v.2 v.3",
+     "subst": "",
+     "children": [
+      {
+       "kind": "leaf",
+       "goal": "appendo v.0 v.1 v.4 & appendo v.4 v.2 v.3",
+       "subst": "",
+       "children": []
+      }
+     ]
+    },
+    "children": [
+     {
+      "id": 1,
+      "kind": "transient",
+      "goal": "appendo v.0 v.1 v.4 & appendo v.4 v.2 v.3",
+      "gen": "",
+      "subst": "",
+      "local": {
+       "kind": "or",
+       "goal": "appendo v.0 v.1 v.4",
+       "subst": "",
+       "children": [
+        {
+         "kind": "leaf",
+         "goal": "appendo v.1 v.2 v.3",
+         "subst": "v.0 ↦ [], v.4 ↦ v.1",
+         "children": []
+        },
+        {
+         "kind": "conj",
+         "goal": "appendo v.5 v.1 v.6 & appendo (v.7 :: v.6) v.2 v.3",
+         "subst": "v.0 ↦ v.7 :: v.5, v.4 ↦ v.7 :: v.6",
+         "children": [
+          {
+           "kind": "or",
+           "goal": "appendo (v.7 :: v.6) v.2 v.3",
+           "subst": "",
+           "children": [
+            {
+             "kind": "fail",
+             "goal": "",
+             "subst": "v.7 :: v.6 ≠ []",
+             "children": []
+            },
+            {
+             "kind": "leaf",
+             "goal": "appendo v.5 v.1 v.6 & appendo v.6 v.2 v.8",
+             "subst": "v.3 ↦ v.7 :: v.8",
+             "children": []
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      "children": [
+       {
+        "id": 2,
+        "kind": "split",
+        "goal": "appendo v.5 v.1 v.6 & appendo v.6 v.2 v.8",
+        "gen": "",
+        "subst": "v.0 ↦ v.7 :: v.5, v.3 ↦ v.7 :: v.8",
+        "local": null,
+        "children": [
+         {
+          "id": 3,
+          "kind": "node",
+          "goal": "appendo v.5 v.1 v.6",
+          "gen": "",
+          "subst": "",
+          "local": {
+           "kind": "or",
+           "goal": "appendo v.1 v.2 v.3",
+           "subst": "",
+           "children": [
+            {
+             "kind": "success",
+             "goal": "",
+             "subst": "v.1 ↦ [], v.3 ↦ v.2",
+             "children": []
+            },
+            {
+             "kind": "leaf",
+             "goal": "appendo v.9 v.2 v.10",
+             "subst": "v.1 ↦ v.11 :: v.9, v.3 ↦ v.11 :: v.10",
+             "children": []
+            }
+           ]
+          },
+          "children": [
+           {
+            "id": 4,
+            "kind": "success",
+            "goal": "",
+            "gen": "",
+            "subst": "v.5 ↦ [], v.6 ↦ v.1",
+            "local": null,
+            "children": []
+           },
+           {
+            "id": 5,
+            "kind": "leaf",
+            "goal": "appendo v.9 v.1 v.10",
+            "gen": "",
+            "subst": "v.5 ↦ v.11 :: v.9, v.6 ↦ v.11 :: v.10",
+            "local": null,
+            "children": []
+           }
+          ]
+         },
+         {
+          "id": 6,
+          "kind": "fail",
+          "goal": "appendo (v.12 :: v.13) v.2 []",
+          "gen": "",
+          "subst": "v.6 ↦ v.12 :: v.13, v.8 ↦ []",
+          "local": null,
+          "children": []
+         },
+         {
+          "kind": "truncated",
+          "children": []
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "treeTruncated": true
+  }
+ ],
+ "runs": [
+  {
+   "spec": "original",
+   "query": "q1",
+   "steps": 36,
+   "unifs": 26,
+   "calls": 10,
+   "outcome": "Finished",
+   "check": "ok",
+   "answers": [
+    "[A, B, C, D, E]"
+   ],
+   "answerSteps": [
+    36
+   ],
+   "profile": [
+    {
+     "rel": "appendo",
+     "calls": 8,
+     "unifOk": 15,
+     "unifFail": 7
+    },
+    {
+     "rel": "<query>",
+     "calls": 1,
+     "unifOk": 4,
+     "unifFail": 0
+    },
+    {
+     "rel": "double_appendo",
+     "calls": 1,
+     "unifOk": 0,
+     "unifFail": 0
+    }
+   ],
+   "trace": [
+    [
+     "call",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "call",
+     "double_appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ]
+   ],
+   "traceTruncated": true
+  },
+  {
+   "spec": "cpd-det",
+   "query": "q1",
+   "steps": 28,
+   "unifs": 20,
+   "calls": 8,
+   "outcome": "Finished",
+   "check": "ok",
+   "answers": [
+    "[A, B, C, D, E]"
+   ],
+   "answerSteps": [
+    28
+   ],
+   "profile": [
+    {
+     "rel": "appendo_appendo",
+     "calls": 3,
+     "unifOk": 5,
+     "unifFail": 3
+    },
+    {
+     "rel": "appendo",
+     "calls": 3,
+     "unifOk": 5,
+     "unifFail": 3
+    },
+    {
+     "rel": "<query>",
+     "calls": 1,
+     "unifOk": 4,
+     "unifFail": 0
+    },
+    {
+     "rel": "double_appendo",
+     "calls": 1,
+     "unifOk": 0,
+     "unifFail": 0
+    }
+   ],
+   "trace": [
+    [
+     "call",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "call",
+     "double_appendo"
+    ],
+    [
+     "call",
+     "appendo_appendo"
+    ],
+    [
+     "unif+",
+     "appendo_appendo"
+    ],
+    [
+     "unif+",
+     "appendo_appendo"
+    ],
+    [
+     "unif-",
+     "appendo_appendo"
+    ],
+    [
+     "call",
+     "appendo_appendo"
+    ],
+    [
+     "unif+",
+     "appendo_appendo"
+    ],
+    [
+     "unif+",
+     "appendo_appendo"
+    ],
+    [
+     "unif-",
+     "appendo_appendo"
+    ],
+    [
+     "call",
+     "appendo_appendo"
+    ],
+    [
+     "unif+",
+     "appendo_appendo"
+    ],
+    [
+     "unif-",
+     "appendo_appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "answer",
+     "1"
+    ]
+   ],
+   "traceTruncated": false
+  },
+  {
+   "spec": "conspd-det",
+   "query": "q1",
+   "steps": 30,
+   "unifs": 21,
+   "calls": 9,
+   "outcome": "Finished",
+   "check": "ok",
+   "answers": [
+    "[A, B, C, D, E]"
+   ],
+   "answerSteps": [
+    28
+   ],
+   "profile": [
+    {
+     "rel": "appendo_2",
+     "calls": 4,
+     "unifOk": 5,
+     "unifFail": 4
+    },
+    {
+     "rel": "conj_1",
+     "calls": 3,
+     "unifOk": 5,
+     "unifFail": 3
+    },
+    {
+     "rel": "<query>",
+     "calls": 1,
+     "unifOk": 4,
+     "unifFail": 0
+    },
+    {
+     "rel": "double_appendo",
+     "calls": 1,
+     "unifOk": 0,
+     "unifFail": 0
+    }
+   ],
+   "trace": [
+    [
+     "call",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "call",
+     "double_appendo"
+    ],
+    [
+     "call",
+     "conj_1"
+    ],
+    [
+     "unif+",
+     "conj_1"
+    ],
+    [
+     "unif+",
+     "conj_1"
+    ],
+    [
+     "unif-",
+     "conj_1"
+    ],
+    [
+     "call",
+     "conj_1"
+    ],
+    [
+     "unif+",
+     "conj_1"
+    ],
+    [
+     "unif+",
+     "conj_1"
+    ],
+    [
+     "unif-",
+     "conj_1"
+    ],
+    [
+     "call",
+     "conj_1"
+    ],
+    [
+     "unif+",
+     "conj_1"
+    ],
+    [
+     "unif-",
+     "conj_1"
+    ],
+    [
+     "call",
+     "appendo_2"
+    ],
+    [
+     "unif+",
+     "appendo_2"
+    ],
+    [
+     "unif+",
+     "appendo_2"
+    ],
+    [
+     "unif-",
+     "appendo_2"
+    ],
+    [
+     "call",
+     "appendo_2"
+    ],
+    [
+     "unif+",
+     "appendo_2"
+    ],
+    [
+     "unif+",
+     "appendo_2"
+    ],
+    [
+     "unif-",
+     "appendo_2"
+    ],
+    [
+     "call",
+     "appendo_2"
+    ],
+    [
+     "unif+",
+     "appendo_2"
+    ],
+    [
+     "unif-",
+     "appendo_2"
+    ],
+    [
+     "answer",
+     "1"
+    ],
+    [
+     "call",
+     "appendo_2"
+    ]
+   ],
+   "traceTruncated": true
+  },
+  {
+   "spec": "original",
+   "query": "q2",
+   "steps": 300000,
+   "unifs": 225986,
+   "calls": 74014,
+   "outcome": "OutOfFuel",
+   "check": "ok~",
+   "answers": [
+    "[], [], [A, B]",
+    "[], [A], [B]",
+    "[A], [], [B]",
+    "[], [A, B], []",
+    "[A], [B], []",
+    "[A, B], [], []"
+   ],
+   "answerSteps": [
+    8,
+    14,
+    24,
+    32,
+    38,
+    47
+   ],
+   "profile": [
+    {
+     "rel": "appendo",
+     "calls": 74012,
+     "unifOk": 18,
+     "unifFail": 225964
+    },
+    {
+     "rel": "<query>",
+     "calls": 1,
+     "unifOk": 4,
+     "unifFail": 0
+    },
+    {
+     "rel": "double_appendo",
+     "calls": 1,
+     "unifOk": 0,
+     "unifFail": 0
+    }
+   ],
+   "trace": [
+    [
+     "call",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "call",
+     "double_appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "answer",
+     "1"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "answer",
+     "2"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "answer",
+     "3"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ]
+   ],
+   "traceTruncated": true
+  },
+  {
+   "spec": "cpd-det",
+   "query": "q2",
+   "steps": 38,
+   "unifs": 27,
+   "calls": 11,
+   "outcome": "Finished",
+   "check": "ok",
+   "answers": [
+    "[], [], [A, B]",
+    "[], [A], [B]",
+    "[A], [], [B]",
+    "[], [A, B], []",
+    "[A], [B], []",
+    "[A, B], [], []"
+   ],
+   "answerSteps": [
+    12,
+    16,
+    23,
+    27,
+    30,
+    38
+   ],
+   "profile": [
+    {
+     "rel": "appendo",
+     "calls": 6,
+     "unifOk": 11,
+     "unifFail": 4
+    },
+    {
+     "rel": "appendo_appendo",
+     "calls": 3,
+     "unifOk": 5,
+     "unifFail": 3
+    },
+    {
+     "rel": "<query>",
+     "calls": 1,
+     "unifOk": 4,
+     "unifFail": 0
+    },
+    {
+     "rel": "double_appendo",
+     "calls": 1,
+     "unifOk": 0,
+     "unifFail": 0
+    }
+   ],
+   "trace": [
+    [
+     "call",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "call",
+     "double_appendo"
+    ],
+    [
+     "call",
+     "appendo_appendo"
+    ],
+    [
+     "unif+",
+     "appendo_appendo"
+    ],
+    [
+     "unif-",
+     "appendo_appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "answer",
+     "1"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "answer",
+     "2"
+    ],
+    [
+     "call",
+     "appendo_appendo"
+    ],
+    [
+     "unif+",
+     "appendo_appendo"
+    ],
+    [
+     "unif+",
+     "appendo_appendo"
+    ],
+    [
+     "unif-",
+     "appendo_appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "answer",
+     "3"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "answer",
+     "4"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "answer",
+     "5"
+    ],
+    [
+     "call",
+     "appendo_appendo"
+    ],
+    [
+     "unif+",
+     "appendo_appendo"
+    ],
+    [
+     "unif+",
+     "appendo_appendo"
+    ],
+    [
+     "unif-",
+     "appendo_appendo"
+    ],
+    [
+     "call",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif+",
+     "appendo"
+    ],
+    [
+     "unif-",
+     "appendo"
+    ],
+    [
+     "answer",
+     "6"
+    ]
+   ],
+   "traceTruncated": false
+  },
+  {
+   "spec": "conspd-det",
+   "query": "q2",
+   "steps": 45,
+   "unifs": 33,
+   "calls": 12,
+   "outcome": "Finished",
+   "check": "unverified-complete",
+   "answers": [
+    "[], [], [A, B]",
+    "[], [A], [B]",
+    "[A], [], [B]",
+    "[], [A, B], []",
+    "[A], [B], []"
+   ],
+   "answerSteps": [
+    12,
+    17,
+    25,
+    29,
+    42
+   ],
+   "profile": [
+    {
+     "rel": "appendo_2",
+     "calls": 7,
+     "unifOk": 11,
+     "unifFail": 9
+    },
+    {
+     "rel": "conj_1",
+     "calls": 3,
+     "unifOk": 5,
+     "unifFail": 4
+    },
+    {
+     "rel": "<query>",
+     "calls": 1,
+     "unifOk": 4,
+     "unifFail": 0
+    },
+    {
+     "rel": "double_appendo",
+     "calls": 1,
+     "unifOk": 0,
+     "unifFail": 0
+    }
+   ],
+   "trace": [
+    [
+     "call",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "unif+",
+     "<query>"
+    ],
+    [
+     "call",
+     "double_appendo"
+    ],
+    [
+     "call",
+     "conj_1"
+    ],
+    [
+     "unif+",
+     "conj_1"
+    ],
+    [
+     "unif-",
+     "conj_1"
+    ],
+    [
+     "call",
+     "appendo_2"
+    ],
+    [
+     "unif+",
+     "appendo_2"
+    ],
+    [
+     "unif+",
+     "appendo_2"
+    ],
+    [
+     "answer",
+     "1"
+    ],
+    [
+     "call",
+     "appendo_2"
+    ],
+    [
+     "unif+",
+     "appendo_2"
+    ],
+    [
+     "unif+",
+     "appendo_2"
+    ],
+    [
+     "unif-",
+     "appendo_2"
+    ],
+    [
+     "unif-",
+     "appendo_2"
+    ],
+    [
+     "answer",
+     "2"
+    ],
+    [
+     "call",
+     "conj_1"
+    ],
+    [
+     "unif+",
+     "conj_1"
+    ],
+    [
+     "unif+",
+     "conj_1"
+    ],
+    [
+     "unif-",
+     "conj_1"
+    ],
+    [
+     "call",
+     "appendo_2"
+    ],
+    [
+     "unif+",
+     "appendo_2"
+    ],
+    [
+     "unif+",
+     "appendo_2"
+    ],
+    [
+     "unif-",
+     "appendo_2"
+    ],
+    [
+     "answer",
+     "3"
+    ],
+    [
+     "call",
+     "appendo_2"
+    ],
+    [
+     "unif+",
+     "appendo_2"
+    ]
+   ],
+   "traceTruncated": true
+  }
+ ]
+}
