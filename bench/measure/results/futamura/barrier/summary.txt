@@ -1,0 +1,30 @@
+# Experiment 4 (barriers at calls of unknown termination, barrier.patch on top of 1d46465) vs experiment 2 (det/).
+# NEGATIVE: not adopted, the patch is not applied.
+
+## original+sched vs original+sched@det
+solved 104 vs 101; gained 3, lost 0; mismatches 0; geometric mean steps ratio 1.066 on 101 common queries
+  gained: lambdaAppend/q1, lambdaAppend/q2, lambdaAppend/q3
+  best:  maxLength/spec 0.42 (1033->435), regexp/spec 0.98 (347->340), contains/spec 0.99 (2790->2774), kmp@vanilla/q2 1.00 (9105->9102), appLast/spec 1.00 (271->271)
+  worst: coloring/q1 24.74 (1512->37409), coloring/q2 11.37 (645->7335), path/spec 4.80 (2383->11441), unifier/spec 1.17 (495->577), vanilla@vanilla/spec 1.00 (6646->6646)
+
+## cpd-det+opt+sched vs cpd-det+opt+sched@det
+solved 96 vs 97; gained 2, lost 3; mismatches 0; geometric mean steps ratio 1.018 on 94 common queries
+  gained: lambdaAppend@vanilla/q2, lambdaAppend@vanilla/q3
+  lost:   exprEvalGeneral/q2, flip@vanilla/spec, relSort@vanilla/spec
+  best:  sortGeneral/q2 0.89 (35252->31295), contains@vanilla/spec 0.97 (3014->2923), typecheck@vanilla/q2 0.99 (2932->2916), appLast/spec 1.00 (29->29), appLast@vanilla/spec 1.00 (264->264)
+  worst: unifier@vanilla/spec 3.46 (6867->23750), power/q2 1.38 (7743->10720), power/q3 1.32 (904->1193), revGeneral@vanilla/q2 1.00 (2982->2990), relSortGeneral@vanilla/q2 1.00 (17979->17995)
+
+## cpd-la+opt+sched vs cpd-la+opt+sched@det
+solved 104 vs 106; gained 1, lost 3; mismatches 0; geometric mean steps ratio 1.010 on 103 common queries
+  gained: binFactor@vanilla/q3
+  lost:   exprEvalGeneral/q2, fclMult@vanilla/q1, relSort@vanilla/spec
+  best:  path@vanilla/spec 0.66 (426->281), sortGeneral/q2 0.89 (35252->31295), contains@vanilla/spec 0.96 (2591->2495), propLastNando@vanilla/spec 0.98 (188->185), binFactor@vanilla/q2 1.00 (10382->10376)
+  worst: binMul@vanilla/q2 1.48 (251->372), power/q2 1.38 (7743->10720), lambdaAppend@vanilla/q3 1.35 (202->273), lambdaAppend@vanilla/q2 1.34 (206->277), power/q3 1.32 (904->1193)
+
+## cpd-lap+opt+sched vs cpd-lap+opt+sched@det
+solved 105 vs 106; gained 1, lost 2; mismatches 0; geometric mean steps ratio 1.022 on 104 common queries
+  gained: binFactor@vanilla/q3
+  lost:   exprEvalGeneral/q2, relSort@vanilla/spec
+  best:  sortGeneral/q2 0.89 (35252->31295), contains@vanilla/spec 0.96 (2591->2495), typecheck/q1 0.97 (247->239), propLastNando@vanilla/spec 0.99 (232->230), binFactor@vanilla/q2 1.00 (10112->10106)
+  worst: path@vanilla/spec 2.33 (1064->2475), binMul@vanilla/q2 1.48 (251->372), power/q2 1.38 (7743->10720), lambdaAppend@vanilla/q3 1.35 (202->273), lambdaAppend@vanilla/q2 1.34 (206->277)
+

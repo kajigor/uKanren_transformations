@@ -1,0 +1,57 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check
+coloring,q1,original+sched,2.52,6,34,28884,8525,9.929,10,GotEnough,ok~
+coloring,q2,original+sched,2.54,6,34,5680,1655,2.425,2,Finished,ok
+coloring,q1,cpd-det+opt+sched,165.96,0,187,250,0,0.059,10,GotEnough,ok~
+coloring,q2,cpd-det+opt+sched,167.18,0,187,70,0,0.023,2,Finished,ok
+coloring,q1,cpd-la+opt+sched,177.17,0,187,250,0,0.065,10,GotEnough,ok~
+coloring,q2,cpd-la+opt+sched,177.33,0,187,70,0,0.025,2,Finished,ok
+coloring,q1,cpd-lap+opt+sched,166.82,0,187,250,0,0.063,10,GotEnough,ok~
+coloring,q2,cpd-lap+opt+sched,166.95,0,187,70,0,0.030,2,Finished,ok
+coloring@vanilla,q1,original+sched,2.33,3,44,260082,39918,143.755,0,OutOfFuel,ok~
+coloring@vanilla,q2,original+sched,2.30,3,44,160357,23878,72.012,2,Finished,ok
+coloring@vanilla,q1,cpd-det+opt+sched,6874.74,0,247,625,0,0.153,10,GotEnough,ok~
+coloring@vanilla,q2,cpd-det+opt+sched,6874.94,0,247,184,0,0.052,2,Finished,ok
+coloring@vanilla,*,cpd-la+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+coloring@vanilla,*,cpd-lap+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+exprEval,q1,original+sched,6.10,4,28,141,46,0.081,1,Finished,ok
+exprEval,q2,original+sched,7.54,11,69,1412,453,0.740,2,Finished,ok~
+exprEval,q1,cpd-det+opt+sched,6.42,4,35,89,20,0.052,1,Finished,ok
+exprEval,q2,cpd-det+opt+sched,7.31,6,45,1177,335,0.649,2,Finished,ok~
+exprEval,q1,cpd-la+opt+sched,6.58,4,35,89,20,0.052,1,Finished,ok
+exprEval,q2,cpd-la+opt+sched,7.61,6,45,1177,335,0.476,2,Finished,ok~
+exprEval,q1,cpd-lap+opt+sched,6.23,4,35,89,20,0.049,1,Finished,ok
+exprEval,q2,cpd-lap+opt+sched,7.18,6,45,1177,335,0.493,2,Finished,ok~
+exprEval@vanilla,q1,original+sched,3.47,3,32,2945,605,2.471,1,Finished,ok
+exprEval@vanilla,q2,original+sched,3.26,3,32,247108,52892,332.432,2,OutOfFuel,ok~
+exprEval@vanilla,q1,cpd-det+opt+sched,137.66,7,46,189873,110127,2510.355,1,OutOfFuel,ok~
+exprEval@vanilla,q2,cpd-det+opt+sched,138.66,11,58,1090,608,0.525,2,Finished,ok~
+exprEval@vanilla,q1,cpd-la+opt+sched,143.06,2,27,118,29,0.089,1,Finished,ok
+exprEval@vanilla,q2,cpd-la+opt+sched,142.80,7,52,2525,707,1.516,2,Finished,ok~
+exprEval@vanilla,q1,cpd-lap+opt+sched,140.19,2,27,118,29,0.063,1,Finished,ok
+exprEval@vanilla,q2,cpd-lap+opt+sched,139.68,7,52,2525,707,1.242,2,Finished,ok~
+exprEvalGeneral,q1,original+sched,5.79,4,28,141,46,0.070,1,Finished,ok
+exprEvalGeneral,q2,original+sched,7.29,11,69,1412,453,0.662,2,Finished,ok~
+exprEvalGeneral,q1,cpd-det+opt+sched,15.66,8,62,141,46,0.075,1,Finished,ok
+exprEvalGeneral,q2,cpd-det+opt+sched,26.52,22,152,225025,74975,79.911,2,OutOfFuel,ok~
+exprEvalGeneral,q1,cpd-la+opt+sched,15.31,8,62,141,46,0.079,1,Finished,ok
+exprEvalGeneral,q2,cpd-la+opt+sched,26.45,22,152,225025,74975,78.759,2,OutOfFuel,ok~
+exprEvalGeneral,q1,cpd-lap+opt+sched,15.58,8,62,141,46,0.078,1,Finished,ok
+exprEvalGeneral,q2,cpd-lap+opt+sched,28.10,22,152,225025,74975,85.568,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,original+sched,1.87,3,32,2945,605,1.499,1,Finished,ok
+exprEvalGeneral@vanilla,q2,original+sched,1.76,3,32,247108,52892,287.804,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,cpd-det+opt+sched,7.68,6,62,2668,597,1.636,1,Finished,ok
+exprEvalGeneral@vanilla,q2,cpd-det+opt+sched,7.58,6,62,243496,56504,261.321,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,cpd-la+opt+sched,6.77,6,62,2657,595,1.595,1,Finished,ok
+exprEvalGeneral@vanilla,q2,cpd-la+opt+sched,6.71,6,62,243494,56506,241.494,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,cpd-lap+opt+sched,6.22,3,32,2474,595,1.578,1,Finished,ok
+exprEvalGeneral@vanilla,q2,cpd-lap+opt+sched,6.17,3,32,240243,59757,302.265,2,OutOfFuel,ok~
+queens5,q1,original+sched,7.96,8,38,217738,60674,67.822,10,GotEnough,ok~
+queens5,q2,original+sched,8.38,8,38,50942,14054,14.995,2,Finished,ok
+queens5,*,cpd-det+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5,*,cpd-la+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5,*,cpd-lap+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,q1,original+sched,2.61,3,50,263944,36056,161.851,0,OutOfFuel,ok~
+queens5@vanilla,q2,original+sched,2.83,3,50,265230,34770,129.440,0,OutOfFuel,ok~
+queens5@vanilla,*,cpd-det+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,*,cpd-la+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,*,cpd-lap+opt+sched,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-

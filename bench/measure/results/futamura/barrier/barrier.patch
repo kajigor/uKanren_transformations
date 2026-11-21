@@ -1,0 +1,52 @@
+diff --git a/src/Schedule.hs b/src/Schedule.hs
+index 495f1d7..4422d7a 100644
+--- a/src/Schedule.hs
++++ b/src/Schedule.hs
+@@ -134,7 +134,30 @@ schedG ctx self inputs gr g = case g of
+           go _ [] = ([], [])
+           go grd rest =
+             let indexed = zip [0 :: Int ..] rest
+-                best = snd $ head $ sortOn fst [ (score grd small i c, (i, c)) | (i, c) <- indexed ]
++                -- a call that terminates in no order (its termination depends on
++                -- data, e.g. the object program of an interpreter) is a barrier:
++                -- later calls may overtake it only if they ground one of its
++                -- variables (they produce its inputs), so elsewhere the program's
++                -- own selection rule is kept; unifications may still move ahead
++                grAll i0 = foldl' (propagate (cTbl ctx)) grd [ c | (i, c) <- indexed, i /= i0 ]
++                isNeutral (i, c) = case c of
++                  Invoke f ts | not (isSpecial f ts) && M.member f (cDefs ctx) ->
++                    not (termOf grd small c) && not (terminates ctx f (callMode (grAll i) ts))
++                  _ -> False
++                barrierCall = case filter isNeutral indexed of
++                  (b : _) -> Just b
++                  [] -> Nothing
++                isU (_ :=: _) = True
++                isU _ = False
++                feeds (_, bcall) c = case bcall of
++                  Invoke _ bts ->
++                    let need = S.fromList (concatMap varsT bts) `S.difference` grd
++                    in not (S.null (S.intersection need (propagate (cTbl ctx) grd c)))
++                  _ -> False
++                cands = case barrierCall of
++                  Nothing -> indexed
++                  Just b@(k, _) -> [ ic | ic@(i, c) <- indexed, i <= k || isU c || feeds b c ]
++                best = snd $ head $ sortOn fst [ (score grd small i c, (i, c)) | (i, c) <- cands ]
+                 (bi, bc) = best
+                 rest' = [ c | (i, c) <- indexed, i /= bi ]
+                 (bc', calls) = case bc of
+@@ -156,6 +179,15 @@ schedG ctx self inputs gr g = case g of
+                                 _ -> (bs, c : cs)) ([], [])
+     collect (Fresh x h) = let (vs, b) = collect h in (x : vs, b)
+     collect h = ([], h)
++    termOf grd small c = case c of
++      Invoke f ts | not (isSpecial f ts) ->
++        let m = callMode grd ts
++            rec = M.lookup f (cScc ctx) == M.lookup self (cScc ctx) && M.member f (cScc ctx)
++        in if rec
++             then any (\(j, t) -> j `S.member` m && case t of V v -> v `S.member` small; _ -> False) (zip [0 ..] ts)
++                  && terminates ctx f m
++             else terminates ctx f m
++      _ -> True
+     score grd small i c = case c of
+       _ :=: _ -> (0 :: Int, 0 :: Int, 0 :: Int, 0 :: Int, i)
+       Invoke f ts

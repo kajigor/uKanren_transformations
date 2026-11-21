@@ -1,0 +1,209 @@
+== arith
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| arith | q1 | original+sched | 1.8 | 4 | 22 | 225001 | 74999 | 65.04 | 3 | OutOfFuel | ok~ |
+| arith | q1 | cpd-det+opt+sched | 1.1 | 2 | 26 | 240001 | 59999 | 65.34 | 3 | OutOfFuel | ok~ |
+| arith | q1 | cpd-la+opt+sched | 0.9 | 2 | 26 | 240001 | 59999 | 72.21 | 3 | OutOfFuel | ok~ |
+| arith | q1 | cpd-lap+opt+sched | 0.8 | 0 | 10 | 10 | 0 | 0.01 | 3 | Finished | ok~ |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| arith@vanilla | q1 | original+sched | 0.9 | 3 | 20 | 225736 | 74264 | 3454.51 | 3 | OutOfFuel | ok~ |
+| arith@vanilla | q1 | cpd-det+opt+sched | 5.3 | 4 | 19 | 200005 | 99995 | 73.02 | 3 | OutOfFuel | ok~ |
+| arith@vanilla | q1 | cpd-la+opt+sched | 37.8 | 11 | 51 | 180003 | 119997 | 58.11 | 3 | OutOfFuel | ok~ |
+| arith@vanilla | q1 | cpd-lap+opt+sched | 44.9 | 6 | 32 | 26 | 9 | 0.03 | 3 | Finished | ok~ |
+== arithGeneral
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| arithGeneral | q1 | original+sched | 0.8 | 2 | 12 | 60 | 21 | 0.03 | 1 | Finished | ok |
+| arithGeneral | q2 | original+sched | 1.8 | 4 | 22 | 225003 | 74997 | 72.18 | 6 | OutOfFuel | ok~ |
+| arithGeneral | q3 | original+sched | 1.4 | 4 | 22 | 105 | 35 | 0.04 | 1 | Finished | ok |
+| arithGeneral | q1 | cpd-det+opt+sched | 1.0 | 2 | 12 | 80 | 21 | 0.04 | 1 | Finished | ok |
+| arithGeneral | q2 | cpd-det+opt+sched | 2.1 | 4 | 22 | 225016 | 74984 | 73.43 | 6 | OutOfFuel | ok~ |
+| arithGeneral | q3 | cpd-det+opt+sched | 1.8 | 4 | 22 | 114 | 35 | 0.05 | 1 | Finished | ok |
+| arithGeneral | q1 | cpd-la+opt+sched | 1.2 | 2 | 12 | 80 | 21 | 0.04 | 1 | Finished | ok |
+| arithGeneral | q2 | cpd-la+opt+sched | 2.2 | 4 | 22 | 225016 | 74984 | 80.29 | 6 | OutOfFuel | ok~ |
+| arithGeneral | q3 | cpd-la+opt+sched | 1.8 | 4 | 22 | 114 | 35 | 0.05 | 1 | Finished | ok |
+| arithGeneral | q1 | cpd-lap+opt+sched | 1.2 | 2 | 12 | 80 | 21 | 0.04 | 1 | Finished | ok |
+| arithGeneral | q2 | cpd-lap+opt+sched | 2.2 | 4 | 22 | 225016 | 74984 | 87.12 | 6 | OutOfFuel | ok~ |
+| arithGeneral | q3 | cpd-lap+opt+sched | 2.0 | 4 | 22 | 114 | 35 | 0.05 | 1 | Finished | ok |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| arithGeneral@vanilla | q1 | original+sched | 1.0 | 3 | 20 | 786 | 262 | 0.56 | 1 | Finished | ok |
+| arithGeneral@vanilla | q2 | original+sched | 1.0 | 3 | 20 | 225708 | 74292 | 3312.46 | 6 | OutOfFuel | ok~ |
+| arithGeneral@vanilla | q3 | original+sched | 1.0 | 3 | 20 | 1371 | 459 | 0.77 | 1 | Finished | ok |
+| arithGeneral@vanilla | q1 | cpd-det+opt+sched | 2.8 | 6 | 36 | 673 | 257 | 0.58 | 1 | Finished | ok |
+| arithGeneral@vanilla | q2 | cpd-det+opt+sched | 2.9 | 6 | 36 | 217558 | 82442 | 3710.34 | 6 | OutOfFuel | ok~ |
+| arithGeneral@vanilla | q3 | cpd-det+opt+sched | 2.8 | 6 | 36 | 1185 | 454 | 0.76 | 1 | Finished | ok |
+| arithGeneral@vanilla | q1 | cpd-la+opt+sched | 3.0 | 6 | 36 | 669 | 255 | 0.31 | 1 | Finished | ok |
+| arithGeneral@vanilla | q2 | cpd-la+opt+sched | 3.0 | 6 | 36 | 217559 | 82441 | 3907.84 | 6 | OutOfFuel | ok~ |
+| arithGeneral@vanilla | q3 | cpd-la+opt+sched | 3.1 | 6 | 36 | 1180 | 452 | 0.73 | 1 | Finished | ok |
+| arithGeneral@vanilla | q1 | cpd-lap+opt+sched | 2.8 | 3 | 18 | 591 | 255 | 0.44 | 1 | Finished | ok |
+| arithGeneral@vanilla | q2 | cpd-lap+opt+sched | 2.7 | 3 | 18 | 209626 | 90374 | 4216.37 | 6 | OutOfFuel | ok~ |
+| arithGeneral@vanilla | q3 | cpd-lap+opt+sched | 3.1 | 3 | 18 | 1043 | 452 | 1.02 | 1 | Finished | ok |
+== path
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| path | spec | original+sched | 9.7 | 5 | 52 | 9801 | 1640 | 5.77 | 10 | GotEnough | ok~ |
+| path | spec | cpd-det+opt+sched | 11.9 | 1 | 13 | 68 | 11 | 0.05 | 10 | GotEnough | ok~ |
+| path | spec | cpd-la+opt+sched | 2.2 | 1 | 13 | 65 | 11 | 0.04 | 10 | GotEnough | ok~ |
+| path | spec | cpd-lap+opt+sched | 2.0 | 1 | 13 | 65 | 11 | 0.04 | 10 | GotEnough | ok~ |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| path@vanilla | spec | original+sched | 6.4 | 3 | 38 | 254752 | 45248 | 363.26 | 5 | OutOfFuel | ok~ |
+| path@vanilla | * | cpd-det+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| path@vanilla | spec | cpd-la+opt+sched | 363.5 | 31 | 82 | 136 | 145 | 0.16 | 10 | GotEnough | ok~ |
+| path@vanilla | spec | cpd-lap+opt+sched | 6549.3 | 54 | 172 | 1191 | 1284 | 2.03 | 10 | GotEnough | ok~ |
+== propFirst
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| propFirst | spec | original+sched | 7.3 | 6 | 66 | 122 | 41 | 0.09 | 10 | GotEnough | ok~ |
+| propFirst | spec | cpd-det+opt+sched | 4.2 | 5 | 44 | 36 | 28 | 0.03 | 10 | GotEnough | ok~ |
+| propFirst | spec | cpd-la+opt+sched | 4.5 | 5 | 44 | 36 | 28 | 0.03 | 10 | GotEnough | ok~ |
+| propFirst | spec | cpd-lap+opt+sched | 3.6 | 5 | 44 | 36 | 28 | 0.03 | 10 | GotEnough | ok~ |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| propFirst@vanilla | spec | original+sched | 3.4 | 3 | 56 | 5789 | 844 | 3.10 | 10 | GotEnough | ok~ |
+| propFirst@vanilla | spec | cpd-det+opt+sched | 37.1 | 5 | 82 | 110 | 33 | 0.07 | 10 | GotEnough | ok~ |
+| propFirst@vanilla | spec | cpd-la+opt+sched | 32.2 | 10 | 60 | 34 | 29 | 0.04 | 10 | GotEnough | ok~ |
+| propFirst@vanilla | spec | cpd-lap+opt+sched | 33.0 | 10 | 60 | 34 | 29 | 0.04 | 10 | GotEnough | ok~ |
+== propFirstNando
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| propFirstNando | spec | original+sched | 6.4 | 9 | 70 | 253 | 64 | 0.09 | 10 | GotEnough | ok~ |
+| propFirstNando | spec | cpd-det+opt+sched | 3.8 | 7 | 48 | 40 | 28 | 0.03 | 10 | GotEnough | ok~ |
+| propFirstNando | spec | cpd-la+opt+sched | 4.1 | 7 | 48 | 40 | 28 | 0.03 | 10 | GotEnough | ok~ |
+| propFirstNando | spec | cpd-lap+opt+sched | 6.2 | 7 | 48 | 40 | 28 | 0.08 | 10 | GotEnough | ok~ |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| propFirstNando@vanilla | spec | original+sched | 2.6 | 3 | 44 | 8224 | 1401 | 4.28 | 10 | GotEnough | ok~ |
+| propFirstNando@vanilla | spec | cpd-det+opt+sched | 66.0 | 5 | 84 | 133 | 33 | 0.07 | 10 | GotEnough | ok~ |
+| propFirstNando@vanilla | spec | cpd-la+opt+sched | 163.7 | 10 | 127 | 87 | 33 | 0.08 | 10 | GotEnough | ok~ |
+| propFirstNando@vanilla | spec | cpd-lap+opt+sched | 153.7 | 10 | 122 | 81 | 27 | 0.06 | 10 | GotEnough | ok~ |
+== propLast
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| propLast | spec | original+sched | 4.9 | 6 | 66 | 122 | 41 | 0.06 | 10 | GotEnough | ok~ |
+| propLast | spec | cpd-det+opt+sched | 27.9 | 1 | 247 | 65 | 9 | 0.04 | 10 | GotEnough | ok~ |
+| propLast | spec | cpd-la+opt+sched | 26.5 | 1 | 247 | 65 | 9 | 0.04 | 10 | GotEnough | ok~ |
+| propLast | spec | cpd-lap+opt+sched | 25.9 | 1 | 247 | 65 | 9 | 0.04 | 10 | GotEnough | ok~ |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| propLast@vanilla | spec | original+sched | 3.3 | 3 | 56 | 7111 | 1108 | 3.37 | 10 | GotEnough | ok~ |
+| propLast@vanilla | spec | cpd-det+opt+sched | 164.4 | 4 | 198 | 38 | 9 | 0.04 | 10 | GotEnough | ok~ |
+| propLast@vanilla | spec | cpd-la+opt+sched | 92.4 | 1 | 297 | 46 | 9 | 0.04 | 10 | GotEnough | ok~ |
+| propLast@vanilla | spec | cpd-lap+opt+sched | 133.8 | 1 | 297 | 46 | 9 | 0.10 | 10 | GotEnough | ok~ |
+== propLastNando
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| propLastNando | spec | original+sched | 7.9 | 9 | 70 | 253 | 64 | 0.12 | 10 | GotEnough | ok~ |
+| propLastNando | spec | cpd-det+opt+sched | 67.1 | 3 | 298 | 81 | 13 | 0.05 | 10 | GotEnough | ok~ |
+| propLastNando | spec | cpd-la+opt+sched | 63.5 | 3 | 298 | 81 | 13 | 0.05 | 10 | GotEnough | ok~ |
+| propLastNando | spec | cpd-lap+opt+sched | 61.2 | 3 | 298 | 81 | 13 | 0.05 | 10 | GotEnough | ok~ |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| propLastNando@vanilla | spec | original+sched | 2.8 | 3 | 44 | 18324 | 3387 | 11.29 | 10 | GotEnough | ok~ |
+| propLastNando@vanilla | spec | cpd-det+opt+sched | 859.6 | 10 | 426 | 109 | 9 | 0.09 | 10 | GotEnough | ok~ |
+| propLastNando@vanilla | spec | cpd-la+opt+sched | 362.9 | 7 | 343 | 168 | 17 | 0.14 | 10 | GotEnough | ok~ |
+| propLastNando@vanilla | spec | cpd-lap+opt+sched | 506.9 | 13 | 500 | 204 | 26 | 0.10 | 10 | GotEnough | ok~ |
+== relSort
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| relSort | spec | original+sched | 10.6 | 5 | 35 | 262 | 65 | 0.12 | 1 | Finished | ok~ |
+| relSort | spec | cpd-det+opt+sched | 114496.4 | 6 | 660 | 226 | 43 | 0.26 | 1 | Finished | ok~ |
+| relSort | spec | cpd-la+opt+sched | 3.2 | 0 | 2 | 2 | 0 | 0.01 | 1 | Finished | ok~ |
+| relSort | spec | cpd-lap+opt+sched | 3.0 | 0 | 2 | 2 | 0 | 0.01 | 1 | Finished | ok~ |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| relSort@vanilla | spec | original+sched | 2.3 | 3 | 36 | 248898 | 51102 | 258.39 | 0 | OutOfFuel | ok~ |
+| relSort@vanilla | spec | cpd-det+opt+sched | 28.5 | 8 | 64 | 229365 | 70635 | 130.50 | 0 | OutOfFuel | ok~ |
+| relSort@vanilla | spec | cpd-la+opt+sched | 18.8 | 8 | 64 | 240433 | 59567 | 418.69 | 1 | OutOfFuel | ok~ |
+| relSort@vanilla | spec | cpd-lap+opt+sched | 157.4 | 7 | 64 | 249117 | 50883 | 352.39 | 1 | OutOfFuel | ok~ |
+== relSortGeneral
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| relSortGeneral | q1 | original+sched | 11.7 | 5 | 35 | 416 | 102 | 0.32 | 1 | Finished | ok~ |
+| relSortGeneral | q2 | original+sched | 8.3 | 9 | 63 | 713 | 173 | 0.39 | 10 | GotEnough | ok~ |
+| relSortGeneral | q1 | cpd-det+opt+sched | 12.2 | 4 | 27 | 349 | 87 | 0.18 | 1 | Finished | ok~ |
+| relSortGeneral | q2 | cpd-det+opt+sched | 8.5 | 7 | 47 | 540 | 146 | 0.25 | 10 | GotEnough | ok~ |
+| relSortGeneral | q1 | cpd-la+opt+sched | 11.7 | 4 | 27 | 349 | 87 | 0.18 | 1 | Finished | ok~ |
+| relSortGeneral | q2 | cpd-la+opt+sched | 8.7 | 7 | 47 | 540 | 146 | 0.32 | 10 | GotEnough | ok~ |
+| relSortGeneral | q1 | cpd-lap+opt+sched | 12.8 | 4 | 27 | 349 | 87 | 0.18 | 1 | Finished | ok~ |
+| relSortGeneral | q2 | cpd-lap+opt+sched | 8.8 | 7 | 47 | 540 | 146 | 0.25 | 10 | GotEnough | ok~ |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| relSortGeneral@vanilla | q1 | original+sched | 2.0 | 3 | 36 | 248898 | 51102 | 252.37 | 0 | OutOfFuel | ok~ |
+| relSortGeneral@vanilla | q2 | original+sched | 2.3 | 3 | 36 | 16255 | 2985 | 8.78 | 10 | GotEnough | ok~ |
+| relSortGeneral@vanilla | q1 | cpd-det+opt+sched | 7.4 | 6 | 68 | 245656 | 54344 | 235.40 | 0 | OutOfFuel | ok~ |
+| relSortGeneral@vanilla | q2 | cpd-det+opt+sched | 8.0 | 6 | 68 | 15026 | 2969 | 8.01 | 10 | GotEnough | ok~ |
+| relSortGeneral@vanilla | q1 | cpd-la+opt+sched | 6.5 | 6 | 68 | 245655 | 54345 | 257.78 | 0 | OutOfFuel | ok~ |
+| relSortGeneral@vanilla | q2 | cpd-la+opt+sched | 7.0 | 6 | 68 | 14999 | 2965 | 7.40 | 10 | GotEnough | ok~ |
+| relSortGeneral@vanilla | q1 | cpd-lap+opt+sched | 5.9 | 3 | 34 | 242836 | 57164 | 230.62 | 0 | OutOfFuel | ok~ |
+| relSortGeneral@vanilla | q2 | cpd-lap+opt+sched | 6.0 | 3 | 34 | 14087 | 2965 | 7.69 | 10 | GotEnough | ok~ |
+== sort
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| sort | spec | original+sched | 13.3 | 5 | 33 | 144 | 47 | 0.09 | 1 | Finished | ok |
+| sort | spec | cpd-det+opt+sched | 2.1 | 0 | 2 | 2 | 0 | 0.01 | 1 | Finished | ok |
+| sort | spec | cpd-la+opt+sched | 0.7 | 0 | 2 | 2 | 0 | 0.01 | 1 | Finished | ok |
+| sort | spec | cpd-lap+opt+sched | 0.8 | 0 | 2 | 2 | 0 | 0.01 | 1 | Finished | ok |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| sort@vanilla | spec | original+sched | 2.1 | 3 | 34 | 3259 | 625 | 1.60 | 1 | Finished | ok |
+| sort@vanilla | * | cpd-det+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| sort@vanilla | * | cpd-la+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+| sort@vanilla | * | cpd-lap+opt+sched | 0.0 | 0 | 0 | 0 | 0 | 0.00 | 0 | spec-fail: <<timeout>> | - |
+== sortGeneral
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| sortGeneral | q1 | original+sched | 13.6 | 5 | 33 | 199 | 63 | 0.11 | 1 | Finished | ok |
+| sortGeneral | q2 | original+sched | 15.3 | 9 | 59 | 7132 | 2197 | 3.71 | 10 | GotEnough | ok~ |
+| sortGeneral | q1 | cpd-det+opt+sched | 46.9 | 7 | 56 | 227740 | 72260 | 129.70 | 1 | OutOfFuel | ok~ |
+| sortGeneral | q2 | cpd-det+opt+sched | 68.0 | 14 | 110 | 25247 | 6048 | 15.45 | 10 | GotEnough | ok~ |
+| sortGeneral | q1 | cpd-la+opt+sched | 60.7 | 7 | 56 | 227740 | 72260 | 165.82 | 1 | OutOfFuel | ok~ |
+| sortGeneral | q2 | cpd-la+opt+sched | 97.8 | 14 | 110 | 25247 | 6048 | 27.13 | 10 | GotEnough | ok~ |
+| sortGeneral | q1 | cpd-lap+opt+sched | 75.2 | 7 | 56 | 227740 | 72260 | 145.17 | 1 | OutOfFuel | ok~ |
+| sortGeneral | q2 | cpd-lap+opt+sched | 70.4 | 14 | 110 | 25247 | 6048 | 13.12 | 10 | GotEnough | ok~ |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| sortGeneral@vanilla | q1 | original+sched | 1.9 | 3 | 34 | 4452 | 852 | 2.17 | 1 | Finished | ok |
+| sortGeneral@vanilla | q2 | original+sched | 2.0 | 3 | 34 | 247655 | 52345 | 206.88 | 2 | OutOfFuel | ok~ |
+| sortGeneral@vanilla | q1 | cpd-det+opt+sched | 13.9 | 6 | 64 | 4089 | 847 | 2.69 | 1 | Finished | ok |
+| sortGeneral@vanilla | q2 | cpd-det+opt+sched | 11.6 | 6 | 64 | 244176 | 55824 | 199.70 | 2 | OutOfFuel | ok~ |
+| sortGeneral@vanilla | q1 | cpd-la+opt+sched | 7.1 | 6 | 64 | 4078 | 845 | 2.04 | 1 | Finished | ok |
+| sortGeneral@vanilla | q2 | cpd-la+opt+sched | 7.1 | 6 | 64 | 244174 | 55826 | 234.94 | 2 | OutOfFuel | ok~ |
+| sortGeneral@vanilla | q1 | cpd-lap+opt+sched | 6.8 | 3 | 32 | 3813 | 845 | 2.17 | 1 | Finished | ok |
+| sortGeneral@vanilla | q2 | cpd-lap+opt+sched | 7.0 | 3 | 32 | 241132 | 58868 | 221.93 | 3 | OutOfFuel | ok~ |
+== typecheck
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| typecheck | q1 | original+sched | 14.0 | 8 | 162 | 273 | 71 | 0.48 | 10 | GotEnough | ok~ |
+| typecheck | q2 | original+sched | 37.0 | 8 | 162 | 140 | 16 | 0.09 | 1 | Finished | ok |
+| typecheck | q1 | cpd-det+opt+sched | 38.3 | 8 | 194 | 222 | 69 | 0.14 | 10 | GotEnough | ok~ |
+| typecheck | q2 | cpd-det+opt+sched | 44.0 | 8 | 194 | 123 | 15 | 0.06 | 1 | Finished | ok |
+| typecheck | q1 | cpd-la+opt+sched | 42.7 | 8 | 194 | 222 | 69 | 0.11 | 10 | GotEnough | ok~ |
+| typecheck | q2 | cpd-la+opt+sched | 40.7 | 8 | 194 | 123 | 15 | 0.06 | 1 | Finished | ok |
+| typecheck | q1 | cpd-lap+opt+sched | 57.4 | 15 | 307 | 170 | 69 | 0.11 | 10 | GotEnough | ok~ |
+| typecheck | q2 | cpd-lap+opt+sched | 64.0 | 15 | 307 | 113 | 15 | 0.07 | 1 | Finished | ok |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| typecheck@vanilla | q1 | original+sched | 2.9 | 3 | 36 | 11341 | 2740 | 13.57 | 10 | GotEnough | ok~ |
+| typecheck@vanilla | q2 | original+sched | 4.2 | 6 | 70 | 2774 | 482 | 2.36 | 1 | Finished | ok |
+| typecheck@vanilla | q1 | cpd-det+opt+sched | 9.6 | 6 | 74 | 8810 | 2385 | 6.56 | 10 | GotEnough | ok~ |
+| typecheck@vanilla | q2 | cpd-det+opt+sched | 9.7 | 6 | 74 | 2448 | 468 | 1.32 | 1 | Finished | ok |
+| typecheck@vanilla | q1 | cpd-la+opt+sched | 9.7 | 6 | 73 | 8783 | 2381 | 6.59 | 10 | GotEnough | ok~ |
+| typecheck@vanilla | q2 | cpd-la+opt+sched | 9.7 | 6 | 73 | 2435 | 466 | 1.33 | 1 | Finished | ok |
+| typecheck@vanilla | q1 | cpd-lap+opt+sched | 9.0 | 3 | 39 | 8246 | 2381 | 6.27 | 10 | GotEnough | ok~ |
+| typecheck@vanilla | q2 | cpd-lap+opt+sched | 10.0 | 6 | 69 | 2285 | 466 | 1.26 | 1 | Finished | ok |
+== unifier
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| unifier | spec | original+sched | 27.1 | 4 | 65 | 488 | 89 | 0.21 | 10 | GotEnough | ok~ |
+| unifier | spec | cpd-det+opt+sched | 16.7 | 5 | 46 | 164 | 64 | 0.10 | 10 | GotEnough | ok~ |
+| unifier | spec | cpd-la+opt+sched | 18.5 | 5 | 46 | 164 | 64 | 0.11 | 10 | GotEnough | ok~ |
+| unifier | spec | cpd-lap+opt+sched | 18.0 | 5 | 46 | 164 | 64 | 0.10 | 10 | GotEnough | ok~ |
+| bench | query | specializer | spec ms | defs | size | unifs | calls | eval ms | #ans | outcome | check |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| unifier@vanilla | spec | original+sched | 5.5 | 3 | 50 | 254009 | 45991 | 479.96 | 7 | OutOfFuel | ok~ |
+| unifier@vanilla | spec | cpd-det+opt+sched | 1696.8 | 24 | 448 | 19959 | 3791 | 69.86 | 10 | GotEnough | ok~ |
+| unifier@vanilla | spec | cpd-la+opt+sched | 79.8 | 6 | 126 | 35696 | 6431 | 31.77 | 10 | GotEnough | ok~ |
+| unifier@vanilla | spec | cpd-lap+opt+sched | 82.1 | 6 | 119 | 34191 | 6431 | 31.27 | 10 | GotEnough | ok~ |
