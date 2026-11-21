@@ -126,20 +126,26 @@ instance (Eq a, Ord a, Show a) => Instance a (Term a) where
       Just w -> Nothing
       Nothing ->
         Just $ Map.insert v u subst
-  inst (C n as) (C m bs) subst | n == m && length as == length bs =
-    foldl (\s (a, b) -> s >>= \s -> inst a b s) (Just subst) (zip as bs)
+  inst (C n as) (C m bs) subst | n == m = instList as bs subst
   inst _ _ _ = Nothing
 
 instance (Eq a, Ord a, Show a) => Instance a (G a) where
-  inst (Invoke f as) (Invoke g bs) subst | f == g && length as == length bs =
-    foldl (\s (a, b) -> s >>= \s -> inst a b s) (Just subst) (zip as bs)
+  inst (Invoke f as) (Invoke g bs) subst | f == g = instList as bs subst
   inst _ _ _ = Nothing
 
 
 instance (Eq a, Ord a, Show a) => Instance a [G a] where
-  inst as bs subst | length as == length bs =
-    foldl (\s (a, b) -> s >>= \s -> inst a b s) (Just subst) (zip as bs)
-  inst _ _ _ = Nothing
+  inst = instList
+
+-- | Pairwise 'inst' of two lists of equal length, stopping at the first
+--   mismatch.  (Comparing the lengths first and folding over the whole zip
+--   made the instance check against every seen conjunction cost O(length)
+--   even when the first goals already differ: 65% of ConsPD's time on
+--   contains@vanilla.)
+instList :: Instance a b => [b] -> [b] -> Map.Map a (Term a) -> Maybe (Map.Map a (Term a))
+instList [] [] subst = Just subst
+instList (a : as) (b : bs) subst = inst a b subst >>= instList as bs
+instList _ _ _ = Nothing
 
 class AlwaysEmbeddable a where
   isAlwaysEmbeddable :: a -> Bool

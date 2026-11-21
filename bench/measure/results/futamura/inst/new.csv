@@ -1,0 +1,81 @@
+bench,query,specializer,spec_ms,defs,size,unifs,calls,eval_ms,answers,outcome,check
+coloring,q1,original,0.32,7,35,28884,8525,12.839,10,GotEnough,ok~
+coloring,q2,original,0.35,7,35,5680,1655,2.965,2,Finished,ok
+coloring,q1,cpd-det,152.95,26,103,343,193,0.108,10,GotEnough,ok~
+coloring,q2,cpd-det,153.13,26,103,70,34,0.032,2,Finished,ok
+coloring,q1,cpd-la,153.65,26,103,343,193,0.108,10,GotEnough,ok~
+coloring,q2,cpd-la,153.79,26,103,70,34,0.031,2,Finished,ok
+coloring,q1,cpd-lap,144.34,26,95,321,185,0.111,10,GotEnough,ok~
+coloring,q2,cpd-lap,144.25,26,95,70,34,0.032,2,Finished,ok
+coloring,q1,conspd-la,691.54,43,164,67,6,0.039,10,GotEnough,ok~
+coloring,q2,conspd-la,691.41,43,164,42,1,0.023,2,Finished,ok
+coloring,q1,conspd-det,1108.76,43,164,67,6,0.039,10,GotEnough,ok~
+coloring,q2,conspd-det,1108.88,43,164,42,1,0.026,2,Finished,ok
+coloring@vanilla,q1,original,1.53,3,44,260082,39918,136.622,0,OutOfFuel,ok~
+coloring@vanilla,q2,original,1.65,3,44,160357,23878,60.414,2,Finished,ok
+coloring@vanilla,q1,cpd-det,5897.60,208,346,3986,7859,6.769,10,GotEnough,ok~
+coloring@vanilla,q2,cpd-det,5905.00,208,346,729,1415,1.447,2,Finished,ok
+coloring@vanilla,*,cpd-la,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+coloring@vanilla,*,cpd-lap,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+coloring@vanilla,*,conspd-la,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+coloring@vanilla,*,conspd-det,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+exprEval,q1,original,0.22,5,29,141,46,0.171,1,Finished,ok
+exprEval,q2,original,0.22,5,29,225175,74825,145.966,2,OutOfFuel,ok~
+exprEval,q1,cpd-det,2.49,8,38,239987,60013,862.774,1,OutOfFuel,ok~
+exprEval,q2,cpd-det,2.74,8,38,239967,60033,1460.812,2,OutOfFuel,ok~
+exprEval,q1,cpd-la,2.95,8,38,239987,60013,860.339,1,OutOfFuel,ok~
+exprEval,q2,cpd-la,3.07,8,38,239967,60033,1482.404,2,OutOfFuel,ok~
+exprEval,q1,cpd-lap,3.00,8,38,239987,60013,864.020,1,OutOfFuel,ok~
+exprEval,q2,cpd-lap,3.04,8,38,239967,60033,1534.914,2,OutOfFuel,ok~
+exprEval,q1,conspd-la,2.51,19,63,233332,66668,1054.647,1,OutOfFuel,ok~
+exprEval,q2,conspd-la,2.55,19,63,239188,60812,518.371,2,OutOfFuel,ok~
+exprEval,q1,conspd-det,2.41,21,65,233332,66668,1085.300,1,OutOfFuel,ok~
+exprEval,q2,conspd-det,2.55,21,65,239188,60812,596.055,2,OutOfFuel,ok~
+exprEval@vanilla,q1,original,1.18,3,32,2945,605,1.492,1,Finished,ok
+exprEval@vanilla,q2,original,1.08,3,32,247108,52892,255.894,2,OutOfFuel,ok~
+exprEval@vanilla,q1,cpd-det,107.52,48,81,129906,170094,296.485,0,OutOfFuel,ok~
+exprEval@vanilla,q2,cpd-det,107.74,48,81,145114,154886,394.266,2,OutOfFuel,ok~
+exprEval@vanilla,q1,cpd-la,126.20,34,62,234925,65075,733.943,1,OutOfFuel,ok~
+exprEval@vanilla,q2,cpd-la,126.54,34,62,236371,63629,242.450,2,OutOfFuel,ok~
+exprEval@vanilla,q1,cpd-lap,125.79,34,62,234925,65075,754.686,1,OutOfFuel,ok~
+exprEval@vanilla,q2,cpd-lap,126.32,34,62,236371,63629,267.681,2,OutOfFuel,ok~
+exprEval@vanilla,*,conspd-la,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+exprEval@vanilla,*,conspd-det,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+exprEvalGeneral,q1,original,0.19,5,29,141,46,0.059,1,Finished,ok
+exprEvalGeneral,q2,original,0.31,5,29,225175,74825,153.796,2,OutOfFuel,ok~
+exprEvalGeneral,q1,cpd-det,1.41,8,62,224949,75051,223.623,1,OutOfFuel,ok~
+exprEvalGeneral,q2,cpd-det,1.43,8,62,227247,72753,1551.018,2,OutOfFuel,ok~
+exprEvalGeneral,q1,cpd-la,1.37,8,62,224949,75051,213.916,1,OutOfFuel,ok~
+exprEvalGeneral,q2,cpd-la,1.61,8,62,227247,72753,1510.007,2,OutOfFuel,ok~
+exprEvalGeneral,q1,cpd-lap,1.43,8,62,224949,75051,241.827,1,OutOfFuel,ok~
+exprEvalGeneral,q2,cpd-lap,1.39,8,62,227247,72753,1529.873,2,OutOfFuel,ok~
+exprEvalGeneral,q1,conspd-la,0.58,7,31,150,46,0.070,1,Finished,ok
+exprEvalGeneral,q2,conspd-la,0.71,7,31,225648,74352,197.075,2,OutOfFuel,ok~
+exprEvalGeneral,q1,conspd-det,0.60,7,31,150,46,0.065,1,Finished,ok
+exprEvalGeneral,q2,conspd-det,0.59,7,31,225648,74352,195.874,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,original,0.99,3,32,2945,605,1.516,1,Finished,ok
+exprEvalGeneral@vanilla,q2,original,0.86,3,32,247108,52892,245.400,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,cpd-det,3.93,12,59,2668,599,1.589,1,Finished,ok
+exprEvalGeneral@vanilla,q2,cpd-det,4.09,12,59,243494,56506,230.280,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,cpd-la,3.47,7,51,2657,596,1.326,1,Finished,ok
+exprEvalGeneral@vanilla,q2,cpd-la,3.45,7,51,243493,56507,241.904,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,cpd-lap,3.55,8,52,2657,596,1.523,1,Finished,ok
+exprEvalGeneral@vanilla,q2,cpd-lap,3.59,8,52,243493,56507,238.554,2,OutOfFuel,ok~
+exprEvalGeneral@vanilla,q1,conspd-la,4.82,21,92,268095,31905,324.538,0,OutOfFuel,unverified-complete
+exprEvalGeneral@vanilla,q2,conspd-la,4.78,21,92,269121,30879,310.297,0,OutOfFuel,unverified-complete
+exprEvalGeneral@vanilla,q1,conspd-det,7.03,35,114,246624,53376,17665.190,0,OutOfFuel,unverified-complete
+exprEvalGeneral@vanilla,q2,conspd-det,7.05,35,114,248106,51894,16419.033,0,OutOfFuel,unverified-complete
+queens5,q1,original,0.20,9,39,202439,57112,57.002,10,GotEnough,ok~
+queens5,q2,original,0.23,9,39,47771,13236,12.578,2,Finished,ok
+queens5,*,cpd-det,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5,*,cpd-la,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5,*,cpd-lap,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5,*,conspd-la,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5,*,conspd-det,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,q1,original,1.51,3,50,263944,36056,141.813,0,OutOfFuel,ok~
+queens5@vanilla,q2,original,1.46,3,50,265230,34770,99.889,0,OutOfFuel,ok~
+queens5@vanilla,*,cpd-det,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,*,cpd-la,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,*,cpd-lap,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,*,conspd-la,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-
+queens5@vanilla,*,conspd-det,0.00,0,0,0,0,0.000,0,spec-fail: <<timeout>>,-

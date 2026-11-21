@@ -1,0 +1,6 @@
+## cpd-det: timeouts 5 -> 5; spec time 0.972x (geometric mean, 77 benchmarks); steps identical 72, different 0
+## cpd-la: timeouts 4 -> 4; spec time 0.956x (geometric mean, 78 benchmarks); steps identical 85, different 0
+## cpd-lap: timeouts 5 -> 5; spec time 0.953x (geometric mean, 77 benchmarks); steps identical 85, different 0
+## conspd-det: timeouts 26 -> 26; spec time 1.021x (geometric mean, 56 benchmarks); steps identical 49, different 0
+## conspd-la: timeouts 19 -> 20; spec time 1.064x (geometric mean, 62 benchmarks); steps identical 64, different 0
+  lost: exprEval@vanilla (now times out)
