@@ -273,3 +273,230 @@ All cited works, with links and provenance, are collected in `docs/RELATED_WORK.
 
 The design-level proposals (one core IR with linting, one analysis engine, a strategy-based
 specializer driver, DSL changes) are in `docs/DESIGN.md` on branch `design-proposals`.
+
+## 6. Futamura projections, Jones optimality, and the collected roadmap (branch `futamura`)
+
+### 6.1 What was added
+
+* **Jones-optimality harness (`src/Measure/Vanilla.hs`, `measure --vanilla`).** Every
+  benchmark `p` gets a twin `p@vanilla`: `p` encoded as clauses of the classic vanilla
+  self-interpreter, with the query `r ts` replaced by `jo_solve [Jo_r ts]`.
+  * Each disjunct of a definition's DNF becomes one `jo_clause` clause. Its body list keeps
+    the original conjunct order, and object-level unifications become `Jo_eq` atoms.
+  * Specializing `jo_solve` for the static object program is the **first Futamura
+    projection**. A Jones-optimal specializer gives back a program no slower than `p`.
+  * `summarize.py` reports, per specializer `S`:
+    * `steps(S(p@vanilla)) / steps(p)` ("vs direct");
+    * `steps(S(p@vanilla)) / steps(S(p))` ("vs S(p)", the interpretive overhead `S` leaves);
+    * the number of queries on which `S` is optimal.
+  * This turns the whole suite (34 benchmarks) into a Jones-optimality test.
+* **Determinate unfolding with failure lookahead (`Unfold.pruneByLookahead`; specializers
+  `cpd-la`, `conspd-la`).** Before counting the alternatives of a selected call, local control
+  drops resultants in which some call fails within `k = 2` further unfolding steps (Gallagher
+  1991; Leuschel's ECCE).
+  * Without it, `jo_atom (Jo_eq a b)` is never unfolded deterministically: its second branch
+    (`jo_clause (Jo_eq a b) _`) only fails one step down. Every object-level unification then
+    stays in the residual program as an extra relation.
+  * Only finitely failing branches are removed, so answer sets are unchanged.
+  * A first version reused the fresh-name supply in nested unfoldings and produced wrong
+    answers. The harness caught it, and the version measured here threads the supply.
+* **Stronger cross-check.** When one side's answer set is complete, every answer of the other
+  side must be an *instance* of one of its answers. Before, an over-general wrong answer (e.g.
+  `S v` where `12` is the only solution, `fclMult`/conspd-branch) passed the replay check as
+  `ok~`.
+* **Benchmarks from the literature (`bench/measure/papers`, see its README).** Seven programs,
+  all with forward and backward queries:
+  * `tmInterp`: Turing-machine interpreter (Jones–Gomard–Sestoft 1993);
+  * `fclMult`: flowchart-language interpreter (JGS 1993);
+  * `kmp`: the KMP test (Consel–Danvy 1989; Sørensen–Glück–Jones 1996);
+  * `binMul` / `binFactor`: Kiselyov et al.'s binary arithmetic (FLOPS 2008);
+  * `lambdaAppend`: relational λ-interpreter (Byrd et al. 2012/2017);
+  * `power`: JGS 1993, Ershov 1977.
+* **Visualizer (`viz/`, `viz-export`).** A static web page with:
+  * global and local trees of every specializer;
+  * residual programs next to the source;
+  * profiled runs of original and residual programs: per-relation cost, answer timeline, and a
+    trace player.
+
+  See `viz/README.md`.
+
+### 6.2 Results of the full sweep (`bench/measure/results/futamura/`)
+
+**Setup.**
+* `measure --vanilla --answers 10 --fuel 300000` over all 41 benchmarks (`dppd`, `v2s`, `new`,
+  `papers`) and their 41 `@vanilla` twins: 136 run-time queries, 68 of them on twins.
+* Raw data: `la.csv`; summary: `summary.md`.
+* This sweep still used the old cross-check. Answer sets that are not exact matches therefore
+  appear as `unverif.` rather than with the stronger instance check of §6.1.
+
+**Aggregate.**
+
+| specializer | solved | wrong | unverif. | spec fail | steps vs original | size |
+|---|---:|---:|---:|---:|---:|---:|
+| original | 95/136 | 0 | 0 | 0 | 1.000 | 2842 |
+| cpd-det | 70/136 | 0 | 17 | 6 | 0.189 | 7266 |
+| **cpd-la** | **85/136** | 0 | 6 | 5 | 0.119 | 5231 |
+| cpd-det+opt+sched | 90/136 | 0 | 9 | 6 | 0.084 | 9262 |
+| **cpd-la+opt+sched** | **98/136** | 0 | 3 | 5 | 0.082 | 9437 |
+| conspd-det | 49/136 | 0 | 19 | 26 | 0.119 | 7850 |
+| conspd-la | 52/136 | 0 | 14 | 29 | 0.089 | 3320 |
+| conspd-det+opt+sched | 55/136 | 0 | 13 | 26 | 0.100 | 17231 |
+| conspd-la+opt+sched | 58/136 | 0 | 13 | 29 | 0.087 | 15663 |
+
+**Jones optimality** (`@vanilla` twins only). "vs direct" is the geometric mean of
+steps(S(p@vanilla)) / steps(p); "vs S(p)" is the geometric mean of
+steps(S(p@vanilla)) / steps(S(p)); "optimal" counts queries with
+steps(S(p@vanilla)) ≤ steps(S(p)).
+
+| specializer | solved | spec fail | vs direct | vs S(p) | optimal |
+|---|---:|---:|---:|---:|---:|
+| original (interpreter, unspecialized) | 45/68 | 0 | 22.9 | – | – |
+| cpd-det | 26/63 | 4 | 5.04 | 16.6 | 0 |
+| cpd-la | 41/63 | 3 | 2.38 | 10.6 | 1 |
+| cpd-det+opt+sched | 39/63 | 4 | 0.97 | 4.84 | 6 |
+| cpd-la+opt+sched | **46/63** | 3 | 1.18 | 7.40 | **10** |
+| conspd-det | 4/29 | 24 | 7.51 | 29.4 | 0 |
+| conspd-la | 7/24 | 27 | 0.70 | 2.19 | 3 |
+
+**Findings.**
+
+* **Lookahead is the largest single improvement measured in this repository.**
+  * cpd-la solves 15 more queries than cpd-det (85 vs 70; it gains 18 and loses 3).
+  * It needs fewer steps (×0.119 vs ×0.189 of the original) and produces smaller residuals
+    (5231 vs 7266 goal nodes).
+  * With PostOpt and scheduling it solves **98/136, more than the original program (95)** and
+    more than any other configuration.
+  * Its queries lost against cpd-det are `binMul` q2 and `coloring@vanilla` q1/q2. Its one
+    regression above 20 % is `unifier@vanilla` (20k → 43k steps).
+* **Interpretive overhead is far from removed.**
+  * The unspecialized self-interpreter costs about 23× the direct program.
+  * The best configuration brings the twins it solves to about 1.2× the direct program.
+  * It is still about 7× slower than specializing the direct program, and Jones-optimal on only
+    10 of 63 queries.
+  * 17 twin queries remain unsolved.
+* **ConsPD does not scale to the self-interpreter.** It times out on 24–27 of the 34 twins.
+  Where it finishes, it is the closest to Jones optimality (conspd-la: 0.70 vs direct). This is
+  problem P4 below.
+* **No exact answer-set mismatches anywhere.** The `unverif.` counts are fuel-limited
+  cross-checks.
+
+### 6.3 Problems found by the new benchmarks
+
+These numbers come from the paper benchmarks (`bench/measure/papers`, all specializers) and from
+the self-interpreter versions of `doubleAppend`, `rev`, `exprEval` and `lambdaAppend`, at
+`--answers 10 --fuel 300000`. Aggregates over the whole suite are in §6.2.
+
+**P1. Without lookahead, the self-interpreter's object-level unifications are never compiled
+away.**
+* *Evidence:* `doubleAppend@vanilla` runs out of fuel on q1 under cpd-det (12 definitions) and
+  conspd-det (53 definitions); the unspecialized direct program needs 90 steps.
+* *Cause:* `jo_atom (Jo_eq a b)` has two branches, and the second one fails only one call
+  deeper, so deterministic unfolding stops there.
+* *Effect of the fix:* with lookahead (`conspd-la`), the residual has 8 definitions and needs
+  75/56/45 steps on q1–q3. On `rev@vanilla`, cpd-det needs 52 steps and cpd-la 25.
+
+**P2. Interpreter specialization yields residuals in the wrong conjunct order.**
+* *Evidence:*
+  * `doubleAppend@vanilla` / cpd-la is `append` and `double_append` up to renaming, but the two
+    calls are swapped. It finds the correct answer, then makes 70k calls before running out of
+    fuel. With `+opt+sched` it needs 85 steps.
+  * `exprEval` forward: every CPD/ConsPD residual runs out of fuel without scheduling, and needs
+    109–123 steps with it (original: 141).
+  * `binMul` q3 (finite failure): runs out of fuel under every plain CPD/ConsPD variant; only
+    `+opt+sched` restores termination (149–163 steps).
+  * `power` q2/q3 (backward): out of fuel without scheduling, 307–7743 steps with it.
+* *Reading:* online PD fixes the data, not the schedule. Scheduling has to be a mandatory
+  pipeline stage.
+
+**P3. Online specializers can make a terminating forward query diverge after its last
+answer.**
+* *Evidence:* `power` q1 (2^3) needs 124 steps unspecialized. Every online specializer, with or
+  without `+opt+sched`, finds the answer and then runs out of fuel.
+* *Reading:* the residual loses a termination argument that the original had. This is not a
+  scheduling problem. It needs a diagnosis: compare the residual's recursion with the original
+  in `viz/`.
+
+**P4. ConsPD's global control blows up on interpreters.**
+* *Evidence:*
+  * conspd-det and cpd-branch time out (60 s) on `exprEval@vanilla` and `lambdaAppend@vanilla`;
+    conspd-la does on `lambdaAppend@vanilla`.
+  * conspd-det and conspd-det+opt+sched time out on `fclMult`.
+  * conspd-det/conspd-branch produce 211 definitions on `tmInterp`, and find no answer for the
+    forward query.
+* *Reading:* the interpreter's growing goal lists and stores keep producing new conjunctions.
+  There is no budget, so the specializer cannot stop with a partial result.
+
+**P5. Two interpreter layers are not removed.**
+* *Evidence:* `lambdaAppend@vanilla` (the vanilla interpreter running a λ-interpreter running
+  `append`) needs about 10.8k steps under cpd-la; cpd-det runs out of fuel. Specializing the
+  λ-interpreter directly gives 18 steps: an exact `append`, the ideal first-projection result.
+* *Reading:* the whistle fires on the static object program (expressions, environments) and
+  generalizes it away.
+
+**P6. The KMP test is not passed.**
+* *Evidence:* on `kmp` (pattern `[A,A,B,A,B]`) the best residual (conspd-branch) is 5.3× faster
+  than the original, but its step counts still grow with how much text is re-scanned. No
+  residual is a KMP automaton.
+* *Reading:* this is the classical result that partial deduction without *negative
+  information* cannot reach KMP, while positive supercompilation with disequalities can
+  (Sørensen–Glück–Jones 1996).
+
+**P7. Soundness and completeness defects in specializers.**
+* *Wrong answers:*
+  * `fclMult` / conspd-branch returns over-general answers (`1 + v` for `3*4`). The old
+    cross-check accepted them as `ok~`; the instance-based check now flags them.
+  * `pd` is wrong on every paper benchmark (13 MISMATCHes); this is the known
+    `PD.Residualization` bug.
+* *Residualizer failures:* "invocation of the undefined relation" on `rev@vanilla` (conspd-la),
+  `binFactor` (conspd-branch) and `sortGeneral` (cpd-*).
+* *Missing answers:* `tmInterp` / conspd-det loses the forward answer (`unverified-complete`).
+
+**P8. The harness and tooling are slow on hard inputs.**
+* A sweep with `--vanilla` takes hours: every timeout costs 60 s per specializer, and the
+  exporter recomputes trees.
+* The 60 s timeout relies on asynchronous exceptions, so it cannot interrupt a loop that never
+  allocates.
+
+### 6.4 Collected roadmap
+
+Status: **done** = implemented and measured on this or an earlier branch; **started** =
+partially implemented; **open** = proposed only. Priority (**A** highest) is set by how many of
+the problems in §6.3 an item addresses.
+
+| # | idea | addresses | source | status | prio |
+|---|---|---|---|---|---|
+| 1 | Measurement harness: cost model, cross-check, suite | – | §1 | done (`measure-harness`) | – |
+| 2 | Soundness fixes in purification | P7 | §3.1 | done | – |
+| 3 | Fix `PD.Residualization` (leaves paired with wrong definitions) | P7 | §3.1 | open | B |
+| 4 | Find and fix the over-general answers of conspd-branch (`fclMult`) and the lost answer of conspd-det (`tmInterp`); run every specializer under the strengthened cross-check in CI | P7 | §6.3 | open | **A** |
+| 5 | Total residualizer (no calls to undefined relations) | P7 | §5 item 3 | open | **A** |
+| 6 | Budgets in global control and anytime specialization: cap the number of global nodes or driving steps and residualize what exists (generalize everything left); a specializer-internal step counter that replaces wall-clock timeouts | P4, P8 | §5 item 3 | open | **A** |
+| 7 | **Scheduling as a mandatory pipeline stage** after every specializer. The greedy version exists (`Schedule.hs`). | P2 | §3.3, §5 item 1 | started | **A** |
+| 7a | …driven by a determinism analysis (Mercury-style: keep semidet tests early, do not reorder past nondeterministic generators), which fixes the `queens5`/`regexp` regressions | P2 | §5 item 1 | open | **A** |
+| 7b | …compared against, then unified with, the pre-existing `Mode.Analysis.prioritySelection` and `FunConversion.DetMode`; `Schedule.hs` was written independently and never compared with them | P2 | discussion on this branch | open | **A** |
+| 7c | …with a cost estimate (Rozplokhas–Boulytchev, FLOPS'22) | P2 | §5 item 1 | open | B |
+| 8 | **Termination-preserving residualization**: diagnose `power` q1; check that every residual recursion keeps a decreasing argument the original had (size-change graphs), and otherwise refuse the transformation | P3 | §6.3 | open | **A** |
+| 9 | **Failure lookahead** in determinate unfolding (`cpd-la`, `conspd-la`) | P1 | §6.1 | done | – |
+| 9a | Make lookahead the default local control. The sweep (§6.2) shows +15 solved for CPD, and none lost for ConsPD; first examine the 3 queries CPD loses (`binMul` q2, `coloring@vanilla`) and the `unifier@vanilla` regression | P1 | §6.2 | open | **A** |
+| 10 | **BTA-informed online control**: never generalize arguments the BTA marks static (the object program inside an interpreter); allow unfolding when recursion descends structurally on static data (size-change termination, Leuschel–Vidal 2014) | P4, P5 | §6.1 | open, next | **A** |
+| 11 | **Conjunction splitting at interpreter boundaries**: CPD carries the vanilla goal list (`jo_solve rest`) along in its conjunctions, which makes the whistle generalize object-level calls; split off continuation goals that share no variables with the selected atom | P4, P5 | `doubleAppend@vanilla` global tree | open | B |
+| 12 | **Negative information**: disequality constraints (constrained PD / positive supercompilation with `≠`), then tabling / query–answer transformation for `path`-like problems; target: pass the KMP test | P6 | §5 item 6 | open | B |
+| 13 | Finite-domain case splitting, characteristic trees for polyvariance control ("The Trick") | P5, P6 | §5 item 5 | open | B |
+| 14 | **Cogen / generating extensions** (the second Futamura projection in practice): from BTA-annotated programs (`src/BTA`, `src/OfflinePD`), generate a program that maps static input directly to residual code, as LOGEN does for Prolog. Hybrid control: a generating extension for repeated specialization, online CPD/ConsPD for one-off runs. This also sidesteps P4 for interpreters. | P4, P8 | §6.1 | open | B |
+| 15 | Specialization-cost benchmarks: driving-step counter (from item 6); break-even N = cogen time / (online − genext time) on many static inputs (`exprEval` over ~50 expressions, `regexp` over many patterns, `prop` over many formulas, `fclMult` over several programs) | P8 | §6.1 | open (wall-clock `spec_ms` only) | C |
+| 16 | PostOpt on every residual (done); add RAF/FAR redundant-argument filtering | – | §3.2, §5 item 2 | PostOpt done, RAF/FAR open | C |
+| 17 | Groundness/sharing/freeness (Pos) analysis feeding the BTA and the backend (drop the occurs check); a prerequisite for 7a and 10 | P2, P5 | §5 item 4 | open | B |
+| 18 | Multi-result driver with an empirical cost model: pick the best residual per mode, using the harness's step counter as the cost model | P2, P3 | §5 item 7 | open | C |
+| 19 | One core IR with lint, one analysis engine, a strategy-based specializer framework, DSL changes (`docs/DESIGN.md`, branch `design-proposals`); item 7b is a first concrete case of merging duplicate analyses | P7 | `docs/DESIGN.md` | `Core.Lint` prototype only | B |
+| 20 | **Jones-optimality test**: every benchmark through the vanilla self-interpreter (`--vanilla`) | P1, P5 | §6.1 | done | – |
+| 21 | Benchmarks from the literature (`bench/measure/papers`); still to add: Barliman-style relational interpreters run backward (quines), STLC inhabitation with polymorphism, Einstein/zebra (`src/TranslatedExamples`), 4×4 Sudoku, cyclic-graph reachability, bridge-and-torch and goat-wolf-cabbage with unknown move counts (`bench/Goat`, `bench/Hanoi`) | – | §5, §6.1 | 7 added, rest open | C |
+| 22 | Visualizer of specialization trees, residuals and runs (`viz/`); next: highlight where the whistle fired and which generalization it caused (needed for 10/11) | P3, P5 | §6.1 | done; extension open | C |
+| 23 | Learning-guided specialization (no prior work found) | – | §5 | open | C |
+
+**Suggested order.**
+1. Correctness first: items 4 and 5, so that later measurements can be trusted.
+2. Then items 6 and 7/7a/7b: these are the largest measured wins (P2, P4).
+3. Then item 8, which removes the `power` regression.
+4. Then item 10, the step towards Jones optimality on two-layer interpreters (P5), with item 22
+   to see why the whistle fires.
+5. Items 12 and 14 are longer research projects.
