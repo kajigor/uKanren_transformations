@@ -32,8 +32,10 @@ per benchmark. The front end (`viz/index.html`) only reads these files.
       "residual": "double_appendo y0 y1 y2 y3 = ...\n...",   // pretty-printed program
       "residualGoal": "double_appendo x0 x1 x2 x3",
       "defs": 3, "size": 17,             // #definitions, #goal nodes
-      "globalTree": GNode | null,        // only for base specializers that have one
-      "treeTruncated": false
+      "globalTree": GNode | null,        // only for base specializers that have one; also when
+                                         // the specialization failed or timed out (partial tree)
+      "treeTruncated": false,            // cut by the node limit or by the deadline
+      "treeTimedOut": false              // cut by the deadline (the specialization's time budget)
     }
   ],
 
@@ -85,3 +87,6 @@ independent parts, children are the parts; `goal` lists all of them), `"transien
 ```
 
 Trees are cut at 1500 nodes per tree; a cut subtree is `{ "kind": "truncated", "children": [] }`.
+Trees are also rendered under a deadline (the specialization's 60 s budget when it failed or timed
+out, 30 s otherwise). The trees are lazy, so this shows how far the specializer got; whatever was
+not computed by then is `{ "kind": "truncated", "reason": "timeout", "children": [] }`.

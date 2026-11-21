@@ -304,3 +304,17 @@ input[type="range"] { accent-color: var(--accent); vertical-align: middle; }
   #main { padding: 14px 16px 40px; }
 }
 .tv-tools .sep { width: 1px; height: 16px; background: var(--border); }
+
+/* ===== New benchmark editor ===== */
+textarea.editor {
+  width: 100%; box-sizing: border-box; resize: vertical; font-family: var(--mono); font-size: 12.5px; line-height: 1.45;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
+  tab-size: 2;
+}
+textarea.editor:focus, input[type="text"]:focus, input[type="number"]:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+input[type="number"] { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; }
+.spec-choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 4px 12px; }
+.spec-choices label { white-space: nowrap; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; padding: 5px 18px; }
+button.primary:hover:not(:disabled) { filter: brightness(1.08); border-color: var(--accent); }
+.run-status { color: var(--ink-2); }

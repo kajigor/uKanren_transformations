@@ -53,6 +53,31 @@ Views (URL `#/<bench>/program|spec|runs`):
   * a trace player that replays the first search events of the original program next to a
     specialized one.
 
+## Run your own program from the page
+
+```
+stack build uKanren-transformation:exe:viz-export
+python3 viz/server.py            # instead of http.server; http://localhost:8765/#/new
+```
+
+`server.py` serves the page like `http.server`, and also runs programs submitted from the
+**New benchmark** view (sidebar, or **Edit a copy…** on a benchmark's Program tab). There you enter:
+
+* the source (`.mk` syntax);
+* the specialization query;
+* run-time queries, one per line;
+* the specializers, the number of answers, the fuel, and optionally the `@vanilla` twin.
+
+**Run** posts this to `/api/run`. The server writes the benchmark to a temporary directory, runs
+`viz-export` on it, saves `<name>.json` into `viz/data` under the group `user`, and the page opens
+its Runs tab.
+
+* Parse errors come back with the parser's message.
+* Names of suite benchmarks are refused.
+* Running again with the same name replaces the earlier result.
+* Runs are serialized.
+* The server listens on 127.0.0.1 only.
+
 ## Dev mode: auto-reload with only good builds swapped in
 
 ```

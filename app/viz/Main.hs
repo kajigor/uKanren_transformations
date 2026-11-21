@@ -18,7 +18,7 @@ import           Data.IORef
 import           Data.List            (intercalate, isPrefixOf, sort)
 import           Data.List.Split      (splitOn)
 import qualified Data.Map.Strict      as M
-import           Data.Time.Clock      (diffUTCTime, getCurrentTime)
+import           Data.Time.Clock      (addUTCTime, diffUTCTime, getCurrentTime)
 import           Data.Time.Format     (defaultTimeLocale, formatTime)
 import           Def                  (Def (..))
 import           Descend              (getCurr)
@@ -139,31 +139,68 @@ consGT t = case t of
   SGC.Prune d s           -> GTree "prune" (goals (getCurr d)) "" (cut 400 (show s)) Nothing []
 
 -- | Render a global tree: a budget of 'maxNodes' global nodes, each local
---   tree with its own budget.  Returns the tree and whether it was cut.
-renderGT :: GTree -> IO (J, Bool)
-renderGT t0 = do
+--   tree with its own budget, and a deadline of @us@ microseconds.  The trees
+--   are lazy, so every node, every local tree and every step along a list of
+--   children is evaluated under the remaining time; what is not evaluated when
+--   the deadline passes becomes a @truncated@ node with @reason: "timeout"@.
+--   For a specialization that timed out this shows the tree as far as the
+--   specializer got.  Returns the tree, whether the node budget cut it and
+--   whether the deadline did.
+renderGT :: Int -> GTree -> IO (J, Bool, Bool)
+renderGT us t0 = do
+  start <- getCurrentTime
+  let deadline = addUTCTime (fromIntegral us / 1000000) start
   ctr <- newIORef 0
   cutRef <- newIORef False
-  let go (GTree k g gen s loc ch) = do
+  timeRef <- newIORef False
+  let within :: IO a -> IO (Maybe a)
+      within act = do
+        now <- getCurrentTime
+        let left = floor (realToFrac (diffUTCTime deadline now) * 1000000 :: Double) :: Int
+        if left <= 0 then return Nothing else timeout left act
+      timedOut = writeIORef timeRef True >> return timeoutNode
+      go t = do
         n <- readIORef ctr
         if n >= maxNodes
           then writeIORef cutRef True >> return truncatedNode
           else do
-            let locJ = fmap (\b -> evalState b 0) loc
-            i <- readIORef ctr
-            modifyIORef ctr (+ 1)
-            chJ <- mapM go ch
-            return $ JO [ ("id", JI i), ("kind", JS k), ("goal", JS g), ("gen", JS gen), ("subst", JS s)
-                        , ("local", maybe JNull id locJ), ("children", JA chJ) ]
+            m <- within $ do
+              gt@(GTree k g gen s _ _) <- evaluate t
+              _ <- evaluate (length k + length g + length gen + length s)
+              return gt
+            case m of
+              Nothing -> timedOut
+              Just (GTree k g gen s loc ch) -> do
+                i <- readIORef ctr
+                modifyIORef ctr (+ 1)
+                locJ <- case loc of
+                  Nothing -> return JNull
+                  Just b -> do
+                    r <- within (let j = evalState b 0 in evaluate (length (render j)) >> return j)
+                    maybe timedOut return r
+                chJ <- goList ch
+                return $ JO [ ("id", JI i), ("kind", JS k), ("goal", JS g), ("gen", JS gen), ("subst", JS s)
+                            , ("local", locJ), ("children", JA chJ) ]
+      goList xs = do
+        m <- within (evaluate (case xs of { [] -> Nothing; (y : ys) -> Just (y, ys) }))
+        case m of
+          Nothing -> (: []) <$> timedOut
+          Just Nothing -> return []
+          Just (Just (y, ys)) -> (:) <$> go y <*> goList ys
   j <- go t0
   c <- readIORef cutRef
-  return (j, c)
+  tc <- readIORef timeRef
+  return (j, c, tc)
+
+timeoutNode :: J
+timeoutNode = JO [("kind", JS "truncated"), ("reason", JS "timeout"), ("goal", JS ""), ("subst", JS ""), ("children", JA [])]
 
 globalTreeOf :: String -> Program G X -> Maybe GTree
 globalTreeOf base p = case base of
   "cpd-det"       -> Just $ cpdGT (fst3 (CGC.topLevel p CLC.Deterministic))
   "cpd-branch"    -> Just $ cpdGT (fst3 (CGC.topLevel p CLC.Branching))
   "cpd-la"        -> Just $ cpdGT (fst3 (CGC.topLevel p (CLC.DeterministicLA 2)))
+  "cpd-lap"       -> Just $ cpdGT (fst3 (CGC.topLevel p (CLC.DeterministicLAP 2)))
   "conspd-det"    -> Just $ consGT (fst3 (SGC.topLevel p SLC.Deterministic))
   "conspd-branch" -> Just $ consGT (fst3 (SGC.topLevel p SLC.Branching))
   "conspd-la"     -> Just $ consGT (fst3 (SGC.topLevel p (SLC.DeterministicLA 2)))
@@ -213,7 +250,7 @@ data Opts = Opts { oOut :: FilePath, oN :: Int, oFuel :: Int, oOnly :: [String]
 defaultSpecs :: [String]
 defaultSpecs = [ "original", "cpd-det", "cpd-la", "cpd-branch", "conspd-det", "conspd-la"
                , "cpd-det+opt", "cpd-det+opt+sched", "conspd-det+opt", "conspd-det+opt+sched"
-               , "cpd-la+opt+sched", "conspd-la+opt+sched" ]
+               , "cpd-la+opt+sched", "conspd-la+opt+sched", "cpd-lap", "cpd-lap+opt+sched" ]
 
 parse :: [String] -> Opts -> Opts
 parse ("--out" : d : r)     o = parse r o { oOut = d }
@@ -289,17 +326,21 @@ exportBench sps group src runsSrc b = do
           Left (ex :: SomeException) -> (Left ("post: " ++ takeWhile (/= '\n') (show ex)), ms)
           Right x -> (x, ms)
       other -> return other
-    -- trees only for base specializers that succeeded
-    tree <- if spName sp == spBase sp && either (const False) (const True) (fst res)
+    -- trees for base specializers; when the specialization failed or timed
+    -- out, the tree is rendered with the same time budget, i.e. as far as the
+    -- specializer got
+    tree <- if spName sp == spBase sp
       then case globalTreeOf (spBase sp) prog of
         Nothing -> return Nothing
         Just gt -> do
-          t <- timeout (30 * 1000000) $ do
-            (j, wasCut) <- renderGT gt
-            n <- evaluate (length (render j))
-            n `seq` return (j, wasCut)
-          return (Just (maybe (truncatedNode, True) id t))
+          let budget = either (const specTimeoutUs) (const (30 * 1000000)) (fst res)
+          (j, wasCut, timedOut) <- renderGT budget gt
+          _ <- evaluate (length (render j))
+          return (Just (j, wasCut, timedOut))
       else return Nothing
+    let treeFields = [ ("globalTree", maybe JNull (\(j, _, _) -> j) tree)
+                     , ("treeTruncated", JB (maybe False (\(_, c, t) -> c || t) tree))
+                     , ("treeTimedOut", JB (maybe False (\(_, _, t) -> t) tree)) ]
     runs <- case fst res of
       Left err -> return [ errRun (spName sp) qn ("spec-fail: " ++ take 80 err) | (qn, _, _, _) <- refs ]
       Right r -> forM refs $ \(qn, ws, origBody, ref) ->
@@ -321,15 +362,15 @@ exportBench sps group src runsSrc b = do
     let specJ = case res of
           (Left err, ms) ->
             JO [ ("name", JS (spName sp)), ("base", JS (spBase sp)), ("specMs", JN ms), ("error", JS err)
-               , ("residual", JS ""), ("residualGoal", JS ""), ("defs", JI 0), ("size", JI 0)
-               , ("globalTree", JNull), ("treeTruncated", JB False) ]
+               , ("residual", JS ""), ("residualGoal", JS ""), ("defs", JI 0), ("size", JI 0) ]
+               `withFields` treeFields
           (Right r, ms) ->
             let (nd, sz) = programSize (resDefs r) (resGoal r)
             in  JO [ ("name", JS (spName sp)), ("base", JS (spBase sp)), ("specMs", JN ms), ("error", JNull)
                    , ("residual", JS (clean (unlines (map show (resDefs r)))))
                    , ("residualGoal", JS (clean (show (resGoal r))))
-                   , ("defs", JI nd), ("size", JI sz)
-                   , ("globalTree", maybe JNull fst tree), ("treeTruncated", JB (maybe False snd tree)) ]
+                   , ("defs", JI nd), ("size", JI sz) ]
+                   `withFields` treeFields
     return (specJ, runs)
   let specQuery = case specCall ogoal of
         Just (_, f, ts) -> clean (show (Invoke f ts :: G X))
@@ -354,3 +395,7 @@ findBenches dir = do
     hasMk <- doesFileExist mk
     if isDir && hasMk then return [(e, takeFileName (takeDirectory sub), mk)]
     else if isDir then findBenches sub else return [])
+
+withFields :: J -> [(String, J)] -> J
+withFields (JO kvs) more = JO (kvs ++ more)
+withFields j _ = j

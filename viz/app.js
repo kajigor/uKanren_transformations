@@ -261,6 +261,7 @@ const TABS = [['program', 'Program'], ['spec', 'Specialization'], ['runs', 'Runs
 function parseHash() {
   const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
   if (!parts.length) return { bench: null, tab: 'overview' };
+  if (parts[0] === 'new' && parts.length === 1) return { bench: null, tab: 'new' };
   const tab = TABS.some(t => t[0] === parts[1]) ? parts[1] : 'program';
   return { bench: parts[0], tab };
 }
@@ -282,6 +283,7 @@ function renderMain() {
   runCleanup();
   hideTip();
   mainEl.replaceChildren();
+  if (state.route.tab === 'new') { renderNew(mainEl); return; }
   if (state.indexError) {
     mainEl.appendChild(h('div', { class: 'panel' },
       h('h3', null, 'Could not load the data index'),
@@ -331,7 +333,8 @@ function renderSidebar() {
   listEl.replaceChildren();
   if (!state.index) return;
   const f = filterEl.value.trim().toLowerCase();
-  listEl.appendChild(h('a', { class: 'nav-item' + (!state.route.bench ? ' active' : ''), href: '#/' }, 'Overview (all benchmarks)'));
+  listEl.appendChild(h('a', { class: 'nav-item' + (!state.route.bench && state.route.tab !== 'new' ? ' active' : ''), href: '#/' }, 'Overview (all benchmarks)'));
+  listEl.appendChild(h('a', { class: 'nav-item' + (state.route.tab === 'new' ? ' active' : ''), href: '#/new' }, '+ New benchmark (run your program)'));
   const groups = new Map();
   for (const b of state.index.benches) {
     if (f && !(b.name.toLowerCase().includes(f) || str(b.group).toLowerCase().includes(f))) continue;
@@ -535,7 +538,9 @@ function renderOverview(root) {
  * ==================================================================== */
 
 function renderProgram(root, b) {
-  const left = h('div', { class: 'panel' }, h('h3', null, 'Source (.mk)'), b.source ? codeBlock(b.source, { maxHeight: '75vh' }) : h('div', { class: 'msg' }, 'No source.'));
+  const copyBtn = h('button', { title: 'Open the source and queries of this benchmark in the New benchmark editor',
+    onclick: () => { state.draft = draftFromBench(b); location.hash = '#/new'; } }, 'Edit a copy…');
+  const left = h('div', { class: 'panel' }, h('div', { class: 'panel-head' }, h('h3', null, 'Source (.mk)'), copyBtn), b.source ? codeBlock(b.source, { maxHeight: '75vh' }) : h('div', { class: 'msg' }, 'No source.'));
   const qt = h('table', { class: 'data' }, h('thead', null, h('tr', null, h('th', null, 'id'), h('th', null, 'run-time goal'))),
     h('tbody', null, b.queries.map(q => h('tr', null, h('td', { class: 'mono' }, q.id), h('td', null, goalEl(q.goal, false))))));
   const specRows = b._specOrder.map(n => {
@@ -544,7 +549,7 @@ function renderProgram(root, b) {
       h('td', { class: 'mono' }, n),
       h('td', { class: 'num' }, sp.specMs !== undefined && sp.specMs !== null ? Number(sp.specMs).toFixed(2) : '—'),
       h('td', { class: 'num' }, fmtInt(sp.defs)), h('td', { class: 'num' }, fmtInt(sp.size)),
-      h('td', null, sp.globalTree ? h('a', { href: hrefFor(b.name, 'spec'), onclick: () => { state.ui.tree = n; } }, 'tree') : ''),
+      h('td', null, (sp.globalTree || (b._spec.get(sp.base) || {}).globalTree) ? h('a', { href: hrefFor(b.name, 'spec'), onclick: () => { state.ui.tree = n; } }, 'tree') : ''),
       h('td', null, sp.error ? h('span', { class: 'flag-bad wrap' }, sp.error) : ''));
   });
   const right = h('div', { class: 'stack' },
@@ -559,17 +564,151 @@ function renderProgram(root, b) {
 }
 
 /* ======================================================================
+ * New benchmark: edit a program and queries, run them through viz/server.py
+ * ==================================================================== */
+
+const SPEC_CHOICES = [
+  ['original', 'the unspecialized program (always run, the reference)'],
+  ['original+sched', 'the original program with mode-directed scheduling'],
+  ['cpd-det', 'CPD, deterministic unfolding'], ['cpd-la', 'CPD, deterministic unfolding with failure lookahead'],
+  ['cpd-lap', 'CPD, lookahead and precise instance folding'], ['cpd-branch', 'CPD, branching unfolding'],
+  ['conspd-det', 'ConsPD, deterministic unfolding'], ['conspd-la', 'ConsPD with failure lookahead'],
+  ['cpd-la+opt+sched', 'cpd-la, post-optimizer, scheduling'], ['cpd-lap+opt+sched', 'cpd-lap, post-optimizer, scheduling'],
+  ['cpd-det+opt+sched', 'cpd-det, post-optimizer, scheduling'], ['conspd-la+opt+sched', 'conspd-la, post-optimizer, scheduling'],
+];
+const DEFAULT_SPECS = ['original', 'cpd-la', 'cpd-lap', 'conspd-la', 'cpd-la+opt+sched', 'cpd-lap+opt+sched'];
+const DRAFT_KEY = 'viz:draft';
+const EXAMPLE_DRAFT = {
+  name: 'myAppend',
+  source: 'appendo x y xy =\n  x == [] & y == xy |\n  (fresh h, t, ty in\n    x == (h :: t) &\n    appendo t y ty &\n    xy == (h :: ty));\n\ndouble_appendo x y z res =\n  fresh t in\n    appendo x y t &\n    appendo t z res;\n',
+  query: 'double_appendo x y z res',
+  runs: '-- forward\ndouble_appendo [A, B] [C] [D, E] res\n-- backward: all splits into three parts\ndouble_appendo x y z [A, B, C, D]',
+  specs: DEFAULT_SPECS, answers: 10, fuel: 300000, vanilla: false,
+};
+
+function loadDraft() {
+  try { const d = JSON.parse(localStorage.getItem(DRAFT_KEY)); if (d && typeof d.source === 'string') return d; } catch (e) { /* ignore */ }
+  return null;
+}
+function saveDraft(d) { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); } catch (e) { /* ignore */ } }
+
+function draftFromBench(b) {
+  const src = str(b.source).split('\n').filter(l => !/^\s*\?/.test(l)).join('\n').replace(/\n+$/, '\n');
+  const runs = str(b.runsSource).split('\n').map(l => l.replace(/^\s*\?\s*/, '')).join('\n').trim()
+    || b.queries.map(q => str(q.goal)).join('\n');
+  return { ...EXAMPLE_DRAFT, name: (b.name.replace(/@vanilla$/, '') + '_copy').replace(/[^A-Za-z0-9_]/g, '_').slice(0, 40),
+           source: src, query: str(b.specQuery), runs, fuel: b.fuel || 300000, answers: b.answers || 10,
+           vanilla: /@vanilla$/.test(b.name) };
+}
+
+async function reloadIndex() {
+  const idx = await fetchJSON(DATA_DIR + 'index.json');
+  idx.benches = Array.isArray(idx.benches) ? idx.benches.filter(b => b && b.name) : [];
+  state.index = idx; state.indexError = null;
+  state.benchMeta = new Map(idx.benches.map(b => [b.name, b]));
+  document.getElementById('data-info').textContent = `${idx.benches.length} benchmarks · ${DATA_DIR.replace(/\/$/, '')}/`;
+}
+
+function renderNew(root) {
+  const d = state.draft || loadDraft() || { ...EXAMPLE_DRAFT };
+  state.draft = d;
+  const keep = () => saveDraft(d);
+  const ta = (key, rows, ph) => h('textarea', { class: 'editor', rows, spellcheck: 'false', placeholder: ph || '', value: d[key] || '',
+    oninput: e => { d[key] = e.target.value; keep(); } });
+  const inp = (key, attrs) => h('input', { type: 'text', value: String(d[key] ?? ''), ...attrs,
+    oninput: e => { d[key] = attrs && attrs.type === 'number' ? Number(e.target.value) : e.target.value; keep(); } });
+  const specs = new Set(d.specs || DEFAULT_SPECS);
+  const specBoxes = h('div', { class: 'spec-choices' }, SPEC_CHOICES.map(([n, title]) =>
+    h('label', { title }, h('input', { type: 'checkbox', checked: specs.has(n), disabled: n === 'original',
+      onchange: e => { e.target.checked ? specs.add(n) : specs.delete(n); d.specs = [...specs]; keep(); } }), ' ', h('code', null, n))));
+  const status = h('div', { class: 'run-status' });
+  const log = h('pre', { class: 'code', style: { display: 'none', maxHeight: '40vh' } });
+  const runBtn = h('button', { class: 'primary', onclick: () => run() }, 'Run');
+  const resetBtn = h('button', { onclick: () => { state.draft = { ...EXAMPLE_DRAFT }; saveDraft(state.draft); renderMain(); } }, 'Reset to example');
+  const server = h('div', { class: 'msg', style: { marginBottom: '10px' } }, 'Checking the run server…');
+
+  append(root, [
+    h('div', { class: 'page-head' }, h('h2', null, 'New benchmark'), h('span', { class: 'group' }, 'user')),
+    server,
+    h('div', { class: 'grid2' },
+      h('div', { class: 'panel' },
+        h('div', { class: 'panel-head' }, h('h3', null, 'Source (.mk syntax)'), resetBtn),
+        ta('source', 22, 'relation definitions, as in bench/measure/*/*.mk'),
+        h('p', { class: 'hint' }, 'Definitions end with ', h('code', null, ';'), '. Lines starting with ', h('code', null, '?'),
+          ' are replaced by the specialization query below.')),
+      h('div', { class: 'stack' },
+        h('div', { class: 'panel' }, h('h3', null, 'Name'), inp('name', { maxlength: 40, style: { width: '100%' } }),
+          h('p', { class: 'hint' }, 'Letters, digits and _. Running again with the same name replaces the earlier result.')),
+        h('div', { class: 'panel' }, h('h3', null, 'Specialization query'), inp('query', { style: { width: '100%' }, class: 'mono' }),
+          h('p', { class: 'hint' }, 'What the specializers specialize, e.g. ', h('code', null, 'double_appendo x y z res'), '.')),
+        h('div', { class: 'panel' }, h('h3', null, 'Run-time queries'), ta('runs', 7, 'one goal per line; -- starts a comment'),
+          h('p', { class: 'hint' }, 'Each must be an instance of the specialization query; upper-case names are constants.')),
+        h('div', { class: 'panel' }, h('h3', null, 'Specializers'), specBoxes,
+          h('div', { class: 'toolbar', style: { marginTop: '10px' } },
+            h('label', null, 'answers ', inp('answers', { type: 'number', min: 1, max: 100, style: { width: '5em' } })),
+            h('label', null, 'fuel ', inp('fuel', { type: 'number', min: 1000, step: 1000, style: { width: '8em' } })),
+            h('label', { title: 'also run it through the vanilla self-interpreter (<name>@vanilla)' },
+              h('input', { type: 'checkbox', checked: !!d.vanilla, onchange: e => { d.vanilla = e.target.checked; keep(); } }), ' also @vanilla'))),
+        h('div', { class: 'panel' }, h('div', { class: 'toolbar' }, runBtn, status), log))),
+  ]);
+
+  fetch('/api/status', { cache: 'no-cache' }).then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))).then(st => {
+    server.replaceChildren(st.exporter ? `Run server ready${st.busy ? ' (a run is in progress)' : ''}.` : 'The run server could not find viz-export: build it with stack build uKanren-transformation:exe:viz-export.');
+    server.className = st.exporter ? 'msg' : 'msg error';
+  }, () => {
+    server.className = 'msg warn';
+    server.replaceChildren('This page is served without the run server, so programs cannot be run from here. Start it with ',
+      h('code', null, 'python3 viz/server.py'), ' (instead of python3 -m http.server) and reload.');
+  });
+
+  async function run() {
+    runBtn.disabled = true; log.style.display = 'none'; log.textContent = '';
+    const t0 = Date.now();
+    const tick = () => { status.textContent = `running… ${Math.round((Date.now() - t0) / 1000)} s (each specializer has a 60 s limit)`; };
+    tick(); const timer = setInterval(tick, 1000);
+    state.cleanup.push(() => clearInterval(timer));
+    try {
+      const r = await fetch('/api/run', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: d.name, source: d.source, query: d.query, runs: d.runs, specs: [...specs],
+                               answers: d.answers, fuel: d.fuel, vanilla: !!d.vanilla }) });
+      let res = null;
+      try { res = await r.json(); } catch (e) {
+        res = { ok: false, error: r.status === 501 || r.status === 404 || r.status === 405
+          ? `HTTP ${r.status}: this page is served by a static server (python3 -m http.server), which cannot run programs. Stop it and start python3 viz/server.py instead, then reload.`
+          : `HTTP ${r.status}: the server did not answer with JSON (is it viz/server.py?)` };
+      }
+      clearInterval(timer);
+      if (!res.ok) {
+        status.replaceChildren(h('span', { class: 'flag-bad', style: { whiteSpace: 'pre-wrap', fontFamily: 'var(--mono)' } }, 'Failed: ' + (res.error || 'unknown error')));
+        if (res.log) { log.textContent = res.log; log.style.display = ''; }
+        return;
+      }
+      status.textContent = `done in ${res.seconds} s`;
+      await reloadIndex();
+      for (const n of res.benches) { state.benches.delete(n); state.loaded.delete(n); }
+      if (state.route.tab === 'new') location.hash = hrefFor(res.benches[0], 'runs');
+      else renderSidebar();
+    } catch (e) {
+      clearInterval(timer);
+      status.replaceChildren(h('span', { class: 'flag-bad' }, 'Request failed: ' + (e.message || e)));
+    } finally {
+      runBtn.disabled = false;
+    }
+  }
+}
+
+/* ======================================================================
  * Tree view (global and local trees): SVG with pan/zoom + collapsible, or outline
  * ==================================================================== */
 
 const GKINDS = {
   node: 'processed conjunction (own definition)', leaf: 'instance of an earlier conjunction (folded)',
   prune: 'generalization point', split: 'split into independent parts', transient: 'deterministic pass-through',
-  success: 'success', fail: 'failure', truncated: 'cut (tree > 1500 nodes)',
+  success: 'success', fail: 'failure', truncated: 'cut (1500-node limit, or not reached before the timeout)',
 };
 const SKINDS = {
   or: 'unfolded call (disjunction)', conj: 'conjunction (current goals)', leaf: 'leaf: goals passed to global control',
-  success: 'success', fail: 'failure', truncated: 'cut (tree > 1500 nodes)',
+  success: 'success', fail: 'failure', truncated: 'cut (1500-node limit, or not reached before the timeout)',
 };
 const KNOWN_KINDS = new Set(['node', 'leaf', 'prune', 'split', 'transient', 'success', 'fail', 'truncated', 'or', 'conj']);
 const kindColor = k => KNOWN_KINDS.has(k) ? `var(--k-${k})` : 'var(--k-unknown)';
@@ -803,7 +942,7 @@ class TreeView {
  * ==================================================================== */
 
 const gLabel = d => {
-  if (d.kind === 'truncated') return '… truncated';
+  if (d.kind === 'truncated') return d.reason === 'timeout' ? '⏱ not reached before timeout' : '… truncated';
   const id = d.id !== undefined && d.id !== null ? '#' + d.id + ' ' : '';
   return id + (str(d.goal) || d.kind || '?');
 };
@@ -811,7 +950,7 @@ const sLabel = d => {
   switch (d.kind) {
     case 'success': return '✓ ' + (str(d.subst) || 'success');
     case 'fail': return '✗ ' + (str(d.subst) || 'fail');
-    case 'truncated': return '… truncated';
+    case 'truncated': return d.reason === 'timeout' ? '⏱ not reached before timeout' : '… truncated';
     default: return str(d.goal) || d.kind || '?';
   }
 };
@@ -827,8 +966,12 @@ const sTipRows = d => [
 
 function renderSpec(root, b) {
   const ui = state.ui;
-  const treeSpecs = b._specOrder.filter(n => n !== 'original').map(n => b._spec.get(n)).filter(sp => sp && (sp.globalTree || sp.error));
-  const withTree = treeSpecs.filter(sp => sp.globalTree);
+  // variants (+opt, +sched) share the run of their base specializer and have no tree of their
+  // own: show the base specializer's tree for them
+  const treeHolder = sp => sp && (sp.globalTree ? sp : (sp.base && sp.base !== sp.name ? b._spec.get(sp.base) : null));
+  const treeOf = sp => { const t = treeHolder(sp); return t && t.globalTree ? t : null; };
+  const treeSpecs = b._specOrder.filter(n => n !== 'original').map(n => b._spec.get(n)).filter(sp => sp && (treeOf(sp) || sp.error));
+  const withTree = treeSpecs.filter(sp => treeOf(sp));
   if (!ui.tree || !treeSpecs.some(sp => sp.name === ui.tree)) ui.tree = (withTree[0] || treeSpecs[0] || {}).name;
   const sp = b._spec.get(ui.tree);
 
@@ -844,16 +987,19 @@ function renderSpec(root, b) {
     top.appendChild(h('div', { class: 'msg' }, 'No specializer of this benchmark exported a global tree.'));
   } else {
     if (sp.error) top.appendChild(h('div', { class: 'msg error wrap' }, 'Specialization failed: ' + sp.error));
-    if (sp.treeTruncated) top.appendChild(h('div', { class: 'msg warn', style: { marginBottom: '8px' } }, 'The tree was truncated at export (subtrees marked “truncated”).'));
-    if (sp.globalTree) {
-      top.appendChild(kindLegend(countKinds(sp.globalTree), GKINDS));
+    const ts = treeOf(sp);
+    if (ts && ts !== sp) top.appendChild(h('div', { class: 'msg', style: { marginBottom: '8px' } }, `${sp.name} shares the specialization run of ${ts.name}; this is the global tree of ${ts.name}.`));
+    if (ts && ts.treeTimedOut) top.appendChild(h('div', { class: 'msg warn', style: { marginBottom: '8px' } }, 'Partial tree: this is how far the specializer got within the time limit. Nodes marked ⏱ were not computed when it was stopped; the last processed nodes are their left neighbours.'));
+    else if (ts && ts.treeTruncated) top.appendChild(h('div', { class: 'msg warn', style: { marginBottom: '8px' } }, 'The tree was truncated at export (subtrees marked “truncated”).'));
+    if (ts) {
+      top.appendChild(kindLegend(countKinds(ts.globalTree), GKINDS));
       const grid = h('div', { class: 'spec-grid', style: { marginTop: '10px' } });
       const treePanel = h('div');
       const details = h('div', { class: 'panel' });
       append(grid, [treePanel, details]);
       top.appendChild(grid);
       const showDetails = d => renderNodeDetails(details, d);
-      const tv = new TreeView(treePanel, sp.globalTree, { label: gLabel, tipRows: gTipRows, onSelect: d => { ui.gSel = d; showDetails(d); }, height: 560 });
+      const tv = new TreeView(treePanel, ts.globalTree, { label: gLabel, tipRows: gTipRows, onSelect: d => { ui.gSel = d; showDetails(d); }, height: 560 });
       // restore / default the selection to the root
       const want = ui.gSel && tv.nodes.find(n => n.d === ui.gSel || n.d.id === ui.gSel.id) || tv.root;
       tv.selected = want; tv.render(); showDetails(want.d);
@@ -876,7 +1022,7 @@ function renderNodeDetails(panel, d) {
       h('dt', null, 'children'), h('dd', null, String(kids))),
     h('h4', null, 'Local unfolding tree'),
   ]);
-  if (!d.local) { panel.appendChild(h('div', { class: 'msg' }, d.kind === 'truncated' ? 'Subtree cut at export.' : 'No local tree for this node.')); return; }
+  if (!d.local) { panel.appendChild(h('div', { class: 'msg' }, d.kind === 'truncated' ? (d.reason === 'timeout' ? 'Not computed before the specialization was stopped by the timeout.' : 'Subtree cut at export.') : 'No local tree for this node.')); return; }
   panel.appendChild(kindLegend(countKinds(d.local), SKINDS));
   const host = h('div', { style: { marginTop: '6px' } });
   const info = h('div', { class: 'kv', style: { marginTop: '8px' } });
