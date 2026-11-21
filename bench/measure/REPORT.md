@@ -500,3 +500,123 @@ the problems in §6.3 an item addresses.
 4. Then item 10, the step towards Jones optimality on two-layer interpreters (P5), with item 22
    to see why the whistle fires.
 5. Items 12 and 14 are longer research projects.
+
+## 7. Fixes, out-of-fuel analysis, and static analyses for the residual programs (branch `futamura`, continued)
+
+All numbers: `--answers 10 --fuel 300000`, the 41 benchmarks and their `@vanilla` twins (136
+queries), steps = unifications + calls. "Solved" means `Finished` or `GotEnough`. Every sweep
+below has **no answer mismatch**. The comparisons are made with
+`bench/measure/results/futamura/compare.py`.
+
+### 7.1 Correctness fixes (roadmap item 5)
+
+* **`split` took the wrong complement** (CPD, ConsPD and OfflinePD).
+  * After the whistle, the best matching subconjunction `b` is generalized, and the rest of the
+    goal was computed by `complementSubconjs b q'`. That function matches goals one at a time
+    against the *generalized* `b`.
+  * With repeated calls (two `splito`, two `sorto` in `sortGeneral`), it removed the wrong goals.
+    The two parts then overlapped, and some goals were in neither. These goals could not be
+    folded, hence "Residualization failed: invocation of an undefined relation".
+  * Candidates now carry their positions, and the complement is taken by position.
+* **ConsPD remembered conjunctions that fail outright.** Such a conjunction becomes a `Fail` node,
+  which gets no definition, but it stayed in `seen`. A later instance of it was folded into a call
+  to the missing definition (`depth@vanilla`, `deforestation1@vanilla`). Such goals are now
+  unfolded again; they fail immediately.
+* **Scheduler defects** (`Schedule.hs`):
+  * success patterns were computed on the unscheduled order;
+  * the fixpoint, made non-monotone by reordering, could settle in a pessimistic table; it now
+    decreases from "all ground";
+  * unifications were propagated only once.
+
+  Together these kept producers after their consumers: in `relSortGeneral`, `minmaxo` ran
+  before the recursive call that grounds its inputs.
+* **Precise instance folding** (`cpd-lap`). CPD's local control folded `multiply 0 y 4` into
+  `multiply x y 4`, which lost the static `0`. It now specializes an instance that differs only by
+  ground bindings on its own. `PostOpt.failureAnalysis` then removes the loop without answers.
+
+Sweep `results/futamura/v3` against the lookahead sweep of §6.2:
+
+| configuration | solved before → after | steps (geometric mean, common queries) |
+|---|---|---:|
+| cpd-la+opt+sched | 98 → **106** | 0.875× |
+| cpd-det+opt+sched | 90 → 97 | 0.981× |
+| conspd-la+opt+sched | 58 → **74** (−1: `power` q2) | 1.017× |
+| conspd-la | 52 → 64 | 1.000× |
+| cpd-lap+opt+sched | – → 106 (`arith`: out of fuel → 10 steps) | 0.997× vs cpd-la+opt+sched |
+
+### 7.2 Why queries run out of fuel, and what the ideal residual would be
+
+| family | example | what happens | ideal program | what gets there |
+|---|---|---|---|---|
+| A. conjunct order wrong for the mode | `relSortGeneral` forward | `smallesto` runs `minmaxo h s'` with `s'` unbound, so nothing downstream is ground | selection sort in dataflow order: the recursive call first, then the comparison with both inputs ground | dataflow scheduling (§7.1): out of fuel → 436 steps |
+| B. finite answers, but search goes on forever; static data known at specialization time | `arith`: `multiply x y 4` | the branch `multiply 0 _ 4` loops without answers | the table of the 3 answers | precise folding + failure analysis: 10 steps |
+| C. as B, but the static data arrives only at run time | `arithGeneral` q2 | the specialization query is `multiply x y z` | as B, per query | run-time specialization / generating extensions (item 14); no static analysis helps |
+| D. a bound that no unfolding sees | `revAcc` backward, `fclMult` q3 | the accumulator grows forever | the search cut at `len acc = len y` | size invariants as guards (§7.4, experiment 3) |
+| E. generate-and-test order | `power` q2 under ConsPD, `coloring` | a call that enumerates runs before a test | tests and deterministic calls first | determinism-aware scheduling (§7.4, experiment 2) |
+| F. reordering breaks termination | `binFactor@vanilla` q3, `power` q1 | the interpreter loop is reordered, so the object program's goals run right to left | the source order where termination depends on data | open: barriers in the scheduler fix `binFactor@vanilla` q3 but lose more elsewhere (§7.4, experiment 4); a termination proof per order (size-change, item 8) is needed |
+
+### 7.3 Visualizer additions
+
+* `viz/server.py` runs a program and queries entered in the page (**New benchmark**, or **Edit a
+  copy…** of a suite benchmark) through `viz-export`.
+* Specializations that time out show the tree as far as the specializer got.
+* Variants show the tree of their base specializer.
+
+On `contains@vanilla`, the partial trees show why ConsPD times out: 1760 global nodes in 20 s but
+only about 1400 more in the next 100 s, with conjunctions of 21–23 goals. The cost per node grows
+with the conjunction length. A likely cause, not yet profiled, is the subsequence enumeration
+(2ⁿ) in `Embed.subconjs`, `split` and `generateSplits` (new roadmap item 27).
+
+### 7.4 Static analyses on the residual programs
+
+**Headroom.** Take the best CPD configuration on the 75 solved queries with more than 50 steps:
+
+* in the median query, 24% of the steps are **failed unifications**;
+* in 15 queries the share is 40–86%, almost all of them interpreters (`binFactor@vanilla` 82%,
+  `unifier@vanilla` 73%, `typecheck@vanilla` 73%);
+* the reason is that the vanilla interpreter's clause table survives specialization. A call scans
+  about 45 clause heads, nearly all of which fail.
+
+Each analysis is a separate pass and variant, measured against its baseline from the same build.
+
+| # | analysis and transformation | variant | solved | steps (geometric mean) | largest effects |
+|---|---|---|---|---:|---|
+| 1 | **constructor analysis + constructor dispatch** (`src/Index.hs`): remove branches whose test can never succeed; group clauses that test the same argument against the same constructor (Mercury-style switch detection) | `+idx` | +1 (`binMul` q2), −0 | **0.909×** (cpd-la+opt), 0.913× (cpd-lap+opt+sched) | `binFactor@vanilla` 0.41×, `typecheck@vanilla` q2 0.45×, `unifier@vanilla` 0.47×, `regexp@vanilla` 0.57×; `typecheck` q1 1.37× (10 answers, in a different order) |
+| 2 | **determinism in the scheduler**: switch-deterministic calls (at most one clause matches) and tests (all arguments ground) before producers that enumerate | `+sched` | original+sched 99 → 101, −0 | 0.955× (original+sched), 0.993× (cpd-la+opt+sched) | `coloring` q1 0.11×, q2 0.24×; `sortGeneral` q2 0.64× |
+| 3 | **size invariants as guards** (`src/SizeGuard.hs`): infer `\|p_i\| ≤ \|p_j\|` and `\|p_i\| ≤ K` (list length, Peano value) as the greatest inductive set (difference constraints); check them before recursive calls whose bound is ground | `+guard` | +2 (`revAcc`, `fclMult` q3), −0 | 1.000× | `revAcc`: out of fuel → about 100 steps |
+| 4 | **barriers at calls of unknown termination**: a call that terminates in no order keeps its source position; only producers of its inputs may overtake it | `+sched` | cpd-la+opt+sched 106 → 104 (+`binFactor@vanilla` q3; −`exprEvalGeneral` q2, `fclMult@vanilla` q1, `relSort@vanilla`) | 1.010×; original+sched 1.066× | **negative, not adopted** (`results/futamura/barrier`, `barrier.patch`): `coloring` q1 24.7× worse; source order blocks too many good reorderings |
+
+All together, `cpd-lap+opt+sched+guard+idx` against the unspecialized program
+(`results/futamura/guard`):
+
+* it solves **108 of 136** queries, against 90 for the original;
+* it takes **0.064×** the steps on the 85 queries both solve;
+* it loses 5 queries the original solves: `binFactor@vanilla` q3, `exDepth`, `power` q1,
+  `sortGeneral` q1 and `tmInterp@vanilla` q1 (family F above; experiment 4 did not solve it).
+
+**Where static analysis does and does not help.**
+
+* It helps most on **interpreters**, whose clause table survives specialization (experiment 1):
+  the dispatch is decided at the residual level instead of at run time.
+* It helps on **generate-and-test** programs (experiment 2) and on **backward runs with size
+  bounds** (experiment 3).
+* It does not help when the static data exists only at run time (family C), or on programs that
+  are already close to one step per answer element (`doubleAppend`).
+* Analyses that only change what a step costs, such as groundness, sharing and freeness to drop the
+  occurs check, show no gain in this step metric. They need wall-clock measurements on the OCanren
+  backend.
+
+### 7.5 Roadmap additions (towards larger interpreters and compilers)
+
+| # | idea | why | prio |
+|---|---|---|---|
+| 24 | **Dispatch inside the specializer**: use the constructor analysis during global control, so a goal with a known constructor is specialized against only the matching clauses, instead of indexing the residual afterwards. Then generalization no longer turns an object program into a run-time clause table. | experiment 1 removes at most the head tests (≤ 2.4×); keeping the dispatch static removes the interpreter layer (P5) | **A** |
+| 25 | **Abstract multiple specialization** (CiaoPP): one abstract-interpretation engine (constructor sets, groundness, size relations, determinism) driving the creation of polyvariant versions and the removal of tests, as the shared basis of `Schedule`, `Index` and `SizeGuard` | the three passes each recompute part of the same information | **A** |
+| 26 | Cardinality / number-of-solutions analysis (Debray–Lin) in the scheduler, beyond switch determinism | `power` q2 under ConsPD: no input is ground at the top-level call, so determinism cannot decide | B |
+| 27 | Ordered-subconjunction embedding in O(n·m) instead of enumerating subsequences; record the fold of every leaf in the global tree, so the residualizer does not search for it | ConsPD/CPD time on long conjunctions (§7.3); residualization becomes total by construction | **A** |
+| 28 | Size invariants beyond pairs (polyhedra, Benoy–King) and conditional invariants (`mul x y z` with `y > 0`), for `power` q3 and `fclMult` q2 | experiment 3 covers only pairwise bounds | B |
+| 29 | Check that every run-time query is an instance of the specialization query; flag it in the harness and the visualizer | user-entered queries in the visualizer silently produced no answers | C |
+
+**Suggested next steps.** Items 6 (budgets) and 27 make ConsPD usable on interpreters. Then items
+24 and 10 make specialization keep the object program static, which is what larger interpreters
+and compilers need. Item 25 is the architecture the analyses of §7.4 should be merged into.
