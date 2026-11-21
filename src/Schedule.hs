@@ -20,6 +20,8 @@
 --   changes the cost and termination behaviour of the search.
 module Schedule
   ( schedule
+  , scheduleWith
+  , semidet
   ) where
 
 import           Data.List       (foldl', nub, sortOn)
@@ -66,7 +68,13 @@ propagate tbl gr g = case g of
         let m = callMode gr ts
             out = M.findWithDefault (S.fromList [0 .. length ts - 1]) (f, m) tbl
         in foldr S.insert gr (concat [ varsT t | (i, t) <- zip [0 ..] ts, i `S.member` out ])
-  Conjunction {} -> foldl' (propagate tbl) gr (conjs g)
+  -- after the whole conjunction succeeded every conjunct holds, so the
+  -- result does not depend on the order: iterate to a fixpoint (a single
+  -- left-to-right pass missed  qs = h :: t & ground h & ground t  ==> ground qs)
+  Conjunction {} ->
+    let pass gr0 = foldl' (propagate tbl) gr0 (conjs g)
+        fixp gr0 = let gr1 = pass gr0 in if gr1 == gr0 then gr0 else fixp gr1
+    in fixp gr
   Disjunction {} -> foldr1 S.intersection (map (propagate tbl gr) (disjs g))
   Fresh _ h -> propagate tbl gr h
   Delay h -> propagate tbl gr h
@@ -102,7 +110,7 @@ smallerVars inputs cs = go S.empty
 
 ------------------------------------------------------------------------------
 
-data Ctx = Ctx { cDefs :: Defs, cScc :: M.Map Name Int, cTbl :: Succ }
+data Ctx = Ctx { cDefs :: Defs, cScc :: M.Map Name Int, cTbl :: Succ, cDet :: Bool }
 
 -- | Schedule one goal; returns the reordered goal and the (relation, mode)
 --   pairs it calls.
@@ -123,7 +131,7 @@ schedG ctx self inputs gr g = case g of
           go _ [] = ([], [])
           go grd rest =
             let indexed = zip [0 :: Int ..] rest
-                best = snd $ head $ sortOn fst [ (score grd small i c, (i, c)) | (i, c) <- indexed ]
+                best = snd $ head $ sortOn fst [ (score' grd small rest i c, (i, c)) | (i, c) <- indexed ]
                 (bi, bc) = best
                 rest' = [ c | (i, c) <- indexed, i /= bi ]
                 (bc', calls) = case bc of
@@ -145,6 +153,20 @@ schedG ctx self inputs gr g = case g of
                                 _ -> (bs, c : cs)) ([], [])
     collect (Fresh x h) = let (vs, b) = collect h in (x : vs, b)
     collect h = ([], h)
+    -- In det mode a generator (nondeterministic call or local disjunction)
+    -- is only moved forward when it grounds a variable used by another
+    -- remaining conjunct: otherwise  (a | b) & rec  would run rec once per
+    -- branch where  rec & (a | b)  shares its answers.
+    score' grd small rest i c
+      | cDet ctx, (k, _, _) <- sc, k == 2, not (helps grd rest c) = (4, 0, i)
+      | otherwise = sc
+      where sc = score grd small i c
+    helps grd rest c =
+      let newG = propagate (cTbl ctx) grd c `S.difference` grd
+          others = [ o | o <- rest, not (sameGoal o c) ]
+      in any (\o -> any (`S.member` newG) (fvG o)) others
+    sameGoal a b = show a == show b
+    fvG = fv
     score grd small i c = case c of
       _ :=: _ -> (0 :: Int, 0 :: Int, i)
       Invoke f ts
@@ -158,7 +180,17 @@ schedG ctx self inputs gr g = case g of
                               && terminates ctx f m
                          else terminates ctx f m
                 -- non-terminating calls are delayed; ground-heavy calls first
-            in (if term then 1 else 3, negate nGround, i)
+                det = cDet ctx && semidet ctx f m
+                -- terminating semidet calls (tests) as early as possible, most
+                -- ground first; terminating generators keep the original order
+                -- (the programmer's generate/test interleaving); calls that may
+                -- not terminate are delayed
+            in if not (cDet ctx) then (if term then 1 else 3, negate nGround, i)
+               else if not term then (3, 0, i)
+               -- cheap first: non-recursive tests before recursive calls
+               else if det then (1, fromEnum rec, i)
+               -- generators: the most constrained (most ground inputs) first
+               else (2, negate nGround, i)
       Disjunction {} -> (2, 0, i)
       _ -> (2, 0, i)
 
@@ -196,6 +228,51 @@ terminates ctx f m = case M.lookup f (cDefs ctx) of
   where
     isU (_ :=: _) = True
     isU _ = False
+
+------------------------------------------------------------------------------
+-- Determinism (semidet: at most one answer) of a relation in a mode.
+--
+-- Coinductive (a call pattern under analysis is assumed semidet).  A goal is
+-- semidet when its conjuncts are (in their modes, groundness propagated left
+-- to right) and the branches of every disjunction are pairwise exclusive: some
+-- variable that is ground at that point is unified, at the top level of the
+-- two branches, with different constructors.
+
+semidet :: Ctx -> Name -> Mode -> Bool
+semidet ctx f0 m0 = rel S.empty f0 m0
+  where
+    rel vis f m
+      | (f, m) `S.member` vis = True
+      | otherwise = case M.lookup f (cDefs ctx) of
+          Nothing -> True
+          Just (Def _ as body) ->
+            let gr = S.fromList [ a | (i, a) <- zip [0 ..] as, i `S.member` m ]
+            in goal (S.insert (f, m) vis) gr body
+    goal vis gr g = case g of
+      _ :=: _ -> True
+      Invoke f ts | isSpecial f ts -> True
+                  | otherwise -> rel vis f (callMode gr ts)
+      Conjunction {} ->
+        fst $ foldl' (\(ok, gr') c -> (ok && goal vis gr' c, propagate (cTbl ctx) gr' c)) (True, gr) (conjs g)
+      Disjunction {} ->
+        let bs = disjs g
+        in and [ exclusive gr a b | (i, a) <- zip [0 :: Int ..] bs, (j, b) <- zip [0 ..] bs, i < j ]
+           && all (goal vis gr) bs
+      Fresh _ h -> goal vis gr h
+      Delay h -> goal vis gr h
+    heads gr b = M.fromListWith (\_ x -> x)
+      [ (x, c) | u <- topConjs b, Just (x, c) <- [headOf u], x `S.member` gr ]
+    headOf (V x :=: C c _) = Just (x, c)
+    headOf (C c _ :=: V x) = Just (x, c)
+    headOf _ = Nothing
+    exclusive gr a b =
+      let ha = heads gr a; hb = heads gr b
+      in or [ c /= d | (x, c) <- M.toList ha, Just d <- [M.lookup x hb] ]
+    topConjs h = case h of
+      Fresh _ k -> topConjs k
+      Delay k -> topConjs k
+      Conjunction {} -> concatMap topConjs (conjs h)
+      _ -> [h]
 
 -- | All conjunctive paths of a goal (disjunctive normal form, fresh erased).
 branches :: G X -> [[G X]]
@@ -260,12 +337,16 @@ successTable defs seeds gr0 goal = iter M.empty
 
 -- | Entry point.  @ground@: variables of @goal@ that are ground at run time.
 schedule :: S.Set X -> ([Def G X], G X) -> ([Def G X], G X)
-schedule ground (ds, goal) =
+schedule = scheduleWith False
+
+-- | @useDet@: use the determinism analysis to separate tests from generators.
+scheduleWith :: Bool -> S.Set X -> ([Def G X], G X) -> ([Def G X], G X)
+scheduleWith useDet ground (ds, goal) =
   let defs = M.fromList [ (getName d, d) | d <- ds ]
       sccIx = M.fromList [ (n, i) | (i, ns) <- zip [0 ..] (sccs ds), n <- ns ]
       run seeds =
         let tbl = successTable defs seeds ground goal
-            ctx = Ctx defs sccIx tbl
+            ctx = Ctx defs sccIx tbl useDet
             (goal', calls0) = schedG ctx "" S.empty ground goal
             build _ [] = ([], [])
             build seen (k@(f, m) : ks)

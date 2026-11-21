@@ -33,11 +33,12 @@ import qualified Data.Set            as S
 import           Def
 import           Syntax
 
-data Pass = PNormalize | PFailure | PUnifElim | PInline | PMerge | PUnreachable
+data Pass = PNormalize | PFailure | PUnifElim | PInline | PMerge | PUnreachable | PRaf | PFar | PUnifFirst
   deriving (Show, Eq, Ord, Enum, Bounded)
 
+-- | The passes of the original @opt@ preset (RAF/FAR are opt-in).
 allPasses :: [Pass]
-allPasses = [minBound .. maxBound]
+allPasses = [PNormalize, PFailure, PUnifElim, PInline, PMerge, PUnreachable]
 
 type Prog = ([Def G X], G X)
 
@@ -65,9 +66,13 @@ optimizeWith ps top p0 = go (6 :: Int) (prep p0)
       , when' PUnifElim   unifElimP
       , when' PNormalize  normalizeP
       , when' PMerge      mergeDuplicates
+      , when' PRaf        (reclose . raf top)
+      , when' PFar        (reclose . far top)
       , when' PUnreachable removeUnreachable
+      , when' PUnifFirst  unifFirstP
       ]
     when' p f = if on p then f else id
+    unifFirstP (ds, g) = (map (\(Def n as b) -> Def n as (unifFirst b)) ds, unifFirst g)
     unifElimP (ds, g) = (map (\(Def n as b) -> Def n as (unifElim (S.fromList as) b)) ds, unifElim (S.fromList top) g)
     reclose (ds, g) = (map (\(Def n as b) -> Def n as (closeExistentials as b)) ds, closeExistentials top g)
     normalizeP (ds, g) = (map (\(Def n as b) -> Def n as (normalizeG b)) ds, normalizeG g)
@@ -314,30 +319,41 @@ inlineThreshold :: Int
 inlineThreshold = 12
 
 inlineNonRec :: Prog -> Prog
+-- Bottom-up over the call graph (callees first): a call to a non-recursive
+-- relation is inlined when the callee's *already inlined* body is small, or
+-- when it is called only once.  (Deciding on the size before inlining made
+-- chains of small definitions multiply out: relSort grew from 319 to 78905
+-- goal nodes and took minutes.)
 inlineNonRec (ds, g) =
-    let ds' = map (\(Def n as b) -> Def n as (evalState (inl b) 0)) ds
-        g'  = evalState (inl g) 0
+    let done = foldl' step M.empty sccs
+        ds' = [ Def n as (M.findWithDefault b n done) | Def n as b <- ds ]
+        g'  = evalState (inl done g) 0
     in (ds', g')
   where
     dm = M.fromList [ (getName d, d) | d <- ds ]
     sccs = stronglyConnComp [ (getName d, getName d, nub (callees (getBody d))) | d <- ds ]
     recursive = S.fromList (concat [ ns | CyclicSCC ns <- sccs ])
     useCount = M.fromListWith (+) [ (f, 1 :: Int) | b <- g : map getBody ds, f <- callees b ]
-    inlinable f = case M.lookup f dm of
-      Just d -> not (f `S.member` recursive)
-                && (gsize (getBody d) <= inlineThreshold || M.findWithDefault 0 f useCount <= 1)
-      Nothing -> False
-    inl :: G X -> State Int (G X)
-    inl h = case h of
-      Invoke f ts | inlinable f -> do
-        let Def _ ps body = dm M.! f
-        body' <- renameBinders body
-        -- inlined body may itself contain inlinable calls (non-recursive => terminates)
-        inl (substG (M.fromList (zip ps ts)) body')
-      Conjunction a b cs -> unsafeConj <$> mapM inl (a : b : cs)
-      Disjunction a b cs -> unsafeDisj <$> mapM inl (a : b : cs)
-      Fresh x b -> Fresh x <$> inl b
-      Delay b -> inl b
+    step done scc =
+      let ns = case scc of AcyclicSCC n -> [n]; CyclicSCC xs -> xs
+      in foldl' (\acc n -> case M.lookup n dm of
+                              Just (Def _ _ b) -> M.insert n (evalState (inl acc b) 0) acc
+                              Nothing -> acc) done ns
+    inlinable done f =
+      not (f `S.member` recursive) &&
+      case M.lookup f done of
+        Just b  -> gsize b <= inlineThreshold || M.findWithDefault 0 f useCount <= 1
+        Nothing -> False
+    inl :: M.Map Name (G X) -> G X -> State Int (G X)
+    inl done h = case h of
+      Invoke f ts | inlinable done f -> do
+        let Def _ ps _ = dm M.! f
+        body' <- renameBinders (done M.! f)
+        return (substG (M.fromList (zip ps ts)) body')
+      Conjunction a b cs -> unsafeConj <$> mapM (inl done) (a : b : cs)
+      Disjunction a b cs -> unsafeDisj <$> mapM (inl done) (a : b : cs)
+      Fresh x b -> Fresh x <$> inl done b
+      Delay b -> inl done b
       _ -> return h
     renameBinders :: G X -> State Int (G X)
     renameBinders = go M.empty
@@ -409,3 +425,151 @@ renameCalls rn h = case h of
   Fresh x b -> Fresh x (renameCalls rn b)
   Delay b -> renameCalls rn b
   _ -> h
+
+------------------------------------------------------------------------------
+-- Redundant argument filtering (Leuschel & Sørensen, LOPSTR'96), both
+-- directions, over residual programs.
+--
+-- RAF: position i of p is erasable when parameter i of p is only passed on
+-- to erasable positions (never unified, never passed elsewhere).  p's
+-- success then does not depend on it, so every call simply drops argument i.
+--
+-- FAR: position i of p is erasable when at every call site argument i is
+-- an existential variable of the caller that occurs nowhere else in the
+-- caller.  The value is never used, so the callee keeps its constraints but
+-- on a local (fresh) variable instead of a parameter.
+--
+-- Both are greatest fixpoints over the set of positions.  The query goal's
+-- free variables count as used.
+
+type Pos = (Name, Int)
+
+-- | All variable occurrences of a goal, with the call position they occur in
+--   (Nothing: in a unification or nested inside a constructor term).
+occurrences :: G X -> [(X, Maybe Pos)]
+occurrences g = case g of
+  a :=: b -> [ (v, Nothing) | v <- fv a ++ fv b ]
+  Invoke f ts -> concat [ case t of
+                            V v -> [(v, Just (f, i))]
+                            _   -> [ (v, Nothing) | v <- fv t ]
+                        | (i, t) <- zip [0 ..] ts ]
+  Conjunction a b cs -> concatMap occurrences (a : b : cs)
+  Disjunction a b cs -> concatMap occurrences (a : b : cs)
+  Fresh _ h -> occurrences h
+  Delay h -> occurrences h
+
+calls :: G X -> [(Name, [Term X])]
+calls g = case g of
+  Invoke f ts -> [(f, ts)]
+  Conjunction a b cs -> concatMap calls (a : b : cs)
+  Disjunction a b cs -> concatMap calls (a : b : cs)
+  Fresh _ h -> calls h
+  Delay h -> calls h
+  _ -> []
+
+boundVars :: G X -> S.Set X
+boundVars g = case g of
+  Fresh x h -> S.insert x (boundVars h)
+  Conjunction a b cs -> S.unions (map boundVars (a : b : cs))
+  Disjunction a b cs -> S.unions (map boundVars (a : b : cs))
+  Delay h -> boundVars h
+  _ -> S.empty
+
+dropArgs :: S.Set Pos -> G X -> G X
+dropArgs er g = case g of
+  Invoke f ts -> Invoke f [ t | (i, t) <- zip [0 ..] ts, not ((f, i) `S.member` er) ]
+  Conjunction a b cs -> unsafeConj (map (dropArgs er) (a : b : cs))
+  Disjunction a b cs -> unsafeDisj (map (dropArgs er) (a : b : cs))
+  Fresh x h -> Fresh x (dropArgs er h)
+  Delay h -> Delay (dropArgs er h)
+  _ -> g
+
+allPositions :: [Def G X] -> S.Set Pos
+allPositions ds = S.fromList [ (n, i) | Def n as _ <- ds, i <- [0 .. length as - 1] ]
+
+raf :: [X] -> Prog -> Prog
+raf _ (ds, g) =
+    let er = gfp (allPositions ds)
+    in if S.null er then (ds, g) else
+       ( [ Def n [ a | (i, a) <- zip [0 ..] as, not ((n, i) `S.member` er) ] (dropArgs er b) | Def n as b <- ds ]
+       , dropArgs er g )
+  where
+    gfp er =
+      let er' = S.filter (ok er) er in if er' == er then er else gfp er'
+    dm = M.fromList [ (n, (as, b)) | Def n as b <- ds ]
+    ok er (n, i) =
+      let (as, b) = dm M.! n
+          a = as !! i
+      in a `notElem` (take i as ++ drop (i + 1) as)   -- a repeated parameter is a constraint
+         && all (\(v, p) -> v /= a || maybe False (`S.member` er) p) (occurrences b)
+
+far :: [X] -> Prog -> Prog
+far top (ds, g) =
+    let er = gfp (allPositions ds)
+    in if S.null er then (ds, g) else
+       ( [ Def n keep (fresh gone (dropArgs er b))
+         | Def n as b <- ds
+         , let keep = [ a | (i, a) <- zip [0 ..] as, not ((n, i) `S.member` er) ]
+         , let gone = [ a | (i, a) <- zip [0 ..] as, (n, i) `S.member` er ] ]
+       , dropArgs er g )
+  where
+    -- callers: every definition body and the query goal.  Candidates for
+    -- "dead" variables: the caller's existentials, plus its own parameters at
+    -- erased positions (they become existentials after the rewrite).
+    callers er = [ (b, boundVars b `S.union` S.fromList [ a | (i, a) <- zip [0 ..] as, (n, i) `S.member` er ])
+                 | Def n as b <- ds ]
+                 ++ [ (g, boundVars g `S.difference` S.fromList top) ]
+    gfp er = let er' = S.filter (ok er) er in if er' == er then er else gfp er'
+    ok er (n, i) = all (\(b, cand) -> let dv = dead er b cand in
+                          all (siteOk dv) [ ts | (f, ts) <- calls b, f == n ]) (callers er)
+      where
+        siteOk dv ts = case drop i ts of
+          (V v : _) -> v `S.member` dv
+          _ -> False
+    -- greatest set of candidate variables whose every occurrence is at an
+    -- erased call position or inside a unification  w = t  with w dead
+    -- (exists w. w = t always holds, so such unifications can be dropped)
+    dead er b cand =
+      let us = unifs b
+          step dv = S.filter (\v -> all (occOk dv v) us && callOk v) dv
+          callOk v = all (\(w, p) -> w /= v || maybe True (`S.member` er) p) (callOccs b)
+          occOk dv v (l, r)
+            | v `notElem` (fv l ++ fv r) = True
+            | V w <- l, w `S.member` dv, w `notElem` fv r = True
+            | V w <- r, w `S.member` dv, w `notElem` fv l = True
+            | otherwise = False
+          fixp dv = let dv' = step dv in if dv' == dv then dv else fixp dv'
+      in fixp cand
+    unifs h = case h of
+      a :=: c -> [(a, c)]
+      Conjunction a c cs -> concatMap unifs (a : c : cs)
+      Disjunction a c cs -> concatMap unifs (a : c : cs)
+      Fresh _ k -> unifs k
+      Delay k -> unifs k
+      _ -> []
+    callOccs h = [ o | o@(_, Just _) <- occurrences h ] ++
+                 [ (v, Nothing) | (_, ts) <- calls h, t@(C _ _) <- ts, v <- fv t ]
+
+------------------------------------------------------------------------------
+-- Unifications first: in every conjunction, unifications are moved (stably)
+-- before calls and disjunctions.  Answer-preserving (conjunction commutes
+-- w.r.t. the answer set); a unification can only prune, so moving it earlier
+-- never adds work, and calls then run with more of their arguments bound.
+-- Residualizers often emit the destructuring  x = h :: t  after the
+-- recursive call (e.g. tupled sum/length), which diverges forward.
+
+unifFirst :: G X -> G X
+unifFirst g = case g of
+  Conjunction {} ->
+    let cs = map unifFirst (conjs g)
+        (us, rest) = partition isU cs
+    in unsafeConjList (us ++ rest)
+  Disjunction a b cs -> unsafeDisj (map unifFirst (a : b : cs))
+  Fresh x h -> Fresh x (unifFirst h)
+  Delay h -> Delay (unifFirst h)
+  _ -> g
+  where
+    isU (_ :=: _) = True
+    isU _ = False
+    unsafeConjList [x] = x
+    unsafeConjList xs = unsafeConj xs
